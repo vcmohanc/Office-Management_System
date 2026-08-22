@@ -2,6 +2,7 @@ import express from 'express';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import User from '../models/User.js';
+import { verifyToken } from '../middleware/auth.js';
 
 const router = express.Router();
 
@@ -29,8 +30,6 @@ router.post('/register', async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 });
-
-import { verifyToken } from '../middleware/auth.js';
 
 // Login
 router.post('/login', async (req, res) => {
@@ -80,6 +79,52 @@ router.put('/update-password', verifyToken, async (req, res) => {
     await user.save();
 
     res.json({ message: 'Password updated successfully' });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Get all users
+router.get('/users', verifyToken, async (req, res) => {
+  try {
+    const users = await User.find({}, '-password').sort({ createdAt: -1 });
+    res.json(users);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Update user details
+router.put('/users/:id', verifyToken, async (req, res) => {
+  try {
+    const { username, role, password } = req.body;
+    
+    // Check if username is already taken by another user
+    if (username) {
+      const existingUser = await User.findOne({ username, _id: { $ne: req.params.id } });
+      if (existingUser) {
+        return res.status(400).json({ error: 'Username already exists' });
+      }
+    }
+    
+    const updateFields = { ...(username && { username }), ...(role && { role }) };
+    
+    if (password) {
+      const salt = await bcrypt.genSalt(10);
+      updateFields.password = await bcrypt.hash(password, salt);
+    }
+    
+    const updatedUser = await User.findByIdAndUpdate(
+      req.params.id,
+      { $set: updateFields },
+      { new: true, select: '-password' }
+    );
+    
+    if (!updatedUser) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    
+    res.json(updatedUser);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }

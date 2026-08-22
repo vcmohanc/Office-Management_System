@@ -15,6 +15,7 @@ import SupportDashboard from './support/SupportDashboard';
 import StaffClaimRequest from './support/StaffClaimRequest';
 import ClaimList from './support/ClaimList';
 import AdminNewRegistration from './admin/AdminNewRegistration';
+import AdminUserList from './admin/AdminUserList';
 import Settings from './settings/Settings';
 
 export default function Dashboard({ setToken }) {
@@ -67,8 +68,9 @@ export default function Dashboard({ setToken }) {
           {activeTab === 'Staff Claim Request' && <StaffClaimRequest />}
           {activeTab === 'Claim List' && <ClaimList />}
           {activeTab === 'Admin New Registration' && <AdminNewRegistration setActiveTab={setActiveTab} />}
+          {activeTab === 'Admin User List' && <AdminUserList setActiveTab={setActiveTab} />}
           {activeTab === 'Settings' && <Settings user={user} />}
-          {activeTab !== 'Dashboard' && activeTab !== 'Account Department' && activeTab !== 'HR Department' && activeTab !== 'New Case' && activeTab !== 'Case List' && activeTab !== 'Payment Status' && activeTab !== 'Staff Registration' && activeTab !== 'Staff List' && activeTab !== 'Visa Management' && activeTab !== 'Resignation' && activeTab !== 'Support Department' && activeTab !== 'Staff Claim Request' && activeTab !== 'Claim List' && activeTab !== 'Admin New Registration' && activeTab !== 'Settings' && (
+          {activeTab !== 'Dashboard' && activeTab !== 'Account Department' && activeTab !== 'HR Department' && activeTab !== 'New Case' && activeTab !== 'Case List' && activeTab !== 'Payment Status' && activeTab !== 'Staff Registration' && activeTab !== 'Staff List' && activeTab !== 'Visa Management' && activeTab !== 'Resignation' && activeTab !== 'Support Department' && activeTab !== 'Staff Claim Request' && activeTab !== 'Claim List' && activeTab !== 'Admin New Registration' && activeTab !== 'Admin User List' && activeTab !== 'Settings' && (
             <div className="flex items-center justify-center h-full text-gray-400">
               <p>Content for {activeTab} is not yet implemented.</p>
             </div>

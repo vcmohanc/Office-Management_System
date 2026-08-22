@@ -59,11 +59,17 @@ export default function Sidebar({ activeTab, setActiveTab, openMenus, toggleMenu
   ];
 
   const navItems = allNavItems.filter(item => {
-    if (!user || user.role === 'admin') return true;
-    if (item.name === 'Settings') return true;
+    // Admin sees only Dashboard and Settings
+    if (!user || user.role === 'admin') {
+      return item.name === 'Dashboard' || item.name === 'Settings';
+    }
+    
+    // Other roles see their department, Dashboard, and Settings
+    if (item.name === 'Dashboard' || item.name === 'Settings') return true;
     if (user.role === 'hr' && item.name === 'HR Department') return true;
     if (user.role === 'account' && item.name === 'Account Department') return true;
     if (user.role === 'support' && item.name === 'Support Department') return true;
+    
     return false;
   });
 
