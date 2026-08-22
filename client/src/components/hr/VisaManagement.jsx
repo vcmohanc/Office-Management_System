@@ -1,0 +1,155 @@
+import { Search, Filter, Download, MoreVertical, ChevronLeft, ChevronRight } from 'lucide-react';
+
+export default function VisaManagement() {
+  return (
+    <div className="max-w-6xl mx-auto pb-10">
+      <div className="mb-6">
+        <h2 className="text-2xl font-bold text-[#162D50] mb-2">Visa Management</h2>
+        <p className="text-gray-500 text-sm">Monitor and manage staff visa status, renewals, and compliance.</p>
+      </div>
+
+      {/* Stats Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+        <div className="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+          <p className="text-xs font-bold text-gray-500 mb-2 uppercase tracking-wider">TOTAL ACTIVE VISAS</p>
+          <p className="text-3xl font-bold text-[#162D50]">1,248</p>
+        </div>
+        <div className="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+          <p className="text-xs font-bold text-gray-500 mb-2 uppercase tracking-wider">EXPIRING SOON (30 DAYS)</p>
+          <p className="text-3xl font-bold text-blue-500">42</p>
+        </div>
+        <div className="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+          <p className="text-xs font-bold text-gray-500 mb-2 uppercase tracking-wider">EXPIRED/ACTION REQUIRED</p>
+          <p className="text-3xl font-bold text-red-500">12</p>
+        </div>
+        <div className="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+          <p className="text-xs font-bold text-gray-500 mb-2 uppercase tracking-wider">PENDING RENEWALS</p>
+          <p className="text-3xl font-bold text-yellow-500">28</p>
+        </div>
+      </div>
+
+      {/* Controls */}
+      <div className="bg-[#F8F9FA] p-3 border border-gray-200 rounded-t-md flex justify-between items-center">
+        <div className="relative w-80">
+          <Search className="w-5 h-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+          <input 
+            type="text" 
+            placeholder="Search by Staff Name or ID..." 
+            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-[#162D50] bg-white"
+          />
+        </div>
+        <div className="flex space-x-3">
+          <button className="flex items-center justify-center bg-white border border-gray-300 text-gray-700 px-4 py-2 rounded-md text-sm font-medium hover:bg-gray-50 transition-colors shadow-sm">
+            <Filter className="w-4 h-4 mr-2" />
+            Filter
+          </button>
+          <button className="flex items-center justify-center bg-white border border-gray-300 text-gray-700 px-4 py-2 rounded-md text-sm font-medium hover:bg-gray-50 transition-colors shadow-sm">
+            <Download className="w-4 h-4 mr-2" />
+            Export
+          </button>
+        </div>
+      </div>
+
+      {/* Table */}
+      <div className="bg-white border-x border-b border-gray-200 rounded-b-md overflow-hidden shadow-sm">
+        <div className="overflow-x-auto">
+          <table className="w-full text-left border-collapse min-w-max">
+            <thead>
+              <tr className="bg-white border-b border-gray-200 text-xs font-bold text-gray-500 uppercase tracking-wider">
+                <th className="py-4 px-6">STAFF ID</th>
+                <th className="py-4 px-6">STAFF NAME</th>
+                <th className="py-4 px-6">NATIONALITY</th>
+                <th className="py-4 px-6">VISA TYPE</th>
+                <th className="py-4 px-6">EXPIRY DATE</th>
+                <th className="py-4 px-6">STATUS</th>
+                <th className="py-4 px-6 text-right">ACTIONS</th>
+              </tr>
+            </thead>
+            <tbody className="text-sm">
+              <tr className="border-b border-gray-100 hover:bg-gray-50">
+                <td className="py-4 px-6 text-gray-800 font-medium">EMP-0842</td>
+                <td className="py-4 px-6 font-bold text-[#162D50]">Sarah Jenkins</td>
+                <td className="py-4 px-6 text-gray-600">United Kingdom</td>
+                <td className="py-4 px-6 text-gray-600">Employment Visa</td>
+                <td className="py-4 px-6 text-gray-600">Oct 12, 2025</td>
+                <td className="py-4 px-6">
+                  <span className="bg-green-50 text-green-600 border border-green-200 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider">Active</span>
+                </td>
+                <td className="py-4 px-6 text-right">
+                  <div className="flex items-center justify-end space-x-3">
+                    <button className="text-[#162D50] font-bold hover:underline text-sm">View</button>
+                    <button className="text-gray-400 hover:text-gray-600"><MoreVertical className="w-5 h-5" /></button>
+                  </div>
+                </td>
+              </tr>
+              
+              <tr className="border-b border-gray-100 hover:bg-gray-50">
+                <td className="py-4 px-6 text-gray-800 font-medium">EMP-1105</td>
+                <td className="py-4 px-6 font-bold text-[#162D50]">Michael Chen</td>
+                <td className="py-4 px-6 text-gray-600">Singapore</td>
+                <td className="py-4 px-6 text-gray-600">Work Permit</td>
+                <td className="py-4 px-6 text-gray-600">Nov 15, 2024</td>
+                <td className="py-4 px-6">
+                  <span className="bg-blue-50 text-blue-600 border border-blue-200 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider">Expiring Soon</span>
+                </td>
+                <td className="py-4 px-6 text-right">
+                  <div className="flex items-center justify-end space-x-3">
+                    <button className="bg-[#162D50] text-white px-4 py-1.5 rounded text-xs font-bold hover:bg-[#0f1f38] transition-colors shadow-sm">Renew</button>
+                    <button className="text-gray-400 hover:text-gray-600"><MoreVertical className="w-5 h-5" /></button>
+                  </div>
+                </td>
+              </tr>
+
+              <tr className="border-b border-gray-100 hover:bg-gray-50">
+                <td className="py-4 px-6 text-gray-800 font-medium">EMP-0921</td>
+                <td className="py-4 px-6 font-bold text-[#162D50]">Elena Rodriguez</td>
+                <td className="py-4 px-6 text-gray-600">Spain</td>
+                <td className="py-4 px-6 text-gray-600">Employment Visa</td>
+                <td className="py-4 px-6 text-gray-600">Sep 30, 2024</td>
+                <td className="py-4 px-6">
+                  <span className="bg-red-50 text-red-600 border border-red-200 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider">Expired</span>
+                </td>
+                <td className="py-4 px-6 text-right">
+                  <div className="flex items-center justify-end space-x-3">
+                    <button className="bg-red-600 text-white px-3 py-1.5 rounded text-xs font-bold hover:bg-red-700 transition-colors shadow-sm whitespace-nowrap">Action Required</button>
+                    <button className="text-gray-400 hover:text-gray-600"><MoreVertical className="w-5 h-5" /></button>
+                  </div>
+                </td>
+              </tr>
+
+              <tr className="border-b border-gray-100 hover:bg-gray-50">
+                <td className="py-4 px-6 text-gray-800 font-medium">EMP-1256</td>
+                <td className="py-4 px-6 font-bold text-[#162D50]">David Kumar</td>
+                <td className="py-4 px-6 text-gray-600">India</td>
+                <td className="py-4 px-6 text-gray-600">Work Permit</td>
+                <td className="py-4 px-6 text-gray-600">Jan 20, 2025</td>
+                <td className="py-4 px-6">
+                  <span className="bg-yellow-50 text-yellow-600 border border-yellow-200 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider">Renewal In Progress</span>
+                </td>
+                <td className="py-4 px-6 text-right">
+                  <div className="flex items-center justify-end space-x-3">
+                    <button className="text-[#162D50] font-bold hover:underline text-sm">Details</button>
+                    <button className="text-gray-400 hover:text-gray-600"><MoreVertical className="w-5 h-5" /></button>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        
+        {/* Pagination */}
+        <div className="p-4 border-t border-gray-200 flex justify-between items-center bg-white text-sm text-gray-600">
+          <div>Showing 1-4 of 1,248 staff</div>
+          <div className="flex space-x-2">
+            <button className="w-8 h-8 flex items-center justify-center border border-gray-300 rounded text-gray-400 hover:bg-gray-50 transition-colors">
+              <ChevronLeft className="w-4 h-4" />
+            </button>
+            <button className="w-8 h-8 flex items-center justify-center border border-gray-300 rounded text-gray-600 hover:bg-gray-50 transition-colors">
+              <ChevronRight className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
