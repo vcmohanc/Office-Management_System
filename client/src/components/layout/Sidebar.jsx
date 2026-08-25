@@ -27,6 +27,7 @@ export default function Sidebar({ activeTab, setActiveTab, openMenus, toggleMenu
 
   const allNavItems = [
     { name: 'Dashboard', icon: LayoutDashboard },
+    { name: 'B2B Department', icon: Briefcase },
     { 
       name: 'Account Department', 
       icon: Building2,
@@ -59,9 +60,9 @@ export default function Sidebar({ activeTab, setActiveTab, openMenus, toggleMenu
   ];
 
   const navItems = allNavItems.filter(item => {
-    // Admin sees only Dashboard and Settings
+    // Admin sees Dashboard, B2B Department, and Settings
     if (!user || user.role === 'admin') {
-      return item.name === 'Dashboard' || item.name === 'Settings';
+      return item.name === 'Dashboard' || item.name === 'B2B Department' || item.name === 'Settings';
     }
     
     // Other roles see their department, Dashboard, and Settings
@@ -108,12 +109,12 @@ export default function Sidebar({ activeTab, setActiveTab, openMenus, toggleMenu
                   }}
                   className={`w-full flex items-center justify-between px-4 py-2.5 rounded-md transition-colors ${
                     isActive
-                      ? 'bg-gray-200 text-[#162D50] font-bold'
+                      ? 'bg-[#162D50] text-white font-bold'
                       : 'text-[#4A5568] hover:bg-gray-100'
                   }`}
                 >
                   <div className="flex items-center">
-                    <Icon className={`w-5 h-5 mr-3 ${isActive ? 'text-[#162D50]' : 'text-gray-500'}`} />
+                    <Icon className={`w-5 h-5 mr-3 ${isActive ? 'text-white' : 'text-gray-500'}`} />
                     <span className="text-sm">{item.name}</span>
                   </div>
                 </button>
@@ -130,11 +131,11 @@ export default function Sidebar({ activeTab, setActiveTab, openMenus, toggleMenu
                           onClick={() => setActiveTab(subItem.name)}
                           className={`w-full flex items-center px-4 py-2 rounded-md transition-colors text-sm ${
                             isSubActive 
-                              ? 'bg-blue-50 text-blue-700 font-bold' 
+                              ? 'bg-[#162D50] text-white font-bold' 
                               : 'text-gray-500 hover:bg-gray-50 hover:text-gray-800'
                           }`}
                         >
-                          <SubIcon className={`w-4 h-4 mr-3 ${isSubActive ? 'text-blue-600' : 'text-gray-400'}`} />
+                          <SubIcon className={`w-4 h-4 mr-3 ${isSubActive ? 'text-white' : 'text-gray-400'}`} />
                           {subItem.name}
                         </button>
                       );

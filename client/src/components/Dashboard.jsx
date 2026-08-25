@@ -17,6 +17,7 @@ import ClaimList from './support/ClaimList';
 import AdminNewRegistration from './admin/AdminNewRegistration';
 import AdminUserList from './admin/AdminUserList';
 import Settings from './settings/Settings';
+import B2BDashboard from './b2b/B2BDashboard';
 
 export default function Dashboard({ setToken }) {
   const user = JSON.parse(localStorage.getItem('user')) || { role: 'admin', username: 'admin' };
@@ -70,7 +71,8 @@ export default function Dashboard({ setToken }) {
           {activeTab === 'Admin New Registration' && <AdminNewRegistration setActiveTab={setActiveTab} />}
           {activeTab === 'Admin User List' && <AdminUserList setActiveTab={setActiveTab} />}
           {activeTab === 'Settings' && <Settings user={user} />}
-          {activeTab !== 'Dashboard' && activeTab !== 'Account Department' && activeTab !== 'HR Department' && activeTab !== 'New Case' && activeTab !== 'Case List' && activeTab !== 'Payment Status' && activeTab !== 'Staff Registration' && activeTab !== 'Staff List' && activeTab !== 'Visa Management' && activeTab !== 'Resignation' && activeTab !== 'Support Department' && activeTab !== 'Staff Claim Request' && activeTab !== 'Claim List' && activeTab !== 'Admin New Registration' && activeTab !== 'Admin User List' && activeTab !== 'Settings' && (
+          {activeTab === 'B2B Department' && <B2BDashboard />}
+          {activeTab !== 'Dashboard' && activeTab !== 'Account Department' && activeTab !== 'HR Department' && activeTab !== 'New Case' && activeTab !== 'Case List' && activeTab !== 'Payment Status' && activeTab !== 'Staff Registration' && activeTab !== 'Staff List' && activeTab !== 'Visa Management' && activeTab !== 'Resignation' && activeTab !== 'Support Department' && activeTab !== 'Staff Claim Request' && activeTab !== 'Claim List' && activeTab !== 'Admin New Registration' && activeTab !== 'Admin User List' && activeTab !== 'Settings' && activeTab !== 'B2B Department' && (
             <div className="flex items-center justify-center h-full text-gray-400">
               <p>Content for {activeTab} is not yet implemented.</p>
             </div>
