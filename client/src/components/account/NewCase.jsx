@@ -3,6 +3,136 @@ import { User, ChevronDown, Box, Calendar, UploadCloud, ArrowRight, Wallet, Land
 
 export default function NewCase() {
   const [newCaseStep, setNewCaseStep] = useState(1);
+  const [expenseType, setExpenseType] = useState('Select Type');
+  const [advancerCategory, setAdvancerCategory] = useState('Select Category');
+  const [bearingParty, setBearingParty] = useState('Select Bearing Party');
+
+  const renderDynamicFields = () => {
+    switch (expenseType) {
+      case 'Postage':
+        return (
+          <div className="grid grid-cols-2 gap-6 mb-8 bg-blue-50 p-6 rounded-md">
+            <div>
+              <label className="block text-sm font-bold text-gray-700 mb-2">Sender</label>
+              <input type="text" placeholder="Enter sender" className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50]" />
+            </div>
+            <div>
+              <label className="block text-sm font-bold text-gray-700 mb-2">Recipient</label>
+              <input type="text" placeholder="Enter recipient" className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50]" />
+            </div>
+          </div>
+        );
+      case 'Transportation Expenses / Flight Fare':
+        return (
+          <div className="grid grid-cols-2 gap-6 mb-8 bg-blue-50 p-6 rounded-md">
+            <div>
+              <label className="block text-sm font-bold text-gray-700 mb-2">Departure Location</label>
+              <input type="text" placeholder="Enter departure" className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50]" />
+            </div>
+            <div>
+              <label className="block text-sm font-bold text-gray-700 mb-2">Destination</label>
+              <input type="text" placeholder="Enter destination" className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50]" />
+            </div>
+            <div>
+              <label className="block text-sm font-bold text-gray-700 mb-2">Date Used</label>
+              <div className="relative">
+                <input type="text" placeholder="YYYY / MM / DD" className="w-full pl-4 pr-10 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50]" />
+                <Calendar className="w-4 h-4 absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-800" />
+              </div>
+            </div>
+            <div>
+              <label className="block text-sm font-bold text-gray-700 mb-2">Mode of Transportation</label>
+              <input type="text" placeholder="e.g. Train, Flight" className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50]" />
+            </div>
+          </div>
+        );
+      case 'Waiting Dormitory Fee':
+        return (
+          <div className="grid grid-cols-3 gap-6 mb-8 bg-blue-50 p-6 rounded-md">
+            <div>
+              <label className="block text-sm font-bold text-gray-700 mb-2">Dormitory Name</label>
+              <input type="text" placeholder="Enter name" className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50]" />
+            </div>
+            <div>
+              <label className="block text-sm font-bold text-gray-700 mb-2">Usage Start Date</label>
+              <div className="relative">
+                <input type="text" placeholder="YYYY / MM / DD" className="w-full pl-4 pr-10 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50]" />
+                <Calendar className="w-4 h-4 absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-800" />
+              </div>
+            </div>
+            <div>
+              <label className="block text-sm font-bold text-gray-700 mb-2">Usage End Date</label>
+              <div className="relative">
+                <input type="text" placeholder="YYYY / MM / DD" className="w-full pl-4 pr-10 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50]" />
+                <Calendar className="w-4 h-4 absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-800" />
+              </div>
+            </div>
+          </div>
+        );
+      case 'Hospital Fee':
+        return (
+          <div className="grid grid-cols-3 gap-6 mb-8 bg-blue-50 p-6 rounded-md">
+            <div>
+              <label className="block text-sm font-bold text-gray-700 mb-2">Consultation Date</label>
+              <div className="relative">
+                <input type="text" placeholder="YYYY / MM / DD" className="w-full pl-4 pr-10 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50]" />
+                <Calendar className="w-4 h-4 absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-800" />
+              </div>
+            </div>
+            <div>
+              <label className="block text-sm font-bold text-gray-700 mb-2">Consultation Fee</label>
+              <input type="number" defaultValue="0" className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50] text-gray-600" />
+            </div>
+            <div>
+              <label className="block text-sm font-bold text-gray-700 mb-2">Medicine Cost</label>
+              <input type="number" defaultValue="0" className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50] text-gray-600" />
+            </div>
+          </div>
+        );
+      case 'Equipment/Supplies':
+        return (
+          <div className="grid grid-cols-2 gap-6 mb-8 bg-blue-50 p-6 rounded-md">
+            <div>
+              <label className="block text-sm font-bold text-gray-700 mb-2">Item Name</label>
+              <input type="text" placeholder="Enter item" className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50]" />
+            </div>
+            <div>
+              <label className="block text-sm font-bold text-gray-700 mb-2">Quantity</label>
+              <input type="number" defaultValue="1" className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50] text-gray-600" />
+            </div>
+            <div>
+              <label className="block text-sm font-bold text-gray-700 mb-2">Purchase Date</label>
+              <div className="relative">
+                <input type="text" placeholder="YYYY / MM / DD" className="w-full pl-4 pr-10 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50]" />
+                <Calendar className="w-4 h-4 absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-800" />
+              </div>
+            </div>
+            <div className="col-span-2">
+              <label className="block text-sm font-bold text-gray-700 mb-2">Reason for damage, malfunction, shortage, etc.</label>
+              <textarea placeholder="Enter reason" rows="3" className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50]"></textarea>
+            </div>
+          </div>
+        );
+      case 'WIFI':
+        return (
+          <div className="grid grid-cols-2 gap-6 mb-8 bg-blue-50 p-6 rounded-md">
+            <div>
+              <label className="block text-sm font-bold text-gray-700 mb-2">Target Host Company / Farm</label>
+              <input type="text" placeholder="Enter company/farm" className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50]" />
+            </div>
+            <div>
+              <label className="block text-sm font-bold text-gray-700 mb-2">Usage Start Date</label>
+              <div className="relative">
+                <input type="text" placeholder="YYYY / MM / DD" className="w-full pl-4 pr-10 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50]" />
+                <Calendar className="w-4 h-4 absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-800" />
+              </div>
+            </div>
+          </div>
+        );
+      default:
+        return null;
+    }
+  };
 
   return (
     <div className="max-w-6xl mx-auto space-y-8 pb-10">
@@ -79,8 +209,17 @@ export default function NewCase() {
             <div>
               <label className="block text-sm font-bold text-gray-700 mb-2">Expense Type</label>
               <div className="relative">
-                <select className="w-full px-4 py-2 border border-gray-300 rounded-md appearance-none focus:outline-none focus:ring-1 focus:ring-[#162D50] text-gray-600">
+                <select 
+                  value={expenseType}
+                  onChange={(e) => setExpenseType(e.target.value)}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-md appearance-none focus:outline-none focus:ring-1 focus:ring-[#162D50] text-gray-600">
                   <option>Select Type</option>
+                  <option>Postage</option>
+                  <option>Transportation Expenses / Flight Fare</option>
+                  <option>Waiting Dormitory Fee</option>
+                  <option>Hospital Fee</option>
+                  <option>Equipment/Supplies</option>
+                  <option>WIFI</option>
                 </select>
                 <ChevronDown className="w-4 h-4 absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 pointer-events-none" />
               </div>
@@ -88,8 +227,14 @@ export default function NewCase() {
             <div>
               <label className="block text-sm font-bold text-gray-700 mb-2">Advancer Category</label>
               <div className="relative">
-                <select className="w-full px-4 py-2 border border-gray-300 rounded-md appearance-none focus:outline-none focus:ring-1 focus:ring-[#162D50] text-gray-600">
+                <select 
+                  value={advancerCategory}
+                  onChange={(e) => setAdvancerCategory(e.target.value)}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-md appearance-none focus:outline-none focus:ring-1 focus:ring-[#162D50] text-gray-600">
                   <option>Select Category</option>
+                  <option>Office</option>
+                  <option>Staff</option>
+                  <option>Host Company</option>
                 </select>
                 <ChevronDown className="w-4 h-4 absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 pointer-events-none" />
               </div>
@@ -104,8 +249,14 @@ export default function NewCase() {
             <div>
               <label className="block text-sm font-bold text-gray-700 mb-2">Bearing Party</label>
               <div className="relative">
-                <select className="w-full px-4 py-2 border border-gray-300 rounded-md appearance-none focus:outline-none focus:ring-1 focus:ring-[#162D50] text-gray-600">
+                <select 
+                  value={bearingParty}
+                  onChange={(e) => setBearingParty(e.target.value)}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-md appearance-none focus:outline-none focus:ring-1 focus:ring-[#162D50] text-gray-600">
                   <option>Select Bearing Party</option>
+                  <option>Office</option>
+                  <option>Staff</option>
+                  <option>Host Company</option>
                 </select>
                 <ChevronDown className="w-4 h-4 absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 pointer-events-none" />
               </div>
@@ -130,6 +281,8 @@ export default function NewCase() {
               <p className="text-xs text-gray-400 mt-2 leading-tight">Note: Claims are typically processed for expenses between the 11th and 27th of the month.</p>
             </div>
           </div>
+
+          {renderDynamicFields()}
 
           <hr className="mb-6 border-gray-200" />
 
