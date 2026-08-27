@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { User, ChevronDown, Box, Calendar, UploadCloud, ArrowRight, Wallet, Landmark, FileText, ArrowLeft, Paperclip } from 'lucide-react';
+import { User, ChevronDown, Box, Calendar, UploadCloud, ArrowRight, Wallet, Landmark, FileText, ArrowLeft, Paperclip, AlertCircle } from 'lucide-react';
 import {
   EXPENSE_TYPES,
   getExpenseType,
@@ -11,6 +11,56 @@ import {
   SUGGESTED_METHODS_BY_COST_BEARER,
   ATTACHMENT_HINT,
 } from '../../constants/expenseTypes';
+import { STAFF_MASTER, FARMER_MASTER } from '../../constants/parties';
+import { POSTAGE_ORIGINS, POSTAGE_DESTINATIONS, getPostageAmount } from '../../constants/postageRates';
+import { getInstallmentThreshold } from '../../constants/installmentSettings';
+import { getPattern } from '../../constants/patterns';
+
+function PartyPicker({ category, value, onChange, placeholder }) {
+  if (category === 'サービススタッフ') {
+    return (
+      <div className="relative">
+        <select
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          className="w-full px-4 py-2 border border-gray-300 rounded-md appearance-none focus:outline-none focus:ring-1 focus:ring-[#162D50] text-gray-600"
+        >
+          <option value="">スタッフを選択</option>
+          {STAFF_MASTER.map((s) => (
+            <option key={s.id} value={s.name}>{s.id} - {s.name}</option>
+          ))}
+        </select>
+        <ChevronDown className="w-4 h-4 absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 pointer-events-none" />
+      </div>
+    );
+  }
+  if (category === '派遣先・農家') {
+    return (
+      <div className="relative">
+        <select
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          className="w-full px-4 py-2 border border-gray-300 rounded-md appearance-none focus:outline-none focus:ring-1 focus:ring-[#162D50] text-gray-600"
+        >
+          <option value="">派遣先・農家を選択</option>
+          {FARMER_MASTER.map((f) => (
+            <option key={f.id} value={f.name}>{f.id} - {f.name}</option>
+          ))}
+        </select>
+        <ChevronDown className="w-4 h-4 absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 pointer-events-none" />
+      </div>
+    );
+  }
+  return (
+    <input
+      type="text"
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      placeholder={placeholder}
+      className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50]"
+    />
+  );
+}
 
 export default function NewCase() {
   const [newCaseStep, setNewCaseStep] = useState(1);
@@ -28,8 +78,15 @@ export default function NewCase() {
   const [wantsInstallment, setWantsInstallment] = useState(false);
   const [installmentNote, setInstallmentNote] = useState('');
   const [attachments, setAttachments] = useState([]);
+  const [postageOrigin, setPostageOrigin] = useState('');
+  const [postageDestination, setPostageDestination] = useState('');
+  const [postageRateFound, setPostageRateFound] = useState(true);
 
   const selectedType = getExpenseType(expenseTypeKey);
+  const isPostage = expenseTypeKey === 'postage';
+  const threshold = getInstallmentThreshold();
+  const overThreshold = Number(amount) > threshold;
+  const matchedPattern = getPattern(advancerCategory, costBearer);
 
   const handleTypeChange = (key) => {
     setExpenseTypeKey(key);
@@ -38,6 +95,9 @@ export default function NewCase() {
     if (type?.defaultCostBearer) {
       handleCostBearerChange(type.defaultCostBearer);
     }
+    setPostageOrigin('');
+    setPostageDestination('');
+    setPostageRateFound(true);
   };
 
   const handleCostBearerChange = (value) => {
@@ -46,6 +106,27 @@ export default function NewCase() {
     if (suggestion) {
       setSettlementMethod(suggestion.settlement);
       setCollectionMethod(suggestion.collection);
+    }
+  };
+
+  const handleAmountChange = (value) => {
+    setAmount(value);
+    if (Number(value) > threshold) {
+      setWantsInstallment(true);
+    }
+  };
+
+  const handlePostageLocationChange = (origin, destination) => {
+    setPostageOrigin(origin);
+    setPostageDestination(destination);
+    if (origin && destination) {
+      const rate = getPostageAmount(origin, destination);
+      if (rate != null) {
+        setPostageRateFound(true);
+        handleAmountChange(String(rate));
+      } else {
+        setPostageRateFound(false);
+      }
     }
   };
 
@@ -139,7 +220,7 @@ export default function NewCase() {
                   <div className="relative">
                     <select
                       value={advancerCategory}
-                      onChange={(e) => setAdvancerCategory(e.target.value)}
+                      onChange={(e) => { setAdvancerCategory(e.target.value); setAdvancerName(''); }}
                       className="w-full px-4 py-2 border border-gray-300 rounded-md appearance-none focus:outline-none focus:ring-1 focus:ring-[#162D50] text-gray-600"
                     >
                       <option value="">区分を選択</option>
@@ -152,13 +233,7 @@ export default function NewCase() {
                 </div>
                 <div>
                   <label className="block text-sm font-bold text-gray-700 mb-2">(3) 立替者</label>
-                  <input
-                    type="text"
-                    value={advancerName}
-                    onChange={(e) => setAdvancerName(e.target.value)}
-                    placeholder="立替者の氏名を入力"
-                    className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50]"
-                  />
+                  <PartyPicker category={advancerCategory} value={advancerName} onChange={setAdvancerName} placeholder="VC担当者名を入力" />
                 </div>
               </div>
 
@@ -168,7 +243,7 @@ export default function NewCase() {
                   <div className="relative">
                     <select
                       value={targetCategory}
-                      onChange={(e) => setTargetCategory(e.target.value)}
+                      onChange={(e) => { setTargetCategory(e.target.value); setTargetName(''); }}
                       disabled={!!selectedType?.targetCategoryFixed}
                       className={`w-full px-4 py-2 border border-gray-300 rounded-md appearance-none focus:outline-none focus:ring-1 focus:ring-[#162D50] text-gray-600 ${selectedType?.targetCategoryFixed ? 'bg-gray-50' : ''}`}
                     >
@@ -185,13 +260,7 @@ export default function NewCase() {
                 </div>
                 <div>
                   <label className="block text-sm font-bold text-gray-700 mb-2">(5) 対象</label>
-                  <input
-                    type="text"
-                    value={targetName}
-                    onChange={(e) => setTargetName(e.target.value)}
-                    placeholder="対象スタッフ・派遣先名を入力"
-                    className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50]"
-                  />
+                  <PartyPicker category={targetCategory} value={targetName} onChange={setTargetName} placeholder="対象名を入力" />
                 </div>
                 <div>
                   <label className="block text-sm font-bold text-gray-700 mb-2">(6) 費用負担先</label>
@@ -213,6 +282,12 @@ export default function NewCase() {
                   )}
                 </div>
               </div>
+
+              {matchedPattern && (
+                <div className="mt-4 inline-flex items-center bg-blue-50 border border-blue-200 text-blue-700 text-xs font-medium px-3 py-1.5 rounded-full">
+                  該当パターン：{matchedPattern.label}
+                </div>
+              )}
             </div>
           </div>
 
@@ -246,13 +321,16 @@ export default function NewCase() {
                   </div>
                 </div>
                 <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-2">金額 (¥)</label>
+                  <label className="block text-sm font-bold text-gray-700 mb-2">
+                    金額 (¥) {isPostage && <span className="text-xs font-normal text-gray-400">郵送費レート表から自動反映</span>}
+                  </label>
                   <input
                     type="number"
                     value={amount}
-                    onChange={(e) => setAmount(e.target.value)}
+                    onChange={(e) => handleAmountChange(e.target.value)}
                     placeholder="0"
-                    className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50] text-gray-600"
+                    readOnly={isPostage && postageRateFound && !!postageOrigin && !!postageDestination}
+                    className={`w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50] text-gray-600 ${isPostage && postageRateFound && postageOrigin && postageDestination ? 'bg-gray-50' : ''}`}
                   />
                 </div>
                 <div>
@@ -261,7 +339,46 @@ export default function NewCase() {
                 </div>
               </div>
 
-              {selectedType && selectedType.extraFields.length > 0 && (
+              {isPostage && (
+                <div className="grid grid-cols-2 gap-6 mb-6 bg-[#F8F9FA] border border-gray-200 rounded-md p-4">
+                  <div>
+                    <label className="block text-sm font-bold text-gray-700 mb-2">送り元</label>
+                    <div className="relative">
+                      <select
+                        value={postageOrigin}
+                        onChange={(e) => handlePostageLocationChange(e.target.value, postageDestination)}
+                        className="w-full px-4 py-2 border border-gray-300 rounded-md appearance-none focus:outline-none focus:ring-1 focus:ring-[#162D50] text-gray-600"
+                      >
+                        <option value="">送り元を選択</option>
+                        {POSTAGE_ORIGINS.map((o) => <option key={o} value={o}>{o}</option>)}
+                      </select>
+                      <ChevronDown className="w-4 h-4 absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 pointer-events-none" />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-bold text-gray-700 mb-2">送り先</label>
+                    <div className="relative">
+                      <select
+                        value={postageDestination}
+                        onChange={(e) => handlePostageLocationChange(postageOrigin, e.target.value)}
+                        className="w-full px-4 py-2 border border-gray-300 rounded-md appearance-none focus:outline-none focus:ring-1 focus:ring-[#162D50] text-gray-600"
+                      >
+                        <option value="">送り先を選択</option>
+                        {POSTAGE_DESTINATIONS.map((d) => <option key={d} value={d}>{d}</option>)}
+                      </select>
+                      <ChevronDown className="w-4 h-4 absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 pointer-events-none" />
+                    </div>
+                  </div>
+                  {!postageRateFound && postageOrigin && postageDestination && (
+                    <div className="col-span-2 flex items-center text-xs text-orange-600">
+                      <AlertCircle className="w-4 h-4 mr-1" />
+                      この組み合わせのレートがマスタに登録されていません。金額を手動で入力してください。
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {!isPostage && selectedType && selectedType.extraFields.length > 0 && (
                 <div className="grid grid-cols-3 gap-6 mb-6 bg-[#F8F9FA] border border-gray-200 rounded-md p-4">
                   {selectedType.extraFields.map((f) => (
                     <div key={f.key}>
@@ -317,7 +434,7 @@ export default function NewCase() {
               <hr className="mb-6 border-gray-200" />
 
               <div className="mb-2 text-xs font-bold text-gray-500 tracking-wide">費用負担先からの回収</div>
-              <div className="grid grid-cols-2 gap-6 mb-6">
+              <div className="grid grid-cols-2 gap-6 mb-2">
                 <div>
                   <label className="block text-sm font-bold text-gray-700 mb-2">回収方法</label>
                   <div className="relative">
@@ -346,6 +463,13 @@ export default function NewCase() {
                   </label>
                 </div>
               </div>
+
+              {overThreshold && (
+                <div className="mb-4 flex items-start text-xs text-orange-600 bg-orange-50 border border-orange-200 rounded-md p-3">
+                  <AlertCircle className="w-4 h-4 mr-2 shrink-0 mt-0.5" />
+                  金額が分割払い提案の上限金額（¥{threshold.toLocaleString()}）を超えているため、分割払いを推奨しています。実際の分割回数・条件は相談のうえ決定してください。
+                </div>
+              )}
 
               {wantsInstallment && (
                 <div>
@@ -435,6 +559,10 @@ export default function NewCase() {
                   <div className="grid grid-cols-2">
                     <span className="text-gray-500">費用負担先</span>
                     <span className="font-bold text-[#162D50]">{costBearer || '未選択'}</span>
+                  </div>
+                  <div className="grid grid-cols-2">
+                    <span className="text-gray-500">該当パターン</span>
+                    <span className="font-bold text-[#162D50]">{matchedPattern ? matchedPattern.label : '該当なし'}</span>
                   </div>
                 </div>
               </div>

@@ -1,6 +1,15 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Building2 } from 'lucide-react';
+import { ROLES, ROLE_LABELS } from '../constants/roles';
+
+// プロトタイプ用のハードコードされたログイン情報（バックエンド接続なし）
+const DEMO_ACCOUNTS = {
+  admin: { password: 'password123', role: ROLES.ADMIN },
+  reviewer_user: { password: 'password123', role: ROLES.REVIEWER },
+  accounting_user: { password: 'password123', role: ROLES.ACCOUNTING },
+  applicant_user: { password: 'password123', role: ROLES.APPLICANT },
+};
 
 export default function Login({ setToken }) {
   const [username, setUsername] = useState('');
@@ -8,24 +17,20 @@ export default function Login({ setToken }) {
   const [error, setError] = useState('');
   const navigate = useNavigate();
 
-  const handleLogin = async (e) => {
+  const handleLogin = (e) => {
     e.preventDefault();
-    try {
-      const res = await fetch('http://localhost:5000/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, password }),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error);
+    setError('');
 
-      localStorage.setItem('token', data.token);
-      localStorage.setItem('user', JSON.stringify(data.user));
-      setToken(data.token);
-      navigate('/dashboard');
-    } catch (err) {
-      setError(err.message);
+    const account = DEMO_ACCOUNTS[username];
+    if (!account || account.password !== password) {
+      setError('ユーザー名またはパスワードが正しくありません');
+      return;
     }
+
+    localStorage.setItem('token', 'demo-token');
+    localStorage.setItem('user', JSON.stringify({ username, role: account.role }));
+    setToken('demo-token');
+    navigate('/dashboard');
   };
 
   return (
@@ -82,6 +87,18 @@ export default function Login({ setToken }) {
             </button>
           </div>
         </form>
+
+        <div className="border-t border-gray-100 pt-4">
+          <p className="text-xs font-bold text-gray-500 mb-2">プロトタイプ用デモアカウント（パスワード共通：password123）</p>
+          <ul className="text-xs text-gray-500 space-y-1">
+            {Object.entries(DEMO_ACCOUNTS).map(([username, { role }]) => (
+              <li key={username} className="flex justify-between">
+                <span className="font-mono">{username}</span>
+                <span>{ROLE_LABELS[role]}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
       </div>
     </div>
   );

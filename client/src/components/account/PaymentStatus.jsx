@@ -2,10 +2,10 @@ import { useState } from 'react';
 import { Search, ChevronDown, Calendar, Download, Landmark, AlertCircle, AlertTriangle, FileSpreadsheet } from 'lucide-react';
 
 const INSTALLMENTS = [
-  { id: 'EMP-1042', name: '田中 健二', term: '12ヶ月', done: 5, total: 12, nextDate: '2023-11-15', nextAmount: 12500, remaining: 87500, status: '順調' },
-  { id: 'EMP-1422', name: '高橋 芽依', term: '24ヶ月', done: 18, total: 24, nextDate: '2023-10-25', nextAmount: 5000, remaining: 30000, status: '延滞', overdue: 1 },
-  { id: 'EMP-0891', name: '佐藤 由美', term: '6ヶ月', done: 5, total: 6, nextDate: '2023-11-01', nextAmount: 2500, remaining: 2500, status: 'ほぼ完了' },
-  { id: 'EMP-2091', name: '鈴木 浩', term: '12ヶ月', done: 2, total: 12, nextDate: '2023-10-28', nextAmount: 15000, remaining: 150000, status: '要対応', overdue: 2 },
+  { id: 'EMP-1042', name: '田中 健二', term: '12ヶ月', done: 5, total: 12, nextDate: '2023-11-15', nextAmount: 12500, remaining: 87500, status: '順調', note: '本人希望による分割（待機寮費）' },
+  { id: 'EMP-1422', name: '高橋 芽依', term: '24ヶ月', done: 18, total: 24, nextDate: '2023-10-25', nextAmount: 5000, remaining: 30000, status: '延滞', overdue: 1, note: '上限金額超過のため分割提案・本人合意済み' },
+  { id: 'EMP-0891', name: '佐藤 由美', term: '6ヶ月', done: 5, total: 6, nextDate: '2023-11-01', nextAmount: 2500, remaining: 2500, status: 'ほぼ完了', note: '' },
+  { id: 'EMP-2091', name: '鈴木 浩', term: '12ヶ月', done: 2, total: 12, nextDate: '2023-10-28', nextAmount: 15000, remaining: 150000, status: '要対応', overdue: 2, note: '分割回数について再調整中' },
 ];
 
 const INSTALLMENT_STATUS_STYLES = {
@@ -177,6 +177,7 @@ export default function PaymentStatus() {
                 <th className="py-3 px-4">次回天引き予定額</th>
                 <th className="py-3 px-4 text-right">残額</th>
                 <th className="py-3 px-4 text-center">処理状態</th>
+                <th className="py-3 px-4">備考</th>
               </tr>
             </thead>
             <tbody className="text-sm">
@@ -203,6 +204,7 @@ export default function PaymentStatus() {
                   <td className="py-3 px-4 text-center">
                     <span className={`px-3 py-1 rounded-full text-xs font-medium border ${INSTALLMENT_STATUS_STYLES[row.status]}`}>{row.status}</span>
                   </td>
+                  <td className="py-3 px-4 text-gray-500 text-xs max-w-[200px]">{row.note || 'ー'}</td>
                 </tr>
               ))}
             </tbody>

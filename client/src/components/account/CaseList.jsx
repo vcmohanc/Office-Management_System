@@ -7,14 +7,15 @@ import {
   CASE_STATUS_COLORS,
 } from '../../constants/expenseTypes';
 import { ROLES } from '../../constants/roles';
+import { getPattern } from '../../constants/patterns';
 
 const MOCK_CASES = [
-  { id: '#CAS-2024-011', date: '2024-05-20', type: '郵送費', advancer: '田中 太郎', target: '田中 太郎', costBearer: 'VC', amount: 4500, status: '未処理', hasAttachment: true, group: 'staff' },
-  { id: '#CAS-2024-010', date: '2024-05-19', type: '病院代', advancer: '鈴木 花子', target: '鈴木 花子', costBearer: 'サービススタッフ', amount: 12000, status: '処理中', hasAttachment: true, group: 'staff' },
-  { id: '#CAS-2024-009', date: '2024-05-18', type: '待機寮', advancer: 'VC', target: '佐藤 健', costBearer: 'サービススタッフ', amount: 85000, status: '差戻し', hasAttachment: false, group: 'staff' },
-  { id: '#CAS-2024-008', date: '2024-05-17', type: 'WIFI', advancer: 'VC', target: 'グリーンファーム農園', costBearer: '派遣先・農家', amount: 6800, status: '完了', hasAttachment: true, group: 'host' },
-  { id: '#CAS-2024-007', date: '2024-05-16', type: 'フライト代', advancer: '高橋 誠', target: '高橋 誠', costBearer: 'VC', amount: 68000, status: '保留', hasAttachment: true, group: 'staff' },
-  { id: '#CAS-2024-006', date: '2024-05-15', type: '交通費', advancer: '山田 一郎', target: '山田 一郎', costBearer: 'VC', amount: 3200, status: '取消', hasAttachment: false, group: 'staff' },
+  { id: '#CAS-2024-011', date: '2024-05-20', type: '郵送費', advancerCategory: 'サービススタッフ', advancer: '田中 太郎', target: '田中 太郎', costBearer: 'VC', amount: 4500, status: '未処理', attachments: ['receipt.pdf'], group: 'staff' },
+  { id: '#CAS-2024-010', date: '2024-05-19', type: '病院代', advancerCategory: 'VC', advancer: '鈴木 花子', target: '鈴木 花子', costBearer: 'サービススタッフ', amount: 12000, status: '処理中', attachments: ['receipt.pdf', 'shindansho.pdf'], group: 'staff' },
+  { id: '#CAS-2024-009', date: '2024-05-18', type: '待機寮', advancerCategory: 'VC', advancer: 'VC', target: '佐藤 健', costBearer: 'サービススタッフ', amount: 85000, status: '差戻し', attachments: [], group: 'staff' },
+  { id: '#CAS-2024-008', date: '2024-05-17', type: 'WIFI', advancerCategory: 'VC', advancer: 'VC', target: 'グリーンファーム農園', costBearer: '派遣先・農家', amount: 6800, status: '完了', attachments: ['invoice.pdf'], group: 'host' },
+  { id: '#CAS-2024-007', date: '2024-05-16', type: 'フライト代', advancerCategory: 'サービススタッフ', advancer: '高橋 誠', target: '高橋 誠', costBearer: 'VC', amount: 68000, status: '保留', attachments: ['ticket.pdf', 'receipt.pdf'], group: 'staff' },
+  { id: '#CAS-2024-006', date: '2024-05-15', type: '交通費', advancerCategory: 'サービススタッフ', advancer: '山田 一郎', target: '山田 一郎', costBearer: 'VC', amount: 3200, status: '取消', attachments: [], group: 'staff' },
 ];
 
 export default function CaseList() {
@@ -165,7 +166,13 @@ export default function CaseList() {
                   <span className={`px-3 py-1 rounded-full text-xs font-medium border ${CASE_STATUS_COLORS[c.status]}`}>{c.status}</span>
                 </td>
                 <td className="py-4 px-6">
-                  {c.hasAttachment ? <FileText className="w-4 h-4 text-gray-400" /> : <AlertTriangle className="w-4 h-4 text-red-500" />}
+                  {c.attachments.length > 0 ? (
+                    <span className="flex items-center text-gray-500 text-xs">
+                      <FileText className="w-4 h-4 mr-1 text-gray-400" />{c.attachments.length}
+                    </span>
+                  ) : (
+                    <AlertTriangle className="w-4 h-4 text-red-500" />
+                  )}
                 </td>
                 <td className="py-4 px-6">
                   <button onClick={(e) => { e.stopPropagation(); setSelectedCase(c); }} className="text-[#162D50] font-bold hover:underline">詳細</button>
@@ -210,6 +217,12 @@ export default function CaseList() {
                   <span className="text-gray-500">金額</span>
                   <span className="font-bold text-gray-800">¥{selectedCase.amount.toLocaleString()}</span>
                 </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-500">該当パターン</span>
+                  <span className="font-bold text-gray-800">
+                    {getPattern(selectedCase.advancerCategory, selectedCase.costBearer)?.key || 'ー'}
+                  </span>
+                </div>
               </div>
             </div>
 
@@ -239,15 +252,17 @@ export default function CaseList() {
 
             {/* 添付書類 */}
             <div>
-              <h4 className="text-xs font-bold text-gray-500 mb-4 tracking-wider">添付書類</h4>
+              <h4 className="text-xs font-bold text-gray-500 mb-4 tracking-wider">添付書類（{selectedCase.attachments.length}件）</h4>
               <div className="space-y-3">
-                {selectedCase.hasAttachment ? (
-                  <div className="bg-white border border-gray-200 rounded-md px-4 py-3 flex justify-between items-center text-sm">
-                    <div className="flex items-center text-gray-700">
-                      <FileText className="w-4 h-4 mr-2" />
-                      receipt.pdf
+                {selectedCase.attachments.length > 0 ? (
+                  selectedCase.attachments.map((file, i) => (
+                    <div key={i} className="bg-white border border-gray-200 rounded-md px-4 py-3 flex justify-between items-center text-sm">
+                      <div className="flex items-center text-gray-700">
+                        <FileText className="w-4 h-4 mr-2" />
+                        {file}
+                      </div>
                     </div>
-                  </div>
+                  ))
                 ) : (
                   <div className="bg-white border border-gray-200 rounded-md px-4 py-3 flex justify-between items-center text-sm">
                     <span className="text-gray-400">添付なし</span>

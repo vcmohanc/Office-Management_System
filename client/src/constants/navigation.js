@@ -10,6 +10,10 @@ import {
   Users,
   Plane,
   UserMinus,
+  Database,
+  Tractor,
+  Mail,
+  SlidersHorizontal,
 } from 'lucide-react';
 import { ROLES } from './roles';
 
@@ -24,7 +28,12 @@ export const NAV_LABELS = {
   'admin-home': 'ホーム',
   'admin-new-registration': 'ユーザー登録',
   'admin-user-list': 'ユーザー一覧',
+  'master-data': 'マスタ管理',
   'expense-type-master': '種別マスタ管理',
+  'staff-master': 'サービススタッフマスタ',
+  'farmer-master': '派遣先・農家マスタ',
+  'postage-rate-master': '郵送費レート表',
+  'installment-settings': '分割天引き設定',
   'hr-legacy': '参考／旧HR機能',
   'hr-staff-registration': 'スタッフ登録',
   'hr-staff-list': 'スタッフ一覧',
@@ -49,7 +58,17 @@ export const NAV_ITEMS_BY_ROLE = {
     { key: 'admin-home', icon: LayoutDashboard },
     { key: 'admin-new-registration', icon: UserPlus },
     { key: 'admin-user-list', icon: List },
-    { key: 'expense-type-master', icon: Tags },
+    {
+      key: 'master-data',
+      icon: Database,
+      subItems: [
+        { key: 'expense-type-master', icon: Tags },
+        { key: 'staff-master', icon: Users },
+        { key: 'farmer-master', icon: Tractor },
+        { key: 'postage-rate-master', icon: Mail },
+        { key: 'installment-settings', icon: SlidersHorizontal },
+      ],
+    },
     {
       key: 'hr-legacy',
       icon: Users,
