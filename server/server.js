@@ -4,6 +4,9 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import authRoutes from './routes/auth.js';
 import dashboardRoutes from './routes/dashboard.js';
+import employeeRoutes from './routes/employees.js';
+import caseRoutes from './routes/cases.js';
+import claimRoutes from './routes/claims.js';
 
 dotenv.config();
 
@@ -17,6 +20,9 @@ app.use(express.json());
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/dashboard', dashboardRoutes);
+app.use('/api/employees', employeeRoutes);
+app.use('/api/cases', caseRoutes);
+app.use('/api/claims', claimRoutes);
 
 // MongoDB Connection
 mongoose.connect(process.env.MONGO_URI || 'mongodb://localhost:27017/office_manage_system')

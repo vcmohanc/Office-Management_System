@@ -35,7 +35,7 @@ export default function StaffRegistration() {
 
             <div>
               <label className="block text-xs font-bold text-gray-600 mb-1 uppercase tracking-wider">Katakana Name</label>
-              <input type="text" placeholder="e.g. ヤマダ タロウ" className="w-full px-4 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-[#162D50]" />
+              <input type="text" placeholder="e.g. YAMADA TARO" className="w-full px-4 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-[#162D50]" />
             </div>
             <div>
               <label className="block text-xs font-bold text-gray-600 mb-1 uppercase tracking-wider">Romaji Full Name</label>

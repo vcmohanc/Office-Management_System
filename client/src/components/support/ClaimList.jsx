@@ -1,36 +1,22 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Filter, Download, Eye, ChevronDown } from 'lucide-react';
 
 export default function ClaimList() {
-  const claims = [
-    {
-      id: 'PAY-4501',
-      paymentType: 'Advance Borrow',
-      details: '',
-      amount: '¥12,000',
-      scheduledDate: '2023-11-25',
-      status: 'SCHEDULED',
-      statusColor: 'bg-yellow-100 text-yellow-700'
-    },
-    {
-      id: 'PAY-4502',
-      paymentType: 'Payroll Deduction',
-      details: '',
-      amount: '¥8,500',
-      scheduledDate: '2023-11-24',
-      status: 'PROCESSING',
-      statusColor: 'bg-blue-100 text-blue-700'
-    },
-    {
-      id: 'PAY-4503',
-      paymentType: 'Bank Transfer',
-      details: '',
-      amount: '¥25,000',
-      scheduledDate: '2023-11-20',
-      status: 'COMPLETED',
-      statusColor: 'bg-green-100 text-green-700'
-    }
-  ];
+  const [claims, setClaims] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetch('http://localhost:5000/api/claims')
+      .then(res => res.json())
+      .then(data => {
+        setClaims(data);
+        setLoading(false);
+      })
+      .catch(err => {
+        console.error('Error fetching claims:', err);
+        setLoading(false);
+      });
+  }, []);
 
   return (
     <div className="p-8 max-w-7xl mx-auto space-y-6">
@@ -72,33 +58,48 @@ export default function ClaimList() {
                 <th className="px-6 py-4 text-sm font-bold text-gray-600">Payment Type</th>
                 <th className="px-6 py-4 text-sm font-bold text-gray-600">Details</th>
                 <th className="px-6 py-4 text-sm font-bold text-gray-600">Amount</th>
-                <th className="px-6 py-4 text-sm font-bold text-gray-600">Scheduled Date</th>
+                <th className="px-6 py-4 text-sm font-bold text-gray-600">Date</th>
                 <th className="px-6 py-4 text-sm font-bold text-gray-600">Status</th>
                 <th className="px-6 py-4 text-sm font-bold text-gray-600 text-center">Action</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
-              {claims.map((claim) => (
-                <tr key={claim.id} className="hover:bg-gray-50 transition-colors">
-                  <td className="px-6 py-5 whitespace-nowrap text-sm font-medium text-gray-800">
-                    <div className="max-w-[80px] break-words whitespace-normal">{claim.id}</div>
-                  </td>
-                  <td className="px-6 py-5 whitespace-nowrap text-sm text-gray-700">{claim.paymentType}</td>
-                  <td className="px-6 py-5 whitespace-nowrap text-sm text-gray-700">{claim.details}</td>
-                  <td className="px-6 py-5 whitespace-nowrap text-sm font-bold text-gray-900">{claim.amount}</td>
-                  <td className="px-6 py-5 whitespace-nowrap text-sm text-gray-700">{claim.scheduledDate}</td>
-                  <td className="px-6 py-5 whitespace-nowrap">
-                    <span className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-md ${claim.statusColor}`}>
-                      {claim.status}
-                    </span>
-                  </td>
-                  <td className="px-6 py-5 whitespace-nowrap text-sm text-center">
-                    <button className="text-gray-500 hover:text-[#162D50] transition-colors focus:outline-none">
-                      <Eye className="w-5 h-5 mx-auto" />
-                    </button>
-                  </td>
+              {loading ? (
+                <tr>
+                  <td colSpan="7" className="px-6 py-5 text-center text-gray-500">Loading...</td>
                 </tr>
-              ))}
+              ) : claims.length === 0 ? (
+                <tr>
+                  <td colSpan="7" className="px-6 py-5 text-center text-gray-500">No claims found.</td>
+                </tr>
+              ) : (
+                claims.map((claim) => (
+                  <tr key={claim._id} className="hover:bg-gray-50 transition-colors">
+                    <td className="px-6 py-5 whitespace-nowrap text-sm font-medium text-gray-800">
+                      <div className="max-w-[80px] break-words whitespace-normal">#CLM-{claim._id.slice(-6).toUpperCase()}</div>
+                    </td>
+                    <td className="px-6 py-5 whitespace-nowrap text-sm text-gray-700">{claim.paymentMethod}</td>
+                    <td className="px-6 py-5 whitespace-nowrap text-sm text-gray-700">{claim.description || claim.expenseType}</td>
+                    <td className="px-6 py-5 whitespace-nowrap text-sm font-bold text-gray-900">¥{claim.amount.toLocaleString()}</td>
+                    <td className="px-6 py-5 whitespace-nowrap text-sm text-gray-700">{new Date(claim.expenseDate).toLocaleDateString('en-US')}</td>
+                    <td className="px-6 py-5 whitespace-nowrap">
+                      <span className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-md ${
+                        claim.status === 'Submitted' ? 'bg-blue-100 text-blue-700' :
+                        claim.status === 'Approved' ? 'bg-green-100 text-green-700' :
+                        claim.status === 'Rejected' ? 'bg-red-100 text-red-700' :
+                        'bg-yellow-100 text-yellow-700'
+                      }`}>
+                        {claim.status}
+                      </span>
+                    </td>
+                    <td className="px-6 py-5 whitespace-nowrap text-sm text-center">
+                      <button className="text-gray-500 hover:text-[#162D50] transition-colors focus:outline-none">
+                        <Eye className="w-5 h-5 mx-auto" />
+                      </button>
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>

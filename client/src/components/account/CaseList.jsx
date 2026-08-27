@@ -1,6 +1,23 @@
+import { useState, useEffect } from 'react';
 import { Search, ChevronDown, Calendar, FileText, AlertTriangle, Image } from 'lucide-react';
 
 export default function CaseList() {
+  const [cases, setCases] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetch('http://localhost:5000/api/cases')
+      .then(res => res.json())
+      .then(data => {
+        setCases(data);
+        setLoading(false);
+      })
+      .catch(err => {
+        console.error('Error fetching cases:', err);
+        setLoading(false);
+      });
+  }, []);
+
   return (
     <div className="max-w-6xl mx-auto space-y-6 pb-10">
       <h2 className="text-2xl font-bold text-[#162D50] mb-4">Case List</h2>
@@ -8,13 +25,13 @@ export default function CaseList() {
       {/* Top Tabs */}
       <div className="bg-[#F2F4F7] p-1 rounded-md flex space-x-1 mb-4 border border-gray-200">
         <button className="flex-1 py-2 text-sm font-bold text-gray-500 rounded-md hover:bg-gray-200 transition-colors">
-          Office Case <span className="ml-2 bg-gray-200 text-gray-600 px-2 py-0.5 rounded-full text-xs">12</span>
+          Office Case <span className="ml-2 bg-gray-200 text-gray-600 px-2 py-0.5 rounded-full text-xs">{cases.length}</span>
         </button>
         <button className="flex-1 py-2 text-sm font-bold text-white bg-[#0A192F] rounded-md shadow-sm">
-          Staff Case <span className="ml-2 bg-white text-[#0A192F] px-2 py-0.5 rounded-full text-xs">5</span>
+          Staff Case <span className="ml-2 bg-white text-[#0A192F] px-2 py-0.5 rounded-full text-xs">0</span>
         </button>
         <button className="flex-1 py-2 text-sm font-bold text-gray-500 rounded-md hover:bg-gray-200 transition-colors">
-          Host Company Case <span className="ml-2 bg-gray-200 text-gray-600 px-2 py-0.5 rounded-full text-xs">2</span>
+          Host Company Case <span className="ml-2 bg-gray-200 text-gray-600 px-2 py-0.5 rounded-full text-xs">0</span>
         </button>
       </div>
 
@@ -48,7 +65,7 @@ export default function CaseList() {
         <div className="w-48">
           <label className="block text-xs font-bold text-gray-600 mb-1">Date Range</label>
           <div className="relative">
-            <input type="text" placeholder="年 /月/日" className="w-full pl-4 pr-10 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-[#162D50]" />
+            <input type="text" placeholder="YYYY / MM / DD" className="w-full pl-4 pr-10 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-[#162D50]" />
             <Calendar className="w-4 h-4 absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-800" />
           </div>
         </div>
@@ -72,58 +89,42 @@ export default function CaseList() {
             </tr>
           </thead>
           <tbody className="text-sm">
-            <tr className="border-b border-gray-100 hover:bg-gray-50">
-              <td className="py-4 px-6 text-gray-600">#CAS-2024-001</td>
-              <td className="py-4 px-6 text-gray-600">2024-05-20</td>
-              <td className="py-4 px-6 text-gray-800">John Doe</td>
-              <td className="py-4 px-6 text-gray-600">Postage</td>
-              <td className="py-4 px-6 font-bold text-gray-800">¥45.00</td>
-              <td className="py-4 px-6">
-                <span className="bg-yellow-100 text-yellow-700 px-3 py-1 rounded-full text-xs font-medium border border-yellow-200">Pending</span>
-              </td>
-              <td className="py-4 px-6">
-                <button className="text-[#162D50] font-bold hover:underline">View Details</button>
-              </td>
-            </tr>
-            <tr className="border-b border-gray-100 hover:bg-gray-50">
-              <td className="py-4 px-6 text-gray-600">#CAS-2024-002</td>
-              <td className="py-4 px-6 text-gray-600">2024-05-19</td>
-              <td className="py-4 px-6 text-gray-800">Jane Smith</td>
-              <td className="py-4 px-6 text-gray-600">Hospital Bills</td>
-              <td className="py-4 px-6 font-bold text-gray-800">¥1,200.00</td>
-              <td className="py-4 px-6">
-                <span className="bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-xs font-medium border border-blue-200">Processing</span>
-              </td>
-              <td className="py-4 px-6">
-                <button className="text-[#162D50] font-bold hover:underline">View Details</button>
-              </td>
-            </tr>
-            <tr className="border-b border-gray-100 bg-gray-50">
-              <td className="py-4 px-6 text-gray-600">#CAS-2024-003</td>
-              <td className="py-4 px-6 text-gray-600">2024-05-18</td>
-              <td className="py-4 px-6 text-gray-800">Robert Chen</td>
-              <td className="py-4 px-6 text-gray-600">Dorm Fees</td>
-              <td className="py-4 px-6 font-bold text-gray-800">¥850.00</td>
-              <td className="py-4 px-6">
-                <span className="bg-red-100 text-red-600 px-3 py-1 rounded-full text-xs font-medium border border-red-200">Missing Receipt</span>
-              </td>
-              <td className="py-4 px-6">
-                <button className="text-[#162D50] font-bold hover:underline">View Details</button>
-              </td>
-            </tr>
-            <tr className="hover:bg-gray-50">
-              <td className="py-4 px-6 text-gray-600">#CAS-2024-004</td>
-              <td className="py-4 px-6 text-gray-600">2024-05-15</td>
-              <td className="py-4 px-6 text-gray-800">Sarah Wilson</td>
-              <td className="py-4 px-6 text-gray-600">Travel</td>
-              <td className="py-4 px-6 font-bold text-gray-800">¥320.50</td>
-              <td className="py-4 px-6">
-                <span className="bg-green-100 text-green-700 px-3 py-1 rounded-full text-xs font-medium border border-green-200">Completed</span>
-              </td>
-              <td className="py-4 px-6">
-                <button className="text-[#162D50] font-bold hover:underline">View Details</button>
-              </td>
-            </tr>
+            {loading ? (
+              <tr>
+                <td colSpan="7" className="py-4 px-6 text-center text-gray-500">Loading...</td>
+              </tr>
+            ) : cases.length === 0 ? (
+              <tr>
+                <td colSpan="7" className="py-4 px-6 text-center text-gray-500">No cases found.</td>
+              </tr>
+            ) : (
+              cases.map(c => (
+                <tr key={c._id} className="border-b border-gray-100 hover:bg-gray-50">
+                  <td className="py-4 px-6 text-gray-600">#CAS-{c._id.slice(-6).toUpperCase()}</td>
+                  <td className="py-4 px-6 text-gray-600">
+                    {new Date(c.expensePeriodStart).toLocaleDateString('en-US')}
+                  </td>
+                  <td className="py-4 px-6 text-gray-800">{c.staffName}</td>
+                  <td className="py-4 px-6 text-gray-600">{c.expenseType}</td>
+                  <td className="py-4 px-6 font-bold text-gray-800">
+                    {c.currency === 'JPY' ? '¥' : '$'}{c.totalExpense.toLocaleString()}
+                  </td>
+                  <td className="py-4 px-6">
+                    <span className={`px-3 py-1 rounded-full text-xs font-medium border ${
+                      c.status === 'Pending' ? 'bg-yellow-100 text-yellow-700 border-yellow-200' :
+                      c.status === 'Processing' ? 'bg-blue-100 text-blue-700 border-blue-200' :
+                      c.status === 'Completed' ? 'bg-green-100 text-green-700 border-green-200' :
+                      'bg-gray-100 text-gray-700 border-gray-200'
+                    }`}>
+                      {c.status}
+                    </span>
+                  </td>
+                  <td className="py-4 px-6">
+                    <button className="text-[#162D50] font-bold hover:underline">View Details</button>
+                  </td>
+                </tr>
+              ))
+            )}
           </tbody>
         </table>
       </div>

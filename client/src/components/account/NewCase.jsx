@@ -9,20 +9,20 @@ export default function NewCase() {
       {/* Header and Stepper */}
       <div className="flex justify-between items-start pt-2">
         <div>
-          <h2 className="text-2xl font-bold text-[#162D50] mb-2">新規案件登録</h2>
-          <p className="text-gray-500 text-sm">関連する財務詳細とともに、新しい前払金または精算案件を登録します。</p>
+          <h2 className="text-2xl font-bold text-[#162D50] mb-2">New Case Registration</h2>
+          <p className="text-gray-500 text-sm">Register a new advance or settlement case with relevant financial details.</p>
         </div>
         <div className="flex items-center space-x-4 text-sm font-medium mt-2">
           <div className="flex items-center text-[#162D50]">
             <div className="w-6 h-6 rounded-full bg-[#162D50] text-white flex items-center justify-center mr-2">1</div>
-            案件詳細
+            Case Details
           </div>
           <div className={`w-16 h-px ${newCaseStep >= 2 ? 'bg-[#162D50]' : 'bg-gray-300'}`}></div>
           <div className={`flex items-center ${newCaseStep >= 2 ? 'text-[#162D50]' : 'text-gray-400'}`}>
             {newCaseStep >= 2 && (
               <div className="w-6 h-6 rounded-full bg-[#162D50] text-white flex items-center justify-center mr-2">2</div>
             )}
-            経費詳細
+            Expense Details
           </div>
           <div className={`w-16 h-px ${newCaseStep >= 3 ? 'bg-[#162D50]' : 'bg-gray-300'}`}></div>
           <div className={`flex items-center ${newCaseStep >= 3 ? 'text-[#162D50]' : 'text-gray-400'}`}>
@@ -31,7 +31,7 @@ export default function NewCase() {
             ) : (
               <div className="w-6 h-6 rounded-full border border-gray-300 flex items-center justify-center mr-2">3</div>
             )}
-            確認
+            Confirmation
           </div>
         </div>
       </div>
@@ -43,19 +43,19 @@ export default function NewCase() {
         <div className="p-6">
           <div className="flex items-center text-[#162D50] font-bold mb-4">
             <User className="w-4 h-4 mr-2" />
-            スタッフ情報
+            Staff Information
           </div>
           <div className="grid grid-cols-3 gap-6">
             <div>
-              <label className="block text-sm font-bold text-gray-700 mb-2">氏名</label>
+              <label className="block text-sm font-bold text-gray-700 mb-2">Full Name</label>
               <input type="text" placeholder="Enter full name" className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50]" />
             </div>
             <div>
-              <label className="block text-sm font-bold text-gray-700 mb-2">スタッフID</label>
+              <label className="block text-sm font-bold text-gray-700 mb-2">Staff ID</label>
               <input type="text" placeholder="ID-00000" className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50]" />
             </div>
             <div>
-              <label className="block text-sm font-bold text-gray-700 mb-2">就業場所</label>
+              <label className="block text-sm font-bold text-gray-700 mb-2">Location</label>
               <div className="relative">
                 <select className="w-full px-4 py-2 border border-gray-300 rounded-md appearance-none focus:outline-none focus:ring-1 focus:ring-[#162D50] text-gray-600">
                   <option>Select Location</option>
@@ -72,12 +72,12 @@ export default function NewCase() {
         <div className="p-6">
           <div className="flex items-center text-[#162D50] font-bold mb-4">
             <Box className="w-4 h-4 mr-2" />
-            案件カテゴリー
+            Case Category
           </div>
           
           <div className="grid grid-cols-3 gap-6 mb-6">
             <div>
-              <label className="block text-sm font-bold text-gray-700 mb-2">経費タイプ</label>
+              <label className="block text-sm font-bold text-gray-700 mb-2">Expense Type</label>
               <div className="relative">
                 <select className="w-full px-4 py-2 border border-gray-300 rounded-md appearance-none focus:outline-none focus:ring-1 focus:ring-[#162D50] text-gray-600">
                   <option>Select Type</option>
@@ -86,7 +86,7 @@ export default function NewCase() {
               </div>
             </div>
             <div>
-              <label className="block text-sm font-bold text-gray-700 mb-2">立替者カテゴリー</label>
+              <label className="block text-sm font-bold text-gray-700 mb-2">Advancer Category</label>
               <div className="relative">
                 <select className="w-full px-4 py-2 border border-gray-300 rounded-md appearance-none focus:outline-none focus:ring-1 focus:ring-[#162D50] text-gray-600">
                   <option>Select Category</option>
@@ -95,14 +95,14 @@ export default function NewCase() {
               </div>
             </div>
             <div>
-              <label className="block text-sm font-bold text-gray-700 mb-2">立替者名</label>
+              <label className="block text-sm font-bold text-gray-700 mb-2">Advancer Name</label>
               <input type="text" placeholder="Enter name" className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50]" />
             </div>
           </div>
           
           <div className="grid grid-cols-3 gap-6 mb-8">
             <div>
-              <label className="block text-sm font-bold text-gray-700 mb-2">費用負担者</label>
+              <label className="block text-sm font-bold text-gray-700 mb-2">Bearing Party</label>
               <div className="relative">
                 <select className="w-full px-4 py-2 border border-gray-300 rounded-md appearance-none focus:outline-none focus:ring-1 focus:ring-[#162D50] text-gray-600">
                   <option>Select Bearing Party</option>
@@ -111,19 +111,19 @@ export default function NewCase() {
               </div>
             </div>
             <div>
-              <label className="block text-sm font-bold text-gray-700 mb-2">金額 (¥)</label>
+              <label className="block text-sm font-bold text-gray-700 mb-2">Amount (¥)</label>
               <input type="number" defaultValue="0" className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50] text-gray-600" />
             </div>
             <div>
-              <label className="block text-sm font-bold text-gray-700 mb-2">経費期間</label>
+              <label className="block text-sm font-bold text-gray-700 mb-2">Expense Period</label>
               <div className="flex items-center space-x-2">
                 <div className="relative flex-1">
-                  <input type="text" placeholder="年 /月/日" className="w-full pl-4 pr-10 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50]" />
+                  <input type="text" placeholder="YYYY / MM / DD" className="w-full pl-4 pr-10 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50]" />
                   <Calendar className="w-4 h-4 absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-800" />
                 </div>
                 <span className="text-gray-500">-</span>
                 <div className="relative flex-1">
-                  <input type="text" placeholder="年 /月/日" className="w-full pl-4 pr-10 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50]" />
+                  <input type="text" placeholder="YYYY / MM / DD" className="w-full pl-4 pr-10 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50]" />
                   <Calendar className="w-4 h-4 absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-800" />
                 </div>
               </div>
@@ -136,18 +136,18 @@ export default function NewCase() {
           {/* Summary Box */}
           <div className="bg-[#F8F9FA] border border-gray-200 rounded-md p-6 flex justify-between items-center mb-6">
             <div>
-              <div className="font-bold text-sm text-gray-800 mb-1">複数案件サマリー</div>
-              <div className="text-xs text-gray-500">上記すべての項目の合計計算</div>
+              <div className="font-bold text-sm text-gray-800 mb-1">Multiple Case Summary</div>
+              <div className="text-xs text-gray-500">Total calculation of all items above</div>
             </div>
             <div className="text-right">
-              <div className="font-bold text-xs text-gray-800 mb-1">経費合計金額</div>
+              <div className="font-bold text-xs text-gray-800 mb-1">Total Expense Amount</div>
               <div className="text-2xl font-bold text-[#162D50]">¥ 0</div>
             </div>
           </div>
 
           {/* Add Another Case Button */}
           <button className="flex items-center px-5 py-2 border border-[#162D50] text-[#162D50] rounded-md font-bold text-sm hover:bg-gray-50 transition-colors">
-            + 別の事例を追加する
+            + Add Another Case
           </button>
         </div>
       </div>
@@ -157,16 +157,16 @@ export default function NewCase() {
         <div className="p-6">
           <div className="flex items-center text-[#162D50] font-bold mb-2">
             <FileText className="w-4 h-4 mr-2" />
-            添付書類
+            Attachments
           </div>
-          <p className="text-gray-500 text-sm mb-6">領収書、請求書、または誓約書をアップロードしてください。</p>
+          <p className="text-gray-500 text-sm mb-6">Please upload receipts, invoices, or pledges.</p>
 
           <div className="border-2 border-dashed border-gray-300 rounded-md bg-[#FAFAFA] p-12 flex flex-col items-center justify-center cursor-pointer hover:bg-gray-50 transition-colors">
             <div className="w-12 h-12 bg-[#162D50] rounded-xl flex items-center justify-center mb-4">
               <UploadCloud className="w-6 h-6 text-white" />
             </div>
-            <p className="font-bold text-[#162D50] text-sm mb-2">クリックしてアップロード、またはファイルをドラッグ＆ドロップ</p>
-            <p className="text-gray-500 text-xs">PDF, PNG, JPG (最大 5MB)</p>
+            <p className="font-bold text-[#162D50] text-sm mb-2">Click to upload or drag & drop files</p>
+            <p className="text-gray-500 text-xs">PDF, PNG, JPG (Max 5MB)</p>
           </div>
         </div>
       </div>
@@ -176,7 +176,7 @@ export default function NewCase() {
         <button 
           onClick={() => setNewCaseStep(2)}
           className="bg-[#0A192F] text-white px-8 py-3 rounded-md font-bold text-sm flex items-center hover:bg-[#162D50] transition-colors shadow-sm">
-          次へ <ArrowRight className="w-4 h-4 ml-2" />
+          Next <ArrowRight className="w-4 h-4 ml-2" />
         </button>
       </div>
       </>
@@ -189,16 +189,16 @@ export default function NewCase() {
             <div className="p-6">
               <div className="flex items-center text-[#162D50] font-bold mb-4">
                 <Wallet className="w-4 h-4 mr-2" />
-                金額詳細
+                Amount Details
               </div>
               
               <div className="grid grid-cols-2 gap-6 mb-6">
                 <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-2">経費総額 (¥)</label>
+                  <label className="block text-sm font-bold text-gray-700 mb-2">Total Expense (¥)</label>
                   <input type="number" defaultValue="0" className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50] text-gray-600" />
                 </div>
                 <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-2">通貨</label>
+                  <label className="block text-sm font-bold text-gray-700 mb-2">Currency</label>
                   <div className="relative">
                     <select className="w-full px-4 py-2 border border-gray-300 rounded-md appearance-none focus:outline-none focus:ring-1 focus:ring-[#162D50] text-gray-600">
                       <option>JPY (Japanese Yen)</option>
@@ -207,11 +207,11 @@ export default function NewCase() {
                   </div>
                 </div>
                 <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-2">前回の未決済残高 (¥)</label>
+                  <label className="block text-sm font-bold text-gray-700 mb-2">Previous Unsettled Balance (¥)</label>
                   <input type="number" defaultValue="0" className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50] text-gray-600 bg-gray-50" readOnly />
                 </div>
                 <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-2">未決済残高を合計に加算しますか？</label>
+                  <label className="block text-sm font-bold text-gray-700 mb-2">Add unsettled balance to the total?</label>
                   <div className="flex items-center mt-3">
                     <div className="relative inline-block w-10 mr-2 align-middle select-none transition duration-200 ease-in">
                       <input type="checkbox" name="toggle" id="toggle" className="toggle-checkbox absolute block w-5 h-5 rounded-full bg-white border-4 appearance-none cursor-pointer" />
@@ -223,7 +223,7 @@ export default function NewCase() {
               </div>
 
               <div>
-                <label className="block text-sm font-bold text-gray-700 mb-2">最終合計金額 (¥)</label>
+                <label className="block text-sm font-bold text-gray-700 mb-2">Final Total Amount (¥)</label>
                 <div className="w-full bg-[#162D50] text-white px-4 py-3 rounded-md font-bold">
                   10000
                 </div>
@@ -236,11 +236,11 @@ export default function NewCase() {
             <div className="p-6">
               <div className="flex items-center text-[#162D50] font-bold mb-4">
                 <Landmark className="w-4 h-4 mr-2" />
-                アドバンサーへの精算
+                Settlement to Advancer
               </div>
               <div className="grid grid-cols-2 gap-6">
                 <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-2">精算方法</label>
+                  <label className="block text-sm font-bold text-gray-700 mb-2">Settlement Method</label>
                   <div className="relative">
                     <select className="w-full px-4 py-2 border border-gray-300 rounded-md appearance-none focus:outline-none focus:ring-1 focus:ring-[#162D50] text-gray-600">
                       <option>Select Method</option>
@@ -249,9 +249,9 @@ export default function NewCase() {
                   </div>
                 </div>
                 <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-2">精算予定日</label>
+                  <label className="block text-sm font-bold text-gray-700 mb-2">Expected Settlement Date</label>
                   <div className="relative">
-                    <input type="text" placeholder="年 /月/日" className="w-full pl-4 pr-10 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50]" />
+                    <input type="text" placeholder="YYYY / MM / DD" className="w-full pl-4 pr-10 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50]" />
                     <Calendar className="w-4 h-4 absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-800" />
                   </div>
                 </div>
@@ -264,11 +264,11 @@ export default function NewCase() {
             <div className="p-6">
               <div className="flex items-center text-[#162D50] font-bold mb-4">
                 <FileText className="w-4 h-4 mr-2" />
-                費用負担者からの回収
+                Collection from Bearing Party
               </div>
               <div className="grid grid-cols-3 gap-6 mb-8">
                 <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-2">回収方法</label>
+                  <label className="block text-sm font-bold text-gray-700 mb-2">Collection Method</label>
                   <div className="relative">
                     <select className="w-full px-4 py-2 border border-gray-300 rounded-md appearance-none focus:outline-none focus:ring-1 focus:ring-[#162D50] text-gray-600">
                       <option>Select Method</option>
@@ -277,7 +277,7 @@ export default function NewCase() {
                   </div>
                 </div>
                 <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-2">分割払いプラン</label>
+                  <label className="block text-sm font-bold text-gray-700 mb-2">Installment Plan</label>
                   <div className="relative">
                     <select className="w-full px-4 py-2 border border-gray-300 rounded-md appearance-none focus:outline-none focus:ring-1 focus:ring-[#162D50] text-gray-600">
                       <option>Single Payment</option>
@@ -286,9 +286,9 @@ export default function NewCase() {
                   </div>
                 </div>
                 <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-2">回収開始月</label>
+                  <label className="block text-sm font-bold text-gray-700 mb-2">Collection Start Month</label>
                   <div className="relative">
-                    <input type="text" placeholder="----年--月" className="w-full pl-4 pr-10 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50]" />
+                    <input type="text" placeholder="YYYY-MM" className="w-full pl-4 pr-10 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50]" />
                     <Calendar className="w-4 h-4 absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-800" />
                   </div>
                 </div>
@@ -314,13 +314,13 @@ export default function NewCase() {
 
       {newCaseStep === 3 && (
         <div className="bg-[#F8F9FA] border border-gray-200 rounded-md p-8">
-          <h3 className="text-[#162D50] text-xl font-bold mb-2">内容の確認・申請</h3>
-          <p className="text-gray-500 text-sm mb-8">最終的な申請の前に、すべての案件情報を確認してください。</p>
+          <h3 className="text-[#162D50] text-xl font-bold mb-2">Confirmation & Submission</h3>
+          <p className="text-gray-500 text-sm mb-8">Please review all case information before final submission.</p>
           
           <div className="grid grid-cols-2 gap-8 mb-8">
             {/* Left Column: Case Information */}
             <div>
-              <h4 className="text-[#162D50] font-bold mb-4">案件情報</h4>
+              <h4 className="text-[#162D50] font-bold mb-4">Case Information</h4>
               <div className="bg-white border border-gray-200 rounded-md p-6">
                 <div className="space-y-4 text-sm">
                   <div className="grid grid-cols-2">
@@ -345,7 +345,7 @@ export default function NewCase() {
 
             {/* Right Column: Financial Overview */}
             <div>
-              <h4 className="text-[#162D50] font-bold mb-4">財務概要</h4>
+              <h4 className="text-[#162D50] font-bold mb-4">Financial Overview</h4>
               <div className="bg-[#162D50] rounded-md p-6 text-white h-full flex flex-col justify-center">
                 <div className="flex justify-between items-center mb-6">
                   <span className="text-blue-200 text-sm">Total Amount</span>
@@ -367,7 +367,7 @@ export default function NewCase() {
 
           {/* Attachments Section */}
           <div>
-            <h4 className="text-[#162D50] font-bold mb-4">添付書類</h4>
+            <h4 className="text-[#162D50] font-bold mb-4">Attachments</h4>
             <div className="flex space-x-4">
               <div className="bg-white border border-gray-200 rounded-md px-4 py-3 flex items-center text-sm font-bold text-[#162D50] shadow-sm">
                 <FileText className="w-4 h-4 mr-2" />
@@ -393,7 +393,7 @@ export default function NewCase() {
                 setNewCaseStep(1);
               }}
               className="bg-[#0A192F] text-white px-10 py-3 rounded-md font-bold text-sm flex items-center hover:bg-[#162D50] transition-colors shadow-sm">
-              申請
+              Submit
             </button>
           </div>
         </div>

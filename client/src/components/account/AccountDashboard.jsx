@@ -41,7 +41,7 @@ export default function AccountDashboard() {
         </div>
       </div>
 
-      <h2 className="text-xl font-bold text-[#162D50] mb-6">資金流動パターン</h2>
+      <h2 className="text-xl font-bold text-[#162D50] mb-6">Fund Flow Patterns</h2>
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         
         {/* Pattern 1 */}
@@ -49,7 +49,7 @@ export default function AccountDashboard() {
           <div className="bg-[#F8F9FA] border-b border-gray-100 p-3 flex justify-between items-center rounded-t-xl">
             <div className="flex items-center space-x-3">
               <span className="bg-[#E2E8F0] text-[#4A5568] px-2 py-0.5 rounded text-xs font-bold">PTN-1</span>
-              <span className="font-bold text-[#162D50] text-sm">VCfund → Staff 前払</span>
+              <span className="font-bold text-[#162D50] text-sm">VCfund → Staff Advance</span>
             </div>
             <span className="text-xs text-blue-600 bg-blue-50 px-2 py-1 rounded-full font-medium">Active: 96</span>
           </div>
@@ -103,7 +103,7 @@ export default function AccountDashboard() {
           <div className="bg-[#F8F9FA] border-b border-gray-100 p-3 flex justify-between items-center rounded-t-xl">
             <div className="flex items-center space-x-3">
               <span className="bg-[#E2E8F0] text-[#4A5568] px-2 py-0.5 rounded text-xs font-bold">PTN-2</span>
-              <span className="font-bold text-[#162D50] text-sm">VCfund → Farmer 前払</span>
+              <span className="font-bold text-[#162D50] text-sm">VCfund → Farmer Advance</span>
             </div>
             <span className="text-xs text-blue-600 bg-blue-50 px-2 py-1 rounded-full font-medium">Active: 72</span>
           </div>
@@ -157,7 +157,7 @@ export default function AccountDashboard() {
           <div className="bg-[#F8F9FA] border-b border-gray-100 p-3 flex justify-between items-center rounded-t-xl">
             <div className="flex items-center space-x-3">
               <span className="bg-[#E2E8F0] text-[#4A5568] px-2 py-0.5 rounded text-xs font-bold">PTN-3</span>
-              <span className="font-bold text-[#162D50] text-sm">Farmer → VCfund 回収</span>
+              <span className="font-bold text-[#162D50] text-sm">Farmer → VCfund Recovery</span>
             </div>
             <span className="text-xs text-blue-600 bg-blue-50 px-2 py-1 rounded-full font-medium">Active: 58</span>
           </div>
@@ -211,7 +211,7 @@ export default function AccountDashboard() {
           <div className="bg-[#F8F9FA] border-b border-gray-100 p-3 flex justify-between items-center rounded-t-xl">
             <div className="flex items-center space-x-3">
               <span className="bg-[#E2E8F0] text-[#4A5568] px-2 py-0.5 rounded text-xs font-bold">PTN-4</span>
-              <span className="font-bold text-[#162D50] text-sm">Staff → VCfund 回収</span>
+              <span className="font-bold text-[#162D50] text-sm">Staff → VCfund Recovery</span>
             </div>
             <span className="text-xs text-blue-600 bg-blue-50 px-2 py-1 rounded-full font-medium">Active: 64</span>
           </div>

@@ -1,6 +1,23 @@
+import { useState, useEffect } from 'react';
 import { Search, Calendar, Filter, UserPlus, Eye, Edit2 } from 'lucide-react';
 
 export default function StaffList() {
+  const [employees, setEmployees] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetch('http://localhost:5000/api/employees')
+      .then(res => res.json())
+      .then(data => {
+        setEmployees(data);
+        setLoading(false);
+      })
+      .catch(err => {
+        console.error('Error fetching employees:', err);
+        setLoading(false);
+      });
+  }, []);
+
   return (
     <div className="max-w-6xl mx-auto pb-10">
       <div className="mb-6">
@@ -12,15 +29,15 @@ export default function StaffList() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
         <div className="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
           <p className="text-sm text-gray-500 mb-2">Total Staff</p>
-          <p className="text-3xl font-bold text-[#162D50]">124</p>
+          <p className="text-3xl font-bold text-[#162D50]">{employees.length}</p>
         </div>
         <div className="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
           <p className="text-sm text-gray-500 mb-2">New Hires (This Month)</p>
-          <p className="text-3xl font-bold text-[#162D50]">12</p>
+          <p className="text-3xl font-bold text-[#162D50]">0</p>
         </div>
         <div className="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
           <p className="text-sm text-gray-500 mb-2">Active Deployments</p>
-          <p className="text-3xl font-bold text-[#162D50]">108</p>
+          <p className="text-3xl font-bold text-[#162D50]">{employees.filter(e => e.onboardingStatus === 'Active').length}</p>
         </div>
       </div>
 
@@ -74,86 +91,49 @@ export default function StaffList() {
               <tr className="bg-[#F8F9FA] border-b border-gray-200 text-xs font-bold text-gray-500 uppercase tracking-wider">
                 <th className="py-4 px-6">Staff ID</th>
                 <th className="py-4 px-6">Name</th>
-                <th className="py-4 px-6">Category</th>
-                <th className="py-4 px-6">Role</th>
+                <th className="py-4 px-6">Department</th>
                 <th className="py-4 px-6">Join Date</th>
                 <th className="py-4 px-6">STATUS</th>
                 <th className="py-4 px-6 text-right">Actions</th>
               </tr>
             </thead>
             <tbody className="text-sm">
-              <tr className="border-b border-gray-100 hover:bg-gray-50">
-                <td className="py-4 px-6 font-medium text-[#162D50]">#STF-8824</td>
-                <td className="py-4 px-6 font-bold text-gray-900">Ravi Nepali</td>
-                <td className="py-4 px-6 text-gray-600">Office Staff</td>
-                <td className="py-4 px-6 text-gray-600">Accountant</td>
-                <td className="py-4 px-6 text-gray-600">Oct 12, 2023</td>
-                <td className="py-4 px-6">
-                  <span className="bg-green-100 text-green-700 px-3 py-1 rounded-full text-xs font-medium">Active</span>
-                </td>
-                <td className="py-4 px-6 text-right">
-                  <div className="flex items-center justify-end space-x-3 text-gray-400">
-                    <button className="hover:text-[#162D50] transition-colors"><UserPlus className="w-5 h-5" /></button>
-                    <button className="hover:text-[#162D50] transition-colors"><Eye className="w-5 h-5" /></button>
-                    <button className="hover:text-[#162D50] transition-colors"><Edit2 className="w-5 h-5" /></button>
-                  </div>
-                </td>
-              </tr>
-              
-              <tr className="border-b border-gray-100 hover:bg-gray-50">
-                <td className="py-4 px-6 font-medium text-[#162D50]">#STF-8815</td>
-                <td className="py-4 px-6 font-bold text-gray-900">Sarah Jenkins</td>
-                <td className="py-4 px-6 text-gray-600">Service Staff</td>
-                <td className="py-4 px-6 text-gray-600">Service Lead</td>
-                <td className="py-4 px-6 text-gray-600">Oct 20, 2023</td>
-                <td className="py-4 px-6">
-                  <span className="bg-green-100 text-green-700 px-3 py-1 rounded-full text-xs font-medium">Active</span>
-                </td>
-                <td className="py-4 px-6 text-right">
-                  <div className="flex items-center justify-end space-x-3 text-gray-400">
-                    <button className="hover:text-[#162D50] transition-colors"><UserPlus className="w-5 h-5" /></button>
-                    <button className="hover:text-[#162D50] transition-colors"><Eye className="w-5 h-5" /></button>
-                    <button className="hover:text-[#162D50] transition-colors"><Edit2 className="w-5 h-5" /></button>
-                  </div>
-                </td>
-              </tr>
-
-              <tr className="border-b border-gray-100 hover:bg-gray-50">
-                <td className="py-4 px-6 font-medium text-[#162D50]">#STF-7742</td>
-                <td className="py-4 px-6 font-bold text-gray-900">Kenji Sato</td>
-                <td className="py-4 px-6 text-gray-600">Farm Staff</td>
-                <td className="py-4 px-6 text-gray-600">Farm Manager</td>
-                <td className="py-4 px-6 text-gray-600">Jan 15, 2022</td>
-                <td className="py-4 px-6">
-                  <span className="bg-yellow-100 text-yellow-700 px-3 py-1 rounded-full text-xs font-medium">On Leave</span>
-                </td>
-                <td className="py-4 px-6 text-right">
-                  <div className="flex items-center justify-end space-x-3 text-gray-400">
-                    <button className="hover:text-[#162D50] transition-colors"><UserPlus className="w-5 h-5" /></button>
-                    <button className="hover:text-[#162D50] transition-colors"><Eye className="w-5 h-5" /></button>
-                    <button className="hover:text-[#162D50] transition-colors"><Edit2 className="w-5 h-5" /></button>
-                  </div>
-                </td>
-              </tr>
-
-              <tr className="hover:bg-gray-50">
-                <td className="py-4 px-6 font-medium text-[#162D50]">#STF-8819</td>
-                <td className="py-4 px-6 font-bold text-gray-900">Marcus Thorne</td>
-                <td className="py-4 px-6 text-gray-600">Office Staff</td>
-                <td className="py-4 px-6 text-gray-600">Office Admin</td>
-                <td className="py-4 px-6 text-gray-600">Oct 22, 2023</td>
-                <td className="py-4 px-6 flex flex-col items-start">
-                  <span className="bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-xs font-medium mb-1">Pending</span>
-                  <span className="bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-xs font-medium">Verification</span>
-                </td>
-                <td className="py-4 px-6 text-right align-top pt-5">
-                  <div className="flex items-center justify-end space-x-3 text-gray-400">
-                    <button className="hover:text-[#162D50] transition-colors"><UserPlus className="w-5 h-5" /></button>
-                    <button className="hover:text-[#162D50] transition-colors"><Eye className="w-5 h-5" /></button>
-                    <button className="hover:text-[#162D50] transition-colors"><Edit2 className="w-5 h-5" /></button>
-                  </div>
-                </td>
-              </tr>
+              {loading ? (
+                <tr>
+                  <td colSpan="6" className="py-4 px-6 text-center text-gray-500">Loading...</td>
+                </tr>
+              ) : employees.length === 0 ? (
+                <tr>
+                  <td colSpan="6" className="py-4 px-6 text-center text-gray-500">No staff found.</td>
+                </tr>
+              ) : (
+                employees.map(employee => (
+                  <tr key={employee._id} className="border-b border-gray-100 hover:bg-gray-50">
+                    <td className="py-4 px-6 font-medium text-[#162D50]">#{employee._id.slice(-6).toUpperCase()}</td>
+                    <td className="py-4 px-6 font-bold text-gray-900">{employee.romajiName || employee.katakanaName}</td>
+                    <td className="py-4 px-6 text-gray-600">{employee.department}</td>
+                    <td className="py-4 px-6 text-gray-600">
+                      {new Date(employee.joinDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                    </td>
+                    <td className="py-4 px-6">
+                      <span className={`px-3 py-1 rounded-full text-xs font-medium ${
+                        employee.onboardingStatus === 'Active' ? 'bg-green-100 text-green-700' :
+                        employee.onboardingStatus === 'Verification Pending' ? 'bg-blue-100 text-blue-700' :
+                        'bg-gray-100 text-gray-700'
+                      }`}>
+                        {employee.onboardingStatus || 'Active'}
+                      </span>
+                    </td>
+                    <td className="py-4 px-6 text-right">
+                      <div className="flex items-center justify-end space-x-3 text-gray-400">
+                        <button className="hover:text-[#162D50] transition-colors"><UserPlus className="w-5 h-5" /></button>
+                        <button className="hover:text-[#162D50] transition-colors"><Eye className="w-5 h-5" /></button>
+                        <button className="hover:text-[#162D50] transition-colors"><Edit2 className="w-5 h-5" /></button>
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>
