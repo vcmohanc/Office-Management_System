@@ -1,223 +1,338 @@
 import React, { useState } from 'react';
-import { UploadCloud, FileText, Calendar } from 'lucide-react';
+import { FileText, Calendar, Plus, Trash2, CheckCircle, ChevronDown, User, Box } from 'lucide-react';
 
 export default function StaffClaimRequest() {
-  const user = JSON.parse(localStorage.getItem('user')) || { username: 'Admin' };
-  
-  const [formData, setFormData] = useState({
-    expenseType: '',
-    expenseDate: '',
-    amount: '',
-    expenseCategory: 'Service Staff',
-    costBearer: 'Service Staff',
-    staffName: user.username,
-    projectRef: '',
-    paymentMethod: '',
-    description: ''
+  const [staffInfo, setStaffInfo] = useState({
+    fullName: '',
+    id: '',
+    location: 'Select Location'
   });
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+  const initialClaim = {
+    expenseType: 'Select Type',
+    advancerCategory: 'Select Category',
+    advancerName: '',
+    bearingParty: 'Select Bearing Party',
+    expenseAmount: '',
+    expensePeriodStart: '',
+    expensePeriodEnd: '',
+    remark: '',
+    receipts: []
   };
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    console.log('Submitting claim:', formData);
-    // Submit logic here
+  const [claims, setClaims] = useState([{ ...initialClaim }]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showSuccess, setShowSuccess] = useState(false);
+
+  const updateClaim = (index, field, value) => {
+    const updatedClaims = [...claims];
+    updatedClaims[index][field] = value;
+    setClaims(updatedClaims);
   };
+
+  const handleAddAnotherClaim = () => {
+    setClaims([...claims, { ...initialClaim }]);
+  };
+
+  const removeClaim = (index) => {
+    if (claims.length === 1) return;
+    const updatedClaims = claims.filter((_, i) => i !== index);
+    setClaims(updatedClaims);
+  };
+
+  const handleFileUpload = (index, e) => {
+    const files = Array.from(e.target.files);
+    const fileNames = files.map(f => f.name);
+    
+    const updatedClaims = [...claims];
+    updatedClaims[index].receipts = [...updatedClaims[index].receipts, ...fileNames];
+    setClaims(updatedClaims);
+  };
+
+  const removeFile = (claimIndex, fileIndex) => {
+    const updatedClaims = [...claims];
+    updatedClaims[claimIndex].receipts = updatedClaims[claimIndex].receipts.filter((_, i) => i !== fileIndex);
+    setClaims(updatedClaims);
+  };
+
+  const totalExpenseAmount = claims.reduce((sum, claim) => {
+    const amt = parseFloat(claim.expenseAmount);
+    return sum + (isNaN(amt) ? 0 : amt);
+  }, 0);
+
+  const handleSubmit = async () => {
+    setIsSubmitting(true);
+
+    try {
+      // Validate
+      if (!staffInfo.fullName || !staffInfo.id || staffInfo.location === 'Select Location') {
+        alert('Please fill out all required Staff Information fields.');
+        setIsSubmitting(false);
+        return;
+      }
+
+      for (let i = 0; i < claims.length; i++) {
+        const c = claims[i];
+        if (c.expenseType === 'Select Type' || c.advancerCategory === 'Select Category' || c.bearingParty === 'Select Bearing Party' || !c.expenseAmount) {
+          alert(`Please fill out all required fields for Case Category #${i + 1}.`);
+          setIsSubmitting(false);
+          return;
+        }
+      }
+
+      // Submit all claims
+      for (const claim of claims) {
+        const payload = {
+          staffInfo,
+          ...claim
+        };
+        const response = await fetch('http://localhost:5000/api/claims', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(payload)
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to submit claim');
+        }
+      }
+
+      setShowSuccess(true);
+      setTimeout(() => {
+        setShowSuccess(false);
+        setClaims([{ ...initialClaim }]);
+        setStaffInfo({ fullName: '', id: '', location: 'Select Location' });
+      }, 3000);
+
+    } catch (error) {
+      console.error('Error submitting claims:', error);
+      alert('An error occurred while submitting. Please try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  if (showSuccess) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[60vh]">
+        <div className="bg-green-100 p-4 rounded-full mb-4">
+          <CheckCircle className="w-16 h-16 text-green-500" />
+        </div>
+        <h2 className="text-2xl font-bold text-[#162D50] mb-2">Submitted Successfully!</h2>
+        <p className="text-gray-500 mb-6">Your expense claims have been submitted.</p>
+        <button 
+          onClick={() => setShowSuccess(false)}
+          className="bg-[#0A192F] text-white px-6 py-2 rounded-md hover:bg-[#162D50] transition-colors"
+        >
+          Submit Another Request
+        </button>
+      </div>
+    );
+  }
 
   return (
-    <div className="p-8 max-w-5xl mx-auto space-y-6">
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-        
-        {/* Header */}
-        <div className="px-8 py-6 border-b border-gray-200 flex justify-between items-center bg-gray-50">
-          <div className="flex items-center space-x-3">
-            <FileText className="w-6 h-6 text-[#162D50]" />
-            <h1 className="text-xl font-bold text-[#162D50]">New Expense Claim</h1>
+    <div className="max-w-6xl mx-auto space-y-8 pb-10 mt-8">
+      
+      {/* Staff Information Section */}
+      <div className="bg-white border border-gray-200 rounded-md shadow-sm">
+        <div className="p-6">
+          <div className="flex items-center text-[#162D50] font-bold mb-4">
+            <User className="w-4 h-4 mr-2" />
+            Staff Information
           </div>
-          <p className="text-sm text-gray-500 font-medium">
-            Expense claim submission period is from the 11th to the 27th of every month.
-          </p>
+          <div className="grid grid-cols-3 gap-6">
+            <div>
+              <label className="block text-sm font-bold text-gray-700 mb-2">Full Name <span className="text-red-500">*</span></label>
+              <input type="text" placeholder="Enter full name" value={staffInfo.fullName} onChange={e => setStaffInfo({...staffInfo, fullName: e.target.value})} className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50]" />
+            </div>
+            <div>
+              <label className="block text-sm font-bold text-gray-700 mb-2">Staff ID <span className="text-red-500">*</span></label>
+              <input type="text" placeholder="ID-00000" value={staffInfo.id} onChange={e => setStaffInfo({...staffInfo, id: e.target.value})} className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50]" />
+            </div>
+            <div>
+              <label className="block text-sm font-bold text-gray-700 mb-2">Location <span className="text-red-500">*</span></label>
+              <div className="relative">
+                <select value={staffInfo.location} onChange={e => setStaffInfo({...staffInfo, location: e.target.value})} className="w-full px-4 py-2 border border-gray-300 rounded-md appearance-none focus:outline-none focus:ring-1 focus:ring-[#162D50] text-gray-600">
+                  <option>Select Location</option>
+                  <option>Tokyo Office</option>
+                  <option>Osaka Office</option>
+                </select>
+                <ChevronDown className="w-4 h-4 absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 pointer-events-none" />
+              </div>
+            </div>
+          </div>
         </div>
+      </div>
 
-        {/* Form Body */}
-        <form onSubmit={handleSubmit} className="p-8 space-y-6">
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            
-            {/* Expense Type */}
-            <div>
-              <label className="block text-xs font-bold text-gray-700 uppercase mb-2">Expense Type</label>
-              <select 
-                name="expenseType" 
-                value={formData.expenseType} 
-                onChange={handleChange}
-                className="w-full border border-gray-300 rounded-md px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none bg-white"
-              >
-                <option value="">Select Type</option>
-                <option value="travel">Travel</option>
-                <option value="meals">Meals & Entertainment</option>
-                <option value="office_supplies">Office Supplies</option>
-                <option value="transportation">Transportation / Mileage</option>
-                <option value="other">Other</option>
-              </select>
+      {/* Case Category Section */}
+      {claims.map((claimItem, index) => (
+      <div key={index} className="bg-white border border-gray-200 rounded-md mb-6 shadow-sm">
+        <div className="p-6">
+          <div className="flex justify-between items-center mb-4">
+            <div className="flex items-center text-[#162D50] font-bold">
+              <Box className="w-4 h-4 mr-2" />
+              Case Category {claims.length > 1 && `#${index + 1}`}
             </div>
-
-            {/* Expense Date */}
+            {claims.length > 1 && (
+              <button 
+                onClick={() => removeClaim(index)}
+                className="text-red-500 hover:text-red-700 text-sm font-medium flex items-center transition-colors">
+                <Trash2 className="w-4 h-4 mr-1" /> Delete Category
+              </button>
+            )}
+          </div>
+          
+          <div className="grid grid-cols-3 gap-6 mb-6">
             <div>
-              <label className="block text-xs font-bold text-gray-700 uppercase mb-2">Expense Date</label>
+              <label className="block text-sm font-bold text-gray-700 mb-2">Expense Type <span className="text-red-500">*</span></label>
               <div className="relative">
-                <input 
-                  type="date" 
-                  name="expenseDate"
-                  value={formData.expenseDate}
-                  onChange={handleChange}
-                  className="w-full border border-gray-300 rounded-md px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-700"
-                />
-                <Calendar className="w-4 h-4 text-gray-400 absolute right-3 top-3 pointer-events-none hidden md:block" />
+                <select 
+                  value={claimItem.expenseType}
+                  onChange={(e) => updateClaim(index, 'expenseType', e.target.value)}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-md appearance-none focus:outline-none focus:ring-1 focus:ring-[#162D50] text-gray-600">
+                  <option>Select Type</option>
+                  <option>Travel</option>
+                  <option>Meals</option>
+                  <option>Office Supplies</option>
+                </select>
+                <ChevronDown className="w-4 h-4 absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 pointer-events-none" />
               </div>
             </div>
-
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            
-            {/* Amount */}
             <div>
-              <label className="block text-xs font-bold text-gray-700 uppercase mb-2">Amount</label>
+              <label className="block text-sm font-bold text-gray-700 mb-2">Advancer Category <span className="text-red-500">*</span></label>
               <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <span className="text-gray-500 sm:text-sm">¥</span>
+                <select 
+                  value={claimItem.advancerCategory}
+                  onChange={(e) => updateClaim(index, 'advancerCategory', e.target.value)}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-md appearance-none focus:outline-none focus:ring-1 focus:ring-[#162D50] text-gray-600">
+                  <option>Select Category</option>
+                  <option>Office</option>
+                  <option>Staff</option>
+                  <option>Host Company</option>
+                </select>
+                <ChevronDown className="w-4 h-4 absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 pointer-events-none" />
+              </div>
+            </div>
+            <div>
+              <label className="block text-sm font-bold text-gray-700 mb-2">Advancer Name <span className="text-red-500">*</span></label>
+              <input 
+                type="text" 
+                placeholder="Enter name" 
+                value={claimItem.advancerName}
+                onChange={(e) => updateClaim(index, 'advancerName', e.target.value)}
+                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50]" 
+              />
+            </div>
+          </div>
+          
+          <div className="grid grid-cols-3 gap-6 mb-8">
+            <div>
+              <label className="block text-sm font-bold text-gray-700 mb-2">Bearing Party <span className="text-red-500">*</span></label>
+              <div className="relative">
+                <select 
+                  value={claimItem.bearingParty}
+                  onChange={(e) => updateClaim(index, 'bearingParty', e.target.value)}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-md appearance-none focus:outline-none focus:ring-1 focus:ring-[#162D50] text-gray-600">
+                  <option>Select Bearing Party</option>
+                  <option>Office</option>
+                  <option>Staff</option>
+                  <option>Host Company</option>
+                </select>
+                <ChevronDown className="w-4 h-4 absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 pointer-events-none" />
+              </div>
+            </div>
+            <div>
+              <label className="block text-sm font-bold text-gray-700 mb-2">Expense Amount (¥) <span className="text-red-500">*</span></label>
+              <input 
+                type="number" 
+                value={claimItem.expenseAmount} 
+                onChange={(e) => updateClaim(index, 'expenseAmount', e.target.value)} 
+                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50] text-gray-600" 
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-bold text-gray-700 mb-2">Expense Period</label>
+              <div className="flex items-center space-x-2">
+                <div className="relative flex-1">
+                  <input type="text" value={claimItem.expensePeriodStart} onChange={(e) => updateClaim(index, 'expensePeriodStart', e.target.value)} placeholder="YYYY / MM / DD" className="w-full pl-4 pr-10 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50] text-gray-600 text-sm" />
+                  <Calendar className="w-4 h-4 absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-800" />
                 </div>
-                <input 
-                  type="number" 
-                  name="amount"
-                  placeholder="0.00"
-                  value={formData.amount}
-                  onChange={handleChange}
-                  className="w-full border border-gray-300 rounded-md pl-8 pr-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
+                <span className="text-gray-500">-</span>
+                <div className="relative flex-1">
+                  <input type="text" value={claimItem.expensePeriodEnd} onChange={(e) => updateClaim(index, 'expensePeriodEnd', e.target.value)} placeholder="YYYY / MM / DD" className="w-full pl-4 pr-10 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50] text-gray-600 text-sm" />
+                  <Calendar className="w-4 h-4 absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-800" />
+                </div>
+              </div>
+              <p className="text-xs text-gray-400 mt-2 leading-tight">Note: Claims are typically processed for expenses between the 11th and 27th of the month.</p>
+            </div>
+          </div>
+
+          {/* Bill/Receipt Upload and Remark for this case */}
+          <div className="border-t border-gray-200 mt-6 pt-6">
+            <div className="grid grid-cols-2 gap-6">
+              <div>
+                <label className="block text-sm font-bold text-gray-700 mb-2">Bill / Receipt Upload</label>
+                <div className="border-2 border-dashed border-gray-300 rounded-md p-4 text-center hover:bg-gray-50 transition-colors cursor-pointer relative flex flex-col items-center justify-center min-h-[120px]">
+                  <input type="file" multiple className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" onChange={(e) => handleFileUpload(index, e)} />
+                  <FileText className="w-6 h-6 text-gray-400 mb-2" />
+                  <p className="text-sm text-gray-600">Drag and drop files or click to upload</p>
+                </div>
+                {claimItem.receipts && claimItem.receipts.length > 0 && (
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    {claimItem.receipts.map((file, i) => (
+                      <div key={i} className="text-xs bg-gray-100 text-gray-700 px-2 py-1 rounded flex items-center">
+                        <FileText className="w-3 h-3 mr-1" /> {file}
+                        <button onClick={() => removeFile(index, i)} className="ml-2 text-red-500 hover:text-red-700"><Trash2 className="w-3 h-3" /></button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+              <div>
+                <label className="block text-sm font-bold text-gray-700 mb-2">Remarks</label>
+                <textarea 
+                  value={claimItem.remark || ''} 
+                  onChange={(e) => updateClaim(index, 'remark', e.target.value)}
+                  placeholder="Enter any additional details or remarks for this case..." 
+                  className="w-full h-[120px] px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50] resize-none text-gray-600"
+                ></textarea>
               </div>
             </div>
-
-            {/* Expense Category */}
-            <div>
-              <label className="block text-xs font-bold text-gray-700 uppercase mb-2">Expense Category</label>
-              <select 
-                name="expenseCategory" 
-                value={formData.expenseCategory} 
-                onChange={handleChange}
-                className="w-full border border-gray-300 rounded-md px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none bg-white"
-              >
-                <option value="Service Staff">Service Staff</option>
-                <option value="Management">Management</option>
-                <option value="General">General</option>
-              </select>
-            </div>
-
-            {/* Cost Bearer */}
-            <div>
-              <label className="block text-xs font-bold text-gray-700 uppercase mb-2">Cost Bearer</label>
-              <select 
-                name="costBearer" 
-                value={formData.costBearer} 
-                onChange={handleChange}
-                className="w-full border border-gray-300 rounded-md px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none bg-white"
-              >
-                <option value="Service Staff">Service Staff</option>
-                <option value="Department A">Department A</option>
-                <option value="Department B">Department B</option>
-              </select>
-            </div>
-
           </div>
+        </div>
+      </div>
+      ))}
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            
-            {/* Staff Name (Auto-filled) */}
+      {/* Summary Box & Add Case */}
+      <div className="bg-white border border-gray-200 rounded-md mb-8 shadow-sm">
+        <div className="p-6">
+          <div className="bg-[#F8F9FA] border border-gray-200 rounded-md p-6 flex justify-between items-center mb-6">
             <div>
-              <label className="block text-xs font-bold text-gray-700 uppercase mb-2">Staff Name</label>
-              <input 
-                type="text" 
-                name="staffName"
-                value={formData.staffName}
-                disabled
-                className="w-full border border-gray-200 bg-gray-50 rounded-md px-4 py-2.5 text-sm text-gray-500 cursor-not-allowed capitalize"
-              />
+              <div className="font-bold text-sm text-gray-800 mb-1">Multiple Case Summary</div>
+              <div className="text-xs text-gray-500">Total calculation of all items above</div>
             </div>
-
-            {/* Project Reference */}
-            <div>
-              <label className="block text-xs font-bold text-gray-700 uppercase mb-2">Project Reference</label>
-              <input 
-                type="text" 
-                name="projectRef"
-                placeholder="Optional"
-                value={formData.projectRef}
-                onChange={handleChange}
-                className="w-full border border-gray-300 rounded-md px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
-            </div>
-
-            {/* Payment Method */}
-            <div>
-              <label className="block text-xs font-bold text-gray-700 uppercase mb-2">Payment Method</label>
-              <select 
-                name="paymentMethod" 
-                value={formData.paymentMethod} 
-                onChange={handleChange}
-                className="w-full border border-gray-300 rounded-md px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none bg-white"
-              >
-                <option value="">Select Method</option>
-                <option value="out_of_pocket">Out of Pocket (Reimburse)</option>
-                <option value="corporate_card">Corporate Card</option>
-              </select>
-            </div>
-
-          </div>
-
-          {/* Description / Reason */}
-          <div>
-            <label className="block text-xs font-bold text-gray-700 uppercase mb-2">Description / Reason</label>
-            <textarea 
-              name="description"
-              rows={4}
-              placeholder="Provide details about the expense..."
-              value={formData.description}
-              onChange={handleChange}
-              className="w-full border border-gray-300 rounded-md px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-y"
-            ></textarea>
-          </div>
-
-          {/* Upload Area */}
-          <div>
-            <label className="block text-xs font-bold text-gray-700 uppercase mb-2">Receipt / Voucher Upload</label>
-            <div className="border-2 border-dashed border-gray-300 rounded-lg p-10 flex flex-col items-center justify-center text-center hover:bg-gray-50 cursor-pointer transition-colors bg-white group">
-              <UploadCloud className="w-10 h-10 text-gray-400 group-hover:text-blue-500 mb-3 transition-colors" />
-              <p className="text-sm font-medium text-gray-700 mb-1">Click to upload or drag and drop</p>
-              <p className="text-xs text-gray-500">PDF, PNG, JPG (MAX 5MB)</p>
+            <div className="text-right">
+              <div className="font-bold text-xs text-gray-800 mb-1">Total Expense Amount</div>
+              <div className="text-2xl font-bold text-[#162D50]">¥ {totalExpenseAmount.toLocaleString()}</div>
             </div>
           </div>
 
-          {/* Buttons */}
-          <div className="flex justify-end space-x-4 pt-6 border-t border-gray-100 mt-8">
+          <div className="flex justify-between items-center">
             <button 
-              type="button" 
-              className="px-6 py-2.5 border border-gray-300 text-gray-700 font-medium rounded-md hover:bg-gray-50 transition-colors text-sm"
-            >
-              Save Draft
+              onClick={handleAddAnotherClaim}
+              className="flex items-center px-5 py-2 border border-[#162D50] text-[#162D50] rounded-md font-bold text-sm hover:bg-gray-50 transition-colors">
+              + Add Another Case
             </button>
             <button 
-              type="submit" 
-              className="px-6 py-2.5 bg-[#162D50] text-white font-medium rounded-md hover:bg-[#1f3f6f] transition-colors shadow-sm text-sm"
-            >
-              Submit Request
+              onClick={handleSubmit}
+              disabled={isSubmitting}
+              className="bg-[#0A192F] text-white px-8 py-3 rounded-md font-bold text-sm hover:bg-[#162D50] transition-colors shadow-sm disabled:opacity-70">
+              {isSubmitting ? 'Submitting...' : 'Submit Request'}
             </button>
           </div>
-          
-        </form>
+        </div>
       </div>
     </div>
   );

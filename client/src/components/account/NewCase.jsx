@@ -287,15 +287,15 @@ export default function NewCase() {
           </div>
           <div className="grid grid-cols-3 gap-6">
             <div>
-              <label className="block text-sm font-bold text-gray-700 mb-2">Full Name</label>
+              <label className="block text-sm font-bold text-gray-700 mb-2">Full Name <span className="text-red-500">*</span></label>
               <input type="text" placeholder="Enter full name" value={staffInfo.fullName} onChange={e => setStaffInfo({...staffInfo, fullName: e.target.value})} className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50]" />
             </div>
             <div>
-              <label className="block text-sm font-bold text-gray-700 mb-2">Staff ID</label>
+              <label className="block text-sm font-bold text-gray-700 mb-2">Staff ID <span className="text-red-500">*</span></label>
               <input type="text" placeholder="ID-00000" value={staffInfo.id} onChange={e => setStaffInfo({...staffInfo, id: e.target.value})} className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50]" />
             </div>
             <div>
-              <label className="block text-sm font-bold text-gray-700 mb-2">Location</label>
+              <label className="block text-sm font-bold text-gray-700 mb-2">Location <span className="text-red-500">*</span></label>
               <div className="relative">
                 <select value={staffInfo.location} onChange={e => setStaffInfo({...staffInfo, location: e.target.value})} className="w-full px-4 py-2 border border-gray-300 rounded-md appearance-none focus:outline-none focus:ring-1 focus:ring-[#162D50] text-gray-600">
                   <option>Select Location</option>
@@ -329,7 +329,7 @@ export default function NewCase() {
           
           <div className="grid grid-cols-3 gap-6 mb-6">
             <div>
-              <label className="block text-sm font-bold text-gray-700 mb-2">Expense Type</label>
+              <label className="block text-sm font-bold text-gray-700 mb-2">Expense Type <span className="text-red-500">*</span></label>
               <div className="relative">
                 <select 
                   value={caseItem.expenseType}
@@ -347,7 +347,7 @@ export default function NewCase() {
               </div>
             </div>
             <div>
-              <label className="block text-sm font-bold text-gray-700 mb-2">Advancer Category</label>
+              <label className="block text-sm font-bold text-gray-700 mb-2">Advancer Category <span className="text-red-500">*</span></label>
               <div className="relative">
                 <select 
                   value={caseItem.advancerCategory}
@@ -362,7 +362,7 @@ export default function NewCase() {
               </div>
             </div>
             <div>
-              <label className="block text-sm font-bold text-gray-700 mb-2">Advancer Name</label>
+              <label className="block text-sm font-bold text-gray-700 mb-2">Advancer Name <span className="text-red-500">*</span></label>
               <input 
                 type="text" 
                 placeholder="Enter name" 
@@ -375,7 +375,7 @@ export default function NewCase() {
           
           <div className="grid grid-cols-3 gap-6 mb-8">
             <div>
-              <label className="block text-sm font-bold text-gray-700 mb-2">Bearing Party</label>
+              <label className="block text-sm font-bold text-gray-700 mb-2">Bearing Party <span className="text-red-500">*</span></label>
               <div className="relative">
                 <select 
                   value={caseItem.bearingParty}
@@ -390,7 +390,7 @@ export default function NewCase() {
               </div>
             </div>
             <div>
-              <label className="block text-sm font-bold text-gray-700 mb-2">Amount (¥)</label>
+              <label className="block text-sm font-bold text-gray-700 mb-2">Expense Amount (¥) <span className="text-red-500">*</span></label>
               <input 
                 type="number" 
                 value={caseItem.expenseAmount} 
@@ -484,7 +484,24 @@ export default function NewCase() {
       {/* Next Button */}
       <div className="flex justify-end pt-4">
         <button 
-          onClick={() => setNewCaseStep(2)}
+          onClick={() => {
+            if (!staffInfo.fullName || !staffInfo.id || !staffInfo.location || staffInfo.location === 'Select Location') {
+              alert('Please fill out all required Staff Information fields.');
+              return;
+            }
+            for (let i = 0; i < cases.length; i++) {
+              const c = cases[i];
+              if (c.expenseType === 'Select Type' || c.advancerCategory === 'Select Category' || c.bearingParty === 'Select Bearing Party' || !c.expenseAmount) {
+                alert(`Please fill out all required fields for Case Category #${i+1}.`);
+                return;
+              }
+              if (c.advancerCategory !== 'Office' && !c.advancerName) {
+                alert(`Please provide the Advancer Name for Case Category #${i+1}.`);
+                return;
+              }
+            }
+            setNewCaseStep(2);
+          }}
           className="bg-[#0A192F] text-white px-8 py-3 rounded-md font-bold text-sm flex items-center hover:bg-[#162D50] transition-colors shadow-sm">
           Next <ArrowRight className="w-4 h-4 ml-2" />
         </button>
@@ -550,7 +567,7 @@ export default function NewCase() {
               </div>
               <div className="grid grid-cols-2 gap-6">
                 <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-2">Settlement Method</label>
+                  <label className="block text-sm font-bold text-gray-700 mb-2">Settlement Method <span className="text-red-500">*</span></label>
                   <div className="relative">
                     <select value={settlementMethod} onChange={e => setSettlementMethod(e.target.value)} className="w-full px-4 py-2 border border-gray-300 rounded-md appearance-none focus:outline-none focus:ring-1 focus:ring-[#162D50] text-gray-600">
                       <option>Bank Transfer</option>
@@ -560,7 +577,7 @@ export default function NewCase() {
                   </div>
                 </div>
                 <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-2">Expected Settlement Date</label>
+                  <label className="block text-sm font-bold text-gray-700 mb-2">Expected Settlement Date <span className="text-red-500">*</span></label>
                   <div className="relative">
                     <input type="text" value={expectedSettlementDate} onChange={e => setExpectedSettlementDate(e.target.value)} placeholder="YYYY / MM / DD" className="w-full pl-4 pr-10 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50]" />
                     <Calendar className="w-4 h-4 absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-800" />
@@ -579,7 +596,7 @@ export default function NewCase() {
               </div>
               <div className="grid grid-cols-3 gap-6 mb-8">
                 <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-2">Collection Method</label>
+                  <label className="block text-sm font-bold text-gray-700 mb-2">Collection Method <span className="text-red-500">*</span></label>
                   <div className="relative">
                     <select value={collectionMethod} onChange={e => setCollectionMethod(e.target.value)} className="w-full px-4 py-2 border border-gray-300 rounded-md appearance-none focus:outline-none focus:ring-1 focus:ring-[#162D50] text-gray-600">
                       <option>Select Method</option>
@@ -601,7 +618,7 @@ export default function NewCase() {
                   </div>
                 </div>
                 <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-2">Collection Start Month</label>
+                  <label className="block text-sm font-bold text-gray-700 mb-2">Collection Start Month <span className="text-red-500">*</span></label>
                   <div className="relative">
                     <input type="text" value={collectionStartMonth} onChange={e => setCollectionStartMonth(e.target.value)} placeholder="YYYY-MM" className="w-full pl-4 pr-10 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50]" />
                     <Calendar className="w-4 h-4 absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-800" />
@@ -617,7 +634,13 @@ export default function NewCase() {
                   <ArrowLeft className="w-4 h-4 mr-2" /> Back
                 </button>
                 <button 
-                  onClick={() => setNewCaseStep(3)}
+                  onClick={() => {
+                    if (!settlementMethod || !expectedSettlementDate || collectionMethod === 'Select Method' || !collectionStartMonth) {
+                      alert('Please fill out all required Settlement and Collection fields.');
+                      return;
+                    }
+                    setNewCaseStep(3);
+                  }}
                   className="bg-[#0A192F] text-white px-8 py-3 rounded-md font-bold text-sm flex items-center hover:bg-[#162D50] transition-colors shadow-sm">
                   Next <ArrowRight className="w-4 h-4 ml-2" />
                 </button>

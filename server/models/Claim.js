@@ -1,15 +1,20 @@
 import mongoose from 'mongoose';
 
 const claimSchema = new mongoose.Schema({
+  staffInfo: {
+    fullName: { type: String, required: true },
+    id: { type: String, required: true },
+    location: { type: String, required: true }
+  },
   expenseType: { type: String, required: true },
-  expenseDate: { type: Date, required: true },
-  amount: { type: Number, required: true },
-  expenseCategory: { type: String, required: true },
-  costBearer: { type: String, required: true },
-  staffName: { type: String, required: true },
-  projectRef: { type: String, default: '' },
-  paymentMethod: { type: String, required: true },
-  description: { type: String, required: true },
+  advancerCategory: { type: String, required: true },
+  advancerName: { type: String },
+  bearingParty: { type: String, required: true },
+  expenseAmount: { type: Number, required: true },
+  expensePeriodStart: { type: String },
+  expensePeriodEnd: { type: String },
+  remark: { type: String },
+  receipts: [{ type: String }],
   status: { type: String, default: 'Submitted' }
 }, { timestamps: true });
 
