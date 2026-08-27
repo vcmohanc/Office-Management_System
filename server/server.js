@@ -7,6 +7,7 @@ import dashboardRoutes from './routes/dashboard.js';
 import employeeRoutes from './routes/employees.js';
 import caseRoutes from './routes/cases.js';
 import claimRoutes from './routes/claims.js';
+import optionRoutes from './routes/options.js';
 
 dotenv.config();
 
@@ -23,6 +24,7 @@ app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/employees', employeeRoutes);
 app.use('/api/cases', caseRoutes);
 app.use('/api/claims', claimRoutes);
+app.use('/api/options', optionRoutes);
 
 // MongoDB Connection
 mongoose.connect(process.env.MONGO_URI || 'mongodb://localhost:27017/office_manage_system')

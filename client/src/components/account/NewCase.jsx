@@ -1,8 +1,15 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { User, ChevronDown, Box, Calendar, UploadCloud, ArrowRight, Wallet, Landmark, FileText, ArrowLeft, Image } from 'lucide-react';
+
 
 export default function NewCase() {
   const [newCaseStep, setNewCaseStep] = useState(1);
+  const [options, setOptions] = useState({
+    Location: [],
+    ExpenseType: [],
+    AdvancerCategory: [],
+    BearingParty: []
+  });
   const [cases, setCases] = useState([{
     id: 1,
     expenseType: 'Select Type',
@@ -20,6 +27,26 @@ export default function NewCase() {
   const [expectedSettlementDate, setExpectedSettlementDate] = useState('');
   const [collectionMethod, setCollectionMethod] = useState('Select Method');
   const [collectionStartMonth, setCollectionStartMonth] = useState('');
+
+  useEffect(() => {
+    const fetchOptions = async () => {
+      try {
+        const response = await fetch('http://localhost:5000/api/options');
+        const data = await response.json();
+        
+        const groupedOptions = data.reduce((acc, opt) => {
+          if (!acc[opt.type]) acc[opt.type] = [];
+          acc[opt.type].push(opt);
+          return acc;
+        }, { Location: [], ExpenseType: [], AdvancerCategory: [], BearingParty: [] });
+
+        setOptions(groupedOptions);
+      } catch (error) {
+        console.error('Error fetching options:', error);
+      }
+    };
+    fetchOptions();
+  }, []);
 
   const updateCase = (index, field, value) => {
     const newCases = [...cases];
@@ -298,9 +325,10 @@ export default function NewCase() {
               <label className="block text-sm font-bold text-gray-700 mb-2">Location <span className="text-red-500">*</span></label>
               <div className="relative">
                 <select value={staffInfo.location} onChange={e => setStaffInfo({...staffInfo, location: e.target.value})} className="w-full px-4 py-2 border border-gray-300 rounded-md appearance-none focus:outline-none focus:ring-1 focus:ring-[#162D50] text-gray-600">
-                  <option>Select Location</option>
-                  <option>Tokyo Office</option>
-                  <option>Osaka Office</option>
+                  <option value="">Select Location</option>
+                  {options.Location.map((opt) => (
+                    <option key={opt._id} value={opt.value}>{opt.label}</option>
+                  ))}
                 </select>
                 <ChevronDown className="w-4 h-4 absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 pointer-events-none" />
               </div>
@@ -335,13 +363,10 @@ export default function NewCase() {
                   value={caseItem.expenseType}
                   onChange={(e) => updateCase(index, 'expenseType', e.target.value)}
                   className="w-full px-4 py-2 border border-gray-300 rounded-md appearance-none focus:outline-none focus:ring-1 focus:ring-[#162D50] text-gray-600">
-                  <option>Select Type</option>
-                  <option>Postage</option>
-                  <option>Transportation Expenses / Flight Fare</option>
-                  <option>Waiting Dormitory Fee</option>
-                  <option>Hospital Fee</option>
-                  <option>Equipment/Supplies</option>
-                  <option>WIFI</option>
+                  <option value="">Select Type</option>
+                  {options.ExpenseType.map((opt) => (
+                    <option key={opt._id} value={opt.value}>{opt.label}</option>
+                  ))}
                 </select>
                 <ChevronDown className="w-4 h-4 absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 pointer-events-none" />
               </div>
@@ -353,10 +378,10 @@ export default function NewCase() {
                   value={caseItem.advancerCategory}
                   onChange={(e) => updateCase(index, 'advancerCategory', e.target.value)}
                   className="w-full px-4 py-2 border border-gray-300 rounded-md appearance-none focus:outline-none focus:ring-1 focus:ring-[#162D50] text-gray-600">
-                  <option>Select Category</option>
-                  <option>Office</option>
-                  <option>Staff</option>
-                  <option>Host Company</option>
+                  <option value="">Select Category</option>
+                  {options.AdvancerCategory.map((opt) => (
+                    <option key={opt._id} value={opt.value}>{opt.label}</option>
+                  ))}
                 </select>
                 <ChevronDown className="w-4 h-4 absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 pointer-events-none" />
               </div>
@@ -381,10 +406,10 @@ export default function NewCase() {
                   value={caseItem.bearingParty}
                   onChange={(e) => updateCase(index, 'bearingParty', e.target.value)}
                   className="w-full px-4 py-2 border border-gray-300 rounded-md appearance-none focus:outline-none focus:ring-1 focus:ring-[#162D50] text-gray-600">
-                  <option>Select Bearing Party</option>
-                  <option>Office</option>
-                  <option>Staff</option>
-                  <option>Host Company</option>
+                  <option value="">Select Bearing Party</option>
+                  {options.BearingParty.map((opt) => (
+                    <option key={opt._id} value={opt.value}>{opt.label}</option>
+                  ))}
                 </select>
                 <ChevronDown className="w-4 h-4 absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 pointer-events-none" />
               </div>

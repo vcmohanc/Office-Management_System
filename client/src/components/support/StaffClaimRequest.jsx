@@ -1,18 +1,25 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { FileText, Calendar, Plus, Trash2, CheckCircle, ChevronDown, User, Box } from 'lucide-react';
 
 export default function StaffClaimRequest() {
+  const [options, setOptions] = useState({
+    Location: [],
+    ExpenseType: [],
+    AdvancerCategory: [],
+    BearingParty: []
+  });
+
   const [staffInfo, setStaffInfo] = useState({
     fullName: '',
     id: '',
-    location: 'Select Location'
+    location: ''
   });
 
   const initialClaim = {
-    expenseType: 'Select Type',
-    advancerCategory: 'Select Category',
+    expenseType: '',
+    advancerCategory: '',
     advancerName: '',
-    bearingParty: 'Select Bearing Party',
+    bearingParty: '',
     expenseAmount: '',
     expensePeriodStart: '',
     expensePeriodEnd: '',
@@ -23,6 +30,26 @@ export default function StaffClaimRequest() {
   const [claims, setClaims] = useState([{ ...initialClaim }]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
+
+  useEffect(() => {
+    const fetchOptions = async () => {
+      try {
+        const response = await fetch('http://localhost:5000/api/options');
+        const data = await response.json();
+        
+        const groupedOptions = data.reduce((acc, opt) => {
+          if (!acc[opt.type]) acc[opt.type] = [];
+          acc[opt.type].push(opt);
+          return acc;
+        }, { Location: [], ExpenseType: [], AdvancerCategory: [], BearingParty: [] });
+
+        setOptions(groupedOptions);
+      } catch (error) {
+        console.error('Error fetching options:', error);
+      }
+    };
+    fetchOptions();
+  }, []);
 
   const updateClaim = (index, field, value) => {
     const updatedClaims = [...claims];
@@ -55,6 +82,122 @@ export default function StaffClaimRequest() {
     setClaims(updatedClaims);
   };
 
+  const renderDynamicFields = (expenseType, index, claimItem) => {
+    switch (expenseType) {
+      case 'Postage':
+        return (
+          <div className="grid grid-cols-2 gap-6 mb-8 bg-blue-50 p-6 rounded-md">
+            <div>
+              <label className="block text-sm font-bold text-gray-700 mb-2">From</label>
+              <input type="text" value={claimItem.postageFrom || ''} onChange={(e) => updateClaim(index, 'postageFrom', e.target.value)} placeholder="Enter sender details" className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50]" />
+            </div>
+            <div>
+              <label className="block text-sm font-bold text-gray-700 mb-2">To</label>
+              <input type="text" value={claimItem.postageTo || ''} onChange={(e) => updateClaim(index, 'postageTo', e.target.value)} placeholder="Enter recipient details" className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50]" />
+            </div>
+          </div>
+        );
+      case 'Transportation Expenses / Flight Fare':
+        return (
+          <div className="grid grid-cols-2 gap-6 mb-8 bg-blue-50 p-6 rounded-md">
+            <div>
+              <label className="block text-sm font-bold text-gray-700 mb-2">Departure Route / Method</label>
+              <input type="text" value={claimItem.departureRoute || ''} onChange={(e) => updateClaim(index, 'departureRoute', e.target.value)} placeholder="Enter departure details" className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50]" />
+            </div>
+            <div>
+              <label className="block text-sm font-bold text-gray-700 mb-2">Return Route / Method</label>
+              <input type="text" value={claimItem.returnRoute || ''} onChange={(e) => updateClaim(index, 'returnRoute', e.target.value)} placeholder="Enter return details" className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50]" />
+            </div>
+            <div className="col-span-2">
+              <label className="block text-sm font-bold text-gray-700 mb-2">Reason</label>
+              <textarea value={claimItem.transportReason || ''} onChange={(e) => updateClaim(index, 'transportReason', e.target.value)} placeholder="Enter reason for travel" rows="3" className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50]"></textarea>
+            </div>
+          </div>
+        );
+      case 'Waiting Dormitory Fee':
+        return (
+          <div className="grid grid-cols-2 gap-6 mb-8 bg-blue-50 p-6 rounded-md">
+            <div>
+              <label className="block text-sm font-bold text-gray-700 mb-2">Usage Start Date</label>
+              <div className="relative">
+                <input type="text" value={claimItem.dormitoryStartDate || ''} onChange={(e) => updateClaim(index, 'dormitoryStartDate', e.target.value)} placeholder="YYYY / MM / DD" className="w-full pl-4 pr-10 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50]" />
+                <Calendar className="w-4 h-4 absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-800" />
+              </div>
+            </div>
+            <div>
+              <label className="block text-sm font-bold text-gray-700 mb-2">Usage End Date</label>
+              <div className="relative">
+                <input type="text" value={claimItem.dormitoryEndDate || ''} onChange={(e) => updateClaim(index, 'dormitoryEndDate', e.target.value)} placeholder="YYYY / MM / DD" className="w-full pl-4 pr-10 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50]" />
+                <Calendar className="w-4 h-4 absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-800" />
+              </div>
+            </div>
+          </div>
+        );
+      case 'Hospital Fee':
+        return (
+          <div className="grid grid-cols-3 gap-6 mb-8 bg-blue-50 p-6 rounded-md">
+            <div>
+              <label className="block text-sm font-bold text-gray-700 mb-2">Consultation Date</label>
+              <div className="relative">
+                <input type="text" value={claimItem.consultationDate || ''} onChange={(e) => updateClaim(index, 'consultationDate', e.target.value)} placeholder="YYYY / MM / DD" className="w-full pl-4 pr-10 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50]" />
+                <Calendar className="w-4 h-4 absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-800" />
+              </div>
+            </div>
+            <div>
+              <label className="block text-sm font-bold text-gray-700 mb-2">Consultation Fee</label>
+              <input type="number" value={claimItem.consultationFee || 0} onChange={(e) => updateClaim(index, 'consultationFee', e.target.value)} className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50] text-gray-600" />
+            </div>
+            <div>
+              <label className="block text-sm font-bold text-gray-700 mb-2">Medicine Cost</label>
+              <input type="number" value={claimItem.medicineCost || 0} onChange={(e) => updateClaim(index, 'medicineCost', e.target.value)} className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50] text-gray-600" />
+            </div>
+          </div>
+        );
+      case 'Equipment/Supplies':
+        return (
+          <div className="grid grid-cols-2 gap-6 mb-8 bg-blue-50 p-6 rounded-md">
+            <div>
+              <label className="block text-sm font-bold text-gray-700 mb-2">Item Name</label>
+              <input type="text" value={claimItem.itemName || ''} onChange={(e) => updateClaim(index, 'itemName', e.target.value)} placeholder="Enter item" className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50]" />
+            </div>
+            <div>
+              <label className="block text-sm font-bold text-gray-700 mb-2">Quantity</label>
+              <input type="number" value={claimItem.quantity || 1} onChange={(e) => updateClaim(index, 'quantity', e.target.value)} className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50] text-gray-600" />
+            </div>
+            <div>
+              <label className="block text-sm font-bold text-gray-700 mb-2">Purchase Date</label>
+              <div className="relative">
+                <input type="text" value={claimItem.purchaseDate || ''} onChange={(e) => updateClaim(index, 'purchaseDate', e.target.value)} placeholder="YYYY / MM / DD" className="w-full pl-4 pr-10 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50]" />
+                <Calendar className="w-4 h-4 absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-800" />
+              </div>
+            </div>
+            <div className="col-span-2">
+              <label className="block text-sm font-bold text-gray-700 mb-2">Reason for damage, malfunction, shortage, etc.</label>
+              <textarea value={claimItem.damageReason || ''} onChange={(e) => updateClaim(index, 'damageReason', e.target.value)} placeholder="Enter reason" rows="3" className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50]"></textarea>
+            </div>
+          </div>
+        );
+      case 'WIFI':
+        return (
+          <div className="grid grid-cols-2 gap-6 mb-8 bg-blue-50 p-6 rounded-md">
+            <div>
+              <label className="block text-sm font-bold text-gray-700 mb-2">Target Host Company / Farm</label>
+              <input type="text" value={claimItem.hostCompany || ''} onChange={(e) => updateClaim(index, 'hostCompany', e.target.value)} placeholder="Enter company/farm" className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50]" />
+            </div>
+            <div>
+              <label className="block text-sm font-bold text-gray-700 mb-2">Usage Start Date</label>
+              <div className="relative">
+                <input type="text" value={claimItem.wifiStartDate || ''} onChange={(e) => updateClaim(index, 'wifiStartDate', e.target.value)} placeholder="YYYY / MM / DD" className="w-full pl-4 pr-10 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50]" />
+                <Calendar className="w-4 h-4 absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-800" />
+              </div>
+            </div>
+          </div>
+        );
+      default:
+        return null;
+    }
+  };
+
   const totalExpenseAmount = claims.reduce((sum, claim) => {
     const amt = parseFloat(claim.expenseAmount);
     return sum + (isNaN(amt) ? 0 : amt);
@@ -65,7 +208,7 @@ export default function StaffClaimRequest() {
 
     try {
       // Validate
-      if (!staffInfo.fullName || !staffInfo.id || staffInfo.location === 'Select Location') {
+      if (!staffInfo.fullName || !staffInfo.id || !staffInfo.location) {
         alert('Please fill out all required Staff Information fields.');
         setIsSubmitting(false);
         return;
@@ -73,7 +216,7 @@ export default function StaffClaimRequest() {
 
       for (let i = 0; i < claims.length; i++) {
         const c = claims[i];
-        if (c.expenseType === 'Select Type' || c.advancerCategory === 'Select Category' || c.bearingParty === 'Select Bearing Party' || !c.expenseAmount) {
+        if (!c.expenseType || !c.advancerCategory || !c.bearingParty || !c.expenseAmount) {
           alert(`Please fill out all required fields for Case Category #${i + 1}.`);
           setIsSubmitting(false);
           return;
@@ -103,7 +246,7 @@ export default function StaffClaimRequest() {
       setTimeout(() => {
         setShowSuccess(false);
         setClaims([{ ...initialClaim }]);
-        setStaffInfo({ fullName: '', id: '', location: 'Select Location' });
+        setStaffInfo({ fullName: '', id: '', location: '' });
       }, 3000);
 
     } catch (error) {
@@ -155,9 +298,10 @@ export default function StaffClaimRequest() {
               <label className="block text-sm font-bold text-gray-700 mb-2">Location <span className="text-red-500">*</span></label>
               <div className="relative">
                 <select value={staffInfo.location} onChange={e => setStaffInfo({...staffInfo, location: e.target.value})} className="w-full px-4 py-2 border border-gray-300 rounded-md appearance-none focus:outline-none focus:ring-1 focus:ring-[#162D50] text-gray-600">
-                  <option>Select Location</option>
-                  <option>Tokyo Office</option>
-                  <option>Osaka Office</option>
+                  <option value="">Select Location</option>
+                  {options.Location.map((opt) => (
+                    <option key={opt._id} value={opt.value}>{opt.label}</option>
+                  ))}
                 </select>
                 <ChevronDown className="w-4 h-4 absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 pointer-events-none" />
               </div>
@@ -192,10 +336,10 @@ export default function StaffClaimRequest() {
                   value={claimItem.expenseType}
                   onChange={(e) => updateClaim(index, 'expenseType', e.target.value)}
                   className="w-full px-4 py-2 border border-gray-300 rounded-md appearance-none focus:outline-none focus:ring-1 focus:ring-[#162D50] text-gray-600">
-                  <option>Select Type</option>
-                  <option>Travel</option>
-                  <option>Meals</option>
-                  <option>Office Supplies</option>
+                  <option value="">Select Type</option>
+                  {options.ExpenseType.map((opt) => (
+                    <option key={opt._id} value={opt.value}>{opt.label}</option>
+                  ))}
                 </select>
                 <ChevronDown className="w-4 h-4 absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 pointer-events-none" />
               </div>
@@ -207,10 +351,10 @@ export default function StaffClaimRequest() {
                   value={claimItem.advancerCategory}
                   onChange={(e) => updateClaim(index, 'advancerCategory', e.target.value)}
                   className="w-full px-4 py-2 border border-gray-300 rounded-md appearance-none focus:outline-none focus:ring-1 focus:ring-[#162D50] text-gray-600">
-                  <option>Select Category</option>
-                  <option>Office</option>
-                  <option>Staff</option>
-                  <option>Host Company</option>
+                  <option value="">Select Category</option>
+                  {options.AdvancerCategory.map((opt) => (
+                    <option key={opt._id} value={opt.value}>{opt.label}</option>
+                  ))}
                 </select>
                 <ChevronDown className="w-4 h-4 absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 pointer-events-none" />
               </div>
@@ -235,10 +379,10 @@ export default function StaffClaimRequest() {
                   value={claimItem.bearingParty}
                   onChange={(e) => updateClaim(index, 'bearingParty', e.target.value)}
                   className="w-full px-4 py-2 border border-gray-300 rounded-md appearance-none focus:outline-none focus:ring-1 focus:ring-[#162D50] text-gray-600">
-                  <option>Select Bearing Party</option>
-                  <option>Office</option>
-                  <option>Staff</option>
-                  <option>Host Company</option>
+                  <option value="">Select Bearing Party</option>
+                  {options.BearingParty.map((opt) => (
+                    <option key={opt._id} value={opt.value}>{opt.label}</option>
+                  ))}
                 </select>
                 <ChevronDown className="w-4 h-4 absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 pointer-events-none" />
               </div>
@@ -268,6 +412,8 @@ export default function StaffClaimRequest() {
               <p className="text-xs text-gray-400 mt-2 leading-tight">Note: Claims are typically processed for expenses between the 11th and 27th of the month.</p>
             </div>
           </div>
+
+          {renderDynamicFields(claimItem.expenseType, index, claimItem)}
 
           {/* Bill/Receipt Upload and Remark for this case */}
           <div className="border-t border-gray-200 mt-6 pt-6">
