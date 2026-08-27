@@ -1,77 +1,18 @@
-import { 
-  LayoutDashboard, 
-  Building2, 
-  Users, 
-  Briefcase,
-  LifeBuoy,
-  Settings as SettingsIcon,
+import {
   HelpCircle,
   LogOut,
   ChevronDown,
   ChevronRight,
-  FilePlus,
-  ListTodo,
-  CreditCard,
-  Plane,
-  UserMinus,
-  List,
-  UserPlus,
-  FileText,
-  ClipboardList,
-  Calendar
+  Settings as SettingsIcon,
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { NAV_ITEMS_BY_ROLE, NAV_LABELS } from '../../constants/navigation';
+import { ROLES, ROLE_LABELS } from '../../constants/roles';
 
 export default function Sidebar({ activeTab, setActiveTab, openMenus, toggleMenu, setToken, user }) {
   const navigate = useNavigate();
-
-  const allNavItems = [
-    { name: 'Dashboard', icon: LayoutDashboard },
-    { 
-      name: 'Account Department', 
-      icon: Building2,
-      subItems: [
-        { name: 'New Case', icon: FilePlus },
-        { name: 'Case List', icon: ListTodo },
-        { name: 'Payment Status', icon: CreditCard }
-      ]
-    },
-    { 
-      name: 'HR Department', 
-      icon: Users,
-      subItems: [
-        { name: 'Staff Registration', icon: UserPlus },
-        { name: 'Staff List', icon: List },
-        { name: 'Visa Management', icon: Plane },
-        { name: 'Resignation', icon: UserMinus }
-      ]
-    },
-    { name: 'Business Department', icon: Briefcase },
-    { 
-      name: 'Support Department', 
-      icon: LifeBuoy,
-      subItems: [
-        { name: 'Staff Claim Request', icon: FileText },
-        { name: 'Claim List', icon: ClipboardList }
-      ]
-    },
-    { name: 'Settings', icon: SettingsIcon },
-  ];
-
-  const navItems = allNavItems.filter(item => {
-    // Admin sees only Dashboard and Settings
-    if (!user || user.role === 'admin') {
-      return item.name === 'Dashboard' || item.name === 'Settings';
-    }
-    
-    // Other roles see their department, Dashboard, and Settings
-    if (item.name === 'Dashboard' || item.name === 'Settings') return true;
-    if (user.role === 'hr' && item.name === 'HR Department') return true;
-    if (user.role === 'account' && item.name === 'Account Department') return true;
-    if (user.role === 'support' && item.name === 'Support Department') return true;
-    
-    return false;
-  });
+  const role = user?.role || ROLES.ADMIN;
+  const navItems = NAV_ITEMS_BY_ROLE[role] || [];
 
   const handleLogout = () => {
     localStorage.removeItem('token');
@@ -89,22 +30,26 @@ export default function Sidebar({ activeTab, setActiveTab, openMenus, toggleMenu
           </div>
           <div>
             <h2 className="text-[#162D50] font-bold text-lg leading-tight capitalize">{user?.username || 'Admin'}</h2>
-            <p className="text-xs text-gray-500 capitalize">{user?.role === 'admin' ? 'System Administrator' : `${user?.role} Department`}</p>
+            <p className="text-xs text-gray-500">{ROLE_LABELS[role] || role}</p>
           </div>
         </div>
 
         <nav className="space-y-1 px-3">
           {navItems.map((item) => {
             const Icon = item.icon;
-            const isActive = activeTab === item.name;
+            const isActive = activeTab === item.key;
             const hasSubItems = !!item.subItems;
-            const isOpen = openMenus[item.name];
+            const isOpen = openMenus[item.key];
 
             return (
-              <div key={item.name} className="flex flex-col">
+              <div key={item.key} className="flex flex-col">
                 <button
                   onClick={() => {
-                    setActiveTab(item.name);
+                    if (hasSubItems) {
+                      toggleMenu(item.key);
+                    } else {
+                      setActiveTab(item.key);
+                    }
                   }}
                   className={`w-full flex items-center justify-between px-4 py-2.5 rounded-md transition-colors ${
                     isActive
@@ -114,28 +59,30 @@ export default function Sidebar({ activeTab, setActiveTab, openMenus, toggleMenu
                 >
                   <div className="flex items-center">
                     <Icon className={`w-5 h-5 mr-3 ${isActive ? 'text-[#162D50]' : 'text-gray-500'}`} />
-                    <span className="text-sm">{item.name}</span>
+                    <span className="text-sm">{NAV_LABELS[item.key]}</span>
                   </div>
+                  {hasSubItems && (
+                    isOpen ? <ChevronDown className="w-4 h-4 text-gray-400" /> : <ChevronRight className="w-4 h-4 text-gray-400" />
+                  )}
                 </button>
-                
-                {/* Sub items static */}
-                {hasSubItems && (
+
+                {hasSubItems && isOpen && (
                   <div className="mt-1 ml-4 pl-4 border-l border-gray-200 space-y-1">
-                    {item.subItems.map(subItem => {
+                    {item.subItems.map((subItem) => {
                       const SubIcon = subItem.icon;
-                      const isSubActive = activeTab === subItem.name;
+                      const isSubActive = activeTab === subItem.key;
                       return (
                         <button
-                          key={subItem.name}
-                          onClick={() => setActiveTab(subItem.name)}
+                          key={subItem.key}
+                          onClick={() => setActiveTab(subItem.key)}
                           className={`w-full flex items-center px-4 py-2 rounded-md transition-colors text-sm ${
-                            isSubActive 
-                              ? 'bg-blue-50 text-blue-700 font-bold' 
+                            isSubActive
+                              ? 'bg-blue-50 text-blue-700 font-bold'
                               : 'text-gray-500 hover:bg-gray-50 hover:text-gray-800'
                           }`}
                         >
                           <SubIcon className={`w-4 h-4 mr-3 ${isSubActive ? 'text-blue-600' : 'text-gray-400'}`} />
-                          {subItem.name}
+                          {NAV_LABELS[subItem.key]}
                         </button>
                       );
                     })}
@@ -144,20 +91,33 @@ export default function Sidebar({ activeTab, setActiveTab, openMenus, toggleMenu
               </div>
             );
           })}
+
+          {/* Settings — always visible for every role */}
+          <button
+            onClick={() => setActiveTab('settings')}
+            className={`w-full flex items-center justify-between px-4 py-2.5 rounded-md transition-colors ${
+              activeTab === 'settings' ? 'bg-gray-200 text-[#162D50] font-bold' : 'text-[#4A5568] hover:bg-gray-100'
+            }`}
+          >
+            <div className="flex items-center">
+              <SettingsIcon className={`w-5 h-5 mr-3 ${activeTab === 'settings' ? 'text-[#162D50]' : 'text-gray-500'}`} />
+              <span className="text-sm">{NAV_LABELS.settings}</span>
+            </div>
+          </button>
         </nav>
       </div>
 
       <div className="p-3 space-y-1 mb-2">
         <a href="#" className="flex items-center px-4 py-2 text-[#4A5568] hover:bg-gray-200 rounded-md">
           <HelpCircle className="w-5 h-5 mr-3 text-gray-500" />
-          <span className="font-medium text-sm">Support</span>
+          <span className="font-medium text-sm">サポート</span>
         </a>
-        <button 
+        <button
           onClick={handleLogout}
           className="w-full flex items-center px-4 py-2 text-[#4A5568] hover:bg-gray-200 rounded-md transition-colors"
         >
           <LogOut className="w-5 h-5 mr-3 text-gray-500" />
-          <span className="font-medium text-sm">Log Out</span>
+          <span className="font-medium text-sm">ログアウト</span>
         </button>
       </div>
     </aside>

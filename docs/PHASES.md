@@ -22,7 +22,7 @@ The OMS project was built iteratively using a phased approach to ensure stabilit
 - Implemented `Settings.jsx` to allow users to view their profile and change their password.
 - Added role-based rendering to the sidebar (e.g., HR users only see HR tabs).
 - Replaced all dropdowns with flat navigation buttons based on user feedback.
-- Finalized English translations for all UI components.
+- Finalized Japanese translations for all UI components, matching 立替・精算管理システム 要件定義.docx terminology.
 
 ## Phase 5: Backend Integration (Upcoming)
 - Wire up frontend forms to backend REST APIs.

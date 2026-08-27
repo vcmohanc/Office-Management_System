@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { Users, ArrowLeft, Edit2, Check, X } from 'lucide-react';
+import { ROLES, ROLE_LABELS, ROLE_BADGE_COLORS } from '../../constants/roles';
 
 export default function AdminUserList({ setActiveTab }) {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  
+
   const [editingId, setEditingId] = useState(null);
   const [editForm, setEditForm] = useState({ username: '', role: '', password: '' });
   const [updateLoading, setUpdateLoading] = useState(false);
@@ -22,16 +23,16 @@ export default function AdminUserList({ setActiveTab }) {
           'Authorization': `Bearer ${token}`
         }
       });
-      
+
       const data = await response.json();
-      
+
       if (response.ok) {
         setUsers(data);
       } else {
-        setError(data.error || 'Failed to fetch users');
+        setError(data.error || 'ユーザーの取得に失敗しました');
       }
     } catch (err) {
-      setError('Server error. Please try again.');
+      setError('サーバーエラーが発生しました。もう一度お試しください。');
     } finally {
       setLoading(false);
     }
@@ -57,23 +58,23 @@ export default function AdminUserList({ setActiveTab }) {
       const token = localStorage.getItem('token');
       const response = await fetch(`/api/auth/users/${id}`, {
         method: 'PUT',
-        headers: { 
+        headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify(editForm)
       });
-      
+
       const data = await response.json();
-      
+
       if (response.ok) {
         setUsers(users.map(u => u._id === id ? data : u));
         setEditingId(null);
       } else {
-        alert(data.error || 'Update failed');
+        alert(data.error || '更新に失敗しました');
       }
     } catch (err) {
-      alert('Server error. Please try again.');
+      alert('サーバーエラーが発生しました。もう一度お試しください。');
     } finally {
       setUpdateLoading(false);
     }
@@ -81,12 +82,12 @@ export default function AdminUserList({ setActiveTab }) {
 
   return (
     <div className="p-8 max-w-5xl mx-auto">
-      <button 
-        onClick={() => setActiveTab('Dashboard')}
+      <button
+        onClick={() => setActiveTab('admin-home')}
         className="flex items-center text-sm text-gray-500 hover:text-[#162D50] mb-6 transition-colors"
       >
         <ArrowLeft className="w-4 h-4 mr-2" />
-        Back to Dashboard
+        ホームに戻る
       </button>
 
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
@@ -96,15 +97,15 @@ export default function AdminUserList({ setActiveTab }) {
               <Users className="w-6 h-6" />
             </div>
             <div>
-              <h1 className="text-xl font-bold text-[#162D50]">User List</h1>
-              <p className="text-sm text-gray-500">Manage all registered users in the system.</p>
+              <h1 className="text-xl font-bold text-[#162D50]">ユーザー一覧</h1>
+              <p className="text-sm text-gray-500">システムに登録されているすべてのユーザーを管理します。</p>
             </div>
           </div>
-          <button 
-            onClick={() => setActiveTab('Admin New Registration')}
+          <button
+            onClick={() => setActiveTab('admin-new-registration')}
             className="px-4 py-2 bg-[#162D50] text-white text-sm font-medium rounded-md hover:bg-[#0f1f38] transition-colors"
           >
-            Add New User
+            新規ユーザーを追加
           </button>
         </div>
 
@@ -116,31 +117,31 @@ export default function AdminUserList({ setActiveTab }) {
           )}
 
           {loading ? (
-            <div className="p-8 text-center text-gray-500">Loading users...</div>
+            <div className="p-8 text-center text-gray-500">ユーザーを読み込み中...</div>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse">
                 <thead>
                   <tr className="border-b border-gray-200 bg-gray-50">
-                    <th className="py-4 px-6 text-xs font-bold text-gray-500 uppercase tracking-wider">Username</th>
-                    <th className="py-4 px-6 text-xs font-bold text-gray-500 uppercase tracking-wider">Role</th>
-                    <th className="py-4 px-6 text-xs font-bold text-gray-500 uppercase tracking-wider">Password</th>
-                    <th className="py-4 px-6 text-xs font-bold text-gray-500 uppercase tracking-wider">Created Date</th>
-                    <th className="py-4 px-6 text-xs font-bold text-gray-500 uppercase tracking-wider text-right">Actions</th>
+                    <th className="py-4 px-6 text-xs font-bold text-gray-500 uppercase tracking-wider">ユーザー名</th>
+                    <th className="py-4 px-6 text-xs font-bold text-gray-500 uppercase tracking-wider">役割</th>
+                    <th className="py-4 px-6 text-xs font-bold text-gray-500 uppercase tracking-wider">パスワード</th>
+                    <th className="py-4 px-6 text-xs font-bold text-gray-500 uppercase tracking-wider">登録日</th>
+                    <th className="py-4 px-6 text-xs font-bold text-gray-500 uppercase tracking-wider text-right">操作</th>
                   </tr>
                 </thead>
                 <tbody className="text-sm divide-y divide-gray-100">
                   {users.length === 0 ? (
                     <tr>
-                      <td colSpan="4" className="py-8 text-center text-gray-500">No users found.</td>
+                      <td colSpan="5" className="py-8 text-center text-gray-500">ユーザーが見つかりません。</td>
                     </tr>
                   ) : (
                     users.map(user => (
                       <tr key={user._id} className="hover:bg-gray-50 transition-colors">
                         <td className="py-4 px-6">
                           {editingId === user._id ? (
-                            <input 
-                              type="text" 
+                            <input
+                              type="text"
                               name="username"
                               value={editForm.username}
                               onChange={handleEditChange}
@@ -158,18 +159,13 @@ export default function AdminUserList({ setActiveTab }) {
                               onChange={handleEditChange}
                               className="border border-gray-300 rounded px-2 py-1 focus:outline-none focus:border-blue-500 w-full"
                             >
-                              <option value="account">Account Department</option>
-                              <option value="hr">HR Department</option>
-                              <option value="support">Support Department</option>
-                              <option value="admin">System Admin</option>
+                              {Object.values(ROLES).map((role) => (
+                                <option key={role} value={role}>{ROLE_LABELS[role]}</option>
+                              ))}
                             </select>
                           ) : (
-                            <span className={`px-2.5 py-1 rounded-full text-xs font-medium 
-                              ${user.role === 'admin' ? 'bg-purple-100 text-purple-800' : 
-                                user.role === 'hr' ? 'bg-blue-100 text-blue-800' : 
-                                user.role === 'support' ? 'bg-green-100 text-green-800' : 
-                                'bg-orange-100 text-orange-800'}`}>
-                              {user.role}
+                            <span className={`px-2.5 py-1 rounded-full text-xs font-medium border ${ROLE_BADGE_COLORS[user.role] || 'bg-gray-100 text-gray-700 border-gray-200'}`}>
+                              {ROLE_LABELS[user.role] || user.role}
                             </span>
                           )}
                         </td>
@@ -180,41 +176,41 @@ export default function AdminUserList({ setActiveTab }) {
                               name="password"
                               value={editForm.password}
                               onChange={handleEditChange}
-                              placeholder="New password..."
+                              placeholder="新しいパスワード..."
                               className="border border-gray-300 rounded px-2 py-1 focus:outline-none focus:border-blue-500 w-full"
                             />
                           ) : (
-                            <span className="text-gray-400 italic text-xs">Hidden</span>
+                            <span className="text-gray-400 italic text-xs">非表示</span>
                           )}
                         </td>
                         <td className="py-4 px-6 text-gray-500">
-                          {new Date(user.createdAt).toLocaleDateString()}
+                          {new Date(user.createdAt).toLocaleDateString('ja-JP')}
                         </td>
                         <td className="py-4 px-6 text-right">
                           {editingId === user._id ? (
                             <div className="flex justify-end space-x-2">
-                              <button 
+                              <button
                                 onClick={() => saveEdit(user._id)}
                                 disabled={updateLoading}
                                 className="p-1.5 bg-green-100 text-green-700 rounded hover:bg-green-200 transition-colors"
-                                title="Save"
+                                title="保存"
                               >
                                 <Check className="w-4 h-4" />
                               </button>
-                              <button 
+                              <button
                                 onClick={cancelEdit}
                                 disabled={updateLoading}
                                 className="p-1.5 bg-red-100 text-red-700 rounded hover:bg-red-200 transition-colors"
-                                title="Cancel"
+                                title="キャンセル"
                               >
                                 <X className="w-4 h-4" />
                               </button>
                             </div>
                           ) : (
-                            <button 
+                            <button
                               onClick={() => startEdit(user)}
                               className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors"
-                              title="Edit user"
+                              title="ユーザーを編集"
                             >
                               <Edit2 className="w-4 h-4" />
                             </button>

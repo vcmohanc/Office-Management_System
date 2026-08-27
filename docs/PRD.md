@@ -38,5 +38,5 @@ Internal employees of the organization, specifically:
 ## 4. Non-Functional Requirements
 - **Performance:** Instant page transitions (achieved via React state routing).
 - **Aesthetics:** Clean, airy, and professional UI. No cluttered screens.
-- **Language:** Strictly English interface.
+- **Language:** Japanese interface, matching the terminology in 立替・精算管理システム 要件定義.docx.
 - **Responsiveness:** Usable on desktop monitors (primary use case).

@@ -18,9 +18,9 @@ const seedUsers = async () => {
 
     const users = [
       { username: 'admin', password: hashedPassword, role: 'admin' },
-      { username: 'hr_user', password: hashedPassword, role: 'hr' },
-      { username: 'account_user', password: hashedPassword, role: 'account' },
-      { username: 'support_user', password: hashedPassword, role: 'support' },
+      { username: 'reviewer_user', password: hashedPassword, role: 'reviewer' },
+      { username: 'accounting_user', password: hashedPassword, role: 'accounting' },
+      { username: 'applicant_user', password: hashedPassword, role: 'applicant' },
     ];
 
     await User.insertMany(users);

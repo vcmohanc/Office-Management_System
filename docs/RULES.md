@@ -21,7 +21,7 @@
 
 ## 5. Assets & Media
 - **Icons:** Use `lucide-react` exclusively. Do not mix icon libraries (e.g., FontAwesome, Heroicons) to maintain a cohesive look.
-- **Language:** All user-facing text, placeholders, and variables must be written in professional English.
+- **Language:** All user-facing text and placeholders must be written in Japanese, using the terminology defined in `立替・精算管理システム 要件定義.docx` (e.g. 申請者, 立替者, 費用負担先). Code identifiers (variables, functions) remain in English.
 
 ## 6. Git & Version Control
 - **Commits:** Use conventional commit messages (e.g., `feat: add staff registration form`, `fix: correct typo in sidebar`).

@@ -31,4 +31,4 @@ The OMS platform is designed with a **"professional, clean, and airy"** aestheti
 - **Forms:** Inputs must have visible borders (`border-gray-300`), internal padding (`px-4 py-2.5`), and a blue focus ring (`focus:ring-2 focus:ring-blue-500`).
 
 ## Language
-- The application interface is strictly in **English**. Any reference material provided in other languages (e.g., Japanese screenshots) must be translated to professional English equivalents.
+- The application interface is in **Japanese**, matching the terminology defined in `立替・精算管理システム 要件定義.docx`. Any reference material provided in other languages must be translated to the terminology used in that document rather than generic English.
