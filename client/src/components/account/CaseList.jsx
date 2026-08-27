@@ -4,6 +4,13 @@ import { Search, ChevronDown, Calendar, FileText, AlertTriangle, Image } from 'l
 export default function CaseList() {
   const [cases, setCases] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState('Office');
+
+  const officeCasesCount = cases.filter(c => c.advancerCategory === 'Office').length;
+  const staffCasesCount = cases.filter(c => c.advancerCategory === 'Staff').length;
+  const hostCompanyCasesCount = cases.filter(c => c.advancerCategory === 'Host Company').length;
+
+  const filteredCases = cases.filter(c => c.advancerCategory === activeTab || (!c.advancerCategory && activeTab === 'Office'));
 
   useEffect(() => {
     fetch('http://localhost:5000/api/cases')
@@ -24,14 +31,20 @@ export default function CaseList() {
       
       {/* Top Tabs */}
       <div className="bg-[#F2F4F7] p-1 rounded-md flex space-x-1 mb-4 border border-gray-200">
-        <button className="flex-1 py-2 text-sm font-bold text-gray-500 rounded-md hover:bg-gray-200 transition-colors">
-          Office Case <span className="ml-2 bg-gray-200 text-gray-600 px-2 py-0.5 rounded-full text-xs">{cases.length}</span>
+        <button 
+          onClick={() => setActiveTab('Office')}
+          className={`flex-1 py-2 text-sm font-bold rounded-md transition-colors ${activeTab === 'Office' ? 'text-white bg-[#0A192F] shadow-sm' : 'text-gray-500 hover:bg-gray-200'}`}>
+          Office Case <span className={`ml-2 px-2 py-0.5 rounded-full text-xs ${activeTab === 'Office' ? 'bg-white text-[#0A192F]' : 'bg-gray-200 text-gray-600'}`}>{officeCasesCount}</span>
         </button>
-        <button className="flex-1 py-2 text-sm font-bold text-white bg-[#0A192F] rounded-md shadow-sm">
-          Staff Case <span className="ml-2 bg-white text-[#0A192F] px-2 py-0.5 rounded-full text-xs">0</span>
+        <button 
+          onClick={() => setActiveTab('Staff')}
+          className={`flex-1 py-2 text-sm font-bold rounded-md transition-colors ${activeTab === 'Staff' ? 'text-white bg-[#0A192F] shadow-sm' : 'text-gray-500 hover:bg-gray-200'}`}>
+          Staff Case <span className={`ml-2 px-2 py-0.5 rounded-full text-xs ${activeTab === 'Staff' ? 'bg-white text-[#0A192F]' : 'bg-gray-200 text-gray-600'}`}>{staffCasesCount}</span>
         </button>
-        <button className="flex-1 py-2 text-sm font-bold text-gray-500 rounded-md hover:bg-gray-200 transition-colors">
-          Host Company Case <span className="ml-2 bg-gray-200 text-gray-600 px-2 py-0.5 rounded-full text-xs">0</span>
+        <button 
+          onClick={() => setActiveTab('Host Company')}
+          className={`flex-1 py-2 text-sm font-bold rounded-md transition-colors ${activeTab === 'Host Company' ? 'text-white bg-[#0A192F] shadow-sm' : 'text-gray-500 hover:bg-gray-200'}`}>
+          Host Company Case <span className={`ml-2 px-2 py-0.5 rounded-full text-xs ${activeTab === 'Host Company' ? 'bg-white text-[#0A192F]' : 'bg-gray-200 text-gray-600'}`}>{hostCompanyCasesCount}</span>
         </button>
       </div>
 
@@ -93,12 +106,12 @@ export default function CaseList() {
               <tr>
                 <td colSpan="7" className="py-4 px-6 text-center text-gray-500">Loading...</td>
               </tr>
-            ) : cases.length === 0 ? (
+            ) : filteredCases.length === 0 ? (
               <tr>
                 <td colSpan="7" className="py-4 px-6 text-center text-gray-500">No cases found.</td>
               </tr>
             ) : (
-              cases.map(c => (
+              filteredCases.map(c => (
                 <tr key={c._id} className="border-b border-gray-100 hover:bg-gray-50">
                   <td className="py-4 px-6 text-gray-600">#CAS-{c._id.slice(-6).toUpperCase()}</td>
                   <td className="py-4 px-6 text-gray-600">

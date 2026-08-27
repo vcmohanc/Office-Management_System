@@ -3,6 +3,7 @@ import { Search, ChevronDown, Calendar, Download, Building, Landmark, AlertCircl
 
 export default function PaymentStatus() {
   const [viewingDetails, setViewingDetails] = useState(false);
+  const [activePaymentTab, setActivePaymentTab] = useState('Office');
 
   if (viewingDetails) {
     return (
@@ -295,14 +296,20 @@ export default function PaymentStatus() {
       
       {/* Top Tabs */}
       <div className="bg-[#F2F4F7] p-1 rounded-md flex space-x-1 mb-4 border border-gray-200">
-        <button className="flex-1 py-2 text-sm font-bold text-white bg-[#0A192F] rounded-md shadow-sm transition-colors">
-          Office Payment Cases <span className="ml-2 bg-white text-[#0A192F] px-2 py-0.5 rounded-full text-xs">12</span>
+        <button 
+          onClick={() => setActivePaymentTab('Office')}
+          className={`flex-1 py-2 text-sm font-bold rounded-md transition-colors ${activePaymentTab === 'Office' ? 'text-white bg-[#0A192F] shadow-sm' : 'text-gray-500 hover:bg-gray-200'}`}>
+          Office Payment Cases <span className={`ml-2 px-2 py-0.5 rounded-full text-xs ${activePaymentTab === 'Office' ? 'bg-white text-[#0A192F]' : 'bg-gray-200 text-gray-600'}`}>12</span>
         </button>
-        <button className="flex-1 py-2 text-sm font-bold text-gray-500 rounded-md hover:bg-gray-200 transition-colors">
-          Staff Payment Cases <span className="ml-2 bg-gray-200 text-gray-600 px-2 py-0.5 rounded-full text-xs">5</span>
+        <button 
+          onClick={() => setActivePaymentTab('Staff')}
+          className={`flex-1 py-2 text-sm font-bold rounded-md transition-colors ${activePaymentTab === 'Staff' ? 'text-white bg-[#0A192F] shadow-sm' : 'text-gray-500 hover:bg-gray-200'}`}>
+          Staff Payment Cases <span className={`ml-2 px-2 py-0.5 rounded-full text-xs ${activePaymentTab === 'Staff' ? 'bg-white text-[#0A192F]' : 'bg-gray-200 text-gray-600'}`}>5</span>
         </button>
-        <button className="flex-1 py-2 text-sm font-bold text-gray-500 rounded-md hover:bg-gray-200 transition-colors">
-          Host Company Cases <span className="ml-2 bg-gray-200 text-gray-600 px-2 py-0.5 rounded-full text-xs">2</span>
+        <button 
+          onClick={() => setActivePaymentTab('Host Company')}
+          className={`flex-1 py-2 text-sm font-bold rounded-md transition-colors ${activePaymentTab === 'Host Company' ? 'text-white bg-[#0A192F] shadow-sm' : 'text-gray-500 hover:bg-gray-200'}`}>
+          Host Company Cases <span className={`ml-2 px-2 py-0.5 rounded-full text-xs ${activePaymentTab === 'Host Company' ? 'bg-white text-[#0A192F]' : 'bg-gray-200 text-gray-600'}`}>2</span>
         </button>
       </div>
 

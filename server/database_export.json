@@ -1,0 +1,231 @@
+{
+  "cases": [
+    {
+      "_id": "6a8ce84f80d901d9fe22ae74",
+      "staffName": "Yamada Taro",
+      "staffId": "EMP-001",
+      "location": "Tokyo Office",
+      "expenseType": "Travel",
+      "advancerCategory": "Company",
+      "advancerName": "OMS Corp",
+      "bearingParty": "Client A",
+      "amount": 15000,
+      "expensePeriodStart": "2024-05-01T00:00:00.000Z",
+      "expensePeriodEnd": "2024-05-05T00:00:00.000Z",
+      "attachments": [],
+      "totalExpense": 15000,
+      "currency": "JPY",
+      "previousBalance": 0,
+      "includeBalance": false,
+      "finalTotal": 15000,
+      "settlementMethod": "Bank Transfer",
+      "expectedSettlementDate": "2024-05-31T00:00:00.000Z",
+      "collectionMethod": "Invoice",
+      "installmentPlan": "Single Payment",
+      "collectionStartMonth": "2024-06",
+      "status": "Pending",
+      "__v": 0,
+      "createdAt": "2026-08-25T00:56:47.751Z",
+      "updatedAt": "2026-08-25T00:56:47.751Z"
+    },
+    {
+      "_id": "6a8f92627a854762bad5070d",
+      "staffName": "Mohan Chaudhary",
+      "staffId": "ST-4586",
+      "location": "Tokyo Office",
+      "expenseType": "Transportation Expenses / Flight Fare",
+      "advancerCategory": "Office",
+      "advancerName": "N/A",
+      "bearingParty": "Office",
+      "amount": 6500,
+      "expensePeriodStart": "2026-08-27T01:26:58.724Z",
+      "expensePeriodEnd": "2026-08-27T01:26:58.724Z",
+      "attachments": [
+        "WhatsApp Image 2026-08-27 at 9.25.17 AM.jpeg"
+      ],
+      "totalExpense": 11700,
+      "currency": "JPY",
+      "previousBalance": 500,
+      "includeBalance": false,
+      "finalTotal": 11700,
+      "settlementMethod": "Bank Transfer",
+      "expectedSettlementDate": "2026-09-26T15:00:00.000Z",
+      "collectionMethod": "Bank Transfer",
+      "installmentPlan": "Payroll Deduction (6 Months)",
+      "collectionStartMonth": "2026/27",
+      "status": "Pending",
+      "createdAt": "2026-08-27T01:26:58.759Z",
+      "updatedAt": "2026-08-27T01:26:58.759Z",
+      "__v": 0
+    },
+    {
+      "_id": "6a8f92627a854762bad5070c",
+      "staffName": "Mohan Chaudhary",
+      "staffId": "ST-4586",
+      "location": "Tokyo Office",
+      "expenseType": "Postage",
+      "advancerCategory": "Staff",
+      "advancerName": "Mohan",
+      "bearingParty": "Office",
+      "amount": 5200,
+      "expensePeriodStart": "2026-08-27T01:26:58.723Z",
+      "expensePeriodEnd": "2026-08-27T01:26:58.723Z",
+      "attachments": [
+        "WhatsApp Image 2026-08-27 at 9.25.17 AM.jpeg"
+      ],
+      "totalExpense": 11700,
+      "currency": "JPY",
+      "previousBalance": 500,
+      "includeBalance": false,
+      "finalTotal": 11700,
+      "settlementMethod": "Bank Transfer",
+      "expectedSettlementDate": "2026-09-26T15:00:00.000Z",
+      "collectionMethod": "Bank Transfer",
+      "installmentPlan": "Payroll Deduction (6 Months)",
+      "collectionStartMonth": "2026/27",
+      "status": "Pending",
+      "createdAt": "2026-08-27T01:26:58.754Z",
+      "updatedAt": "2026-08-27T01:26:58.754Z",
+      "__v": 0
+    }
+  ],
+  "users": [
+    {
+      "_id": "6a8ce84f80d901d9fe22ae6b",
+      "username": "admin",
+      "password": "$2b$10$Fyl7bMv5jUbba6w2g2ISZuPcIm7/JM42u5fLVyiyO9aQM82e5q4my",
+      "role": "admin",
+      "__v": 0,
+      "createdAt": "2026-08-25T00:56:47.738Z",
+      "updatedAt": "2026-08-25T00:56:47.738Z"
+    },
+    {
+      "_id": "6a8ce84f80d901d9fe22ae6c",
+      "username": "hr_user",
+      "password": "$2b$10$Fyl7bMv5jUbba6w2g2ISZuPcIm7/JM42u5fLVyiyO9aQM82e5q4my",
+      "role": "hr",
+      "__v": 0,
+      "createdAt": "2026-08-25T00:56:47.739Z",
+      "updatedAt": "2026-08-25T00:56:47.739Z"
+    },
+    {
+      "_id": "6a8ce84f80d901d9fe22ae6d",
+      "username": "account_user",
+      "password": "$2b$10$Fyl7bMv5jUbba6w2g2ISZuPcIm7/JM42u5fLVyiyO9aQM82e5q4my",
+      "role": "account",
+      "__v": 0,
+      "createdAt": "2026-08-25T00:56:47.739Z",
+      "updatedAt": "2026-08-25T00:56:47.739Z"
+    },
+    {
+      "_id": "6a8ce84f80d901d9fe22ae6e",
+      "username": "support_user",
+      "password": "$2b$10$Fyl7bMv5jUbba6w2g2ISZuPcIm7/JM42u5fLVyiyO9aQM82e5q4my",
+      "role": "support",
+      "__v": 0,
+      "createdAt": "2026-08-25T00:56:47.739Z",
+      "updatedAt": "2026-08-25T00:56:47.739Z"
+    }
+  ],
+  "employees": [
+    {
+      "_id": "6a8ce84f80d901d9fe22ae6f",
+      "department": "Audit & Compliance",
+      "joinDate": "2022-04-01T00:00:00.000Z",
+      "katakanaName": "ヤマダ タロウ",
+      "romajiName": "Yamada Taro",
+      "nationality": "Japan",
+      "dob": "1990-01-01T00:00:00.000Z",
+      "age": 34,
+      "gender": "Male",
+      "visaStatus": "Permanent Resident",
+      "joiningType": "Full-time",
+      "educationalQualifications": [
+        {
+          "passingYear": "2012",
+          "qualification": "Bachelor",
+          "institution": "Tokyo Univ",
+          "_id": "6a8ce84f80d901d9fe22ae70"
+        }
+      ],
+      "workExperience": [
+        {
+          "companyName": "ABC Corp",
+          "workPeriod": "2012-2022",
+          "jobDescription": "Auditor",
+          "_id": "6a8ce84f80d901d9fe22ae71"
+        }
+      ],
+      "personality": "Detail-oriented",
+      "languageFluency": {
+        "english": "Fluent",
+        "japanese": "Native"
+      },
+      "physicalAttributes": {
+        "height": 175,
+        "weight": 65,
+        "clothingSize": "M",
+        "shoeSize": "27.0"
+      },
+      "onboardingStatus": "Active",
+      "__v": 0,
+      "createdAt": "2026-08-25T00:56:47.748Z",
+      "updatedAt": "2026-08-25T00:56:47.748Z"
+    },
+    {
+      "_id": "6a8ce84f80d901d9fe22ae72",
+      "department": "Taxation",
+      "joinDate": "2023-05-15T00:00:00.000Z",
+      "katakanaName": "サトウ ハナコ",
+      "romajiName": "Sato Hanako",
+      "nationality": "Japan",
+      "dob": "1992-05-05T00:00:00.000Z",
+      "age": 32,
+      "gender": "Female",
+      "visaStatus": "Permanent Resident",
+      "joiningType": "Full-time",
+      "educationalQualifications": [
+        {
+          "passingYear": "2014",
+          "qualification": "Master",
+          "institution": "Osaka Univ",
+          "_id": "6a8ce84f80d901d9fe22ae73"
+        }
+      ],
+      "workExperience": [],
+      "personality": "Proactive",
+      "languageFluency": {
+        "english": "Conversational",
+        "japanese": "Native"
+      },
+      "physicalAttributes": {
+        "height": 160,
+        "weight": 50,
+        "clothingSize": "S",
+        "shoeSize": "23.5"
+      },
+      "onboardingStatus": "Active",
+      "__v": 0,
+      "createdAt": "2026-08-25T00:56:47.748Z",
+      "updatedAt": "2026-08-25T00:56:47.748Z"
+    }
+  ],
+  "claims": [
+    {
+      "_id": "6a8ce84f80d901d9fe22ae75",
+      "expenseType": "meals",
+      "expenseDate": "2024-05-15T00:00:00.000Z",
+      "amount": 3000,
+      "expenseCategory": "Management",
+      "costBearer": "Department A",
+      "staffName": "admin",
+      "projectRef": "PRJ-102",
+      "paymentMethod": "corporate_card",
+      "description": "Business lunch with client",
+      "status": "Submitted",
+      "__v": 0,
+      "createdAt": "2026-08-25T00:56:47.753Z",
+      "updatedAt": "2026-08-25T00:56:47.753Z"
+    }
+  ]
+}

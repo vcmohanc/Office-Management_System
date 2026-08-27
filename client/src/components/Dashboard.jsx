@@ -26,7 +26,7 @@ export default function Dashboard({ setToken }) {
     if (user.role === 'hr') return 'HR Department';
     if (user.role === 'account') return 'Account Department';
     if (user.role === 'support') return 'Support Department';
-    return 'Dashboard';
+    return 'B2B Department';
   });
   const [openMenus, setOpenMenus] = useState({});
 
