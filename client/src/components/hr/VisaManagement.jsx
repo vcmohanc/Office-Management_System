@@ -68,8 +68,8 @@ export default function VisaManagement() {
             <tbody className="text-sm">
               <tr className="border-b border-gray-100 hover:bg-gray-50">
                 <td className="py-4 px-6 text-gray-800 font-medium">EMP-0842</td>
-                <td className="py-4 px-6 font-bold text-[#162D50]">サラ・ジェンキンス</td>
-                <td className="py-4 px-6 text-gray-600">イギリス</td>
+                <td className="py-4 px-6 font-bold text-[#162D50]">ラメシュ</td>
+                <td className="py-4 px-6 text-gray-600">ネパール</td>
                 <td className="py-4 px-6 text-gray-600">就労ビザ</td>
                 <td className="py-4 px-6 text-gray-600">2025-10-12</td>
                 <td className="py-4 px-6">
@@ -85,8 +85,8 @@ export default function VisaManagement() {
 
               <tr className="border-b border-gray-100 hover:bg-gray-50">
                 <td className="py-4 px-6 text-gray-800 font-medium">EMP-1105</td>
-                <td className="py-4 px-6 font-bold text-[#162D50]">マイケル・チェン</td>
-                <td className="py-4 px-6 text-gray-600">シンガポール</td>
+                <td className="py-4 px-6 font-bold text-[#162D50]">スニタ</td>
+                <td className="py-4 px-6 text-gray-600">ネパール</td>
                 <td className="py-4 px-6 text-gray-600">就労許可</td>
                 <td className="py-4 px-6 text-gray-600">2024-11-15</td>
                 <td className="py-4 px-6">
@@ -102,8 +102,8 @@ export default function VisaManagement() {
 
               <tr className="border-b border-gray-100 hover:bg-gray-50">
                 <td className="py-4 px-6 text-gray-800 font-medium">EMP-0921</td>
-                <td className="py-4 px-6 font-bold text-[#162D50]">エレナ・ロドリゲス</td>
-                <td className="py-4 px-6 text-gray-600">スペイン</td>
+                <td className="py-4 px-6 font-bold text-[#162D50]">ビカス</td>
+                <td className="py-4 px-6 text-gray-600">ネパール</td>
                 <td className="py-4 px-6 text-gray-600">就労ビザ</td>
                 <td className="py-4 px-6 text-gray-600">2024-09-30</td>
                 <td className="py-4 px-6">
@@ -119,8 +119,8 @@ export default function VisaManagement() {
 
               <tr className="border-b border-gray-100 hover:bg-gray-50">
                 <td className="py-4 px-6 text-gray-800 font-medium">EMP-1256</td>
-                <td className="py-4 px-6 font-bold text-[#162D50]">デビッド・クマール</td>
-                <td className="py-4 px-6 text-gray-600">インド</td>
+                <td className="py-4 px-6 font-bold text-[#162D50]">アルジュン</td>
+                <td className="py-4 px-6 text-gray-600">ネパール</td>
                 <td className="py-4 px-6 text-gray-600">就労許可</td>
                 <td className="py-4 px-6 text-gray-600">2025-01-20</td>
                 <td className="py-4 px-6">

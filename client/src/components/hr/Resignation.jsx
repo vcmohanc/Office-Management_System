@@ -63,7 +63,7 @@ export default function Resignation() {
             <tbody className="text-sm">
               <tr className="border-b border-gray-100 hover:bg-gray-50">
                 <td className="py-4 px-6 text-gray-600">EMP-2045</td>
-                <td className="py-4 px-6 font-bold text-gray-900">サラ・ジェンキンス</td>
+                <td className="py-4 px-6 font-bold text-gray-900">ラメシュ</td>
                 <td className="py-4 px-6 text-gray-600">2023-10-12</td>
                 <td className="py-4 px-6 text-gray-600">2023-11-12</td>
                 <td className="py-4 px-6">
@@ -76,7 +76,7 @@ export default function Resignation() {
 
               <tr className="border-b border-gray-100 hover:bg-gray-50">
                 <td className="py-4 px-6 text-gray-600">EMP-1982</td>
-                <td className="py-4 px-6 font-bold text-gray-900">マイケル・チェン</td>
+                <td className="py-4 px-6 font-bold text-gray-900">スニタ</td>
                 <td className="py-4 px-6 text-gray-600">2023-10-05</td>
                 <td className="py-4 px-6 text-gray-600">2023-11-05</td>
                 <td className="py-4 px-6">
@@ -89,7 +89,7 @@ export default function Resignation() {
 
               <tr className="border-b border-gray-100 hover:bg-gray-50">
                 <td className="py-4 px-6 text-gray-600">EMP-2103</td>
-                <td className="py-4 px-6 font-bold text-gray-900">エレナ・ロドリゲス</td>
+                <td className="py-4 px-6 font-bold text-gray-900">ビカス</td>
                 <td className="py-4 px-6 text-gray-600">2023-09-28</td>
                 <td className="py-4 px-6 text-gray-600">2023-10-28</td>
                 <td className="py-4 px-6">
@@ -102,7 +102,7 @@ export default function Resignation() {
 
               <tr className="hover:bg-gray-50">
                 <td className="py-4 px-6 text-gray-600">EMP-1855</td>
-                <td className="py-4 px-6 font-bold text-gray-900">デビッド・スミス</td>
+                <td className="py-4 px-6 font-bold text-gray-900">アルジュン</td>
                 <td className="py-4 px-6 text-gray-600">2023-09-15</td>
                 <td className="py-4 px-6 text-gray-600">2023-10-15</td>
                 <td className="py-4 px-6">

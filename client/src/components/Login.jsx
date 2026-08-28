@@ -34,13 +34,13 @@ export default function Login({ setToken }) {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen flex items-center justify-center bg-[#F8F9FA] py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full space-y-8 bg-white p-10 rounded-xl shadow-lg">
         <div className="flex flex-col items-center">
-          <div className="h-12 w-12 bg-indigo-600 rounded-lg flex items-center justify-center">
+          <div className="h-12 w-12 bg-[#162D50] rounded-lg flex items-center justify-center">
             <Building2 className="h-8 w-8 text-white" />
           </div>
-          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
+          <h2 className="mt-6 text-center text-3xl font-extrabold text-[#162D50]">
             立替・精算管理システム
           </h2>
           <p className="mt-2 text-center text-sm text-gray-600">
@@ -59,7 +59,7 @@ export default function Login({ setToken }) {
               <input
                 type="text"
                 required
-                className="appearance-none relative block w-full px-3 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
+                className="appearance-none relative block w-full px-3 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50] focus:border-[#162D50] focus:z-10 sm:text-sm"
                 placeholder="ユーザー名"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
@@ -70,7 +70,7 @@ export default function Login({ setToken }) {
               <input
                 type="password"
                 required
-                className="appearance-none relative block w-full px-3 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
+                className="appearance-none relative block w-full px-3 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50] focus:border-[#162D50] focus:z-10 sm:text-sm"
                 placeholder="パスワード"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
@@ -81,7 +81,7 @@ export default function Login({ setToken }) {
           <div>
             <button
               type="submit"
-              className="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors"
+              className="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-[#0A192F] hover:bg-[#162D50] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#162D50] transition-colors shadow-sm"
             >
               ログイン
             </button>

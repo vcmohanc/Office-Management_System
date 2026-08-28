@@ -84,7 +84,7 @@ export default function StaffList() {
             <tbody className="text-sm">
               <tr className="border-b border-gray-100 hover:bg-gray-50">
                 <td className="py-4 px-6 font-medium text-[#162D50]">#STF-8824</td>
-                <td className="py-4 px-6 font-bold text-gray-900">田中 蓮</td>
+                <td className="py-4 px-6 font-bold text-gray-900">ラメシュ</td>
                 <td className="py-4 px-6 text-gray-600">オフィススタッフ</td>
                 <td className="py-4 px-6 text-gray-600">経理担当</td>
                 <td className="py-4 px-6 text-gray-600">2023-10-12</td>
@@ -102,7 +102,7 @@ export default function StaffList() {
 
               <tr className="border-b border-gray-100 hover:bg-gray-50">
                 <td className="py-4 px-6 font-medium text-[#162D50]">#STF-8815</td>
-                <td className="py-4 px-6 font-bold text-gray-900">鈴木 さくら</td>
+                <td className="py-4 px-6 font-bold text-gray-900">スニタ</td>
                 <td className="py-4 px-6 text-gray-600">サービススタッフ</td>
                 <td className="py-4 px-6 text-gray-600">サービスリーダー</td>
                 <td className="py-4 px-6 text-gray-600">2023-10-20</td>
@@ -120,7 +120,7 @@ export default function StaffList() {
 
               <tr className="border-b border-gray-100 hover:bg-gray-50">
                 <td className="py-4 px-6 font-medium text-[#162D50]">#STF-7742</td>
-                <td className="py-4 px-6 font-bold text-gray-900">佐藤 健二</td>
+                <td className="py-4 px-6 font-bold text-gray-900">ビカス</td>
                 <td className="py-4 px-6 text-gray-600">農場スタッフ</td>
                 <td className="py-4 px-6 text-gray-600">農場マネージャー</td>
                 <td className="py-4 px-6 text-gray-600">2022-01-15</td>
@@ -138,7 +138,7 @@ export default function StaffList() {
 
               <tr className="hover:bg-gray-50">
                 <td className="py-4 px-6 font-medium text-[#162D50]">#STF-8819</td>
-                <td className="py-4 px-6 font-bold text-gray-900">高橋 誠</td>
+                <td className="py-4 px-6 font-bold text-gray-900">アルジュン</td>
                 <td className="py-4 px-6 text-gray-600">オフィススタッフ</td>
                 <td className="py-4 px-6 text-gray-600">総務担当</td>
                 <td className="py-4 px-6 text-gray-600">2023-10-22</td>
