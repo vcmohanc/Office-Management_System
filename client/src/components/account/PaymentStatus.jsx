@@ -3,6 +3,7 @@ import { Search, ChevronDown, Calendar, Download, Building, Landmark, AlertCircl
 
 export default function PaymentStatus() {
   const [viewingDetails, setViewingDetails] = useState(false);
+  const [selectedCase, setSelectedCase] = useState(null);
   const [activePaymentTab, setActivePaymentTab] = useState('Office');
   const [cases, setCases] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -48,6 +49,110 @@ export default function PaymentStatus() {
   const processingCount = cases.filter(c => c.status === 'Processing').length;
   const completedCount = cases.filter(c => c.status === 'Completed').length;
   const overdueCount = cases.filter(c => c.status === 'Overdue').length;
+
+  if (selectedCase) {
+    return (
+      <div className="max-w-6xl mx-auto space-y-6 pb-10">
+        <button 
+          onClick={() => setSelectedCase(null)}
+          className="flex items-center text-[#162D50] hover:underline font-medium mb-2"
+        >
+          <ArrowLeft className="w-4 h-4 mr-1" />
+          Back to Payment List
+        </button>
+
+        <div className="bg-white border border-gray-200 rounded-md p-6 shadow-sm">
+          <div className="flex justify-between items-start mb-6">
+            <div>
+              <h2 className="text-2xl font-bold text-[#162D50] mb-1">Case Details: {selectedCase.staffName}</h2>
+              <p className="text-gray-500 text-sm">Staff ID: {selectedCase.staffId}</p>
+            </div>
+            <span className={`px-4 py-1.5 rounded-full text-sm font-medium border ${
+              selectedCase.status === 'Pending' ? 'bg-yellow-100 text-yellow-700 border-yellow-200' :
+              selectedCase.status === 'Processing' ? 'bg-blue-100 text-blue-700 border-blue-200' :
+              selectedCase.status === 'Completed' ? 'bg-green-100 text-green-700 border-green-200' :
+              'bg-gray-100 text-gray-700 border-gray-200'
+            }`}>
+              {selectedCase.status}
+            </span>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <h3 className="text-sm font-bold text-[#162D50] mb-3 border-b border-gray-100 pb-2">Expense Information</h3>
+              <div className="space-y-3 text-sm">
+                <div className="flex justify-between"><span className="text-gray-500">Case ID:</span> <span className="font-medium text-gray-800">#CAS-{selectedCase._id.slice(-6).toUpperCase()}</span></div>
+                <div className="flex justify-between"><span className="text-gray-500">Expense Type:</span> <span className="font-medium text-gray-800">{selectedCase.expenseType}</span></div>
+                <div className="flex justify-between"><span className="text-gray-500">Total Amount:</span> <span className="font-bold text-gray-800">{selectedCase.currency === 'JPY' ? '¥' : '$'}{(selectedCase.finalTotal || selectedCase.totalExpense || 0).toLocaleString()}</span></div>
+                <div className="flex justify-between"><span className="text-gray-500">Period:</span> <span className="font-medium text-gray-800">{new Date(selectedCase.expensePeriodStart).toLocaleDateString()} - {new Date(selectedCase.expensePeriodEnd).toLocaleDateString()}</span></div>
+                <div className="flex justify-between"><span className="text-gray-500">Location:</span> <span className="font-medium text-gray-800">{selectedCase.location}</span></div>
+                <div className="flex justify-between"><span className="text-gray-500">Remark:</span> <span className="font-medium text-gray-800">{selectedCase.remark || 'N/A'}</span></div>
+              </div>
+            </div>
+
+            <div>
+              <h3 className="text-sm font-bold text-[#162D50] mb-3 border-b border-gray-100 pb-2">Settlement Details</h3>
+              <div className="space-y-3 text-sm">
+                <div className="flex justify-between"><span className="text-gray-500">Category:</span> <span className="font-medium text-gray-800">{selectedCase.advancerCategory}</span></div>
+                <div className="flex justify-between"><span className="text-gray-500">Advancer Name:</span> <span className="font-medium text-gray-800">{selectedCase.advancerName}</span></div>
+                <div className="flex justify-between"><span className="text-gray-500">Settlement Method:</span> <span className="font-medium text-gray-800">{selectedCase.settlementMethod}</span></div>
+                <div className="flex justify-between"><span className="text-gray-500">Collection Method:</span> <span className="font-medium text-gray-800">{selectedCase.collectionMethod}</span></div>
+                <div className="flex justify-between"><span className="text-gray-500">Installment Plan:</span> <span className="font-medium text-gray-800">{selectedCase.installmentPlan}</span></div>
+                <div className="flex justify-between"><span className="text-gray-500">Expected Settlement:</span> <span className="font-medium text-gray-800">{new Date(selectedCase.expectedSettlementDate).toLocaleDateString()}</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Payment History Section */}
+        <div className="bg-white border border-gray-200 rounded-md shadow-sm overflow-hidden mt-6">
+          <div className="px-6 py-4 border-b border-gray-200 bg-[#F8F9FA]">
+            <h3 className="text-lg font-bold text-[#162D50]">Payment History & Related Cases</h3>
+          </div>
+          <table className="w-full text-left border-collapse">
+            <thead>
+              <tr className="bg-white border-b border-gray-200 text-xs font-bold text-gray-500 uppercase tracking-wider">
+                <th className="py-3 px-6">Case ID</th>
+                <th className="py-3 px-6">Period</th>
+                <th className="py-3 px-6">Expense Type</th>
+                <th className="py-3 px-6">Amount</th>
+                <th className="py-3 px-6">Status</th>
+                <th className="py-3 px-6 text-right">Action</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-100 text-sm">
+              {cases.filter(c => c.staffId === selectedCase.staffId).map(c => (
+                <tr key={c._id} className={`hover:bg-gray-50 transition-colors ${c._id === selectedCase._id ? 'bg-blue-50' : ''}`}>
+                  <td className="py-4 px-6 font-medium text-[#162D50]">#CAS-{c._id.slice(-6).toUpperCase()}</td>
+                  <td className="py-4 px-6 text-gray-600">{new Date(c.expensePeriodStart).toLocaleDateString()} - {new Date(c.expensePeriodEnd).toLocaleDateString()}</td>
+                  <td className="py-4 px-6 text-gray-600">{c.expenseType}</td>
+                  <td className="py-4 px-6 font-bold text-[#162D50]">{c.currency === 'JPY' ? '¥' : '$'}{(c.finalTotal || c.totalExpense || 0).toLocaleString()}</td>
+                  <td className="py-4 px-6">
+                    <span className={`px-2 py-1 rounded-full text-xs font-medium border ${
+                      c.status === 'Pending' ? 'bg-yellow-100 text-yellow-700 border-yellow-200' :
+                      c.status === 'Processing' ? 'bg-blue-100 text-blue-700 border-blue-200' :
+                      c.status === 'Completed' ? 'bg-green-100 text-green-700 border-green-200' :
+                      'bg-gray-100 text-gray-700 border-gray-200'
+                    }`}>
+                      {c.status}
+                    </span>
+                  </td>
+                  <td className="py-4 px-6 text-right">
+                    {c._id !== selectedCase._id && (
+                      <button onClick={() => setSelectedCase(c)} className="text-[#162D50] font-bold hover:underline text-xs">View</button>
+                    )}
+                    {c._id === selectedCase._id && (
+                      <span className="text-gray-400 text-xs font-medium">Viewing</span>
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    );
+  }
 
   if (viewingDetails) {
     return (
@@ -470,7 +575,7 @@ export default function PaymentStatus() {
                     </span>
                   </td>
                   <td className="py-4 px-6 text-right">
-                    <button onClick={() => setViewingDetails(true)} className="text-[#162D50] font-bold hover:underline">View Details</button>
+                    <button onClick={() => setSelectedCase(c)} className="text-[#162D50] font-bold hover:underline">View Details</button>
                   </td>
                 </tr>
               ))
