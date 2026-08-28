@@ -1,9 +1,53 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Search, ChevronDown, Calendar, Download, Building, Landmark, AlertCircle, AlertTriangle, ArrowRight, ArrowLeft } from 'lucide-react';
 
 export default function PaymentStatus() {
   const [viewingDetails, setViewingDetails] = useState(false);
   const [activePaymentTab, setActivePaymentTab] = useState('Office');
+  const [cases, setCases] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [statusFilter, setStatusFilter] = useState('All Statuses');
+  const [expenseTypeFilter, setExpenseTypeFilter] = useState('All Types');
+  const [expenseTypeOptions, setExpenseTypeOptions] = useState([]);
+
+  useEffect(() => {
+    fetch('http://localhost:5000/api/cases')
+      .then(res => res.json())
+      .then(data => {
+        setCases(data);
+        setLoading(false);
+      })
+      .catch(err => {
+        console.error('Error fetching cases:', err);
+        setLoading(false);
+      });
+
+    fetch('http://localhost:5000/api/options')
+      .then(res => res.json())
+      .then(data => {
+        const types = data.filter(opt => opt.type === 'ExpenseType');
+        setExpenseTypeOptions(types);
+      })
+      .catch(err => console.error('Error fetching options:', err));
+  }, []);
+
+  const officeCasesCount = cases.filter(c => c.advancerCategory === 'Office').length;
+  const staffCasesCount = cases.filter(c => c.advancerCategory === 'Staff').length;
+  const hostCompanyCasesCount = cases.filter(c => c.advancerCategory === 'Host Company').length;
+
+  const filteredCases = cases.filter(c => {
+    const matchesTab = c.advancerCategory === activePaymentTab || (!c.advancerCategory && activePaymentTab === 'Office');
+    const matchesStatus = statusFilter === 'All Statuses' || c.status === statusFilter;
+    const matchesType = expenseTypeFilter === 'All Types' || c.expenseType === expenseTypeFilter;
+    return matchesTab && matchesStatus && matchesType;
+  });
+
+  const totalBankTransfers = cases.filter(c => c.settlementMethod === 'Bank Transfer').reduce((sum, c) => sum + (c.finalTotal || 0), 0);
+  const totalDeductions = cases.filter(c => c.collectionMethod === 'Deduction').reduce((sum, c) => sum + (c.finalTotal || 0), 0);
+  const pendingCount = cases.filter(c => c.status === 'Pending').length;
+  const processingCount = cases.filter(c => c.status === 'Processing').length;
+  const completedCount = cases.filter(c => c.status === 'Completed').length;
+  const overdueCount = cases.filter(c => c.status === 'Overdue').length;
 
   if (viewingDetails) {
     return (
@@ -39,12 +83,12 @@ export default function PaymentStatus() {
             <h3 className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-2">TOTAL BANK TRANSFERS</h3>
             <div className="flex justify-between items-center">
               <div>
-                <p className="text-3xl font-bold text-[#162D50]">¥4,250,000</p>
+                <p className="text-3xl font-bold text-[#162D50]">¥{totalBankTransfers.toLocaleString()}</p>
                 <div className="flex items-center mt-2 text-xs text-green-600 font-medium">
                   <div className="w-3 h-3 rounded-full border-2 border-green-600 flex items-center justify-center mr-1">
                     <div className="w-1.5 h-1.5 bg-green-600 rounded-full"></div>
                   </div>
-                  142 Settlements Ready
+                  {cases.filter(c => c.settlementMethod === 'Bank Transfer').length} Settlements Ready
                 </div>
               </div>
               <Landmark className="w-10 h-10 text-gray-100" />
@@ -55,12 +99,12 @@ export default function PaymentStatus() {
             <h3 className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-2">PAYROLL DEDUCTIONS</h3>
             <div className="flex justify-between items-center">
               <div>
-                <p className="text-3xl font-bold text-[#162D50]">¥185,000</p>
+                <p className="text-3xl font-bold text-[#162D50]">¥{totalDeductions.toLocaleString()}</p>
                 <div className="flex items-center mt-2 text-xs text-green-600 font-medium">
                   <div className="w-3 h-3 rounded-full border-2 border-green-600 flex items-center justify-center mr-1">
                     <div className="w-1.5 h-1.5 bg-green-600 rounded-full"></div>
                   </div>
-                  28 Recoveries Ready
+                  {cases.filter(c => c.collectionMethod === 'Deduction').length} Recoveries Ready
                 </div>
               </div>
             </div>
@@ -70,7 +114,7 @@ export default function PaymentStatus() {
             <h3 className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-2">PENDING ADJUSTMENTS</h3>
             <div className="flex justify-between items-center">
               <div>
-                <p className="text-3xl font-bold text-[#162D50]">3 items</p>
+                <p className="text-3xl font-bold text-[#162D50]">{pendingCount} items</p>
                 <div className="flex items-center mt-2 text-xs text-yellow-600 font-medium">
                   Requires review before
                   <br />export
@@ -87,7 +131,7 @@ export default function PaymentStatus() {
             <h3 className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-2">BOUNCED PAYMENTS</h3>
             <div className="flex justify-between items-center">
               <div>
-                <p className="text-3xl font-bold text-red-600">7 items</p>
+                <p className="text-3xl font-bold text-red-600">{processingCount} items</p>
                 <div className="flex items-center mt-2 text-xs text-red-500 font-medium">
                   Requires immediate
                   <br />resolution
@@ -107,26 +151,26 @@ export default function PaymentStatus() {
           <div className="p-4 border-b border-gray-200 flex justify-between items-center">
             <div className="flex items-center space-x-2">
               <button className="flex items-center px-4 py-1.5 bg-[#162D50] text-white rounded-full text-sm font-medium">
-                Active Installments <span className="ml-2 bg-blue-900 text-white px-2 rounded-full text-xs opacity-80">86</span>
+                Active Installments <span className="ml-2 bg-blue-900 text-white px-2 rounded-full text-xs opacity-80">{pendingCount + processingCount}</span>
               </button>
               <button className="flex items-center px-4 py-1.5 text-gray-500 hover:bg-gray-100 rounded-full text-sm font-medium">
-                Completed <span className="ml-2 bg-gray-200 text-gray-600 px-2 rounded-full text-xs">142</span>
+                Completed <span className="ml-2 bg-gray-200 text-gray-600 px-2 rounded-full text-xs">{completedCount}</span>
               </button>
               <button className="flex items-center px-4 py-1.5 text-gray-500 hover:bg-gray-100 rounded-full text-sm font-medium">
-                Overdue <span className="ml-2 bg-gray-200 text-gray-600 px-2 rounded-full text-xs">4</span>
+                Overdue <span className="ml-2 bg-gray-200 text-gray-600 px-2 rounded-full text-xs">{overdueCount}</span>
               </button>
               
               <div className="flex items-center space-x-2 ml-4 border-l border-gray-200 pl-4">
                 <span className="bg-red-50 text-red-600 border border-red-200 px-2 py-0.5 rounded-md text-xs font-bold flex items-center">
-                  ! 4 Overdue
+                  ! {overdueCount} Overdue
                 </span>
                 <span className="bg-red-600 text-white px-2 py-0.5 rounded-md text-xs font-bold flex items-center">
-                  <AlertTriangle className="w-3 h-3 mr-1" /> 7 Bounced
+                  <AlertTriangle className="w-3 h-3 mr-1" /> {processingCount} Bounced
                 </span>
               </div>
             </div>
             <div className="text-sm text-gray-500">
-              Total: 173 items
+              Total: {cases.length} items
             </div>
           </div>
 
@@ -164,125 +208,46 @@ export default function PaymentStatus() {
               </tr>
             </thead>
             <tbody className="text-sm">
-              <tr className="border-b border-gray-100 hover:bg-gray-50">
-                <td className="py-3 px-4">
-                  <input type="checkbox" className="rounded border-gray-300" defaultChecked />
-                </td>
-                <td className="py-3 px-4">
-                  <div className="font-bold text-[#162D50]">EMP-1042</div>
-                  <div className="text-xs text-gray-500">Tanaka, Kenji</div>
-                </td>
-                <td className="py-3 px-4 text-gray-600">12 months</td>
-                <td className="py-3 px-4">
-                  <div className="flex items-center space-x-2">
-                    <div className="w-full h-1.5 bg-gray-200 rounded-full overflow-hidden">
-                      <div className="h-full bg-green-500 w-[40%]"></div>
-                    </div>
-                    <span className="text-xs text-gray-500 whitespace-nowrap">5 / 12</span>
-                  </div>
-                </td>
-                <td className="py-3 px-4">
-                  <div className="text-gray-500 text-xs">2023-11-15</div>
-                  <div className="font-bold text-gray-800">¥12,500</div>
-                </td>
-                <td className="py-3 px-4 text-center text-gray-400">-</td>
-                <td className="py-3 px-4 text-right font-bold text-gray-800">¥87,500</td>
-                <td className="py-3 px-4 text-center">
-                  <span className="bg-green-100 text-green-700 px-3 py-1 rounded-full text-xs font-medium border border-green-200">On Track</span>
-                </td>
-              </tr>
-
-              <tr className="border-b border-gray-100 bg-yellow-50">
-                <td className="py-3 px-4">
-                  <input type="checkbox" className="rounded border-gray-300" />
-                </td>
-                <td className="py-3 px-4">
-                  <div className="font-bold text-[#162D50]">EMP-1422</div>
-                  <div className="text-xs text-gray-500">Takahashi, Mei</div>
-                </td>
-                <td className="py-3 px-4 text-gray-600">24 months</td>
-                <td className="py-3 px-4">
-                  <div className="flex items-center space-x-2">
-                    <div className="w-full h-1.5 bg-gray-200 rounded-full overflow-hidden">
-                      <div className="h-full bg-red-500 w-[75%]"></div>
-                    </div>
-                    <span className="text-xs text-gray-500 whitespace-nowrap">18 / 24</span>
-                  </div>
-                </td>
-                <td className="py-3 px-4">
-                  <div className="text-red-500 text-xs">2023-10-25</div>
-                  <div className="font-bold text-red-600">¥5,000</div>
-                </td>
-                <td className="py-3 px-4 text-center">
-                  <span className="text-red-500 text-xs font-bold flex items-center justify-center">
-                    <AlertTriangle className="w-3 h-3 mr-1" /> 1 item
-                  </span>
-                </td>
-                <td className="py-3 px-4 text-right font-bold text-gray-800">¥30,000</td>
-                <td className="py-3 px-4 text-center">
-                  <span className="bg-orange-100 text-orange-700 px-3 py-1 rounded-full text-xs font-medium border border-orange-200">Overdue</span>
-                </td>
-              </tr>
-
-              <tr className="border-b border-gray-100 hover:bg-gray-50">
-                <td className="py-3 px-4">
-                  <input type="checkbox" className="rounded border-gray-300" />
-                </td>
-                <td className="py-3 px-4">
-                  <div className="font-bold text-[#162D50]">EMP-0891</div>
-                  <div className="text-xs text-gray-500">Sato, Yumi</div>
-                </td>
-                <td className="py-3 px-4 text-gray-600">6 months</td>
-                <td className="py-3 px-4">
-                  <div className="flex items-center space-x-2">
-                    <div className="w-full h-1.5 bg-gray-200 rounded-full overflow-hidden">
-                      <div className="h-full bg-blue-500 w-[83%]"></div>
-                    </div>
-                    <span className="text-xs text-gray-500 whitespace-nowrap">5 / 6</span>
-                  </div>
-                </td>
-                <td className="py-3 px-4">
-                  <div className="text-gray-500 text-xs">2023-11-01</div>
-                  <div className="font-bold text-red-600">¥2,500</div>
-                </td>
-                <td className="py-3 px-4 text-center text-gray-400">-</td>
-                <td className="py-3 px-4 text-right font-bold text-gray-800">¥2,500</td>
-                <td className="py-3 px-4 text-center">
-                  <span className="bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-xs font-medium border border-blue-200">Near Completion</span>
-                </td>
-              </tr>
-
-              <tr className="hover:bg-gray-50 bg-red-50/30">
-                <td className="py-3 px-4">
-                  <input type="checkbox" className="rounded border-gray-300" />
-                </td>
-                <td className="py-3 px-4">
-                  <div className="font-bold text-[#162D50]">EMP-2091</div>
-                  <div className="text-xs text-gray-500">Suzuki, Hiroshi</div>
-                </td>
-                <td className="py-3 px-4 text-gray-600">12 months</td>
-                <td className="py-3 px-4">
-                  <div className="flex items-center space-x-2">
-                    <div className="w-full h-1.5 bg-gray-200 rounded-full overflow-hidden">
-                      <div className="h-full bg-yellow-500 w-[16%]"></div>
-                    </div>
-                    <span className="text-xs text-gray-500 whitespace-nowrap">2 / 12</span>
-                  </div>
-                </td>
-                <td className="py-3 px-4">
-                  <div className="text-red-500 text-xs">2023-10-28</div>
-                  <div className="font-bold text-red-600">¥15,000</div>
-                </td>
-                <td className="py-3 px-4 text-center">
-                  <span className="text-red-500 text-xs font-bold flex items-center justify-center">
-                    <AlertTriangle className="w-3 h-3 mr-1" /> 2 items
-                  </span>
-                </td>
-                <td className="py-3 px-4 text-right font-bold text-gray-800">¥150,000</td>
-                <td className="py-3 px-4 text-center">
-                  <span className="bg-orange-100 text-orange-700 px-3 py-1 rounded-full text-xs font-medium border border-orange-200">Action Required</span>
-                </td>
-              </tr>
+              {cases.length === 0 ? (
+                <tr><td colSpan="8" className="py-4 px-6 text-center text-gray-500">No data found.</td></tr>
+              ) : (
+                cases.map((c, index) => (
+                  <tr key={c._id || index} className="border-b border-gray-100 hover:bg-gray-50">
+                    <td className="py-3 px-4">
+                      <input type="checkbox" className="rounded border-gray-300" />
+                    </td>
+                    <td className="py-3 px-4">
+                      <div className="font-bold text-[#162D50]">{c.staffId}</div>
+                      <div className="text-xs text-gray-500">{c.staffName}</div>
+                    </td>
+                    <td className="py-3 px-4 text-gray-600">{c.installmentPlan || '1 month'}</td>
+                    <td className="py-3 px-4">
+                      <div className="flex items-center space-x-2">
+                        <div className="w-full h-1.5 bg-gray-200 rounded-full overflow-hidden">
+                          <div className="h-full bg-blue-500" style={{ width: c.status === 'Completed' ? '100%' : '50%' }}></div>
+                        </div>
+                        <span className="text-xs text-gray-500 whitespace-nowrap">{c.status === 'Completed' ? '1/1' : '0/1'}</span>
+                      </div>
+                    </td>
+                    <td className="py-3 px-4">
+                      <div className="text-gray-500 text-xs">{new Date(c.expectedSettlementDate).toLocaleDateString('en-US')}</div>
+                      <div className="font-bold text-gray-800">{c.currency === 'JPY' ? '¥' : '$'}{(c.finalTotal || 0).toLocaleString()}</div>
+                    </td>
+                    <td className="py-3 px-4 text-center text-gray-400">-</td>
+                    <td className="py-3 px-4 text-right font-bold text-gray-800">{c.currency === 'JPY' ? '¥' : '$'}{(c.finalTotal || 0).toLocaleString()}</td>
+                    <td className="py-3 px-4 text-center">
+                      <span className={`px-3 py-1 rounded-full text-xs font-medium border ${
+                        c.status === 'Pending' ? 'bg-yellow-100 text-yellow-700 border-yellow-200' :
+                        c.status === 'Processing' ? 'bg-blue-100 text-blue-700 border-blue-200' :
+                        c.status === 'Completed' ? 'bg-green-100 text-green-700 border-green-200' :
+                        'bg-gray-100 text-gray-700 border-gray-200'
+                      }`}>
+                        {c.status}
+                      </span>
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>
@@ -292,24 +257,125 @@ export default function PaymentStatus() {
 
   return (
     <div className="max-w-6xl mx-auto space-y-6 pb-10">
-      <h2 className="text-2xl font-bold text-[#162D50] mb-4">Payment Application List</h2>
+      <div className="flex justify-between items-center mb-4">
+        <h2 className="text-2xl font-bold text-[#162D50]">Payment Application List</h2>
+        <button className="flex items-center bg-[#162D50] text-white px-4 py-2 rounded-md text-sm font-bold hover:bg-[#0f1f38] transition-colors shadow-sm">
+          <Download className="w-4 h-4 mr-2" />
+          Generate Export
+        </button>
+      </div>
       
+      {/* Metric Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+        <div className="bg-white border border-gray-200 p-5 rounded-md shadow-sm">
+          <h3 className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-2">TOTAL BANK TRANSFERS</h3>
+          <div className="flex justify-between items-center">
+            <div>
+              <p className="text-3xl font-bold text-[#162D50]">¥{totalBankTransfers.toLocaleString()}</p>
+              <div className="flex items-center mt-2 text-xs text-green-600 font-medium">
+                <div className="w-3 h-3 rounded-full border-2 border-green-600 flex items-center justify-center mr-1">
+                  <div className="w-1.5 h-1.5 bg-green-600 rounded-full"></div>
+                </div>
+                {cases.filter(c => c.settlementMethod === 'Bank Transfer').length} Settlements Ready
+              </div>
+            </div>
+            <Landmark className="w-10 h-10 text-gray-100" />
+          </div>
+        </div>
+
+        <div className="bg-white border border-gray-200 p-5 rounded-md shadow-sm">
+          <h3 className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-2">PAYROLL DEDUCTIONS</h3>
+          <div className="flex justify-between items-center">
+            <div>
+              <p className="text-3xl font-bold text-[#162D50]">¥{totalDeductions.toLocaleString()}</p>
+              <div className="flex items-center mt-2 text-xs text-green-600 font-medium">
+                <div className="w-3 h-3 rounded-full border-2 border-green-600 flex items-center justify-center mr-1">
+                  <div className="w-1.5 h-1.5 bg-green-600 rounded-full"></div>
+                </div>
+                {cases.filter(c => c.collectionMethod === 'Deduction').length} Recoveries Ready
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white border border-yellow-400 p-5 rounded-md shadow-sm border-l-4 border-l-yellow-400">
+          <h3 className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-2">PENDING ADJUSTMENTS</h3>
+          <div className="flex justify-between items-center">
+            <div>
+              <p className="text-3xl font-bold text-[#162D50]">{pendingCount} items</p>
+              <div className="flex items-center mt-2 text-xs text-yellow-600 font-medium">
+                Requires review before
+                <br />export
+              </div>
+            </div>
+            <div className="flex flex-col justify-between h-full items-end">
+              <AlertCircle className="w-10 h-10 text-yellow-100" />
+              <ArrowRight className="w-4 h-4 text-yellow-600 mt-2 cursor-pointer" />
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white border border-red-400 p-5 rounded-md shadow-sm border-l-4 border-l-red-500">
+          <h3 className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-2">BOUNCED PAYMENTS</h3>
+          <div className="flex justify-between items-center">
+            <div>
+              <p className="text-3xl font-bold text-red-600">{processingCount} items</p>
+              <div className="flex items-center mt-2 text-xs text-red-500 font-medium">
+                Requires immediate
+                <br />resolution
+              </div>
+            </div>
+            <div className="flex flex-col justify-between h-full items-end">
+              <AlertTriangle className="w-10 h-10 text-red-100" />
+              <span className="text-red-500 font-bold mt-2 cursor-pointer">!</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      {/* Installment Status Row */}
+      <div className="bg-white border border-gray-200 rounded-md p-4 flex justify-between items-center mb-6">
+        <div className="flex items-center space-x-2">
+          <button className="flex items-center px-4 py-1.5 bg-[#162D50] text-white rounded-full text-sm font-medium">
+            Active Installments <span className="ml-2 bg-blue-900 text-white px-2 rounded-full text-xs opacity-80">{pendingCount + processingCount}</span>
+          </button>
+          <button className="flex items-center px-4 py-1.5 text-gray-500 hover:bg-gray-100 rounded-full text-sm font-medium">
+            Completed <span className="ml-2 bg-gray-200 text-gray-600 px-2 rounded-full text-xs">{completedCount}</span>
+          </button>
+          <button className="flex items-center px-4 py-1.5 text-gray-500 hover:bg-gray-100 rounded-full text-sm font-medium">
+            Overdue <span className="ml-2 bg-gray-200 text-gray-600 px-2 rounded-full text-xs">{overdueCount}</span>
+          </button>
+          
+          <div className="flex items-center space-x-2 ml-4 border-l border-gray-200 pl-4">
+            <span className="bg-red-50 text-red-600 border border-red-200 px-2 py-0.5 rounded-md text-xs font-bold flex items-center">
+              ! {overdueCount} Overdue
+            </span>
+            <span className="bg-red-600 text-white px-2 py-0.5 rounded-md text-xs font-bold flex items-center">
+              <AlertTriangle className="w-3 h-3 mr-1" /> {processingCount} Bounced
+            </span>
+          </div>
+        </div>
+        <div className="text-sm text-gray-500">
+          Total: {cases.length} items
+        </div>
+      </div>
+
       {/* Top Tabs */}
       <div className="bg-[#F2F4F7] p-1 rounded-md flex space-x-1 mb-4 border border-gray-200">
         <button 
           onClick={() => setActivePaymentTab('Office')}
           className={`flex-1 py-2 text-sm font-bold rounded-md transition-colors ${activePaymentTab === 'Office' ? 'text-white bg-[#0A192F] shadow-sm' : 'text-gray-500 hover:bg-gray-200'}`}>
-          Office Payment Cases <span className={`ml-2 px-2 py-0.5 rounded-full text-xs ${activePaymentTab === 'Office' ? 'bg-white text-[#0A192F]' : 'bg-gray-200 text-gray-600'}`}>12</span>
+          Office Payment Cases <span className={`ml-2 px-2 py-0.5 rounded-full text-xs ${activePaymentTab === 'Office' ? 'bg-white text-[#0A192F]' : 'bg-gray-200 text-gray-600'}`}>{officeCasesCount}</span>
         </button>
         <button 
           onClick={() => setActivePaymentTab('Staff')}
           className={`flex-1 py-2 text-sm font-bold rounded-md transition-colors ${activePaymentTab === 'Staff' ? 'text-white bg-[#0A192F] shadow-sm' : 'text-gray-500 hover:bg-gray-200'}`}>
-          Staff Payment Cases <span className={`ml-2 px-2 py-0.5 rounded-full text-xs ${activePaymentTab === 'Staff' ? 'bg-white text-[#0A192F]' : 'bg-gray-200 text-gray-600'}`}>5</span>
+          Staff Payment Cases <span className={`ml-2 px-2 py-0.5 rounded-full text-xs ${activePaymentTab === 'Staff' ? 'bg-white text-[#0A192F]' : 'bg-gray-200 text-gray-600'}`}>{staffCasesCount}</span>
         </button>
         <button 
           onClick={() => setActivePaymentTab('Host Company')}
           className={`flex-1 py-2 text-sm font-bold rounded-md transition-colors ${activePaymentTab === 'Host Company' ? 'text-white bg-[#0A192F] shadow-sm' : 'text-gray-500 hover:bg-gray-200'}`}>
-          Host Company Cases <span className={`ml-2 px-2 py-0.5 rounded-full text-xs ${activePaymentTab === 'Host Company' ? 'bg-white text-[#0A192F]' : 'bg-gray-200 text-gray-600'}`}>2</span>
+          Host Company Cases <span className={`ml-2 px-2 py-0.5 rounded-full text-xs ${activePaymentTab === 'Host Company' ? 'bg-white text-[#0A192F]' : 'bg-gray-200 text-gray-600'}`}>{hostCompanyCasesCount}</span>
         </button>
       </div>
 
@@ -325,8 +391,11 @@ export default function PaymentStatus() {
         <div className="w-48">
           <label className="block text-xs font-bold text-gray-600 mb-1">Status</label>
           <div className="relative">
-            <select className="w-full pl-4 pr-10 py-2 border border-gray-300 rounded-md text-sm appearance-none focus:outline-none focus:ring-1 focus:ring-[#162D50] text-gray-600">
-              <option>All Statuses</option>
+            <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)} className="w-full pl-4 pr-10 py-2 border border-gray-300 rounded-md text-sm appearance-none focus:outline-none focus:ring-1 focus:ring-[#162D50] text-gray-600">
+              <option value="All Statuses">All Statuses</option>
+              {[...new Set(cases.map(c => c.status))].filter(Boolean).map(status => (
+                <option key={status} value={status}>{status}</option>
+              ))}
             </select>
             <ChevronDown className="w-4 h-4 absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none" />
           </div>
@@ -334,8 +403,11 @@ export default function PaymentStatus() {
         <div className="w-48">
           <label className="block text-xs font-bold text-gray-600 mb-1">Expense Type</label>
           <div className="relative">
-            <select className="w-full pl-4 pr-10 py-2 border border-gray-300 rounded-md text-sm appearance-none focus:outline-none focus:ring-1 focus:ring-[#162D50] text-gray-600">
-              <option>All Types</option>
+            <select value={expenseTypeFilter} onChange={e => setExpenseTypeFilter(e.target.value)} className="w-full pl-4 pr-10 py-2 border border-gray-300 rounded-md text-sm appearance-none focus:outline-none focus:ring-1 focus:ring-[#162D50] text-gray-600">
+              <option value="All Types">All Types</option>
+              {expenseTypeOptions.map(opt => (
+                <option key={opt._id || opt.value} value={opt.value}>{opt.label}</option>
+              ))}
             </select>
             <ChevronDown className="w-4 h-4 absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none" />
           </div>
@@ -367,58 +439,42 @@ export default function PaymentStatus() {
             </tr>
           </thead>
           <tbody className="text-sm">
-            <tr className="border-b border-gray-100 hover:bg-gray-50">
-              <td className="py-4 px-6 text-gray-600">#CAS-2024-001</td>
-              <td className="py-4 px-6 text-gray-600">2024-05-20</td>
-              <td className="py-4 px-6 text-gray-800">John Doe</td>
-              <td className="py-4 px-6 text-gray-600">Postage</td>
-              <td className="py-4 px-6 font-bold text-gray-800">¥45.00</td>
-              <td className="py-4 px-6">
-                <span className="bg-yellow-100 text-yellow-700 px-3 py-1 rounded-full text-xs font-medium border border-yellow-200">Pending</span>
-              </td>
-              <td className="py-4 px-6 text-right">
-                <button onClick={() => setViewingDetails(true)} className="text-[#162D50] font-bold hover:underline">View Details</button>
-              </td>
-            </tr>
-            <tr className="border-b border-gray-100 hover:bg-gray-50">
-              <td className="py-4 px-6 text-gray-600">#CAS-2024-002</td>
-              <td className="py-4 px-6 text-gray-600">2024-05-19</td>
-              <td className="py-4 px-6 text-gray-800">Jane Smith</td>
-              <td className="py-4 px-6 text-gray-600">Hospital Bills</td>
-              <td className="py-4 px-6 font-bold text-gray-800">¥1,200.00</td>
-              <td className="py-4 px-6">
-                <span className="bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-xs font-medium border border-blue-200">Processing</span>
-              </td>
-              <td className="py-4 px-6 text-right">
-                <button onClick={() => setViewingDetails(true)} className="text-[#162D50] font-bold hover:underline">View Details</button>
-              </td>
-            </tr>
-            <tr className="border-b border-gray-100 bg-gray-50">
-              <td className="py-4 px-6 text-gray-600">#CAS-2024-003</td>
-              <td className="py-4 px-6 text-gray-600">2024-05-18</td>
-              <td className="py-4 px-6 text-gray-800">Robert Chen</td>
-              <td className="py-4 px-6 text-gray-600">Dorm Fees</td>
-              <td className="py-4 px-6 font-bold text-gray-800">¥850.00</td>
-              <td className="py-4 px-6">
-                <span className="bg-red-100 text-red-600 px-3 py-1 rounded-full text-xs font-medium border border-red-200">Missing Receipt</span>
-              </td>
-              <td className="py-4 px-6 text-right">
-                <button onClick={() => setViewingDetails(true)} className="text-[#162D50] font-bold hover:underline">View Details</button>
-              </td>
-            </tr>
-            <tr className="hover:bg-gray-50">
-              <td className="py-4 px-6 text-gray-600">#CAS-2024-004</td>
-              <td className="py-4 px-6 text-gray-600">2024-05-15</td>
-              <td className="py-4 px-6 text-gray-800">Sarah Wilson</td>
-              <td className="py-4 px-6 text-gray-600">Travel</td>
-              <td className="py-4 px-6 font-bold text-gray-800">¥320.50</td>
-              <td className="py-4 px-6">
-                <span className="bg-green-100 text-green-700 px-3 py-1 rounded-full text-xs font-medium border border-green-200">Completed</span>
-              </td>
-              <td className="py-4 px-6 text-right">
-                <button onClick={() => setViewingDetails(true)} className="text-[#162D50] font-bold hover:underline">View Details</button>
-              </td>
-            </tr>
+            {loading ? (
+              <tr>
+                <td colSpan="7" className="py-4 px-6 text-center text-gray-500">Loading...</td>
+              </tr>
+            ) : filteredCases.length === 0 ? (
+              <tr>
+                <td colSpan="7" className="py-4 px-6 text-center text-gray-500">No cases found.</td>
+              </tr>
+            ) : (
+              filteredCases.map(c => (
+                <tr key={c._id} className="border-b border-gray-100 hover:bg-gray-50">
+                  <td className="py-4 px-6 text-gray-600">#CAS-{c._id.slice(-6).toUpperCase()}</td>
+                  <td className="py-4 px-6 text-gray-600">
+                    {new Date(c.expensePeriodStart).toLocaleDateString('en-US')}
+                  </td>
+                  <td className="py-4 px-6 text-gray-800">{c.staffName}</td>
+                  <td className="py-4 px-6 text-gray-600">{c.expenseType}</td>
+                  <td className="py-4 px-6 font-bold text-gray-800">
+                    {c.currency === 'JPY' ? '¥' : '$'}{c.totalExpense.toLocaleString()}
+                  </td>
+                  <td className="py-4 px-6">
+                    <span className={`px-3 py-1 rounded-full text-xs font-medium border ${
+                      c.status === 'Pending' ? 'bg-yellow-100 text-yellow-700 border-yellow-200' :
+                      c.status === 'Processing' ? 'bg-blue-100 text-blue-700 border-blue-200' :
+                      c.status === 'Completed' ? 'bg-green-100 text-green-700 border-green-200' :
+                      'bg-gray-100 text-gray-700 border-gray-200'
+                    }`}>
+                      {c.status}
+                    </span>
+                  </td>
+                  <td className="py-4 px-6 text-right">
+                    <button onClick={() => setViewingDetails(true)} className="text-[#162D50] font-bold hover:underline">View Details</button>
+                  </td>
+                </tr>
+              ))
+            )}
           </tbody>
         </table>
       </div>

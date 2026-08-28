@@ -62,7 +62,7 @@ export default function Dashboard({ setToken }) {
           {activeTab === 'Case List' && <CaseList />}
           {activeTab === 'Payment Status' && <PaymentStatus />}
           {activeTab === 'Staff Registration' && <StaffRegistration />}
-          {activeTab === 'Staff List' && <StaffList />}
+          {activeTab === 'Staff List' && <StaffList setActiveTab={setActiveTab} />}
           {activeTab === 'Visa Management' && <VisaManagement />}
           {activeTab === 'Resignation' && <Resignation />}
           {activeTab === 'Support Department' && <SupportDashboard />}

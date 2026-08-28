@@ -5,12 +5,20 @@ export default function CaseList() {
   const [cases, setCases] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('Office');
+  const [statusFilter, setStatusFilter] = useState('All Statuses');
+  const [expenseTypeFilter, setExpenseTypeFilter] = useState('All Types');
+  const [expenseTypeOptions, setExpenseTypeOptions] = useState([]);
 
   const officeCasesCount = cases.filter(c => c.advancerCategory === 'Office').length;
   const staffCasesCount = cases.filter(c => c.advancerCategory === 'Staff').length;
   const hostCompanyCasesCount = cases.filter(c => c.advancerCategory === 'Host Company').length;
 
-  const filteredCases = cases.filter(c => c.advancerCategory === activeTab || (!c.advancerCategory && activeTab === 'Office'));
+  const filteredCases = cases.filter(c => {
+    const matchesTab = c.advancerCategory === activeTab || (!c.advancerCategory && activeTab === 'Office');
+    const matchesStatus = statusFilter === 'All Statuses' || c.status === statusFilter;
+    const matchesType = expenseTypeFilter === 'All Types' || c.expenseType === expenseTypeFilter;
+    return matchesTab && matchesStatus && matchesType;
+  });
 
   useEffect(() => {
     fetch('http://localhost:5000/api/cases')
@@ -23,6 +31,14 @@ export default function CaseList() {
         console.error('Error fetching cases:', err);
         setLoading(false);
       });
+
+    fetch('http://localhost:5000/api/options')
+      .then(res => res.json())
+      .then(data => {
+        const types = data.filter(opt => opt.type === 'ExpenseType');
+        setExpenseTypeOptions(types);
+      })
+      .catch(err => console.error('Error fetching options:', err));
   }, []);
 
   return (
@@ -60,8 +76,11 @@ export default function CaseList() {
         <div className="w-48">
           <label className="block text-xs font-bold text-gray-600 mb-1">Status</label>
           <div className="relative">
-            <select className="w-full pl-4 pr-10 py-2 border border-gray-300 rounded-md text-sm appearance-none focus:outline-none focus:ring-1 focus:ring-[#162D50] text-gray-600">
-              <option>All Statuses</option>
+            <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)} className="w-full pl-4 pr-10 py-2 border border-gray-300 rounded-md text-sm appearance-none focus:outline-none focus:ring-1 focus:ring-[#162D50] text-gray-600">
+              <option value="All Statuses">All Statuses</option>
+              {[...new Set(cases.map(c => c.status))].filter(Boolean).map(status => (
+                <option key={status} value={status}>{status}</option>
+              ))}
             </select>
             <ChevronDown className="w-4 h-4 absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none" />
           </div>
@@ -69,8 +88,11 @@ export default function CaseList() {
         <div className="w-48">
           <label className="block text-xs font-bold text-gray-600 mb-1">Expense Type</label>
           <div className="relative">
-            <select className="w-full pl-4 pr-10 py-2 border border-gray-300 rounded-md text-sm appearance-none focus:outline-none focus:ring-1 focus:ring-[#162D50] text-gray-600">
-              <option>All Types</option>
+            <select value={expenseTypeFilter} onChange={e => setExpenseTypeFilter(e.target.value)} className="w-full pl-4 pr-10 py-2 border border-gray-300 rounded-md text-sm appearance-none focus:outline-none focus:ring-1 focus:ring-[#162D50] text-gray-600">
+              <option value="All Types">All Types</option>
+              {expenseTypeOptions.map(opt => (
+                <option key={opt._id || opt.value} value={opt.value}>{opt.label}</option>
+              ))}
             </select>
             <ChevronDown className="w-4 h-4 absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none" />
           </div>

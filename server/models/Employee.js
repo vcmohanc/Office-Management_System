@@ -2,6 +2,7 @@ import mongoose from 'mongoose';
 
 const employeeSchema = new mongoose.Schema({
   department: { type: String, required: true },
+  location: { type: String, default: 'Tokyo Office' },
   joinDate: { type: Date, required: true },
   katakanaName: { type: String, required: true },
   romajiName: { type: String, required: true },

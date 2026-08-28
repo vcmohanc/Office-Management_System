@@ -14,6 +14,7 @@ export default function StaffClaimRequest() {
     id: '',
     location: ''
   });
+  const [employees, setEmployees] = useState([]);
 
   const initialClaim = {
     expenseType: '',
@@ -44,6 +45,10 @@ export default function StaffClaimRequest() {
         }, { Location: [], ExpenseType: [], AdvancerCategory: [], BearingParty: [] });
 
         setOptions(groupedOptions);
+
+        const empResponse = await fetch('http://localhost:5000/api/employees');
+        const empData = await empResponse.json();
+        setEmployees(empData);
       } catch (error) {
         console.error('Error fetching options:', error);
       }
@@ -288,11 +293,28 @@ export default function StaffClaimRequest() {
           <div className="grid grid-cols-3 gap-6">
             <div>
               <label className="block text-sm font-bold text-gray-700 mb-2">Full Name <span className="text-red-500">*</span></label>
-              <input type="text" placeholder="Enter full name" value={staffInfo.fullName} onChange={e => setStaffInfo({...staffInfo, fullName: e.target.value})} className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50]" />
+              <input type="text" placeholder="Enter full name" value={staffInfo.fullName} onChange={e => {
+                const val = e.target.value;
+                const match = employees.find(emp => (emp.romajiName && emp.romajiName.toLowerCase() === val.toLowerCase()) || (emp.katakanaName && emp.katakanaName === val));
+                if (match) {
+                  setStaffInfo({...staffInfo, fullName: val, id: 'ID-' + match._id.slice(-6).toUpperCase(), location: match.location || staffInfo.location});
+                } else {
+                  setStaffInfo({...staffInfo, fullName: val});
+                }
+              }} className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50]" />
             </div>
             <div>
               <label className="block text-sm font-bold text-gray-700 mb-2">Staff ID <span className="text-red-500">*</span></label>
-              <input type="text" placeholder="ID-00000" value={staffInfo.id} onChange={e => setStaffInfo({...staffInfo, id: e.target.value})} className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50]" />
+              <input type="text" placeholder="ID-00000" value={staffInfo.id} onChange={e => {
+                const val = e.target.value;
+                const searchId = val.replace('ID-', '').toLowerCase();
+                const match = employees.find(emp => emp._id.slice(-6) === searchId);
+                if (match) {
+                  setStaffInfo({...staffInfo, id: val, fullName: match.romajiName || match.katakanaName || staffInfo.fullName, location: match.location || staffInfo.location});
+                } else {
+                  setStaffInfo({...staffInfo, id: val});
+                }
+              }} className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50]" />
             </div>
             <div>
               <label className="block text-sm font-bold text-gray-700 mb-2">Location <span className="text-red-500">*</span></label>
