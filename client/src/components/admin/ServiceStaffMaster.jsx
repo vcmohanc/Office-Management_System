@@ -1,11 +1,12 @@
 import { useState } from 'react';
 import { Search, Plus, Edit2 } from 'lucide-react';
-import { STAFF_MASTER } from '../../constants/parties';
+import { useParties } from '../../hooks/useMasters';
 
 export default function ServiceStaffMaster() {
+  const { staff } = useParties();
   const [query, setQuery] = useState('');
 
-  const filtered = STAFF_MASTER.filter((s) => s.name.includes(query) || s.id.includes(query));
+  const filtered = staff.filter((s) => s.name.includes(query) || s.id.includes(query));
 
   return (
     <div className="max-w-4xl mx-auto pb-10">

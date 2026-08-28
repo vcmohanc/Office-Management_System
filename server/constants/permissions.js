@@ -1,3 +1,6 @@
+// §1-20 権限管理機能
+// client/src/constants/roles.js と同じ定義。変更時は両方を更新すること。
+
 export const ROLES = {
   APPLICANT: 'applicant',
   REVIEWER: 'reviewer',
@@ -5,21 +8,6 @@ export const ROLES = {
   ADMIN: 'admin',
 };
 
-export const ROLE_LABELS = {
-  [ROLES.APPLICANT]: '申請者',
-  [ROLES.REVIEWER]: '内容確認者',
-  [ROLES.ACCOUNTING]: '経理・給与処理担当者',
-  [ROLES.ADMIN]: 'システム管理者',
-};
-
-export const ROLE_BADGE_COLORS = {
-  [ROLES.APPLICANT]: 'bg-blue-100 text-blue-700 border-blue-200',
-  [ROLES.REVIEWER]: 'bg-amber-100 text-amber-700 border-amber-200',
-  [ROLES.ACCOUNTING]: 'bg-green-100 text-green-700 border-green-200',
-  [ROLES.ADMIN]: 'bg-purple-100 text-purple-700 border-purple-200',
-};
-
-// §1-20 権限管理機能 — 権限区分ごとに制御する操作
 export const PERMISSIONS = {
   VIEW: 'view',                       // 閲覧
   CREATE: 'create',                   // 新規登録
@@ -31,19 +19,6 @@ export const PERMISSIONS = {
   EXPORT_CSV: 'exportCsv',            // CSV出力
   CANCEL: 'cancel',                   // 取消
   MANAGE_MASTER: 'manageMaster',      // マスタ管理
-};
-
-export const PERMISSION_LABELS = {
-  [PERMISSIONS.VIEW]: '閲覧',
-  [PERMISSIONS.CREATE]: '新規登録',
-  [PERMISSIONS.EDIT]: '編集',
-  [PERMISSIONS.REJECT]: '差戻し',
-  [PERMISSIONS.APPROVE]: '承認',
-  [PERMISSIONS.UPDATE_PROCESS]: '処理状態更新',
-  [PERMISSIONS.VIEW_ATTACHMENT]: '添付ファイル閲覧',
-  [PERMISSIONS.EXPORT_CSV]: 'CSV出力',
-  [PERMISSIONS.CANCEL]: '取消',
-  [PERMISSIONS.MANAGE_MASTER]: 'マスタ管理',
 };
 
 const P = PERMISSIONS;

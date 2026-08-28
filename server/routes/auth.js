@@ -3,11 +3,19 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import User from '../models/User.js';
 import { verifyToken } from '../middleware/auth.js';
+import { requirePermission, PERMISSIONS } from '../middleware/permissions.js';
 
 const router = express.Router();
 
+// 最初の管理者だけは未認証で作成できる。以降のユーザー作成はマスタ管理権限が必要 §1-20
+const allowFirstAdminOrManageMaster = async (req, res, next) => {
+  const userCount = await User.countDocuments();
+  if (userCount === 0) return next();
+  return verifyToken(req, res, () => requirePermission(PERMISSIONS.MANAGE_MASTER)(req, res, next));
+};
+
 // Register (for initial setup and admin creation)
-router.post('/register', async (req, res) => {
+router.post('/register', allowFirstAdminOrManageMaster, async (req, res) => {
   try {
     const { username, password, role } = req.body;
     const existingUser = await User.findOne({ username });
@@ -85,7 +93,7 @@ router.put('/update-password', verifyToken, async (req, res) => {
 });
 
 // Get all users
-router.get('/users', verifyToken, async (req, res) => {
+router.get('/users', verifyToken, requirePermission(PERMISSIONS.MANAGE_MASTER), async (req, res) => {
   try {
     const users = await User.find({}, '-password').sort({ createdAt: -1 });
     res.json(users);
@@ -95,7 +103,7 @@ router.get('/users', verifyToken, async (req, res) => {
 });
 
 // Update user details
-router.put('/users/:id', verifyToken, async (req, res) => {
+router.put('/users/:id', verifyToken, requirePermission(PERMISSIONS.MANAGE_MASTER), async (req, res) => {
   try {
     const { username, role, password } = req.body;
     

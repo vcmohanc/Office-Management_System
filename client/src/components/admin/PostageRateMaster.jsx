@@ -1,9 +1,8 @@
-import { useState } from 'react';
 import { Plus, Edit2, MapPin } from 'lucide-react';
-import { POSTAGE_RATES } from '../../constants/postageRates';
+import { usePostageRates } from '../../hooks/useMasters';
 
 export default function PostageRateMaster() {
-  const [rates] = useState(POSTAGE_RATES);
+  const { rates } = usePostageRates();
 
   return (
     <div className="max-w-4xl mx-auto pb-10">

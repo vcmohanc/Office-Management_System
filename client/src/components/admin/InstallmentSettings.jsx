@@ -1,15 +1,22 @@
 import { useState } from 'react';
 import { Save, CheckCircle2 } from 'lucide-react';
-import { getInstallmentThreshold, setInstallmentThreshold } from '../../constants/installmentSettings';
+import { useInstallmentThreshold } from '../../hooks/useMasters';
+import { saveSetting } from '../../api/client';
 
 export default function InstallmentSettings() {
-  const [threshold, setThreshold] = useState(getInstallmentThreshold());
+  const { threshold, setThreshold, offline } = useInstallmentThreshold();
   const [saved, setSaved] = useState(false);
+  const [error, setError] = useState('');
 
-  const handleSave = () => {
-    setInstallmentThreshold(Number(threshold));
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2000);
+  const handleSave = async () => {
+    setError('');
+    try {
+      await saveSetting('installmentThreshold', Number(threshold));
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2000);
+    } catch (err) {
+      setError(err.message);
+    }
   };
 
   return (
@@ -20,6 +27,12 @@ export default function InstallmentSettings() {
       </div>
 
       <div className="bg-white border border-gray-200 rounded-md p-6">
+        {error && (
+          <div className="mb-4 p-3 rounded-md text-sm bg-red-50 text-red-600">{error}</div>
+        )}
+        {offline && (
+          <div className="mb-4 p-3 rounded-md text-sm bg-yellow-50 text-yellow-700">サーバーに接続できないため、初期値を表示しています。</div>
+        )}
         {saved && (
           <div className="mb-4 p-3 rounded-md flex items-center text-sm bg-green-50 text-green-700">
             <CheckCircle2 className="w-5 h-5 mr-2 shrink-0" />

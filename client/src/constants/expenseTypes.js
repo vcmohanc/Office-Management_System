@@ -141,9 +141,9 @@ export const COLLECTION_METHODS = [
 
 // 費用負担先 → 推奨される精算・回収方法（xlsxの補足メモに基づく初期提案。ユーザーが変更可能）
 export const SUGGESTED_METHODS_BY_COST_BEARER = {
-  'サービススタッフ': { settlement: '本人へ振込', collection: '給与天引き' },
-  '派遣先・農家': { settlement: '派遣先への請求額から控除', collection: '派遣先へ請求' },
-  'VC': { settlement: 'VC経費処理', collection: 'VC負担' },
+  'サービススタッフ': { settlement: '本人へ振込', recovery: '給与天引き' },
+  '派遣先・農家': { settlement: '派遣先への請求額から控除', recovery: '派遣先へ請求' },
+  'VC': { settlement: 'VC経費処理', recovery: 'VC負担' },
 };
 
 export const CASE_STATUSES = ['未処理', '処理中', '完了', '差戻し', '保留', '取消'];

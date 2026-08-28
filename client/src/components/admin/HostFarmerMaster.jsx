@@ -1,11 +1,12 @@
 import { useState } from 'react';
 import { Search, Plus, Edit2 } from 'lucide-react';
-import { FARMER_MASTER } from '../../constants/parties';
+import { useParties } from '../../hooks/useMasters';
 
 export default function HostFarmerMaster() {
+  const { hostFarmers } = useParties();
   const [query, setQuery] = useState('');
 
-  const filtered = FARMER_MASTER.filter((f) => f.name.includes(query) || f.id.includes(query));
+  const filtered = hostFarmers.filter((f) => f.name.includes(query) || f.id.includes(query));
 
   return (
     <div className="max-w-4xl mx-auto pb-10">

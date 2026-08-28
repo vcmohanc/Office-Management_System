@@ -1,42 +1,63 @@
 # Product Requirements Document (PRD)
 
-## 1. Objective
-Build an internal Office Management System (OMS) to streamline cross-departmental workflows including HR, Accounting, and Support. The system must be fast, visually appealing, and enforce role-based access.
+出典：`立替・精算管理システム 要件定義.docx` ／ `立替者・精算種別.xlsx`
+本ドキュメントは要件定義書の要約であり、正典は上記2ファイル。差異が生じた場合は要件定義書を優先する。
 
-## 2. Target Audience
-Internal employees of the organization, specifically:
-- **System Administrators:** Need oversight of all departments and the ability to provision new user accounts.
-- **HR Staff:** Need to manage employee lifecycles (registration, visas, resignations).
-- **Account Staff:** Need to manage financial cases and payment statuses.
-- **Support Staff:** Need to manage internal claims and expenses.
+## 1. 目的
+サービススタッフ・派遣先・農家・VC が立て替えた費用について、申請から精算・回収完了までを一元管理する。
 
-## 3. Core Features
+## 2. 基本業務ルール
+**立替者・対象・費用負担先は、それぞれ別の情報として管理する。**
 
-### 3.1 Authentication & Authorization
-- Secure login portal.
-- Role-based Access Control (RBAC). Users only see navigation items pertinent to their assigned role.
+| 用語 | 意味 | 想定区分 |
+| --- | --- | --- |
+| 申請者 | システムへ立替内容を登録する人。立替者とは限らない | ー |
+| 立替者 | 実際に費用を一時的に支払った人・組織 | サービススタッフ／派遣先・農家／VC |
+| 対象 | その費用が誰・どの派遣先に関して発生したか | サービススタッフ／派遣先・農家／その他 |
+| 費用負担先 | 最終的に費用を負担する人・組織 | サービススタッフ／派遣先・農家／VC |
 
-### 3.2 Admin Features
-- High-level overview dashboard (Pending Settlements, Awaiting Recoveries, Monthly Totals).
-- Ability to create new user accounts and assign roles.
+## 3. 主な処理パターン（要件定義書 §13）
+| # | 立替者 | 費用負担先 | 例 | 立替者への精算 | 費用負担先からの回収 |
+| --- | --- | --- | --- | --- | --- |
+| 1 | サービススタッフ | VC | 郵送費 | 本人へ振込 | なし |
+| 2 | VC | サービススタッフ | 待機寮費 | VC経費処理 | 給与天引き |
+| 3 | 派遣先・農家 | サービススタッフ | 病院代 | 派遣先請求額から控除 | 給与天引き |
+| 4 | VC | 派遣先・農家 | 備品（布団） | VC経費処理 | 派遣先へ請求 |
 
-### 3.3 Human Resources (HR)
-- **Staff Registration:** Collect comprehensive employee data (Personal, Employment, Bank).
-- **Staff List:** View all staff members in a tabular format.
-- **Visa Management:** Monitor visa expiration dates.
-- **Resignation:** Handle employee offboarding workflows.
+> 注意：`立替者・精算種別.xlsx` ではパターン2と3の番号が入れ替わっている。
+> 実装は要件定義書 §13 の番号に合わせている（`constants/patterns.js`）。
 
-### 3.4 Accounting
-- **New Case:** Open new financial files.
-- **Case List:** Review active financial cases.
-- **Payment Status:** Monitor financial health and outstanding payments.
+## 4. 機能要件（§1-1〜§1-21）
+| 番号 | 機能 | 主な実装先 |
+| --- | --- | --- |
+| 1-1 | 立替案件登録（ケースID自動採番） | `account/NewCase.jsx` |
+| 1-2 | 費用種別選択（マスタ管理） | `constants/expenseTypes.js` / `admin/ExpenseTypeMaster.jsx` |
+| 1-3 | 種別ごとの入力項目切替 | `account/NewCase.jsx` |
+| 1-4〜1-6 | 立替者／対象／費用負担先の管理 | `account/NewCase.jsx` |
+| 1-7 | 精算・回収処理管理（予定額・処理済み額・残額・対象月・処理日・担当者・状態・備考） | `constants/cases.js` / `account/CaseList.jsx` |
+| 1-8 | 農家立替・スタッフ負担の2処理を個別管理 | `constants/cases.js`（`getFarmerProcess` / `getStaffProcess` / `deriveCaseStatus`） |
+| 1-9 | 給与天引き管理 | `account/PaymentStatus.jsx` |
+| 1-10 | 分割天引き（対象月ごとの明細・合計一致確認） | `account/CaseList.jsx` |
+| 1-11 | 退職時の給与天引き管理 | `account/CaseList.jsx`（案件詳細内） |
+| 1-12 | 派遣先請求・控除管理 | `account/PaymentStatus.jsx` |
+| 1-13 | 添付ファイル管理（書類種別付き） | `account/NewCase.jsx` / `constants/cases.js` |
+| 1-14 | ステータス管理（未処理・処理中・完了・差戻し・保留・取消） | `constants/expenseTypes.js` |
+| 1-15 | 立替一覧表示 | `account/CaseList.jsx` |
+| 1-16 | 検索・絞り込み | `account/CaseList.jsx` |
+| 1-17 | 詳細表示・編集 | `account/CaseList.jsx` |
+| 1-18 | 差戻し・取消（理由入力必須） | `account/CaseList.jsx` |
+| 1-19 | CSV出力（案件一覧／給与天引き用／派遣先請求・控除用） | `utils/csv.js` |
+| 1-20 | 権限管理（申請者／内容確認者／経理・給与処理担当者／システム管理者） | `constants/roles.js` |
+| 1-21 | 操作履歴（操作者・日時・内容・変更前・変更後） | `constants/cases.js` / `account/CaseList.jsx` |
 
-### 3.5 Support
-- **Claim Request:** Allow staff to submit expense claims with receipts/attachments.
-- **Claim List:** Review and process submitted claims.
+## 5. 要件定義書に無い追加仕様（合意済み）
+以下は書類の補足メモをもとに追加したもの。
+- **郵送費レート表マスタ**：送り元・送り先（都道府県）から上限額を引き、申請金額と照らし合わせて超過を警告する（`constants/postageRates.js`）
+- **サービススタッフ／派遣先・農家マスタ**：立替者・対象の選択元（`constants/parties.js`）
+- **分割に関する備考欄**：分割回数の詳細は事務職と申請者が別途調整するため、システムでは希望有無と自由記入の備考のみを保持
+- **分割提案の上限金額の自動判定**：設定金額を超えたら分割を推奨表示（`constants/installmentSettings.js` / `admin/InstallmentSettings.jsx`）
 
-## 4. Non-Functional Requirements
-- **Performance:** Instant page transitions (achieved via React state routing).
-- **Aesthetics:** Clean, airy, and professional UI. No cluttered screens.
-- **Language:** Japanese interface, matching the terminology in 立替・精算管理システム 要件定義.docx.
-- **Responsiveness:** Usable on desktop monitors (primary use case).
+## 6. 非機能要件
+- **表示言語**：日本語。用語は要件定義書に合わせる（申請者・立替者・対象・費用負担先）。
+- **UI**：余白のある業務画面。既存のカラーパレット・カード構成を維持する（`DESIGN.md`）。
+- **対象環境**：デスクトップブラウザ。

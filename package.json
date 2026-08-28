@@ -1,0 +1,15 @@
+{
+  "name": "office-management-system",
+  "version": "1.0.0",
+  "private": true,
+  "description": "立替・精算管理システム（server + client のまとめ役）",
+  "type": "module",
+  "scripts": {
+    "dev": "node scripts/dev.mjs",
+    "dev:server": "npm run dev --prefix server",
+    "dev:client": "npm run dev --prefix client",
+    "install:all": "npm install --prefix server && npm install --prefix client",
+    "seed": "node server/seed.js",
+    "build": "npm run build --prefix client"
+  }
+}
