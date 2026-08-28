@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Search, ChevronDown, Calendar, Download, Building, Landmark, AlertCircle, AlertTriangle, ArrowRight, ArrowLeft } from 'lucide-react';
+import { Search, ChevronDown, Calendar, Download, Building, Landmark, AlertCircle, AlertTriangle, ArrowRight, ArrowLeft, Printer } from 'lucide-react';
 
 export default function PaymentStatus() {
   const [viewingDetails, setViewingDetails] = useState(false);
@@ -61,46 +61,86 @@ export default function PaymentStatus() {
           Back to Payment List
         </button>
 
-        <div className="bg-white border border-gray-200 rounded-md p-6 shadow-sm">
-          <div className="flex justify-between items-start mb-6">
+        <div className="bg-white border border-gray-200 rounded-md p-6 shadow-sm print-area print:shadow-none print:border-none print:p-8 print:w-full print:bg-white print:[print-color-adjust:exact]">
+          
+          {/* Print Only Header */}
+          <div className="hidden print:flex justify-between items-end border-b-4 border-[#162D50] pb-6 mb-8">
             <div>
-              <h2 className="text-2xl font-bold text-[#162D50] mb-1">Case Details: {selectedCase.staffName}</h2>
-              <p className="text-gray-500 text-sm">Staff ID: {selectedCase.staffId}</p>
+              <h1 className="text-3xl font-black text-[#162D50] tracking-tight uppercase">Settlement Record</h1>
+              <p className="text-gray-500 text-sm mt-2 font-medium">Generated: {new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
             </div>
-            <span className={`px-4 py-1.5 rounded-full text-sm font-medium border ${
-              selectedCase.status === 'Pending' ? 'bg-yellow-100 text-yellow-700 border-yellow-200' :
-              selectedCase.status === 'Processing' ? 'bg-blue-100 text-blue-700 border-blue-200' :
-              selectedCase.status === 'Completed' ? 'bg-green-100 text-green-700 border-green-200' :
-              'bg-gray-100 text-gray-700 border-gray-200'
-            }`}>
-              {selectedCase.status}
-            </span>
+            <div className="text-right flex flex-col items-end">
+              <div className="bg-[#162D50] text-white p-2 rounded-md mb-2">
+                <Building className="w-6 h-6" />
+              </div>
+              <p className="text-sm font-bold text-[#162D50]">OMS Corporation</p>
+            </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="flex justify-between items-start mb-8">
             <div>
-              <h3 className="text-sm font-bold text-[#162D50] mb-3 border-b border-gray-100 pb-2">Expense Information</h3>
-              <div className="space-y-3 text-sm">
-                <div className="flex justify-between"><span className="text-gray-500">Case ID:</span> <span className="font-medium text-gray-800">#CAS-{selectedCase._id.slice(-6).toUpperCase()}</span></div>
-                <div className="flex justify-between"><span className="text-gray-500">Expense Type:</span> <span className="font-medium text-gray-800">{selectedCase.expenseType}</span></div>
-                <div className="flex justify-between"><span className="text-gray-500">Total Amount:</span> <span className="font-bold text-gray-800">{selectedCase.currency === 'JPY' ? '¥' : '$'}{(selectedCase.finalTotal || selectedCase.totalExpense || 0).toLocaleString()}</span></div>
-                <div className="flex justify-between"><span className="text-gray-500">Period:</span> <span className="font-medium text-gray-800">{new Date(selectedCase.expensePeriodStart).toLocaleDateString()} - {new Date(selectedCase.expensePeriodEnd).toLocaleDateString()}</span></div>
-                <div className="flex justify-between"><span className="text-gray-500">Location:</span> <span className="font-medium text-gray-800">{selectedCase.location}</span></div>
-                <div className="flex justify-between"><span className="text-gray-500">Remark:</span> <span className="font-medium text-gray-800">{selectedCase.remark || 'N/A'}</span></div>
+              <h2 className="text-2xl font-bold text-[#162D50] mb-1 print:text-3xl">Case Details: {selectedCase.staffName}</h2>
+              <p className="text-gray-500 text-sm print:text-base">Staff ID: <span className="font-medium text-gray-800">{selectedCase.staffId}</span></p>
+            </div>
+            <div className="flex items-center space-x-3">
+              <button 
+                onClick={() => window.print()}
+                className="flex items-center px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-medium rounded-md transition-colors print:hidden"
+              >
+                <Printer className="w-4 h-4 mr-1.5" />
+                Print
+              </button>
+              <span className={`px-4 py-1.5 rounded-full text-sm font-medium border print:border-2 ${
+                selectedCase.status === 'Pending' ? 'bg-yellow-100 text-yellow-700 border-yellow-200 print:bg-yellow-100 print:text-yellow-800' :
+                selectedCase.status === 'Processing' ? 'bg-blue-100 text-blue-700 border-blue-200 print:bg-blue-100 print:text-blue-800' :
+                selectedCase.status === 'Completed' ? 'bg-green-100 text-green-700 border-green-200 print:bg-green-100 print:text-green-800' :
+                'bg-gray-100 text-gray-700 border-gray-200 print:bg-gray-100 print:text-gray-800'
+              }`}>
+                {selectedCase.status}
+              </span>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 print:grid-cols-2 gap-8 print:gap-12">
+            <div className="bg-gray-50 print:bg-white rounded-lg p-5 print:p-0 border border-gray-100 print:border-none">
+              <div className="flex items-center mb-4 border-b border-gray-200 pb-3">
+                <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center mr-3 print:bg-blue-50">
+                  <Landmark className="w-4 h-4 text-blue-700" />
+                </div>
+                <h3 className="text-sm font-bold text-[#162D50] uppercase tracking-wider print:text-base">Expense Information</h3>
+              </div>
+              <div className="space-y-4 text-sm print:text-base">
+                <div className="flex justify-between items-center pb-2 border-b border-dashed border-gray-200"><span className="text-gray-500">Case ID</span> <span className="font-bold text-gray-800">#CAS-{selectedCase._id.slice(-6).toUpperCase()}</span></div>
+                <div className="flex justify-between items-center pb-2 border-b border-dashed border-gray-200"><span className="text-gray-500">Expense Type</span> <span className="font-medium text-gray-800">{selectedCase.expenseType}</span></div>
+                <div className="flex justify-between items-center pb-2 border-b border-dashed border-gray-200"><span className="text-gray-500">Total Amount</span> <span className="font-black text-[#162D50] text-lg">{selectedCase.currency === 'JPY' ? '¥' : '$'}{(selectedCase.finalTotal || selectedCase.totalExpense || 0).toLocaleString()}</span></div>
+                <div className="flex justify-between items-center pb-2 border-b border-dashed border-gray-200"><span className="text-gray-500">Period</span> <span className="font-medium text-gray-800">{new Date(selectedCase.expensePeriodStart).toLocaleDateString()} - {new Date(selectedCase.expensePeriodEnd).toLocaleDateString()}</span></div>
+                <div className="flex justify-between items-center pb-2 border-b border-dashed border-gray-200"><span className="text-gray-500">Location</span> <span className="font-medium text-gray-800">{selectedCase.location}</span></div>
+                <div className="flex justify-between items-center"><span className="text-gray-500">Remark</span> <span className="font-medium text-gray-800">{selectedCase.remark || 'N/A'}</span></div>
               </div>
             </div>
 
-            <div>
-              <h3 className="text-sm font-bold text-[#162D50] mb-3 border-b border-gray-100 pb-2">Settlement Details</h3>
-              <div className="space-y-3 text-sm">
-                <div className="flex justify-between"><span className="text-gray-500">Category:</span> <span className="font-medium text-gray-800">{selectedCase.advancerCategory}</span></div>
-                <div className="flex justify-between"><span className="text-gray-500">Advancer Name:</span> <span className="font-medium text-gray-800">{selectedCase.advancerName}</span></div>
-                <div className="flex justify-between"><span className="text-gray-500">Settlement Method:</span> <span className="font-medium text-gray-800">{selectedCase.settlementMethod}</span></div>
-                <div className="flex justify-between"><span className="text-gray-500">Collection Method:</span> <span className="font-medium text-gray-800">{selectedCase.collectionMethod}</span></div>
-                <div className="flex justify-between"><span className="text-gray-500">Installment Plan:</span> <span className="font-medium text-gray-800">{selectedCase.installmentPlan}</span></div>
-                <div className="flex justify-between"><span className="text-gray-500">Expected Settlement:</span> <span className="font-medium text-gray-800">{new Date(selectedCase.expectedSettlementDate).toLocaleDateString()}</span></div>
+            <div className="bg-gray-50 print:bg-white rounded-lg p-5 print:p-0 border border-gray-100 print:border-none">
+              <div className="flex items-center mb-4 border-b border-gray-200 pb-3">
+                <div className="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center mr-3 print:bg-indigo-50">
+                  <Download className="w-4 h-4 text-indigo-700" />
+                </div>
+                <h3 className="text-sm font-bold text-[#162D50] uppercase tracking-wider print:text-base">Settlement Details</h3>
+              </div>
+              <div className="space-y-4 text-sm print:text-base">
+                <div className="flex justify-between items-center pb-2 border-b border-dashed border-gray-200"><span className="text-gray-500">Category</span> <span className="font-medium text-gray-800">{selectedCase.advancerCategory}</span></div>
+                <div className="flex justify-between items-center pb-2 border-b border-dashed border-gray-200"><span className="text-gray-500">Advancer Name</span> <span className="font-medium text-gray-800">{selectedCase.advancerName}</span></div>
+                <div className="flex justify-between items-center pb-2 border-b border-dashed border-gray-200"><span className="text-gray-500">Settlement Method</span> <span className="font-medium text-gray-800">{selectedCase.settlementMethod}</span></div>
+                <div className="flex justify-between items-center pb-2 border-b border-dashed border-gray-200"><span className="text-gray-500">Collection Method</span> <span className="font-medium text-gray-800">{selectedCase.collectionMethod}</span></div>
+                <div className="flex justify-between items-center pb-2 border-b border-dashed border-gray-200"><span className="text-gray-500">Installment Plan</span> <span className="font-medium text-gray-800">{selectedCase.installmentPlan}</span></div>
+                <div className="flex justify-between items-center"><span className="text-gray-500">Expected Settlement</span> <span className="font-bold text-[#162D50]">{new Date(selectedCase.expectedSettlementDate).toLocaleDateString()}</span></div>
               </div>
             </div>
+          </div>
+
+          {/* Print Footer */}
+          <div className="hidden print:flex justify-between items-center mt-16 pt-8 border-t border-gray-200 text-xs text-gray-400">
+            <p>This is a computer-generated document. No signature is required.</p>
+            <p>Ref: CAS-{selectedCase._id}</p>
           </div>
         </div>
 
