@@ -9,7 +9,8 @@ import {
   hasMissingAttachment,
 } from '../../constants/cases';
 import { exportCaseListCsv, exportPayrollCsv, exportHostBillingCsv } from '../../utils/csv';
-import { fetchCases, downloadExport } from '../../api/client';
+import { fetchCases, downloadExport, updateProcess, updateBilling } from '../../api/client';
+import { ProcessDialog, BillingDialog } from './CaseDialogs';
 import { useExpenseTypes } from '../../hooks/useMasters';
 
 const yen = (n) => `¥${Number(n || 0).toLocaleString()}`;
@@ -19,6 +20,7 @@ const buildPayrollRows = (cases) =>
   cases
     .filter((c) => c.recovery?.method === '給与天引き')
     .map((c) => ({
+      source: c,
       caseId: c.id,
       staff: c.target,
       type: c.type,
@@ -47,6 +49,9 @@ export default function PaymentStatus() {
   const [cases, setCases] = useState([]);
   const [offline, setOffline] = useState(false);
   const [exportError, setExportError] = useState('');
+  const [editingPayroll, setEditingPayroll] = useState(null);
+  const [editingBilling, setEditingBilling] = useState(null);
+  const [actionError, setActionError] = useState('');
 
   useEffect(() => {
     fetchCases()
@@ -72,7 +77,7 @@ export default function PaymentStatus() {
     return true;
   });
 
-  const billingRows = cases.filter((c) => !!c.billing).map((c) => ({ caseId: c.id, ...c.billing }));
+  const billingRows = cases.filter((c) => !!c.billing).map((c) => ({ caseId: c.id, source: c, ...c.billing }));
   const billingMonths = [...new Set(billingRows.map((r) => r.month))];
   const visibleBilling = billingRows.filter((row) => {
     if (billingKeyword && !row.host.includes(billingKeyword)) return false;
@@ -81,6 +86,35 @@ export default function PaymentStatus() {
   });
 
   const canExport = can(user.role, PERMISSIONS.EXPORT_CSV);
+
+  const canUpdateProcess = can(user.role, PERMISSIONS.UPDATE_PROCESS);
+
+  const replaceCase = (updated) =>
+    setCases((prev) => prev.map((c) => (c.id === updated.id ? updated : c)));
+
+  // §1-9 給与天引きの処理状態を更新する
+  const handlePayrollSubmit = async (payload) => {
+    setActionError('');
+    try {
+      replaceCase(await updateProcess(editingPayroll.caseId, 'recovery', payload));
+      setEditingPayroll(null);
+    } catch (err) {
+      setActionError(err.message);
+      setEditingPayroll(null);
+    }
+  };
+
+  // §1-12 派遣先請求・控除の処理状態を更新する
+  const handleBillingSubmit = async (payload) => {
+    setActionError('');
+    try {
+      replaceCase(await updateBilling(editingBilling.caseId, payload));
+      setEditingBilling(null);
+    } catch (err) {
+      setActionError(err.message);
+      setEditingBilling(null);
+    }
+  };
 
   // §1-19 CSV出力はサーバーで生成する。接続できない場合は表示中のデータから出力する。
   const runExport = async (kind, filename, fallback) => {
@@ -122,6 +156,9 @@ export default function PaymentStatus() {
           <p className="text-gray-500 text-sm">給与天引き・派遣先請求控除の処理状況を確認し、必要に応じてCSVを出力します。</p>
           {offline && (
             <p className="text-xs text-yellow-700 mt-2">サーバーに接続できないため、サンプルデータを表示しています。</p>
+          )}
+          {actionError && (
+            <p className="text-xs text-red-600 mt-2">{actionError}</p>
           )}
         </div>
         <div className="flex items-center border border-gray-300 rounded-md px-3 py-2 bg-white text-sm text-gray-700">
@@ -272,6 +309,7 @@ export default function PaymentStatus() {
                 <th className="py-3 px-4">処理日</th>
                 <th className="py-3 px-4 text-center">処理状態</th>
                 <th className="py-3 px-4">備考</th>
+                {canUpdateProcess && <th className="py-3 px-4 text-right">操作</th>}
               </tr>
             </thead>
             <tbody className="text-sm">
@@ -299,10 +337,20 @@ export default function PaymentStatus() {
                     <span className={`px-3 py-1 rounded-full text-xs font-medium border ${PROCESS_STATUS_COLORS[row.status]}`}>{row.status}</span>
                   </td>
                   <td className="py-3 px-4 text-gray-500 text-xs max-w-[200px]">{row.note || 'ー'}</td>
+                  {canUpdateProcess && (
+                    <td className="py-3 px-4 text-right">
+                      <button
+                        onClick={() => setEditingPayroll(row)}
+                        className="text-[#162D50] font-bold hover:underline whitespace-nowrap"
+                      >
+                        処理
+                      </button>
+                    </td>
+                  )}
                 </tr>
               ))}
               {visiblePayroll.length === 0 && (
-                <tr><td colSpan={10} className="py-10 text-center text-gray-400">該当するデータはありません</td></tr>
+                <tr><td colSpan={canUpdateProcess ? 11 : 10} className="py-10 text-center text-gray-400">該当するデータはありません</td></tr>
               )}
             </tbody>
           </table>
@@ -355,6 +403,7 @@ export default function PaymentStatus() {
                 <th className="py-3 px-4">処理日</th>
                 <th className="py-3 px-4">担当者</th>
                 <th className="py-3 px-4">備考</th>
+                {canUpdateProcess && <th className="py-3 px-4 text-right">操作</th>}
               </tr>
             </thead>
             <tbody className="text-sm">
@@ -375,10 +424,20 @@ export default function PaymentStatus() {
                   <td className="py-3 px-4 text-gray-500 text-xs">{row.processedOn || 'ー'}</td>
                   <td className="py-3 px-4 text-gray-600">{row.handler || 'ー'}</td>
                   <td className="py-3 px-4 text-gray-500 text-xs">{row.note || 'ー'}</td>
+                  {canUpdateProcess && (
+                    <td className="py-3 px-4 text-right">
+                      <button
+                        onClick={() => setEditingBilling(row)}
+                        className="text-[#162D50] font-bold hover:underline whitespace-nowrap"
+                      >
+                        処理
+                      </button>
+                    </td>
+                  )}
                 </tr>
               ))}
               {visibleBilling.length === 0 && (
-                <tr><td colSpan={11} className="py-10 text-center text-gray-400">該当するデータはありません</td></tr>
+                <tr><td colSpan={canUpdateProcess ? 12 : 11} className="py-10 text-center text-gray-400">該当するデータはありません</td></tr>
               )}
             </tbody>
           </table>
@@ -387,6 +446,22 @@ export default function PaymentStatus() {
       )}
 
       {/* §1-19 CSV出力 */}
+      {editingPayroll && (
+        <ProcessDialog
+          leg="recovery"
+          process={editingPayroll.source.recovery}
+          onClose={() => setEditingPayroll(null)}
+          onSubmit={handlePayrollSubmit}
+        />
+      )}
+      {editingBilling && (
+        <BillingDialog
+          billing={editingBilling.source.billing}
+          onClose={() => setEditingBilling(null)}
+          onSubmit={handleBillingSubmit}
+        />
+      )}
+
       {activeSection === 'csv' && (
         <div className="bg-white border border-gray-200 rounded-md p-8 space-y-4">
           <p className="text-sm text-gray-500 mb-4">対象月のデータをCSV形式で出力します。用途に応じて出力ファイルを選択してください。</p>

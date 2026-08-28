@@ -32,7 +32,7 @@ export const NAV_LABELS = {
   'expense-type-master': '種別マスタ管理',
   'staff-master': 'サービススタッフマスタ',
   'farmer-master': '派遣先・農家マスタ',
-  'postage-rate-master': '郵送費レート表',
+  'postage-rate-master': '郵送費',
   'installment-settings': '分割天引き設定',
   'hr-legacy': '参考／旧HR機能',
   'hr-staff-registration': 'スタッフ登録',

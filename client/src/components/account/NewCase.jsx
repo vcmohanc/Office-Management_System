@@ -448,7 +448,7 @@ export default function NewCase() {
                 <div>
                   <label className="block text-sm font-bold text-gray-700 mb-2">
                     金額 (¥) {isPostage && postageLimit != null && (
-                      <span className="text-xs font-normal text-gray-400">レート表の上限 ¥{postageLimit.toLocaleString()}</span>
+                      <span className="text-xs font-normal text-gray-400">郵送費の上限 ¥{postageLimit.toLocaleString()}</span>
                     )}
                   </label>
                   <input
@@ -504,13 +504,13 @@ export default function NewCase() {
                   {!postageRateFound && postageOrigin && postageDestination && (
                     <div className="col-span-2 flex items-center text-xs text-orange-600">
                       <AlertCircle className="w-4 h-4 mr-1" />
-                      この組み合わせのレートがマスタに登録されていません。金額を手動で入力してください。
+                      この組み合わせの郵送費がマスタに登録されていません。金額を手動で入力してください。
                     </div>
                   )}
                   {overPostageLimit && (
                     <div className="col-span-2 flex items-start text-xs text-orange-600">
                       <AlertCircle className="w-4 h-4 mr-1 shrink-0 mt-0.5" />
-                      申請金額がレート表の上限額（¥{postageLimit.toLocaleString()}）を超えています。精算額は上限額までとなる場合があります。差額の理由を「内容・備考」に記入してください。
+                      申請金額が郵送費の上限額（¥{postageLimit.toLocaleString()}）を超えています。精算額は上限額までとなる場合があります。差額の理由を「内容・備考」に記入してください。
                     </div>
                   )}
                 </div>
@@ -788,7 +788,7 @@ export default function NewCase() {
                   </div>
                   {overPostageLimit && (
                     <div className="flex justify-between">
-                      <span className="text-blue-200">レート表の上限</span>
+                      <span className="text-blue-200">郵送費の上限</span>
                       <span className="font-medium">¥{postageLimit.toLocaleString()}（超過分は要確認）</span>
                     </div>
                   )}
