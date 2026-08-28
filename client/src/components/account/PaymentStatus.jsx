@@ -257,13 +257,7 @@ export default function PaymentStatus() {
 
   return (
     <div className="max-w-6xl mx-auto space-y-6 pb-10">
-      <div className="flex justify-between items-center mb-4">
-        <h2 className="text-2xl font-bold text-[#162D50]">Payment Application List</h2>
-        <button className="flex items-center bg-[#162D50] text-white px-4 py-2 rounded-md text-sm font-bold hover:bg-[#0f1f38] transition-colors shadow-sm">
-          <Download className="w-4 h-4 mr-2" />
-          Generate Export
-        </button>
-      </div>
+      <h2 className="text-2xl font-bold text-[#162D50] mb-4">Payment Application List</h2>
       
       {/* Metric Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
@@ -419,9 +413,15 @@ export default function PaymentStatus() {
             <Calendar className="w-4 h-4 absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-800" />
           </div>
         </div>
-        <button className="bg-[#0A192F] text-white px-6 py-2 rounded-md text-sm font-bold hover:bg-[#162D50] transition-colors shadow-sm whitespace-nowrap h-[38px]">
-          Apply Filters
-        </button>
+        <div className="flex space-x-2">
+          <button className="bg-[#0A192F] text-white px-6 py-2 rounded-md text-sm font-bold hover:bg-[#162D50] transition-colors shadow-sm whitespace-nowrap h-[38px]">
+            Apply Filters
+          </button>
+          <button className="flex items-center bg-[#162D50] text-white px-4 py-2 rounded-md text-sm font-bold hover:bg-[#0f1f38] transition-colors shadow-sm whitespace-nowrap h-[38px]">
+            <Download className="w-4 h-4 mr-2" />
+            Generate Export
+          </button>
+        </div>
       </div>
 
       {/* Data Table */}
