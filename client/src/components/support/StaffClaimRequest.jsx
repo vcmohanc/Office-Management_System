@@ -12,7 +12,10 @@ export default function StaffClaimRequest() {
   const [staffInfo, setStaffInfo] = useState({
     fullName: '',
     id: '',
-    location: ''
+    location: '',
+    branchAndFarmName: '',
+    visaStatus: '',
+    visaAvailableTime: ''
   });
   const [employees, setEmployees] = useState([]);
 
@@ -59,6 +62,40 @@ export default function StaffClaimRequest() {
   const updateClaim = (index, field, value) => {
     const updatedClaims = [...claims];
     updatedClaims[index][field] = value;
+
+    if (field === 'expenseType') {
+      switch (value) {
+        case 'Postage':
+        case 'Transportation Expenses / Flight Fare':
+          updatedClaims[index].advancerCategory = 'Service staff';
+          updatedClaims[index].bearingParty = 'VC';
+          updatedClaims[index].advancerName = 'Transfer to the person concerned';
+          break;
+        case 'Visa application fee':
+          updatedClaims[index].advancerCategory = 'Service staff';
+          updatedClaims[index].bearingParty = 'VC';
+          updatedClaims[index].advancerName = 'Salary deduction';
+          break;
+        case 'Waiting Dormitory Fee':
+        case 'Hospital Fee':
+          updatedClaims[index].advancerCategory = 'Service staff';
+          updatedClaims[index].bearingParty = 'Service staff';
+          updatedClaims[index].advancerName = 'Salary deduction';
+          break;
+        case 'Equipment/Supplies':
+        case 'others':
+          updatedClaims[index].advancerCategory = 'Select for each project';
+          updatedClaims[index].bearingParty = 'Select for each project';
+          updatedClaims[index].advancerName = '';
+          break;
+        case 'WIFI':
+          updatedClaims[index].advancerCategory = 'Dispatch destination: Farm';
+          updatedClaims[index].bearingParty = 'Dispatch destination: Farm';
+          updatedClaims[index].advancerName = 'Invoice from the client company';
+          break;
+      }
+    }
+
     setClaims(updatedClaims);
   };
 
@@ -291,30 +328,69 @@ export default function StaffClaimRequest() {
             Staff Information
           </div>
           <div className="grid grid-cols-3 gap-6">
-            <div>
+            <div className="relative">
               <label className="block text-sm font-bold text-gray-700 mb-2">Full Name <span className="text-red-500">*</span></label>
-              <input type="text" placeholder="Enter full name" value={staffInfo.fullName} onChange={e => {
+              <input type="text" placeholder="Enter full name" list="claimEmployeeNames" value={staffInfo.fullName} onChange={e => {
                 const val = e.target.value;
+                setStaffInfo({...staffInfo, fullName: val});
                 const match = employees.find(emp => (emp.romajiName && emp.romajiName.toLowerCase() === val.toLowerCase()) || (emp.katakanaName && emp.katakanaName === val));
                 if (match) {
-                  setStaffInfo({...staffInfo, fullName: val, id: 'ID-' + match._id.slice(-6).toUpperCase(), location: match.location || staffInfo.location});
-                } else {
-                  setStaffInfo({...staffInfo, fullName: val});
+                  setStaffInfo({...staffInfo, 
+                    fullName: val, 
+                    id: 'ID-' + match._id.slice(-6).toUpperCase(), 
+                    location: match.location || staffInfo.location,
+                    branchAndFarmName: match.branchAndFarmName || match.location || '',
+                    visaStatus: match.visaStatus || '',
+                    visaAvailableTime: match.visaEndDate ? new Date(match.visaEndDate).toISOString().split('T')[0] : ''
+                  });
+                }
+              }} onBlur={() => {
+                if (staffInfo.fullName) {
+                  const match = employees.find(emp => (emp.romajiName && emp.romajiName.toLowerCase() === staffInfo.fullName.toLowerCase()) || (emp.katakanaName && emp.katakanaName === staffInfo.fullName));
+                  if (!match) {
+                    setStaffInfo({...staffInfo, fullName: '', id: '', location: '', branchAndFarmName: '', visaStatus: '', visaAvailableTime: ''});
+                    alert('Please select a valid staff member from the list.');
+                  }
                 }
               }} className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50]" />
+              <datalist id="claimEmployeeNames">
+                {employees.map(emp => (
+                  <option key={emp._id} value={emp.romajiName || emp.katakanaName} />
+                ))}
+              </datalist>
             </div>
-            <div>
+            <div className="relative">
               <label className="block text-sm font-bold text-gray-700 mb-2">Staff ID <span className="text-red-500">*</span></label>
-              <input type="text" placeholder="ID-00000" value={staffInfo.id} onChange={e => {
+              <input type="text" placeholder="ID-00000" list="claimEmployeeIds" value={staffInfo.id} onChange={e => {
                 const val = e.target.value;
+                setStaffInfo({...staffInfo, id: val});
                 const searchId = val.replace('ID-', '').toLowerCase();
                 const match = employees.find(emp => emp._id.slice(-6) === searchId);
                 if (match) {
-                  setStaffInfo({...staffInfo, id: val, fullName: match.romajiName || match.katakanaName || staffInfo.fullName, location: match.location || staffInfo.location});
-                } else {
-                  setStaffInfo({...staffInfo, id: val});
+                  setStaffInfo({...staffInfo, 
+                    id: val, 
+                    fullName: match.romajiName || match.katakanaName || staffInfo.fullName, 
+                    location: match.location || staffInfo.location,
+                    branchAndFarmName: match.branchAndFarmName || match.location || '',
+                    visaStatus: match.visaStatus || '',
+                    visaAvailableTime: match.visaEndDate ? new Date(match.visaEndDate).toISOString().split('T')[0] : ''
+                  });
+                }
+              }} onBlur={() => {
+                if (staffInfo.id) {
+                  const searchId = staffInfo.id.replace('ID-', '').toLowerCase();
+                  const match = employees.find(emp => emp._id.slice(-6) === searchId);
+                  if (!match) {
+                    setStaffInfo({...staffInfo, fullName: '', id: '', location: '', branchAndFarmName: '', visaStatus: '', visaAvailableTime: ''});
+                    alert('Please select a valid staff ID from the list.');
+                  }
                 }
               }} className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50]" />
+              <datalist id="claimEmployeeIds">
+                {employees.map(emp => (
+                  <option key={emp._id} value={'ID-' + emp._id.slice(-6).toUpperCase()} />
+                ))}
+              </datalist>
             </div>
             <div>
               <label className="block text-sm font-bold text-gray-700 mb-2">Location <span className="text-red-500">*</span></label>
@@ -327,6 +403,18 @@ export default function StaffClaimRequest() {
                 </select>
                 <ChevronDown className="w-4 h-4 absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 pointer-events-none" />
               </div>
+            </div>
+            <div>
+              <label className="block text-sm font-bold text-gray-700 mb-2">Branch and farm name</label>
+              <input type="text" placeholder="Branch/Farm" value={staffInfo.branchAndFarmName} onChange={e => setStaffInfo({...staffInfo, branchAndFarmName: e.target.value})} className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50]" />
+            </div>
+            <div>
+              <label className="block text-sm font-bold text-gray-700 mb-2">Visa Status</label>
+              <input type="text" placeholder="Visa Status" value={staffInfo.visaStatus} onChange={e => setStaffInfo({...staffInfo, visaStatus: e.target.value})} className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50]" />
+            </div>
+            <div>
+              <label className="block text-sm font-bold text-gray-700 mb-2">Visa Available Time</label>
+              <input type="date" value={staffInfo.visaAvailableTime} onChange={e => setStaffInfo({...staffInfo, visaAvailableTime: e.target.value})} className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50] text-gray-600" />
             </div>
           </div>
         </div>
@@ -382,7 +470,7 @@ export default function StaffClaimRequest() {
               </div>
             </div>
             <div>
-              <label className="block text-sm font-bold text-gray-700 mb-2">Advancer Name <span className="text-red-500">*</span></label>
+              <label className="block text-sm font-bold text-gray-700 mb-2">Payment Process Types <span className="text-red-500">*</span></label>
               <input 
                 type="text" 
                 placeholder="Enter name" 

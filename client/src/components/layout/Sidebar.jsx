@@ -27,6 +27,7 @@ export default function Sidebar({ activeTab, setActiveTab, openMenus, toggleMenu
   const navigate = useNavigate();
 
   const allNavItems = [
+    { name: 'Dashboard', icon: LayoutDashboard },
     { name: 'B2B Department', icon: Briefcase },
     { 
       name: 'Account Department', 
@@ -61,9 +62,9 @@ export default function Sidebar({ activeTab, setActiveTab, openMenus, toggleMenu
   ];
 
   const navItems = allNavItems.filter(item => {
-    // Admin sees B2B Department and Settings
+    // Admin sees all departments except Business Department, and Settings
     if (!user || user.role === 'admin') {
-      return item.name === 'B2B Department' || item.name === 'Settings';
+      return item.name !== 'Business Department';
     }
     
     // Other roles see their department and Settings
@@ -73,6 +74,12 @@ export default function Sidebar({ activeTab, setActiveTab, openMenus, toggleMenu
     if (user.role === 'support' && item.name === 'Support Department') return true;
     
     return false;
+  }).map(item => {
+    // Do not show sub-items for Admin
+    if (!user || user.role === 'admin') {
+      return { ...item, subItems: undefined };
+    }
+    return item;
   });
 
   const handleLogout = () => {

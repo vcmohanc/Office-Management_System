@@ -144,7 +144,7 @@ export default function PaymentStatus() {
               </div>
               <div className="space-y-4 text-sm print:text-base">
                 <div className="flex justify-between items-center pb-2 border-b border-dashed border-gray-200"><span className="text-gray-500">Category</span> <span className="font-medium text-gray-800">{selectedCase.advancerCategory}</span></div>
-                <div className="flex justify-between items-center pb-2 border-b border-dashed border-gray-200"><span className="text-gray-500">Advancer Name</span> <span className="font-medium text-gray-800">{selectedCase.advancerName}</span></div>
+                <div className="flex justify-between items-center pb-2 border-b border-dashed border-gray-200"><span className="text-gray-500">Payment Process Types</span> <span className="font-medium text-gray-800">{selectedCase.advancerName}</span></div>
                 <div className="flex justify-between items-center pb-2 border-b border-dashed border-gray-200"><span className="text-gray-500">Settlement Method</span> <span className="font-medium text-gray-800">{selectedCase.settlementMethod}</span></div>
                 <div className="flex justify-between items-center pb-2 border-b border-dashed border-gray-200"><span className="text-gray-500">Collection Method</span> <span className="font-medium text-gray-800">{selectedCase.collectionMethod}</span></div>
                 <div className="flex justify-between items-center pb-2 border-b border-dashed border-gray-200"><span className="text-gray-500">Installment Plan</span> <span className="font-medium text-gray-800">{selectedCase.installmentPlan}</span></div>

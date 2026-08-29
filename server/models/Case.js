@@ -23,6 +23,10 @@ const caseSchema = new mongoose.Schema({
   collectionMethod: { type: String, required: true },
   installmentPlan: { type: String, required: true },
   collectionStartMonth: { type: String, required: true },
+  paidTerms: { type: Number, default: 0 },
+  bouncedCount: { type: Number, default: 0 },
+  nextPaymentDate: { type: Date },
+  nextPaymentAmount: { type: Number },
   status: { type: String, default: 'New' }
 }, { timestamps: true });
 
