@@ -12,6 +12,7 @@ import {
   FilePlus,
   ListTodo,
   CreditCard,
+  Banknote,
   Plane,
   UserMinus,
   List,
@@ -33,7 +34,8 @@ export default function Sidebar({ activeTab, setActiveTab, openMenus, toggleMenu
       subItems: [
         { name: 'New Case', icon: FilePlus },
         { name: 'Case List', icon: ListTodo },
-        { name: 'Payment Status', icon: CreditCard }
+        { name: 'Payment Status', icon: CreditCard },
+        { name: 'Payment Entry', icon: Banknote }
       ]
     },
     { 

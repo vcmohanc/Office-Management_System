@@ -23,7 +23,7 @@ const caseSchema = new mongoose.Schema({
   collectionMethod: { type: String, required: true },
   installmentPlan: { type: String, required: true },
   collectionStartMonth: { type: String, required: true },
-  status: { type: String, default: 'Pending' }
+  status: { type: String, default: 'New' }
 }, { timestamps: true });
 
 export default mongoose.model('Case', caseSchema);

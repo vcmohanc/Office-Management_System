@@ -37,20 +37,36 @@ export default function PaymentStatus() {
   const hostCompanyCasesCount = cases.filter(c => c.advancerCategory === 'Host Company').length;
 
   const filteredCases = cases.filter(c => {
+    // Only show post-approval cases in Payment Status
+    const isPostApproval = ['Payment Pending', 'Processing', 'Completed', 'Overdue'].includes(c.status);
+    
     const matchesTab = c.advancerCategory === activePaymentTab || (!c.advancerCategory && activePaymentTab === 'Office');
     const matchesStatus = statusFilter === 'All Statuses' || c.status === statusFilter;
     const matchesType = expenseTypeFilter === 'All Types' || c.expenseType === expenseTypeFilter;
-    return matchesTab && matchesStatus && matchesType;
+    
+    return isPostApproval && matchesTab && matchesStatus && matchesType;
   });
 
   const totalBankTransfers = cases.filter(c => c.settlementMethod === 'Bank Transfer').reduce((sum, c) => sum + (c.finalTotal || 0), 0);
   const totalDeductions = cases.filter(c => c.collectionMethod === 'Deduction').reduce((sum, c) => sum + (c.finalTotal || 0), 0);
-  const pendingCount = cases.filter(c => c.status === 'Pending').length;
+  const pendingCount = cases.filter(c => c.status === 'Payment Pending').length;
   const processingCount = cases.filter(c => c.status === 'Processing').length;
   const completedCount = cases.filter(c => c.status === 'Completed').length;
   const overdueCount = cases.filter(c => c.status === 'Overdue').length;
 
   if (selectedCase) {
+    const personCases = cases.filter(c => c.staffId === selectedCase.staffId);
+    const personTotalBankTransfers = personCases.filter(c => c.settlementMethod === 'Bank Transfer').reduce((sum, c) => sum + (c.finalTotal || c.totalExpense || 0), 0);
+    const personTotalDeductions = personCases.filter(c => c.collectionMethod === 'Deduction').reduce((sum, c) => sum + (c.finalTotal || c.totalExpense || 0), 0);
+    const personPendingCount = personCases.filter(c => c.status === 'Payment Pending').length;
+    const personProcessingCount = personCases.filter(c => c.status === 'Processing').length;
+    
+    const filteredPersonCases = personCases.filter(c => {
+      const matchesStatus = statusFilter === 'All Statuses' || c.status === statusFilter;
+      const matchesType = expenseTypeFilter === 'All Types' || c.expenseType === expenseTypeFilter;
+      return matchesStatus && matchesType;
+    });
+
     return (
       <div className="max-w-6xl mx-auto space-y-6 pb-10">
         <button 
@@ -144,8 +160,129 @@ export default function PaymentStatus() {
           </div>
         </div>
 
+        <div className="print:hidden space-y-6 mt-6">
+          {/* Metric Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div className="bg-white border border-gray-200 p-5 rounded-md shadow-sm">
+              <h3 className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-2">TOTAL BANK TRANSFERS</h3>
+              <div className="flex justify-between items-center">
+                <div>
+                  <p className="text-3xl font-bold text-[#162D50]">¥{personTotalBankTransfers.toLocaleString()}</p>
+                  <div className="flex items-center mt-2 text-xs text-green-600 font-medium">
+                    <div className="w-3 h-3 rounded-full border-2 border-green-600 flex items-center justify-center mr-1">
+                      <div className="w-1.5 h-1.5 bg-green-600 rounded-full"></div>
+                    </div>
+                    {personCases.filter(c => c.settlementMethod === 'Bank Transfer').length} Settlements Ready
+                  </div>
+                </div>
+                <Landmark className="w-10 h-10 text-gray-100" />
+              </div>
+            </div>
+
+            <div className="bg-white border border-gray-200 p-5 rounded-md shadow-sm">
+              <h3 className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-2">PAYROLL DEDUCTIONS</h3>
+              <div className="flex justify-between items-center">
+                <div>
+                  <p className="text-3xl font-bold text-[#162D50]">¥{personTotalDeductions.toLocaleString()}</p>
+                  <div className="flex items-center mt-2 text-xs text-green-600 font-medium">
+                    <div className="w-3 h-3 rounded-full border-2 border-green-600 flex items-center justify-center mr-1">
+                      <div className="w-1.5 h-1.5 bg-green-600 rounded-full"></div>
+                    </div>
+                    {personCases.filter(c => c.collectionMethod === 'Deduction').length} Recoveries Ready
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-white border border-yellow-400 p-5 rounded-md shadow-sm border-l-4 border-l-yellow-400">
+              <h3 className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-2">PENDING ADJUSTMENTS</h3>
+              <div className="flex justify-between items-center">
+                <div>
+                  <p className="text-3xl font-bold text-[#162D50]">{personPendingCount} items</p>
+                  <div className="flex items-center mt-2 text-xs text-yellow-600 font-medium">
+                    Requires review before
+                    <br />export
+                  </div>
+                </div>
+                <div className="flex flex-col justify-between h-full items-end">
+                  <AlertCircle className="w-10 h-10 text-yellow-100" />
+                  <ArrowRight className="w-4 h-4 text-yellow-600 mt-2 cursor-pointer" />
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-white border border-red-400 p-5 rounded-md shadow-sm border-l-4 border-l-red-500">
+              <h3 className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-2">BOUNCED PAYMENTS</h3>
+              <div className="flex justify-between items-center">
+                <div>
+                  <p className="text-3xl font-bold text-red-600">{personProcessingCount} items</p>
+                  <div className="flex items-center mt-2 text-xs text-red-500 font-medium">
+                    Requires immediate
+                    <br />resolution
+                  </div>
+                </div>
+                <div className="flex flex-col justify-between h-full items-end">
+                  <AlertTriangle className="w-10 h-10 text-red-100" />
+                  <span className="text-red-500 font-bold mt-2 cursor-pointer">!</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Filter Bar */}
+          <div className="bg-[#F8F9FA] border border-gray-200 rounded-md p-4 flex items-end space-x-4">
+            <div className="flex-1">
+              <label className="block text-xs font-bold text-gray-600 mb-1">Search</label>
+              <div className="relative">
+                <input type="text" placeholder="Search Case ID, Staff Name..." className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-[#162D50]" />
+                <Search className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+              </div>
+            </div>
+            <div className="w-48">
+              <label className="block text-xs font-bold text-gray-600 mb-1">Status</label>
+              <div className="relative">
+                <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)} className="w-full pl-4 pr-10 py-2 border border-gray-300 rounded-md text-sm appearance-none focus:outline-none focus:ring-1 focus:ring-[#162D50] text-gray-600">
+                  <option value="All Statuses">All Statuses</option>
+                  {[...new Set(personCases.map(c => c.status))].filter(Boolean).map(status => (
+                    <option key={status} value={status}>{status}</option>
+                  ))}
+                </select>
+                <ChevronDown className="w-4 h-4 absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none" />
+              </div>
+            </div>
+            <div className="w-48">
+              <label className="block text-xs font-bold text-gray-600 mb-1">Expense Type</label>
+              <div className="relative">
+                <select value={expenseTypeFilter} onChange={e => setExpenseTypeFilter(e.target.value)} className="w-full pl-4 pr-10 py-2 border border-gray-300 rounded-md text-sm appearance-none focus:outline-none focus:ring-1 focus:ring-[#162D50] text-gray-600">
+                  <option value="All Types">All Types</option>
+                  {expenseTypeOptions.map(opt => (
+                    <option key={opt._id || opt.value} value={opt.value}>{opt.label}</option>
+                  ))}
+                </select>
+                <ChevronDown className="w-4 h-4 absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none" />
+              </div>
+            </div>
+            <div className="w-48">
+              <label className="block text-xs font-bold text-gray-600 mb-1">Date Range</label>
+              <div className="relative">
+                <input type="text" placeholder="YYYY / MM / DD" className="w-full pl-4 pr-10 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-[#162D50]" />
+                <Calendar className="w-4 h-4 absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-800" />
+              </div>
+            </div>
+            <div className="flex space-x-2">
+              <button className="bg-[#0A192F] text-white px-6 py-2 rounded-md text-sm font-bold hover:bg-[#162D50] transition-colors shadow-sm whitespace-nowrap h-[38px]">
+                Apply Filters
+              </button>
+              <button className="flex items-center bg-[#162D50] text-white px-4 py-2 rounded-md text-sm font-bold hover:bg-[#0f1f38] transition-colors shadow-sm whitespace-nowrap h-[38px]">
+                <Download className="w-4 h-4 mr-2" />
+                Generate Export
+              </button>
+            </div>
+          </div>
+        </div>
+
         {/* Payment History Section */}
-        <div className="bg-white border border-gray-200 rounded-md shadow-sm overflow-hidden mt-6">
+        <div className="bg-white border border-gray-200 rounded-md shadow-sm overflow-hidden mt-6 print:hidden">
           <div className="px-6 py-4 border-b border-gray-200 bg-[#F8F9FA]">
             <h3 className="text-lg font-bold text-[#162D50]">Payment History & Related Cases</h3>
           </div>
@@ -161,7 +298,10 @@ export default function PaymentStatus() {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100 text-sm">
-              {cases.filter(c => c.staffId === selectedCase.staffId).map(c => (
+              {filteredPersonCases.length === 0 ? (
+                <tr><td colSpan="6" className="py-4 px-6 text-center text-gray-500">No cases found matching filters.</td></tr>
+              ) : (
+                filteredPersonCases.map(c => (
                 <tr key={c._id} className={`hover:bg-gray-50 transition-colors ${c._id === selectedCase._id ? 'bg-blue-50' : ''}`}>
                   <td className="py-4 px-6 font-medium text-[#162D50]">#CAS-{c._id.slice(-6).toUpperCase()}</td>
                   <td className="py-4 px-6 text-gray-600">{new Date(c.expensePeriodStart).toLocaleDateString()} - {new Date(c.expensePeriodEnd).toLocaleDateString()}</td>
@@ -169,7 +309,7 @@ export default function PaymentStatus() {
                   <td className="py-4 px-6 font-bold text-[#162D50]">{c.currency === 'JPY' ? '¥' : '$'}{(c.finalTotal || c.totalExpense || 0).toLocaleString()}</td>
                   <td className="py-4 px-6">
                     <span className={`px-2 py-1 rounded-full text-xs font-medium border ${
-                      c.status === 'Pending' ? 'bg-yellow-100 text-yellow-700 border-yellow-200' :
+                      c.status === 'Payment Pending' ? 'bg-yellow-100 text-yellow-700 border-yellow-200' :
                       c.status === 'Processing' ? 'bg-blue-100 text-blue-700 border-blue-200' :
                       c.status === 'Completed' ? 'bg-green-100 text-green-700 border-green-200' :
                       'bg-gray-100 text-gray-700 border-gray-200'
@@ -186,8 +326,9 @@ export default function PaymentStatus() {
                     )}
                   </td>
                 </tr>
-              ))}
-            </tbody>
+              ))
+            )}
+          </tbody>
           </table>
         </div>
       </div>
@@ -382,9 +523,10 @@ export default function PaymentStatus() {
                     <td className="py-3 px-4 text-right font-bold text-gray-800">{c.currency === 'JPY' ? '¥' : '$'}{(c.finalTotal || 0).toLocaleString()}</td>
                     <td className="py-3 px-4 text-center">
                       <span className={`px-3 py-1 rounded-full text-xs font-medium border ${
-                        c.status === 'Pending' ? 'bg-yellow-100 text-yellow-700 border-yellow-200' :
+                        c.status === 'Payment Pending' ? 'bg-yellow-100 text-yellow-700 border-yellow-200' :
                         c.status === 'Processing' ? 'bg-blue-100 text-blue-700 border-blue-200' :
                         c.status === 'Completed' ? 'bg-green-100 text-green-700 border-green-200' :
+                        c.status === 'Overdue' ? 'bg-red-100 text-red-700 border-red-200' :
                         'bg-gray-100 text-gray-700 border-gray-200'
                       }`}>
                         {c.status}

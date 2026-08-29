@@ -6,6 +6,7 @@ import AccountDashboard from './account/AccountDashboard';
 import NewCase from './account/NewCase';
 import CaseList from './account/CaseList';
 import PaymentStatus from './account/PaymentStatus';
+import PaymentEntry from './account/PaymentEntry';
 import HRDashboard from './hr/HRDashboard';
 import StaffRegistration from './hr/StaffRegistration';
 import StaffList from './hr/StaffList';
@@ -61,6 +62,7 @@ export default function Dashboard({ setToken }) {
           {activeTab === 'New Case' && <NewCase />}
           {activeTab === 'Case List' && <CaseList />}
           {activeTab === 'Payment Status' && <PaymentStatus />}
+          {activeTab === 'Payment Entry' && <PaymentEntry />}
           {activeTab === 'Staff Registration' && <StaffRegistration />}
           {activeTab === 'Staff List' && <StaffList setActiveTab={setActiveTab} />}
           {activeTab === 'Visa Management' && <VisaManagement />}
@@ -72,7 +74,7 @@ export default function Dashboard({ setToken }) {
           {activeTab === 'Admin User List' && <AdminUserList setActiveTab={setActiveTab} />}
           {activeTab === 'Settings' && <Settings user={user} />}
           {activeTab === 'B2B Department' && <B2BDashboard />}
-          {activeTab !== 'Dashboard' && activeTab !== 'Account Department' && activeTab !== 'HR Department' && activeTab !== 'New Case' && activeTab !== 'Case List' && activeTab !== 'Payment Status' && activeTab !== 'Staff Registration' && activeTab !== 'Staff List' && activeTab !== 'Visa Management' && activeTab !== 'Resignation' && activeTab !== 'Support Department' && activeTab !== 'Staff Claim Request' && activeTab !== 'Claim List' && activeTab !== 'Admin New Registration' && activeTab !== 'Admin User List' && activeTab !== 'Settings' && activeTab !== 'B2B Department' && (
+          {activeTab !== 'Dashboard' && activeTab !== 'Account Department' && activeTab !== 'HR Department' && activeTab !== 'New Case' && activeTab !== 'Case List' && activeTab !== 'Payment Status' && activeTab !== 'Payment Entry' && activeTab !== 'Staff Registration' && activeTab !== 'Staff List' && activeTab !== 'Visa Management' && activeTab !== 'Resignation' && activeTab !== 'Support Department' && activeTab !== 'Staff Claim Request' && activeTab !== 'Claim List' && activeTab !== 'Admin New Registration' && activeTab !== 'Admin User List' && activeTab !== 'Settings' && activeTab !== 'B2B Department' && (
             <div className="flex items-center justify-center h-full text-gray-400">
               <p>Content for {activeTab} is not yet implemented.</p>
             </div>

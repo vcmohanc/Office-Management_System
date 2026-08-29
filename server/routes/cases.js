@@ -22,5 +22,28 @@ router.post('/', async (req, res) => {
     res.status(400).json({ message: 'Error creating case', error: error.message });
   }
 });
+router.patch('/:id/status', async (req, res) => {
+  try {
+    const { status } = req.body;
+    if (!status) {
+      return res.status(400).json({ message: 'Status is required' });
+    }
+    
+    const updatedCase = await Case.findByIdAndUpdate(
+      req.params.id,
+      { status },
+      { new: true }
+    );
+    
+    if (!updatedCase) {
+      return res.status(404).json({ message: 'Case not found' });
+    }
+    
+    res.json(updatedCase);
+  } catch (error) {
+    console.error('Error updating case status:', error);
+    res.status(500).json({ message: 'Server error updating status' });
+  }
+});
 
 export default router;
