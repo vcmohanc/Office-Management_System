@@ -19,7 +19,8 @@ import {
   UserPlus,
   FileText,
   ClipboardList,
-  Calendar
+  Calendar,
+  MapPin
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
@@ -45,6 +46,7 @@ export default function Sidebar({ activeTab, setActiveTab, openMenus, toggleMenu
       subItems: [
         { name: 'Staff Registration', icon: UserPlus },
         { name: 'Staff List', icon: List },
+        { name: 'Assign Work Place', icon: MapPin },
         { name: 'Visa Management', icon: Plane },
         { name: 'Resignation', icon: UserMinus }
       ]

@@ -48,6 +48,15 @@ export default function StaffList({ setActiveTab }) {
   };
 
   const getPrimaryAction = (employee) => {
+    if (employee.onboardingStatus === 'Active') {
+      return { 
+        label: 'View', 
+        type: 'default', 
+        className: 'bg-transparent text-[#162D50] font-bold hover:bg-blue-50',
+        onClick: () => setSelectedStaffToView(employee) 
+      };
+    }
+
     if (employee.onboardingStatus === 'Missing Documents') {
       return { 
         label: 'Action Required', 
@@ -81,8 +90,8 @@ export default function StaffList({ setActiveTab }) {
   const filteredEmployees = employees.filter(employee => {
     // 1. Tab Filtering
     let matchesTab = true;
-    const dept = (employee.department || '').toLowerCase();
-    
+    const deptStr = Array.isArray(employee.department) ? employee.department.join(' ') : (employee.department || '');
+    const dept = deptStr.toLowerCase();
     if (activeTab === 'Service Staff') {
       matchesTab = dept.includes('service');
     } else if (activeTab === 'Farm Staff') {
@@ -216,7 +225,7 @@ export default function StaffList({ setActiveTab }) {
                   <tr key={employee._id} className="border-b border-gray-100 hover:bg-gray-50">
                     <td className="py-4 px-6 font-medium text-[#162D50]">#{employee._id.slice(-6).toUpperCase()}</td>
                     <td className="py-4 px-6 font-bold text-gray-900">{employee.romajiName || employee.katakanaName}</td>
-                    <td className="py-4 px-6 text-gray-600">{employee.department}</td>
+                    <td className="py-4 px-6 text-gray-600">{Array.isArray(employee.department) ? employee.department.join(', ') : employee.department}</td>
                     <td className="py-4 px-6 text-gray-600">
                       {new Date(employee.joinDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                     </td>

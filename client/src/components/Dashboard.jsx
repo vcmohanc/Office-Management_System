@@ -10,6 +10,7 @@ import PaymentEntry from './account/PaymentEntry';
 import HRDashboard from './hr/HRDashboard';
 import StaffRegistration from './hr/StaffRegistration';
 import StaffList from './hr/StaffList';
+import AssignWorkPlace from './hr/AssignWorkPlace';
 import VisaManagement from './hr/VisaManagement';
 import Resignation from './hr/Resignation';
 import SupportDashboard from './support/SupportDashboard';
@@ -63,8 +64,9 @@ export default function Dashboard({ setToken }) {
           {activeTab === 'Case List' && <CaseList />}
           {activeTab === 'Payment Status' && <PaymentStatus />}
           {activeTab === 'Payment Entry' && <PaymentEntry />}
-          {activeTab === 'Staff Registration' && <StaffRegistration />}
+          {activeTab === 'Staff Registration' && <StaffRegistration setActiveTab={setActiveTab} />}
           {activeTab === 'Staff List' && <StaffList setActiveTab={setActiveTab} />}
+          {activeTab === 'Assign Work Place' && <AssignWorkPlace />}
           {activeTab === 'Visa Management' && <VisaManagement />}
           {activeTab === 'Resignation' && <Resignation />}
           {activeTab === 'Support Department' && <SupportDashboard />}
@@ -74,7 +76,7 @@ export default function Dashboard({ setToken }) {
           {activeTab === 'Admin User List' && <AdminUserList setActiveTab={setActiveTab} />}
           {activeTab === 'Settings' && <Settings user={user} />}
           {activeTab === 'B2B Department' && <B2BDashboard />}
-          {activeTab !== 'Dashboard' && activeTab !== 'Account Department' && activeTab !== 'HR Department' && activeTab !== 'New Case' && activeTab !== 'Case List' && activeTab !== 'Payment Status' && activeTab !== 'Payment Entry' && activeTab !== 'Staff Registration' && activeTab !== 'Staff List' && activeTab !== 'Visa Management' && activeTab !== 'Resignation' && activeTab !== 'Support Department' && activeTab !== 'Staff Claim Request' && activeTab !== 'Claim List' && activeTab !== 'Admin New Registration' && activeTab !== 'Admin User List' && activeTab !== 'Settings' && activeTab !== 'B2B Department' && (
+          {activeTab !== 'Dashboard' && activeTab !== 'Account Department' && activeTab !== 'HR Department' && activeTab !== 'New Case' && activeTab !== 'Case List' && activeTab !== 'Payment Status' && activeTab !== 'Payment Entry' && activeTab !== 'Staff Registration' && activeTab !== 'Staff List' && activeTab !== 'Assign Work Place' && activeTab !== 'Visa Management' && activeTab !== 'Resignation' && activeTab !== 'Support Department' && activeTab !== 'Staff Claim Request' && activeTab !== 'Claim List' && activeTab !== 'Admin New Registration' && activeTab !== 'Admin User List' && activeTab !== 'Settings' && activeTab !== 'B2B Department' && (
             <div className="flex items-center justify-center h-full text-gray-400">
               <p>Content for {activeTab} is not yet implemented.</p>
             </div>

@@ -13,6 +13,17 @@ router.get('/', async (req, res) => {
   }
 });
 
+router.post('/', async (req, res) => {
+  try {
+    const newEmployee = new Employee(req.body);
+    const savedEmployee = await newEmployee.save();
+    res.status(201).json(savedEmployee);
+  } catch (error) {
+    console.error('Error creating employee:', error);
+    res.status(500).json({ message: 'Server error creating employee', error: error.message });
+  }
+});
+
 router.put('/:id', async (req, res) => {
   try {
     const updatedEmployee = await Employee.findByIdAndUpdate(

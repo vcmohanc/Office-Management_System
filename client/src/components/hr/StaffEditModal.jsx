@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { X, Save, User, Globe, Briefcase, Heart, AlertCircle, Plus, Trash2 } from 'lucide-react';
+import { ALL_DEPARTMENTS } from '../../constants';
 
 export default function StaffEditModal({ employee, onClose, onEditComplete, initialTab = 'Basic' }) {
   const [activeTab, setActiveTab] = useState(initialTab);
@@ -12,11 +13,14 @@ export default function StaffEditModal({ employee, onClose, onEditComplete, init
 
   const [formData, setFormData] = useState({
     ...employee,
+    department: Array.isArray(employee.department) ? employee.department : (employee.department ? [employee.department] : []),
     joinDate: formatDate(employee.joinDate),
     dob: formatDate(employee.dob),
     visaStartDate: formatDate(employee.visaStartDate),
     visaEndDate: formatDate(employee.visaEndDate),
     visaRenewalDate: formatDate(employee.visaRenewalDate),
+    phone: employee.phone || '',
+    email: employee.email || '',
     educationalQualifications: employee.educationalQualifications || [],
     workExperience: employee.workExperience || [],
     languageFluency: {
@@ -37,6 +41,16 @@ export default function StaffEditModal({ employee, onClose, onEditComplete, init
 
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
+  const [photoPreview, setPhotoPreview] = useState(employee.photo || null);
+
+  const handlePhotoChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => setPhotoPreview(reader.result);
+      reader.readAsDataURL(file);
+    }
+  };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -100,8 +114,13 @@ export default function StaffEditModal({ employee, onClose, onEditComplete, init
     try {
       const response = await fetch(`http://localhost:5000/api/employees/${employee._id}`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
+        headers: { 
+          'Content-Type': 'application/json' 
+        },
+        body: JSON.stringify({
+          ...formData,
+          photo: photoPreview
+        }),
       });
 
       if (!response.ok) {
@@ -164,6 +183,23 @@ export default function StaffEditModal({ employee, onClose, onEditComplete, init
             
             {/* TAB: Basic Info */}
             <div className={activeTab === 'Basic' ? 'block' : 'hidden'}>
+              <div className="mb-6 flex items-center space-x-6">
+                <div className="w-24 h-24 border-2 border-gray-300 bg-gray-50 flex items-center justify-center overflow-hidden flex-shrink-0">
+                  {photoPreview ? (
+                    <img src={photoPreview} alt="Preview" className="w-full h-full object-cover" />
+                  ) : (
+                    <div className="text-gray-400 text-xs text-center px-2">No Photo</div>
+                  )}
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-gray-600 mb-1 uppercase">Profile Photo</label>
+                  <label className="cursor-pointer bg-white border border-gray-300 text-gray-700 px-4 py-2 rounded-md text-sm font-medium hover:bg-gray-50 transition-colors inline-block">
+                    <span>Upload Photo</span>
+                    <input type="file" accept="image/*" className="hidden" onChange={handlePhotoChange} />
+                  </label>
+                  <p className="text-xs text-gray-400 mt-2">JPEG or PNG, max 2MB</p>
+                </div>
+              </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-bold text-gray-600 mb-1 uppercase">Romaji Name</label>
@@ -174,16 +210,43 @@ export default function StaffEditModal({ employee, onClose, onEditComplete, init
                   <input type="text" name="katakanaName" value={formData.katakanaName} onChange={handleChange} className="w-full px-4 py-2 border rounded-md text-sm focus:ring-1 focus:ring-[#162D50]" required />
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-gray-600 mb-1 uppercase">Department</label>
-                  <select name="department" value={formData.department} onChange={handleChange} className="w-full px-4 py-2 border rounded-md text-sm focus:ring-1 focus:ring-[#162D50]" required>
-                    <option value="">Select Department</option>
-                    <option value="Audit & Compliance">Audit & Compliance</option>
-                    <option value="Taxation">Taxation</option>
-                    <option value="Payroll">Payroll</option>
-                    <option value="HR">HR</option>
-                    <option value="Service">Service</option>
-                    <option value="Farm Operations">Farm Operations</option>
-                  </select>
+                  <label className="block text-xs font-bold text-gray-600 mb-1 uppercase">Phone Number</label>
+                  <input type="tel" name="phone" value={formData.phone} onChange={handleChange} className="w-full px-4 py-2 border rounded-md text-sm focus:ring-1 focus:ring-[#162D50]" />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-gray-600 mb-1 uppercase">Email Address</label>
+                  <input type="email" name="email" value={formData.email} onChange={handleChange} className="w-full px-4 py-2 border rounded-md text-sm focus:ring-1 focus:ring-[#162D50]" />
+                </div>
+                <div className="col-span-1 md:col-span-2">
+                  <label className="block text-xs font-bold text-gray-600 mb-2 uppercase">Departments</label>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                    {ALL_DEPARTMENTS.map((dept, idx) => {
+                      const isSelected = formData.department.includes(dept);
+                      return (
+                        <button
+                          key={idx}
+                          type="button"
+                          onClick={() => {
+                            setFormData(prev => ({
+                              ...prev,
+                              department: isSelected 
+                                ? prev.department.filter(d => d !== dept) 
+                                : [...prev.department, dept]
+                            }));
+                          }}
+                          className={`
+                            text-left px-3 py-2 rounded border transition-colors text-sm
+                            ${isSelected 
+                              ? 'border-[#162D50] bg-[#162D50] text-white' 
+                              : 'border-gray-300 bg-white text-gray-700 hover:border-[#162D50]'
+                            }
+                          `}
+                        >
+                          {dept}
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
                 <div>
                   <label className="block text-xs font-bold text-gray-600 mb-1 uppercase">Join Date</label>
