@@ -8,7 +8,8 @@ import {
   HelpCircle,
   LogOut,
   ChevronDown,
-  ChevronRight,
+  ChevronsRight,
+  ChevronsLeft,
   FilePlus,
   ListTodo,
   CreditCard,
@@ -20,12 +21,15 @@ import {
   FileText,
   ClipboardList,
   Calendar,
-  MapPin
+  MapPin,
+  Menu
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { useState } from 'react';
 
 export default function Sidebar({ activeTab, setActiveTab, openMenus, toggleMenu, setToken, user }) {
   const navigate = useNavigate();
+  const [isCollapsed, setIsCollapsed] = useState(false);
 
   const allNavItems = [
     { name: 'Dashboard', icon: LayoutDashboard },
@@ -57,7 +61,7 @@ export default function Sidebar({ activeTab, setActiveTab, openMenus, toggleMenu
       icon: LifeBuoy,
       subItems: [
         { name: 'Staff Claim Request', icon: FileText },
-        { name: 'Claim List', icon: ClipboardList }
+        { name: 'Case List', icon: ClipboardList }
       ]
     },
     { name: 'Settings', icon: SettingsIcon },
@@ -92,16 +96,26 @@ export default function Sidebar({ activeTab, setActiveTab, openMenus, toggleMenu
   };
 
   return (
-    <aside className="w-64 bg-[#F2F4F7] flex flex-col justify-between border-r border-gray-200">
-      <div>
-        <div className="p-5 flex items-center mb-4">
-          <div className="w-10 h-10 bg-[#162D50] rounded flex items-center justify-center text-white font-bold mr-3 uppercase">
-            {user?.username ? user.username[0] : 'A'}
+    <aside className={`${isCollapsed ? 'w-20' : 'w-64'} transition-all duration-300 bg-[#F2F4F7] flex flex-col justify-between border-r border-gray-200 relative z-10`}>
+      <div className="overflow-hidden">
+        <div className={`p-4 flex items-center ${isCollapsed ? 'justify-center flex-col space-y-4' : 'justify-between'} mb-2`}>
+          <div className="flex items-center">
+            <div className={`w-10 h-10 bg-[#162D50] rounded flex items-center justify-center text-white font-bold uppercase shrink-0 ${isCollapsed ? '' : 'mr-3'}`}>
+              {user?.username ? user.username[0] : 'A'}
+            </div>
+            {!isCollapsed && (
+              <div className="whitespace-nowrap">
+                <h2 className="text-[#162D50] font-bold text-lg leading-tight capitalize truncate w-32">{user?.username || 'Admin'}</h2>
+                <p className="text-xs text-gray-500 capitalize truncate w-32">{user?.role === 'admin' ? 'System Administrator' : `${user?.role} Department`}</p>
+              </div>
+            )}
           </div>
-          <div>
-            <h2 className="text-[#162D50] font-bold text-lg leading-tight capitalize">{user?.username || 'Admin'}</h2>
-            <p className="text-xs text-gray-500 capitalize">{user?.role === 'admin' ? 'System Administrator' : `${user?.role} Department`}</p>
-          </div>
+          <button 
+            onClick={() => setIsCollapsed(!isCollapsed)} 
+            className="text-[#162D50] hover:bg-gray-200 p-1 rounded-md transition-colors"
+          >
+            {isCollapsed ? <ChevronsRight className="w-5 h-5" strokeWidth={3} /> : <ChevronsLeft className="w-5 h-5" strokeWidth={3} />}
+          </button>
         </div>
 
         <nav className="space-y-1 px-3">
@@ -114,23 +128,22 @@ export default function Sidebar({ activeTab, setActiveTab, openMenus, toggleMenu
             return (
               <div key={item.name} className="flex flex-col">
                 <button
-                  onClick={() => {
-                    setActiveTab(item.name);
-                  }}
-                  className={`w-full flex items-center justify-between px-4 py-2.5 rounded-md transition-colors ${
+                  onClick={() => setActiveTab(item.name)}
+                  className={`w-full flex items-center ${isCollapsed ? 'justify-center' : 'justify-between'} px-4 py-2.5 rounded-md transition-colors ${
                     isActive
                       ? 'bg-[#162D50] text-white font-bold'
                       : 'text-[#4A5568] hover:bg-gray-100'
                   }`}
+                  title={isCollapsed ? item.name : undefined}
                 >
                   <div className="flex items-center">
-                    <Icon className={`w-5 h-5 mr-3 ${isActive ? 'text-white' : 'text-gray-500'}`} />
-                    <span className="text-sm">{item.name}</span>
+                    <Icon className={`w-5 h-5 ${isCollapsed ? '' : 'mr-3'} ${isActive ? 'text-white' : 'text-gray-500'}`} />
+                    {!isCollapsed && <span className="text-sm whitespace-nowrap">{item.name}</span>}
                   </div>
                 </button>
                 
                 {/* Sub items static */}
-                {hasSubItems && (
+                {hasSubItems && !isCollapsed && (
                   <div className="mt-1 ml-4 pl-4 border-l border-gray-200 space-y-1">
                     {item.subItems.map(subItem => {
                       const SubIcon = subItem.icon;
@@ -138,7 +151,14 @@ export default function Sidebar({ activeTab, setActiveTab, openMenus, toggleMenu
                       return (
                         <button
                           key={subItem.name}
-                          onClick={() => setActiveTab(subItem.name)}
+                          onClick={() => {
+                            if (subItem.name === 'Case List' && item.name === 'Support Department') {
+                              sessionStorage.setItem('caseListTab', 'Staff');
+                            } else if (subItem.name === 'Case List' && item.name === 'Account Department') {
+                              sessionStorage.setItem('caseListTab', 'Office');
+                            }
+                            setActiveTab(subItem.name);
+                          }}
                           className={`w-full flex items-center px-4 py-2 rounded-md transition-colors text-sm ${
                             isSubActive 
                               ? 'bg-[#162D50] text-white font-bold' 
@@ -159,16 +179,17 @@ export default function Sidebar({ activeTab, setActiveTab, openMenus, toggleMenu
       </div>
 
       <div className="p-3 space-y-1 mb-2">
-        <a href="#" className="flex items-center px-4 py-2 text-[#4A5568] hover:bg-gray-200 rounded-md">
-          <HelpCircle className="w-5 h-5 mr-3 text-gray-500" />
-          <span className="font-medium text-sm">Support</span>
+        <a href="#" className={`flex items-center ${isCollapsed ? 'justify-center' : ''} px-4 py-2 text-[#4A5568] hover:bg-gray-200 rounded-md transition-colors`} title={isCollapsed ? 'Support' : undefined}>
+          <HelpCircle className={`w-5 h-5 ${isCollapsed ? '' : 'mr-3'} text-gray-500`} />
+          {!isCollapsed && <span className="font-medium text-sm whitespace-nowrap">Support</span>}
         </a>
         <button 
           onClick={handleLogout}
-          className="w-full flex items-center px-4 py-2 text-[#4A5568] hover:bg-gray-200 rounded-md transition-colors"
+          className={`w-full flex items-center ${isCollapsed ? 'justify-center' : ''} px-4 py-2 text-[#4A5568] hover:bg-gray-200 rounded-md transition-colors`}
+          title={isCollapsed ? 'Log Out' : undefined}
         >
-          <LogOut className="w-5 h-5 mr-3 text-gray-500" />
-          <span className="font-medium text-sm">Log Out</span>
+          <LogOut className={`w-5 h-5 ${isCollapsed ? '' : 'mr-3'} text-gray-500`} />
+          {!isCollapsed && <span className="font-medium text-sm whitespace-nowrap">Log Out</span>}
         </button>
       </div>
     </aside>

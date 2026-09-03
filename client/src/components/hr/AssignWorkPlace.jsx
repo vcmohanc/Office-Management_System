@@ -171,9 +171,14 @@ export default function AssignWorkPlace() {
       if (mainCategory === 'Haken') {
         matchesFilter = includesValue(emp.assignedWorkPlace, filterWorkPlace) && emp.onboardingStatus === 'Active';
       } else if (mainCategory === 'Office') {
-        matchesFilter = includesValue(emp.department, filterWorkPlace) && emp.onboardingStatus === 'Active';
+        const isDepartmentFilter = OFFICE_DEPARTMENTS.includes(filterWorkPlace);
+        if (isDepartmentFilter) {
+          matchesFilter = includesValue(emp.department, filterWorkPlace) && emp.onboardingStatus === 'Active';
+        } else {
+          matchesFilter = includesValue(emp.office, filterWorkPlace) && emp.onboardingStatus === 'Active';
+        }
       } else {
-        matchesFilter = (includesValue(emp.assignedWorkPlace, filterWorkPlace) || includesValue(emp.department, filterWorkPlace)) && emp.onboardingStatus === 'Active';
+        matchesFilter = (includesValue(emp.assignedWorkPlace, filterWorkPlace) || includesValue(emp.department, filterWorkPlace) || includesValue(emp.office, filterWorkPlace)) && emp.onboardingStatus === 'Active';
       }
     }
                           
@@ -192,9 +197,14 @@ export default function AssignWorkPlace() {
     if (mainCategory === 'Haken') {
       return baseEmps.filter(e => includesValue(e.assignedWorkPlace, filterVal) && e.onboardingStatus === 'Active').length;
     } else if (mainCategory === 'Office') {
-      return baseEmps.filter(e => includesValue(e.department, filterVal) && e.onboardingStatus === 'Active').length;
+      const isDepartmentFilter = OFFICE_DEPARTMENTS.includes(filterVal);
+      if (isDepartmentFilter) {
+        return baseEmps.filter(e => includesValue(e.department, filterVal) && e.onboardingStatus === 'Active').length;
+      } else {
+        return baseEmps.filter(e => includesValue(e.office, filterVal) && e.onboardingStatus === 'Active').length;
+      }
     } else {
-      return baseEmps.filter(e => (includesValue(e.assignedWorkPlace, filterVal) || includesValue(e.department, filterVal)) && e.onboardingStatus === 'Active').length;
+      return baseEmps.filter(e => (includesValue(e.assignedWorkPlace, filterVal) || includesValue(e.department, filterVal) || includesValue(e.office, filterVal)) && e.onboardingStatus === 'Active').length;
     }
   };
 
@@ -328,11 +338,12 @@ export default function AssignWorkPlace() {
               onChange={(e) => setFilterWorkPlace(e.target.value)}
               className="w-full pl-4 pr-8 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#162D50] bg-white appearance-none cursor-pointer"
             >
-              <option value="All">All Locations</option>
+              <option value="All">{mainCategory === 'Office' ? 'Select Office' : 'All Locations'}</option>
               <option value="Unassigned">Unassigned</option>
-              {WORK_PLACES.map(place => (
-                <option key={place} value={place}>{place}</option>
-              ))}
+              {mainCategory === 'Office' 
+                ? OFFICE_LOCATIONS.map(loc => <option key={loc} value={loc}>{loc}</option>)
+                : WORK_PLACES.map(place => <option key={place} value={place}>{place}</option>)
+              }
             </select>
             <ChevronDown className="w-4 h-4 absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 pointer-events-none" />
           </div>
@@ -349,8 +360,8 @@ export default function AssignWorkPlace() {
                 <th className="py-4 px-6">Staff ID</th>
                 <th className="py-4 px-6">Full Name</th>
                 <th className="py-4 px-6">Department</th>
+                <th className="py-4 px-6">{mainCategory === 'Office' ? 'Select Office' : 'Work Place'}</th>
                 <th className="py-4 px-6">Join Date</th>
-                <th className="py-4 px-6">Work Place</th>
                 <th className="py-4 px-6 text-center">Actions</th>
               </tr>
             </thead>
@@ -370,15 +381,22 @@ export default function AssignWorkPlace() {
                     <td className="py-4 px-6 font-medium text-[#162D50]">#{employee._id?.slice(-6).toUpperCase() || 'NEW'}</td>
                     <td className="py-4 px-6 font-bold text-gray-900">{employee.romajiName || 'N/A'}</td>
                     <td className="py-4 px-6 text-gray-600">{Array.isArray(employee.department) ? employee.department.join(', ') : employee.department || 'N/A'}</td>
-                    <td className="py-4 px-6 text-gray-600">
-                      {employee.joinDate ? new Date(employee.joinDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'N/A'}
-                    </td>
                     <td className="py-4 px-6">
                       {employee.onboardingStatus !== 'Active' ? (
                         <span className="px-3 py-1 bg-red-100 text-red-800 rounded-full text-xs font-semibold whitespace-nowrap">
                           {employee.onboardingStatus || 'Inactive'}
                         </span>
-                      ) : employee.assignedWorkPlace ? (
+                      ) : mainCategory === 'Office' ? (
+                        employee.office && employee.office.length > 0 ? (
+                          <span className="px-3 py-1 bg-indigo-100 text-indigo-800 rounded-full text-xs font-semibold whitespace-nowrap">
+                            {Array.isArray(employee.office) ? employee.office.join(', ') : employee.office}
+                          </span>
+                        ) : (
+                          <span className="px-3 py-1 bg-amber-100 text-amber-800 rounded-full text-xs font-semibold whitespace-nowrap">
+                            Pending Assignment
+                          </span>
+                        )
+                      ) : employee.assignedWorkPlace && employee.assignedWorkPlace.length > 0 ? (
                         <span className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-xs font-semibold whitespace-nowrap">
                           {Array.isArray(employee.assignedWorkPlace) ? employee.assignedWorkPlace.join(', ') : employee.assignedWorkPlace}
                         </span>
@@ -387,6 +405,9 @@ export default function AssignWorkPlace() {
                           Pending Assignment
                         </span>
                       )}
+                    </td>
+                    <td className="py-4 px-6 text-gray-600">
+                      {employee.joinDate ? new Date(employee.joinDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'N/A'}
                     </td>
                     <td className="py-4 px-6 text-center">
                       <button 

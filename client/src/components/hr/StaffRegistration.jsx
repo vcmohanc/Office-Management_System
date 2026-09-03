@@ -1,14 +1,23 @@
 import { Calendar, Trash2, Plus, UploadCloud, AlertCircle } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { ALL_DEPARTMENTS } from '../../constants';
+import MultiDatePicker from '../common/MultiDatePicker';
 
 export default function StaffRegistration({ setActiveTab }) {
   const [loading, setLoading] = useState(false);
+  const [staffId, setStaffId] = useState('');
   const [photoPreview, setPhotoPreview] = useState(null);
   const [pledgeFileName, setPledgeFileName] = useState(null);
   const [qualifications, setQualifications] = useState([{ passingYear: '', qualification: '', university: '' }]);
+  
+  // Generate random Staff ID on component mount
+  useEffect(() => {
+    const randomHex = Math.floor(Math.random() * 16777215).toString(16).padStart(6, '0').toUpperCase();
+    setStaffId(`STF${randomHex}`);
+  }, []);
   const [workExperiences, setWorkExperiences] = useState([{ companyName: '', workPeriod: '', jobDescription: '' }]);
   const [departments, setDepartments] = useState([]);
+  const [workingDays, setWorkingDays] = useState([]);
 
   const [dob, setDob] = useState('');
   const [age, setAge] = useState('');
@@ -88,7 +97,9 @@ export default function StaffRegistration({ setActiveTab }) {
       data.photo = photoPreview;
     }
     
-    // Map mismatched fields
+    data.workingDays = workingDays;
+
+    console.log("Submitting Data:", data);
     data.dob = data.dateOfBirth;
     data.visaStatus = data.currentVisaStatus;
     
@@ -111,6 +122,7 @@ export default function StaffRegistration({ setActiveTab }) {
     
     // Use selected departments array
     data.department = departments;
+    data.staffId = staffId;
     
     try {
       const res = await fetch('http://localhost:5000/api/employees', {
@@ -139,11 +151,10 @@ export default function StaffRegistration({ setActiveTab }) {
     <form onSubmit={handleSubmit} className="max-w-4xl mx-auto pb-10">
       <div className="bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden">
         
-        {/* Header */}
         <div className="p-6 border-b border-gray-200 flex justify-between items-center bg-[#F8F9FA]">
           <h2 className="text-xl font-bold text-[#162D50]">New Staff Registration & Onboarding</h2>
           <div className="bg-gray-100 border border-gray-200 text-gray-700 px-3 py-1.5 rounded-md text-sm font-medium">
-            Staff ID: <span className="font-bold text-[#162D50]">#STF-NEW</span>
+            Staff ID: <span className="font-bold text-[#162D50]">{staffId}</span>
           </div>
         </div>
 
@@ -154,68 +165,41 @@ export default function StaffRegistration({ setActiveTab }) {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
 
             <div>
-              <label className="block text-xs font-bold text-gray-600 mb-1 uppercase tracking-wider">Join Date</label>
+              <label className="block text-xs font-bold text-gray-600 mb-1 uppercase tracking-wider">Join Date <span className="text-red-500">*</span></label>
               <div className="relative">
-                <input name="joinDate" type="date" className="w-full px-4 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-[#162D50]" />
+                <input required name="joinDate" type="date" className="w-full px-4 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-[#162D50]" />
               </div>
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-gray-600 mb-1 uppercase tracking-wider">Katakana Name</label>
-              <input name="katakanaName" type="text" placeholder="e.g. YAMADA TARO" className="w-full px-4 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-[#162D50]" />
+              <label className="block text-xs font-bold text-gray-600 mb-1 uppercase tracking-wider">Katakana Name <span className="text-red-500">*</span></label>
+              <input required name="katakanaName" type="text" placeholder="e.g. YAMADA TARO" className="w-full px-4 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-[#162D50]" />
             </div>
             <div>
-              <label className="block text-xs font-bold text-gray-600 mb-1 uppercase tracking-wider">Romaji Full Name</label>
-              <input name="romajiName" type="text" placeholder="ROMAJI NAME" className="w-full px-4 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-[#162D50]" />
+              <label className="block text-xs font-bold text-gray-600 mb-1 uppercase tracking-wider">Romaji Full Name <span className="text-red-500">*</span></label>
+              <input required name="romajiName" type="text" placeholder="ROMAJI NAME" className="w-full px-4 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-[#162D50]" />
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-gray-600 mb-1 uppercase tracking-wider">Nationality</label>
-              <input name="nationality" type="text" placeholder="Enter nationality" className="w-full px-4 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-[#162D50]" />
+              <label className="block text-xs font-bold text-gray-600 mb-1 uppercase tracking-wider">Nationality <span className="text-red-500">*</span></label>
+              <input required name="nationality" type="text" placeholder="Enter nationality" className="w-full px-4 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-[#162D50]" />
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-gray-600 mb-1 uppercase tracking-wider">Phone Number</label>
-              <input name="phone" type="tel" placeholder="e.g. 090-1234-5678" className="w-full px-4 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-[#162D50]" />
+              <label className="block text-xs font-bold text-gray-600 mb-1 uppercase tracking-wider">Phone Number <span className="text-red-500">*</span></label>
+              <input required name="phone" type="tel" placeholder="e.g. 090-1234-5678" className="w-full px-4 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-[#162D50]" />
             </div>
             <div>
-              <label className="block text-xs font-bold text-gray-600 mb-1 uppercase tracking-wider">Email Address</label>
-              <input name="email" type="email" placeholder="e.g. staff@example.com" className="w-full px-4 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-[#162D50]" />
+              <label className="block text-xs font-bold text-gray-600 mb-1 uppercase tracking-wider">Email Address <span className="text-red-500">*</span></label>
+              <input required name="email" type="email" placeholder="e.g. staff@example.com" className="w-full px-4 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-[#162D50]" />
             </div>
-            <div className="md:col-span-2">
-              <label className="block text-xs font-bold text-gray-600 mb-2 uppercase tracking-wider">Departments</label>
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                {ALL_DEPARTMENTS.map((dept, idx) => {
-                  const isSelected = departments.includes(dept);
-                  return (
-                    <button
-                      key={idx}
-                      type="button"
-                      onClick={() => {
-                        setDepartments(prev => 
-                          isSelected ? prev.filter(d => d !== dept) : [...prev, dept]
-                        );
-                      }}
-                      className={`
-                        text-left px-3 py-2 rounded-lg border-2 transition-all duration-200 text-sm font-medium
-                        ${isSelected 
-                          ? 'border-[#162D50] bg-[#162D50] text-white shadow-sm' 
-                          : 'border-gray-200 bg-white hover:border-[#162D50] text-gray-700'
-                        }
-                      `}
-                    >
-                      {dept}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
+
 
             <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-3 gap-6">
               <div>
-                <label className="block text-xs font-bold text-gray-600 mb-1 uppercase tracking-wider">Date of Birth</label>
+                <label className="block text-xs font-bold text-gray-600 mb-1 uppercase tracking-wider">Date of Birth <span className="text-red-500">*</span></label>
                 <div className="relative">
-                  <input name="dateOfBirth" type="date" className="w-full px-4 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-[#162D50]" value={dob} onChange={handleDobChange} />
+                  <input required name="dateOfBirth" type="date" className="w-full px-4 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-[#162D50]" value={dob} onChange={handleDobChange} />
                 </div>
               </div>
 
@@ -225,8 +209,8 @@ export default function StaffRegistration({ setActiveTab }) {
               </div>
               
               <div>
-                <label className="block text-xs font-bold text-gray-600 mb-1 uppercase tracking-wider">Gender</label>
-                <select name="gender" className="w-full px-4 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-[#162D50] text-gray-700 bg-white">
+                <label className="block text-xs font-bold text-gray-600 mb-1 uppercase tracking-wider">Gender <span className="text-red-500">*</span></label>
+                <select required name="gender" className="w-full px-4 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-[#162D50] text-gray-700 bg-white">
                   <option value="">Select Gender</option>
                   <option value="Male">Male</option>
                   <option value="Female">Female</option>
@@ -297,6 +281,17 @@ export default function StaffRegistration({ setActiveTab }) {
               <div className="relative">
                 <input name="visaRenewalDate" type="date" className="w-full px-4 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-[#162D50]" />
               </div>
+            </div>
+          </div>
+
+          <hr className="border-gray-200 mt-6" />
+
+          {/* Working Mode Calendar */}
+          <div className="mt-6 mb-6">
+            <h3 className="text-sm font-bold text-[#162D50] uppercase tracking-wider mb-4">Working Days</h3>
+            <p className="text-xs text-gray-500 mb-3">Select the specific calendar dates this staff member is scheduled to work.</p>
+            <div className="flex justify-center bg-gray-50 p-4 border border-gray-200 rounded-md">
+              <MultiDatePicker selectedDates={workingDays} onChange={setWorkingDays} />
             </div>
           </div>
 

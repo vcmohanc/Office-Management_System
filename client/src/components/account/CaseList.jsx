@@ -3,8 +3,19 @@ import { Search, ChevronDown, Calendar, FileText, AlertTriangle, Image } from 'l
 
 export default function CaseList() {
   const [cases, setCases] = useState([]);
+  const [claims, setClaims] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState('Office');
+  
+  // Use sessionStorage to set initial tab, then clear it
+  const [activeTab, setActiveTab] = useState(() => {
+    const savedTab = sessionStorage.getItem('caseListTab');
+    if (savedTab) {
+      sessionStorage.removeItem('caseListTab');
+      return savedTab;
+    }
+    return 'Office';
+  });
+
   const [statusFilter, setStatusFilter] = useState('All Statuses');
   const [expenseTypeFilter, setExpenseTypeFilter] = useState('All Types');
   const [expenseTypeOptions, setExpenseTypeOptions] = useState([]);
@@ -13,56 +24,80 @@ export default function CaseList() {
   const handleUpdateStatus = (newStatus) => {
     if (!selectedCase) return;
     
-    // Update main cases list
-    setCases(prevCases => prevCases.map(c => 
-      c._id === selectedCase._id ? { ...c, status: newStatus } : c
-    ));
+    const isClaim = selectedCase.type === 'Staff Case';
+    const endpoint = isClaim ? `/api/claims/${selectedCase._id}/status` : `/api/cases/${selectedCase._id}/status`;
+
+    // Update main list
+    if (isClaim) {
+      setClaims(prev => prev.map(c => c._id === selectedCase._id ? { ...c, status: newStatus } : c));
+    } else {
+      setCases(prev => prev.map(c => c._id === selectedCase._id ? { ...c, status: newStatus } : c));
+    }
     
     // Update currently selected case to reflect immediately
     setSelectedCase(prev => ({ ...prev, status: newStatus }));
 
     // Update the backend
-    fetch(`http://localhost:5000/api/cases/${selectedCase._id}/status`, {
+    fetch(`http://localhost:5000${endpoint}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ status: newStatus })
     }).catch(err => console.error('Failed to update status', err));
   };
 
-  const officeCasesCount = cases.filter(c => c.advancerCategory === 'Office').length;
-  const staffCasesCount = cases.filter(c => c.advancerCategory === 'Staff').length;
-  const hostCompanyCasesCount = cases.filter(c => c.advancerCategory === 'Host Company').length;
+  // Map Cases
+  const mappedCases = cases.map(c => ({
+    ...c,
+    type: 'Office Case',
+    displayId: `#CAS-${c._id.slice(-6).toUpperCase()}`,
+    displayDate: new Date(c.expense_period_start || c.createdAt).toLocaleDateString('en-US'),
+    displayName: c.staff_name,
+    displayTotal: c.total_expense || c.final_total_amount || 0,
+    currencySymbol: c.currency === 'JPY' ? '¥' : '$',
+  }));
 
-  const filteredCases = cases.filter(c => {
-    // Only show pre-approval cases in Case List
+  // Map Claims
+  const mappedClaims = claims.map(c => ({
+    ...c,
+    type: 'Staff Case',
+    displayId: `#CLM-${c._id.slice(-6).toUpperCase()}`,
+    displayDate: new Date(c.expense_period_start || c.createdAt).toLocaleDateString('en-US'),
+    displayName: c.full_name,
+    displayTotal: c.total_expense_amount || 0,
+    currencySymbol: c.currency === 'JPY' ? '¥' : '$',
+  }));
+
+  const allRecords = [...mappedCases, ...mappedClaims];
+
+  const officeCasesCount = mappedCases.length;
+  const staffCasesCount = mappedClaims.length;
+  const hostCompanyCasesCount = 0; // Placeholder
+
+  const filteredRecords = allRecords.filter(c => {
     const isPreApproval = ['New', 'Pending', 'Pending Correction', 'Rejected', 'Registered'].includes(c.status);
     
-    const matchesTab = c.advancerCategory === activeTab || (!c.advancerCategory && activeTab === 'Office');
+    const activeCaseType = activeTab + ' Case';
+    const matchesTab = c.type === activeCaseType || (activeTab === 'Host Company' && false);
     const matchesStatus = statusFilter === 'All Statuses' || c.status === statusFilter;
-    const matchesType = expenseTypeFilter === 'All Types' || c.expenseType === expenseTypeFilter;
+    const matchesType = expenseTypeFilter === 'All Types' || c.expense_type === expenseTypeFilter;
     
     return isPreApproval && matchesTab && matchesStatus && matchesType;
   });
 
   useEffect(() => {
-    fetch('http://localhost:5000/api/cases')
-      .then(res => res.json())
-      .then(data => {
-        setCases(data);
-        setLoading(false);
-      })
-      .catch(err => {
-        console.error('Error fetching cases:', err);
-        setLoading(false);
-      });
-
-    fetch('http://localhost:5000/api/options')
-      .then(res => res.json())
-      .then(data => {
-        const types = data.filter(opt => opt.type === 'ExpenseType');
-        setExpenseTypeOptions(types);
-      })
-      .catch(err => console.error('Error fetching options:', err));
+    setLoading(true);
+    Promise.all([
+      fetch('http://localhost:5000/api/cases').then(res => res.json()).catch(() => []),
+      fetch('http://localhost:5000/api/claims').then(res => res.json()).catch(() => []),
+      fetch('http://localhost:5000/api/options').then(res => res.json()).catch(() => [])
+    ]).then(([casesData, claimsData, optionsData]) => {
+      setCases(casesData);
+      setClaims(claimsData);
+      
+      const types = optionsData.filter(opt => opt.type === 'ExpenseType');
+      setExpenseTypeOptions(types);
+      setLoading(false);
+    });
   }, []);
 
   return (
@@ -152,21 +187,21 @@ export default function CaseList() {
               <tr>
                 <td colSpan="7" className="py-4 px-6 text-center text-gray-500">Loading...</td>
               </tr>
-            ) : filteredCases.length === 0 ? (
+            ) : filteredRecords.length === 0 ? (
               <tr>
                 <td colSpan="7" className="py-4 px-6 text-center text-gray-500">No cases found.</td>
               </tr>
             ) : (
-              filteredCases.map(c => (
+              filteredRecords.map(c => (
                 <tr key={c._id} className="border-b border-gray-100 hover:bg-gray-50">
-                  <td className="py-4 px-6 text-gray-600">#CAS-{c._id.slice(-6).toUpperCase()}</td>
+                  <td className="py-4 px-6 text-gray-600">{c.displayId}</td>
                   <td className="py-4 px-6 text-gray-600">
-                    {new Date(c.expensePeriodStart).toLocaleDateString('en-US')}
+                    {c.displayDate}
                   </td>
-                  <td className="py-4 px-6 text-gray-800">{c.staffName}</td>
-                  <td className="py-4 px-6 text-gray-600">{c.expenseType}</td>
+                  <td className="py-4 px-6 text-gray-800">{c.displayName}</td>
+                  <td className="py-4 px-6 text-gray-600">{c.expense_type}</td>
                   <td className="py-4 px-6 font-bold text-gray-800">
-                    {c.currency === 'JPY' ? '¥' : '$'}{c.totalExpense.toLocaleString()}
+                    {c.currencySymbol}{c.displayTotal.toLocaleString()}
                   </td>
                   <td className="py-4 px-6">
                     <span className={`px-3 py-1 rounded-full text-xs font-medium border ${
@@ -211,19 +246,19 @@ export default function CaseList() {
               <div className="space-y-3 text-sm">
                 <div className="flex justify-between">
                   <span className="text-gray-500">Case ID</span>
-                  <span className="font-bold text-gray-800">#CAS-{selectedCase._id.slice(-6).toUpperCase()}</span>
+                  <span className="font-bold text-gray-800">{selectedCase.displayId}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-500">Staff Name</span>
-                  <span className="font-bold text-gray-800">{selectedCase.staffName}</span>
+                  <span className="font-bold text-gray-800">{selectedCase.displayName}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-500">Expense Type</span>
-                  <span className="font-bold text-gray-800">{selectedCase.expenseType}</span>
+                  <span className="font-bold text-gray-800">{selectedCase.expense_type}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-500">Total Amount</span>
-                  <span className="font-bold text-gray-800">{selectedCase.currency === 'JPY' ? '¥' : '$'}{(selectedCase.finalTotal || selectedCase.totalExpense || 0).toLocaleString()}</span>
+                  <span className="font-bold text-gray-800">{selectedCase.currencySymbol}{selectedCase.displayTotal.toLocaleString()}</span>
                 </div>
               </div>
             </div>
@@ -234,15 +269,15 @@ export default function CaseList() {
               <div className="bg-[#E9ECEF] rounded-md p-4 text-sm">
                 <div className="flex justify-between mb-2">
                   <span className="text-gray-600">Settlement to Advancer</span>
-                  <span className="font-bold text-gray-800">{selectedCase.currency === 'JPY' ? '¥' : '$'}{(selectedCase.finalTotal || selectedCase.totalExpense || 0).toLocaleString()}</span>
+                  <span className="font-bold text-gray-800">{selectedCase.currencySymbol}{selectedCase.displayTotal.toLocaleString()}</span>
                 </div>
                 <div className="flex justify-between mb-4 pb-4 border-b border-gray-300">
                   <span className="text-gray-500">Method</span>
-                  <span className="text-gray-800">{selectedCase.settlementMethod || 'Bank Transfer'}</span>
+                  <span className="text-gray-800">{selectedCase.settlement_method || 'Bank Transfer'}</span>
                 </div>
                 <div>
                   <div className="text-gray-500 mb-1">Recovery Method:</div>
-                  <div className="text-gray-800">{selectedCase.collectionMethod || 'Company Expense (VC Bears)'}</div>
+                  <div className="text-gray-800">{selectedCase.collection_method || 'Company Expense (VC Bears)'}</div>
                 </div>
               </div>
             </div>
@@ -251,12 +286,12 @@ export default function CaseList() {
             <div>
               <h4 className="text-xs font-bold text-gray-500 mb-4 tracking-wider">ATTACHMENTS</h4>
               <div className="space-y-3">
-                {selectedCase.receiptFiles && selectedCase.receiptFiles.length > 0 ? (
-                  selectedCase.receiptFiles.map((file, idx) => (
+                {(selectedCase.receipts || selectedCase.bill_receipt_url) && (selectedCase.receipts || selectedCase.bill_receipt_url).length > 0 ? (
+                  (selectedCase.receipts || selectedCase.bill_receipt_url).map((fileName, idx) => (
                     <div key={idx} className="bg-white border border-gray-200 rounded-md px-4 py-3 flex justify-between items-center text-sm">
                       <div className="flex items-center text-gray-700">
                         <FileText className="w-4 h-4 mr-2" />
-                        {file.name || `Receipt_${idx + 1}`}
+                        {fileName || `Receipt_${idx + 1}`}
                       </div>
                     </div>
                   ))

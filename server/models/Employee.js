@@ -1,6 +1,7 @@
 import mongoose from 'mongoose';
 
 const employeeSchema = new mongoose.Schema({
+  staffId: { type: String, unique: true, sparse: true },
   department: { type: [String], required: true },
   location: { type: String, default: 'Tokyo Office' },
   joinDate: { type: Date, required: true },
@@ -45,7 +46,11 @@ const employeeSchema = new mongoose.Schema({
   },
   onboardingStatus: { type: String, default: 'Verification Pending' },
   assignedWorkPlace: { type: [String] },
-  staffType: { type: String }
+  office: { type: [String] },
+  staffType: { type: String },
+  workingDays: { type: [Date], default: [] },
+  visaAppStatus: { type: String, default: 'Not Applied' },
+  visaExpiryHistory: { type: [Date], default: [] }
 }, { timestamps: true });
 
 export default mongoose.model('Employee', employeeSchema);

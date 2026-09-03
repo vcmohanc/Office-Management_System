@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { X, Save, User, Globe, Briefcase, Heart, AlertCircle, Plus, Trash2 } from 'lucide-react';
 import { ALL_DEPARTMENTS } from '../../constants';
+import MultiDatePicker from '../common/MultiDatePicker';
 
 export default function StaffEditModal({ employee, onClose, onEditComplete, initialTab = 'Basic' }) {
   const [activeTab, setActiveTab] = useState(initialTab);
@@ -21,6 +22,7 @@ export default function StaffEditModal({ employee, onClose, onEditComplete, init
     visaRenewalDate: formatDate(employee.visaRenewalDate),
     phone: employee.phone || '',
     email: employee.email || '',
+    workingDays: (employee.workingDays || []).map(formatDate).filter(Boolean),
     educationalQualifications: employee.educationalQualifications || [],
     workExperience: employee.workExperience || [],
     languageFluency: {
@@ -313,6 +315,20 @@ export default function StaffEditModal({ employee, onClose, onEditComplete, init
                 <div>
                   <label className="block text-xs font-bold text-gray-600 mb-1 uppercase">Visa Renewal Date</label>
                   <input type="date" name="visaRenewalDate" value={formData.visaRenewalDate} onChange={handleChange} className="w-full px-4 py-2 border rounded-md text-sm focus:ring-1 focus:ring-[#162D50]" />
+                </div>
+              </div>
+
+              <hr className="border-gray-200 my-6" />
+
+              {/* Working Mode Calendar */}
+              <div>
+                <h3 className="text-sm font-bold text-[#162D50] uppercase tracking-wider mb-4">Working Days</h3>
+                <p className="text-xs text-gray-500 mb-3">Select the specific calendar dates this staff member is scheduled to work.</p>
+                <div className="flex justify-center bg-gray-50 p-4 border border-gray-200 rounded-md">
+                  <MultiDatePicker 
+                    selectedDates={formData.workingDays} 
+                    onChange={(newDates) => setFormData(prev => ({...prev, workingDays: newDates}))} 
+                  />
                 </div>
               </div>
             </div>

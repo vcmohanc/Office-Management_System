@@ -76,15 +76,17 @@ export default function ClaimList() {
                 claims.map((claim) => (
                   <tr key={claim._id} className="hover:bg-gray-50 transition-colors">
                     <td className="px-6 py-5 whitespace-nowrap text-sm font-medium text-gray-800">
-                      <div className="max-w-[80px] break-words whitespace-normal">#CLM-{claim._id.slice(-6).toUpperCase()}</div>
+                      <div className="max-w-[80px] break-words whitespace-normal">{claim.claim_id || `#CLM-${claim._id.slice(-6).toUpperCase()}`}</div>
                     </td>
-                    <td className="px-6 py-5 whitespace-nowrap text-sm text-gray-700">{claim.paymentMethod}</td>
-                    <td className="px-6 py-5 whitespace-nowrap text-sm text-gray-700">{claim.description || claim.expenseType}</td>
-                    <td className="px-6 py-5 whitespace-nowrap text-sm font-bold text-gray-900">¥{claim.amount.toLocaleString()}</td>
-                    <td className="px-6 py-5 whitespace-nowrap text-sm text-gray-700">{new Date(claim.expenseDate).toLocaleDateString('en-US')}</td>
+                    <td className="px-6 py-5 whitespace-nowrap text-sm text-gray-700">{claim.payment_process_types || '-'}</td>
+                    <td className="px-6 py-5 whitespace-nowrap text-sm text-gray-700">{claim.expense_type}</td>
+                    <td className="px-6 py-5 whitespace-nowrap text-sm font-bold text-gray-900">¥{(claim.expense_amount || 0).toLocaleString()}</td>
+                    <td className="px-6 py-5 whitespace-nowrap text-sm text-gray-700">
+                      {claim.expense_period_start ? new Date(claim.expense_period_start).toLocaleDateString('en-US') : '-'}
+                    </td>
                     <td className="px-6 py-5 whitespace-nowrap">
                       <span className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-md ${
-                        claim.status === 'Submitted' ? 'bg-blue-100 text-blue-700' :
+                        claim.status === 'Pending' ? 'bg-blue-100 text-blue-700' :
                         claim.status === 'Approved' ? 'bg-green-100 text-green-700' :
                         claim.status === 'Rejected' ? 'bg-red-100 text-red-700' :
                         'bg-yellow-100 text-yellow-700'

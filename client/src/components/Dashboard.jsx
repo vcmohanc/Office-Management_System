@@ -60,7 +60,7 @@ export default function Dashboard({ setToken }) {
           {activeTab === 'Dashboard' && <DashboardHome setActiveTab={setActiveTab} />}
           {activeTab === 'Account Department' && <AccountDashboard />}
           {activeTab === 'HR Department' && <HRDashboard />}
-          {activeTab === 'New Case' && <NewCase />}
+          {activeTab === 'New Case' && <NewCase setActiveTab={setActiveTab} />}
           {activeTab === 'Case List' && <CaseList />}
           {activeTab === 'Payment Status' && <PaymentStatus />}
           {activeTab === 'Payment Entry' && <PaymentEntry />}
