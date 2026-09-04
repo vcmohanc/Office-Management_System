@@ -10,7 +10,7 @@ export default function LandingPage() {
           <div className="flex justify-between h-16">
             <div className="flex items-center">
               <Building2 className="h-8 w-8 text-indigo-600 mr-3" />
-              <span className="font-bold text-xl text-gray-900">OMS</span>
+              <span className="font-bold text-xl text-gray-900">OMS VegeCoop</span>
             </div>
             <div className="flex items-center space-x-4">
               <Link 
@@ -52,7 +52,7 @@ export default function LandingPage() {
       <footer className="bg-white border-t border-gray-100 py-8">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <p className="text-center text-sm text-gray-500">
-            &copy; {new Date().getFullYear()} Office Management System. All rights reserved.
+            &copy; {new Date().getFullYear()} OMS VegeCoop. All rights reserved.
           </p>
         </div>
       </footer>
