@@ -44,12 +44,15 @@ const seedDB = async () => {
   try {
     await mongoose.connect(process.env.MONGO_URI || 'mongodb://localhost:27017/office_manage_system');
     console.log('Connected to MongoDB');
-    
-    await Option.deleteMany({});
-    console.log('Cleared existing options');
+
+    const existing = await Option.countDocuments();
+    if (existing > 0) {
+      console.log(`Options already seeded (${existing} records). Skipping.`);
+      process.exit(0);
+    }
 
     await Option.insertMany(initialOptions);
-    console.log('Successfully seeded options');
+    console.log(`Successfully seeded ${initialOptions.length} options`);
 
     process.exit(0);
   } catch (err) {
