@@ -106,7 +106,7 @@ export default function AssignWorkPlace() {
 
   const fetchStaff = () => {
     setLoading(true);
-    fetch('http://localhost:5000/api/employees')
+    fetch(`${import.meta.env.VITE_API_URL}/api/employees`)
       .then(res => res.json())
       .then(data => {
         // Fetch all staff so we can route non-active ones to Unassigned
@@ -123,7 +123,7 @@ export default function AssignWorkPlace() {
     if (!selectedStaff) return;
     setAssigning(true);
     try {
-      const res = await fetch(`http://localhost:5000/api/employees/${selectedStaff._id}`, {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/employees/${selectedStaff._id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json'

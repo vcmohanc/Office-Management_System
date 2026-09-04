@@ -32,7 +32,7 @@ export default function NewCase() {
   useEffect(() => {
     const fetchOptions = async () => {
       try {
-        const response = await fetch('http://localhost:5000/api/options');
+        const response = await fetch(`${import.meta.env.VITE_API_URL}/api/options`);
         const data = await response.json();
         
         const groupedOptions = data.reduce((acc, opt) => {
@@ -43,7 +43,7 @@ export default function NewCase() {
 
         setOptions(groupedOptions);
 
-        const empResponse = await fetch('http://localhost:5000/api/employees');
+        const empResponse = await fetch(`${import.meta.env.VITE_API_URL}/api/employees`);
         const empData = await empResponse.json();
         setEmployees(empData);
       } catch (error) {
@@ -151,7 +151,7 @@ export default function NewCase() {
           status: 'Pending'
         };
 
-        return fetch('http://localhost:5000/api/cases', {
+        return fetch(`${import.meta.env.VITE_API_URL}/api/cases`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload)

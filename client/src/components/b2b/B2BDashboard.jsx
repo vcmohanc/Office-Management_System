@@ -24,7 +24,7 @@ export default function B2BDashboard() {
     const controller = new AbortController();
     setLoadingMetrics(true);
 
-    fetch('http://localhost:5000/api/b2b/metrics', { signal: controller.signal })
+    fetch(`${import.meta.env.VITE_API_URL}/api/b2b/metrics`, { signal: controller.signal })
       .then(res => res.json())
       .then(data => {
         setMetrics(data);
@@ -51,7 +51,7 @@ export default function B2BDashboard() {
     query.set('page', '1'); // For simplicity, always fetch page 1 on filter change
     query.set('limit', '10');
 
-    fetch(`http://localhost:5000/api/b2b/engagements?${query.toString()}`, { signal: controller.signal })
+    fetch(`${import.meta.env.VITE_API_URL}/api/b2b/engagements?${query.toString()}`, { signal: controller.signal })
       .then(res => res.json())
       .then(data => {
         setEngagements(data.data || []);

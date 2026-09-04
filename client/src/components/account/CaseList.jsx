@@ -38,7 +38,7 @@ export default function CaseList() {
     setSelectedCase(prev => ({ ...prev, status: newStatus }));
 
     // Update the backend
-    fetch(`http://localhost:5000${endpoint}`, {
+    fetch(`${import.meta.env.VITE_API_URL}${endpoint}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ status: newStatus })
@@ -87,9 +87,9 @@ export default function CaseList() {
   useEffect(() => {
     setLoading(true);
     Promise.all([
-      fetch('http://localhost:5000/api/cases').then(res => res.json()).catch(() => []),
-      fetch('http://localhost:5000/api/claims').then(res => res.json()).catch(() => []),
-      fetch('http://localhost:5000/api/options').then(res => res.json()).catch(() => [])
+      fetch(`${import.meta.env.VITE_API_URL}/api/cases`).then(res => res.json()).catch(() => []),
+      fetch(`${import.meta.env.VITE_API_URL}/api/claims`).then(res => res.json()).catch(() => []),
+      fetch(`${import.meta.env.VITE_API_URL}/api/options`).then(res => res.json()).catch(() => [])
     ]).then(([casesData, claimsData, optionsData]) => {
       setCases(casesData);
       setClaims(claimsData);

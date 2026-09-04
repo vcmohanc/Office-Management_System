@@ -36,7 +36,7 @@ export default function StaffList({ setActiveTab }) {
   const isEmpOffice = (e) => e.staffType ? e.staffType === 'Office Staff' : (Array.isArray(e.department) ? e.department.some(isOffice) : isOffice(e.department || ''));
 
   useEffect(() => {
-    fetch('http://localhost:5000/api/employees')
+    fetch(`${import.meta.env.VITE_API_URL}/api/employees`)
       .then(res => res.json())
       .then(data => {
         setEmployees(data);

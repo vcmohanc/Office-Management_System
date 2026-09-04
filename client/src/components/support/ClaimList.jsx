@@ -6,7 +6,7 @@ export default function ClaimList() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch('http://localhost:5000/api/claims')
+    fetch(`${import.meta.env.VITE_API_URL}/api/claims`)
       .then(res => res.json())
       .then(data => {
         setClaims(data);

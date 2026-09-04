@@ -59,7 +59,7 @@ export default function PaymentEntry() {
     };
 
     try {
-      const response = await fetch(`http://localhost:5000/api/cases/${selectedCaseToProcess._id}/settle`, {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/cases/${selectedCaseToProcess._id}/settle`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -102,7 +102,7 @@ export default function PaymentEntry() {
   };
 
   useEffect(() => {
-    fetch('http://localhost:5000/api/cases')
+    fetch(`${import.meta.env.VITE_API_URL}/api/cases`)
       .then(res => res.json())
       .then(data => {
         setCases(data);

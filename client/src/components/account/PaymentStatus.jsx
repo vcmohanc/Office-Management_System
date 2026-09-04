@@ -12,7 +12,7 @@ export default function PaymentStatus() {
   const [expenseTypeOptions, setExpenseTypeOptions] = useState([]);
 
   useEffect(() => {
-    fetch('http://localhost:5000/api/cases')
+    fetch(`${import.meta.env.VITE_API_URL}/api/cases`)
       .then(res => res.json())
       .then(data => {
         setCases(data);
@@ -23,7 +23,7 @@ export default function PaymentStatus() {
         setLoading(false);
       });
 
-    fetch('http://localhost:5000/api/options')
+    fetch(`${import.meta.env.VITE_API_URL}/api/options`)
       .then(res => res.json())
       .then(data => {
         const types = data.filter(opt => opt.type === 'ExpenseType');

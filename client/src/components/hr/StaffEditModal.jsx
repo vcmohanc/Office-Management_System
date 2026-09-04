@@ -114,7 +114,7 @@ export default function StaffEditModal({ employee, onClose, onEditComplete, init
     setError('');
 
     try {
-      const response = await fetch(`http://localhost:5000/api/employees/${employee._id}`, {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/employees/${employee._id}`, {
         method: 'PUT',
         headers: { 
           'Content-Type': 'application/json' 

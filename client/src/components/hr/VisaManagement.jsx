@@ -18,7 +18,7 @@ export default function VisaManagement() {
 
   const fetchStaff = () => {
     setLoading(true);
-    fetch('http://localhost:5000/api/employees')
+    fetch(`${import.meta.env.VITE_API_URL}/api/employees`)
       .then(res => res.json())
       .then(data => {
         setEmployees(data);
@@ -77,7 +77,7 @@ export default function VisaManagement() {
         history.push(selectedStaff.visaEndDate);
       }
 
-      const res = await fetch(`http://localhost:5000/api/employees/${selectedStaff._id}`, {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/employees/${selectedStaff._id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json'

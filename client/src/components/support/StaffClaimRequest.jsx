@@ -38,7 +38,7 @@ export default function StaffClaimRequest() {
   useEffect(() => {
     const fetchOptions = async () => {
       try {
-        const response = await fetch('http://localhost:5000/api/options');
+        const response = await fetch(`${import.meta.env.VITE_API_URL}/api/options`);
         const data = await response.json();
         
         const groupedOptions = data.reduce((acc, opt) => {
@@ -49,7 +49,7 @@ export default function StaffClaimRequest() {
 
         setOptions(groupedOptions);
 
-        const empResponse = await fetch('http://localhost:5000/api/employees');
+        const empResponse = await fetch(`${import.meta.env.VITE_API_URL}/api/employees`);
         const empData = await empResponse.json();
         setEmployees(empData);
       } catch (error) {
@@ -271,7 +271,7 @@ export default function StaffClaimRequest() {
           staffInfo,
           ...claim
         };
-        const response = await fetch('http://localhost:5000/api/claims', {
+        const response = await fetch(`${import.meta.env.VITE_API_URL}/api/claims`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json'
