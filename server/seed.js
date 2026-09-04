@@ -5,7 +5,7 @@ import Employee from './models/Employee.js';
 import Case from './models/Case.js';
 import Claim from './models/Claim.js';
 
-const MONGODB_URI = 'mongodb://localhost:27017/office_manage_system';
+const MONGODB_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/office_manage_system';
 
 const seedData = async () => {
   try {

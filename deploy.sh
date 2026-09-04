@@ -1,22 +1,25 @@
+#!/bin/bash
+set -e
+
+echo "Installing docker-compose..."
+sudo apt-get update -y
+sudo apt-get install -y docker-compose docker-compose-plugin
+
+echo "Creating docker-compose.yml..."
+cat << 'EOF' > docker-compose.yml
 version: '3.8'
 
 services:
   client:
-    build:
-      context: ./client
-      dockerfile: Dockerfile
     image: mohanc35/oms-client
     ports:
       - "80:80"
     depends_on:
       - server
     environment:
-      - VITE_API_URL=http://localhost:5000
+      - VITE_API_URL=http://13.196.191.114:5000
 
   server:
-    build:
-      context: ./server
-      dockerfile: Dockerfile
     image: mohanc35/oms-server
     ports:
       - "5000:5000"
@@ -36,3 +39,12 @@ services:
 
 volumes:
   mongo_data:
+EOF
+
+echo "Pulling images..."
+sudo docker-compose pull
+
+echo "Starting application..."
+sudo docker-compose up -d
+
+echo "Deployment successful!"
