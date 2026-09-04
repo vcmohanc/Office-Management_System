@@ -34,8 +34,6 @@ jobs:
           file: ./client/Dockerfile
           push: true
           tags: mohanc35/oms-client:latest
-          build-args: |
-            VITE_API_URL=${{ secrets.VITE_API_URL }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
@@ -63,8 +61,14 @@ jobs:
             # Pull latest images
             sudo docker-compose -f ~/docker-compose.yml pull
 
-            # Restart containers with zero-downtime rolling update
+            # Restart containers
             sudo docker-compose -f ~/docker-compose.yml up -d --remove-orphans
+
+            # Wait for server to be ready
+            sleep 8
+
+            # Seed options data if collection is empty
+            sudo docker-compose -f ~/docker-compose.yml exec -T server node seedOptions.js || true
 
             # Remove old/dangling images to save disk space
             sudo docker image prune -f
