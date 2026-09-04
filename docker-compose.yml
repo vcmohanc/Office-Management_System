@@ -5,8 +5,9 @@ services:
     build:
       context: ./client
       dockerfile: Dockerfile
+    image: mohanc35/oms-client
     ports:
-      - "5173:80"
+      - "80:80"
     depends_on:
       - server
     environment:
@@ -16,6 +17,7 @@ services:
     build:
       context: ./server
       dockerfile: Dockerfile
+    image: mohanc35/oms-server
     ports:
       - "5000:5000"
     environment:
