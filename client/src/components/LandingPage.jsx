@@ -9,7 +9,7 @@ export default function LandingPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-16">
             <div className="flex items-center">
-              <img src="/logo.png" alt="OMS Logo" className="h-10 w-10 object-contain mr-3" />
+              <img src="/logo.png" alt="OMS Logo" className="h-8 w-auto object-contain mr-3" />
               <span className="font-bold text-xl text-gray-900">OMS</span>
             </div>
             <div className="flex items-center space-x-4">
