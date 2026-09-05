@@ -1,1 +1,38 @@
-[{"_id":"6a8ff7937618f03b9de57322","username":"admin","password":"$2b$10$yjSsBYG1ZT8Im9TIuJAC1emcKZkmUAOWA.Msgs3OflIsg0DGNBQra","role":"admin","__v":0,"createdAt":"2026-08-27T08:38:43.055Z","updatedAt":"2026-08-27T08:38:43.055Z"},{"_id":"6a8ff7937618f03b9de57323","username":"hr_user","password":"$2b$10$yjSsBYG1ZT8Im9TIuJAC1emcKZkmUAOWA.Msgs3OflIsg0DGNBQra","role":"hr","__v":0,"createdAt":"2026-08-27T08:38:43.055Z","updatedAt":"2026-08-27T08:38:43.055Z"},{"_id":"6a8ff7937618f03b9de57324","username":"account_user","password":"$2b$10$yjSsBYG1ZT8Im9TIuJAC1emcKZkmUAOWA.Msgs3OflIsg0DGNBQra","role":"account","__v":0,"createdAt":"2026-08-27T08:38:43.055Z","updatedAt":"2026-08-27T08:38:43.055Z"},{"_id":"6a8ff7937618f03b9de57325","username":"support_user","password":"$2b$10$yjSsBYG1ZT8Im9TIuJAC1emcKZkmUAOWA.Msgs3OflIsg0DGNBQra","role":"support","__v":0,"createdAt":"2026-08-27T08:38:43.055Z","updatedAt":"2026-08-27T08:38:43.055Z"}]
+[
+  {
+    "_id": "6a8ff7937618f03b9de57322",
+    "username": "admin",
+    "password": "$2b$10$yjSsBYG1ZT8Im9TIuJAC1emcKZkmUAOWA.Msgs3OflIsg0DGNBQra",
+    "role": "admin",
+    "__v": 0,
+    "createdAt": "2026-08-27T08:38:43.055Z",
+    "updatedAt": "2026-08-27T08:38:43.055Z"
+  },
+  {
+    "_id": "6a8ff7937618f03b9de57323",
+    "username": "hr_user",
+    "password": "$2b$10$yjSsBYG1ZT8Im9TIuJAC1emcKZkmUAOWA.Msgs3OflIsg0DGNBQra",
+    "role": "hr",
+    "__v": 0,
+    "createdAt": "2026-08-27T08:38:43.055Z",
+    "updatedAt": "2026-08-27T08:38:43.055Z"
+  },
+  {
+    "_id": "6a8ff7937618f03b9de57324",
+    "username": "account_user",
+    "password": "$2b$10$yjSsBYG1ZT8Im9TIuJAC1emcKZkmUAOWA.Msgs3OflIsg0DGNBQra",
+    "role": "account",
+    "__v": 0,
+    "createdAt": "2026-08-27T08:38:43.055Z",
+    "updatedAt": "2026-08-27T08:38:43.055Z"
+  },
+  {
+    "_id": "6a8ff7937618f03b9de57325",
+    "username": "support_user",
+    "password": "$2b$10$yjSsBYG1ZT8Im9TIuJAC1emcKZkmUAOWA.Msgs3OflIsg0DGNBQra",
+    "role": "support",
+    "__v": 0,
+    "createdAt": "2026-08-27T08:38:43.055Z",
+    "updatedAt": "2026-08-27T08:38:43.055Z"
+  }
+]

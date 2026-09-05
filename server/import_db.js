@@ -1,68 +1,59 @@
 import mongoose from 'mongoose';
 import fs from 'fs';
-import User from './models/User.js';
-import Employee from './models/Employee.js';
-import Case from './models/Case.js';
-import Claim from './models/Claim.js';
-import Option from './models/Option.js';
-import Settlement from './models/Settlement.js';
-import B2BPartner from './models/B2BPartner.js';
+import path from 'path';
+import { fileURLToPath } from 'url';
 
-const MODELS = {
-  'users': User,
-  'employees': Employee,
-  'cases': Case,
-  'claims': Claim,
-  'options': Option,
-  'settlements': Settlement,
-  'b2bpartners': B2BPartner
-};
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
-async function importDatabase() {
+// Replace this with your production MongoDB connection string, or set the TARGET_MONGO_URI environment variable
+const TARGET_MONGO_URI = process.env.TARGET_MONGO_URI || 'mongodb://localhost:27017/office_manage_system_prod';
+
+async function importData() {
+  if (!TARGET_MONGO_URI) {
+    console.error('Error: TARGET_MONGO_URI is not defined.');
+    process.exit(1);
+  }
+
   try {
-    const mongoUri = process.env.MONGO_URI || 'mongodb://mongo:27017/office_manage_system';
-    await mongoose.connect(mongoUri);
-    console.log('Connected to MongoDB');
-
-    const db = mongoose.connection.db;
-
-    const rawData = fs.readFileSync('/app/database_export.json', 'utf-8');
-    const importData = JSON.parse(rawData);
-
-    for (const [collectionName, documents] of Object.entries(importData)) {
-      if (documents.length > 0) {
-        // Strip _id to let MongoDB generate new ones, OR convert string _ids to ObjectId
-        const docsToInsert = documents.map(doc => {
-          if (doc._id) {
-            doc._id = new mongoose.Types.ObjectId(doc._id);
-          }
-          return doc;
-        });
-
-        if (MODELS[collectionName]) {
-          const Model = MODELS[collectionName];
-          await Model.deleteMany({});
-          console.log(`Cleared existing collection: ${collectionName}`);
-          await Model.insertMany(docsToInsert);
-          console.log(`Imported ${docsToInsert.length} documents into ${collectionName} via Mongoose Model`);
-        } else {
-          // Native insertion for collections without models (like departments, workplaces)
-          const collection = db.collection(collectionName);
-          await collection.deleteMany({});
-          console.log(`Cleared existing collection: ${collectionName}`);
-          await collection.insertMany(docsToInsert);
-          console.log(`Imported ${docsToInsert.length} documents into ${collectionName} via Native Driver`);
-        }
-      }
+    console.log(`Connecting to Target Database...`);
+    await mongoose.connect(TARGET_MONGO_URI);
+    console.log('Connected to Target MongoDB');
+    
+    const exportFile = path.join(__dirname, 'database_export.json');
+    if (!fs.existsSync(exportFile)){
+        console.error('Export file not found: ' + exportFile);
+        process.exit(1);
     }
 
-    console.log('\nSuccess! Database imported successfully.');
-  } catch (error) {
-    console.error('Error importing database:', error);
-  } finally {
-    await mongoose.disconnect();
+    const data = JSON.parse(fs.readFileSync(exportFile, 'utf8'));
+    const collections = Object.keys(data);
+
+    for (let collectionName of collections) {
+      const documents = data[collectionName];
+      if (documents && documents.length > 0) {
+        // Drop existing collection to avoid duplicates (optional, comment out if you want to merge)
+        try {
+          await mongoose.connection.db.dropCollection(collectionName);
+          console.log(`Dropped existing collection: ${collectionName}`);
+        } catch (e) {
+          // Ignore error if collection does not exist
+        }
+
+        // Insert documents
+        const collection = mongoose.connection.db.collection(collectionName);
+        await collection.insertMany(documents);
+        console.log(`Imported ${documents.length} documents into ${collectionName}`);
+      } else {
+         console.log(`Skipped ${collectionName} - no documents to import.`);
+      }
+    }
+    
+    console.log('Import complete');
     process.exit(0);
+  } catch (err) {
+    console.error('Error during import:', err);
+    process.exit(1);
   }
 }
-
-importDatabase();
+importData();

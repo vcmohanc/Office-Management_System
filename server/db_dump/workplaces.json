@@ -1,1 +1,79 @@
-[{"_id":"6a9523165754b4f5515d9d53","name":"Global Bittory","__v":0,"createdAt":"2026-08-31T06:45:42.131Z","updatedAt":"2026-08-31T06:45:42.131Z"},{"_id":"6a9523165754b4f5515d9d54","name":"Hotels","__v":0,"createdAt":"2026-08-31T06:45:42.131Z","updatedAt":"2026-08-31T06:45:42.131Z"},{"_id":"6a9523165754b4f5515d9d55","name":"Food and Beverage","__v":0,"createdAt":"2026-08-31T06:45:42.131Z","updatedAt":"2026-08-31T06:45:42.131Z"},{"_id":"6a9523165754b4f5515d9d56","name":"Food and Beverage Manufacturing","__v":0,"createdAt":"2026-08-31T06:45:42.131Z","updatedAt":"2026-08-31T06:45:42.131Z"},{"_id":"6a9523165754b4f5515d9d57","name":"Cleaning","__v":0,"createdAt":"2026-08-31T06:45:42.131Z","updatedAt":"2026-08-31T06:45:42.131Z"},{"_id":"6a9523165754b4f5515d9d58","name":"Warehousing/Packaging","__v":0,"createdAt":"2026-08-31T06:45:42.131Z","updatedAt":"2026-08-31T06:45:42.131Z"},{"_id":"6a9523165754b4f5515d9d59","name":"Telecommunications/Retail","__v":0,"createdAt":"2026-08-31T06:45:42.131Z","updatedAt":"2026-08-31T06:45:42.131Z"},{"_id":"6a9523165754b4f5515d9d5a","name":"Registration Support","__v":0,"createdAt":"2026-08-31T06:45:42.131Z","updatedAt":"2026-08-31T06:45:42.131Z"},{"_id":"6a9523165754b4f5515d9d5b","name":"Agriculture and Forestry","__v":0,"createdAt":"2026-08-31T06:45:42.131Z","updatedAt":"2026-08-31T06:45:42.131Z"},{"_id":"6a9523165754b4f5515d9d5c","name":"Logistics","__v":0,"createdAt":"2026-08-31T06:45:42.131Z","updatedAt":"2026-08-31T06:45:42.131Z"},{"_id":"6a9523165754b4f5515d9d5d","name":"Transfer to Headquarters","__v":0,"createdAt":"2026-08-31T06:45:42.131Z","updatedAt":"2026-08-31T06:45:42.131Z"}]
+[
+  {
+    "_id": "6a9523165754b4f5515d9d53",
+    "name": "Global Bittory",
+    "__v": 0,
+    "createdAt": "2026-08-31T06:45:42.131Z",
+    "updatedAt": "2026-08-31T06:45:42.131Z"
+  },
+  {
+    "_id": "6a9523165754b4f5515d9d54",
+    "name": "Hotels",
+    "__v": 0,
+    "createdAt": "2026-08-31T06:45:42.131Z",
+    "updatedAt": "2026-08-31T06:45:42.131Z"
+  },
+  {
+    "_id": "6a9523165754b4f5515d9d55",
+    "name": "Food and Beverage",
+    "__v": 0,
+    "createdAt": "2026-08-31T06:45:42.131Z",
+    "updatedAt": "2026-08-31T06:45:42.131Z"
+  },
+  {
+    "_id": "6a9523165754b4f5515d9d56",
+    "name": "Food and Beverage Manufacturing",
+    "__v": 0,
+    "createdAt": "2026-08-31T06:45:42.131Z",
+    "updatedAt": "2026-08-31T06:45:42.131Z"
+  },
+  {
+    "_id": "6a9523165754b4f5515d9d57",
+    "name": "Cleaning",
+    "__v": 0,
+    "createdAt": "2026-08-31T06:45:42.131Z",
+    "updatedAt": "2026-08-31T06:45:42.131Z"
+  },
+  {
+    "_id": "6a9523165754b4f5515d9d58",
+    "name": "Warehousing/Packaging",
+    "__v": 0,
+    "createdAt": "2026-08-31T06:45:42.131Z",
+    "updatedAt": "2026-08-31T06:45:42.131Z"
+  },
+  {
+    "_id": "6a9523165754b4f5515d9d59",
+    "name": "Telecommunications/Retail",
+    "__v": 0,
+    "createdAt": "2026-08-31T06:45:42.131Z",
+    "updatedAt": "2026-08-31T06:45:42.131Z"
+  },
+  {
+    "_id": "6a9523165754b4f5515d9d5a",
+    "name": "Registration Support",
+    "__v": 0,
+    "createdAt": "2026-08-31T06:45:42.131Z",
+    "updatedAt": "2026-08-31T06:45:42.131Z"
+  },
+  {
+    "_id": "6a9523165754b4f5515d9d5b",
+    "name": "Agriculture and Forestry",
+    "__v": 0,
+    "createdAt": "2026-08-31T06:45:42.131Z",
+    "updatedAt": "2026-08-31T06:45:42.131Z"
+  },
+  {
+    "_id": "6a9523165754b4f5515d9d5c",
+    "name": "Logistics",
+    "__v": 0,
+    "createdAt": "2026-08-31T06:45:42.131Z",
+    "updatedAt": "2026-08-31T06:45:42.131Z"
+  },
+  {
+    "_id": "6a9523165754b4f5515d9d5d",
+    "name": "Transfer to Headquarters",
+    "__v": 0,
+    "createdAt": "2026-08-31T06:45:42.131Z",
+    "updatedAt": "2026-08-31T06:45:42.131Z"
+  }
+]

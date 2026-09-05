@@ -1,0 +1,254 @@
+[
+  {
+    "_id": "6a9bafd78a4881c7752e7aa4",
+    "departure": "Hokkaido",
+    "__v": 0,
+    "charges": {
+      "Hokkaido": "0",
+      "Northern Tohoku": "4,530",
+      "Southern Tohoku": "4,530",
+      "Kanto": "100",
+      "Shinetsu": "4,530",
+      "Hokuriku": "4,530",
+      "Chubu": "4,530",
+      "Kansai": "4,530",
+      "Chugoku": "4,530",
+      "Shikoku": "4,530",
+      "Kyushu": "4,530",
+      "Okinawa": "9,130"
+    },
+    "createdAt": "2026-09-05T05:59:51.921Z",
+    "updatedAt": "2026-09-05T06:01:56.267Z"
+  },
+  {
+    "_id": "6a9bb0548a4881c7752e7aa5",
+    "departure": "Northern Tohoku",
+    "__v": 0,
+    "charges": {
+      "Hokkaido": "4,530",
+      "Northern Tohoku": "なし",
+      "Southern Tohoku": "4,530",
+      "Kanto": "4,530",
+      "Shinetsu": "4,530",
+      "Hokuriku": "4,530",
+      "Chubu": "4,530",
+      "Kansai": "4,530",
+      "Chugoku": "4,530",
+      "Shikoku": "4,530",
+      "Kyushu": "4,530",
+      "Okinawa": "9,130"
+    },
+    "createdAt": "2026-09-05T06:01:56.269Z",
+    "updatedAt": "2026-09-05T06:01:56.269Z"
+  },
+  {
+    "_id": "6a9bb0548a4881c7752e7aa6",
+    "departure": "Southern Tohoku",
+    "__v": 0,
+    "charges": {
+      "Hokkaido": "4,530",
+      "Northern Tohoku": "4,530",
+      "Southern Tohoku": "なし",
+      "Kanto": "4,530",
+      "Shinetsu": "4,530",
+      "Hokuriku": "4,530",
+      "Chubu": "4,530",
+      "Kansai": "4,530",
+      "Chugoku": "4,530",
+      "Shikoku": "4,530",
+      "Kyushu": "4,530",
+      "Okinawa": "9,130"
+    },
+    "createdAt": "2026-09-05T06:01:56.271Z",
+    "updatedAt": "2026-09-05T06:01:56.271Z"
+  },
+  {
+    "_id": "6a9bb0548a4881c7752e7aa7",
+    "departure": "Kanto",
+    "__v": 0,
+    "charges": {
+      "Hokkaido": "4,530",
+      "Northern Tohoku": "4,530",
+      "Southern Tohoku": "4,530",
+      "Kanto": "なし",
+      "Shinetsu": "4,530",
+      "Hokuriku": "4,530",
+      "Chubu": "4,530",
+      "Kansai": "4,530",
+      "Chugoku": "4,530",
+      "Shikoku": "4,530",
+      "Kyushu": "4,530",
+      "Okinawa": "9,130"
+    },
+    "createdAt": "2026-09-05T06:01:56.273Z",
+    "updatedAt": "2026-09-05T06:01:56.273Z"
+  },
+  {
+    "_id": "6a9bb0548a4881c7752e7aa8",
+    "departure": "Shinetsu",
+    "__v": 0,
+    "charges": {
+      "Hokkaido": "4,530",
+      "Northern Tohoku": "4,530",
+      "Southern Tohoku": "4,530",
+      "Kanto": "4,530",
+      "Shinetsu": "なし",
+      "Hokuriku": "4,530",
+      "Chubu": "4,530",
+      "Kansai": "4,530",
+      "Chugoku": "4,530",
+      "Shikoku": "4,530",
+      "Kyushu": "4,530",
+      "Okinawa": "9,130"
+    },
+    "createdAt": "2026-09-05T06:01:56.274Z",
+    "updatedAt": "2026-09-05T06:01:56.274Z"
+  },
+  {
+    "_id": "6a9bb0548a4881c7752e7aa9",
+    "departure": "Hokuriku",
+    "__v": 0,
+    "charges": {
+      "Hokkaido": "4,530",
+      "Northern Tohoku": "4,530",
+      "Southern Tohoku": "4,530",
+      "Kanto": "4,530",
+      "Shinetsu": "4,530",
+      "Hokuriku": "なし",
+      "Chubu": "4,530",
+      "Kansai": "4,530",
+      "Chugoku": "4,530",
+      "Shikoku": "4,530",
+      "Kyushu": "4,530",
+      "Okinawa": "9,130"
+    },
+    "createdAt": "2026-09-05T06:01:56.276Z",
+    "updatedAt": "2026-09-05T06:01:56.276Z"
+  },
+  {
+    "_id": "6a9bb0548a4881c7752e7aaa",
+    "departure": "Chubu",
+    "__v": 0,
+    "charges": {
+      "Hokkaido": "4,530",
+      "Northern Tohoku": "4,530",
+      "Southern Tohoku": "4,530",
+      "Kanto": "4,530",
+      "Shinetsu": "4,530",
+      "Hokuriku": "4,530",
+      "Chubu": "なし",
+      "Kansai": "4,530",
+      "Chugoku": "4,530",
+      "Shikoku": "4,530",
+      "Kyushu": "4,530",
+      "Okinawa": "9,130"
+    },
+    "createdAt": "2026-09-05T06:01:56.277Z",
+    "updatedAt": "2026-09-05T06:01:56.277Z"
+  },
+  {
+    "_id": "6a9bb0548a4881c7752e7aab",
+    "departure": "Kansai",
+    "__v": 0,
+    "charges": {
+      "Hokkaido": "4,530",
+      "Northern Tohoku": "4,530",
+      "Southern Tohoku": "4,530",
+      "Kanto": "4,530",
+      "Shinetsu": "4,530",
+      "Hokuriku": "4,530",
+      "Chubu": "4,530",
+      "Kansai": "なし",
+      "Chugoku": "4,530",
+      "Shikoku": "4,530",
+      "Kyushu": "4,530",
+      "Okinawa": "9,130"
+    },
+    "createdAt": "2026-09-05T06:01:56.279Z",
+    "updatedAt": "2026-09-05T06:01:56.279Z"
+  },
+  {
+    "_id": "6a9bb0548a4881c7752e7aac",
+    "departure": "Chugoku",
+    "__v": 0,
+    "charges": {
+      "Hokkaido": "4,530",
+      "Northern Tohoku": "4,530",
+      "Southern Tohoku": "4,530",
+      "Kanto": "4,530",
+      "Shinetsu": "4,530",
+      "Hokuriku": "4,530",
+      "Chubu": "4,530",
+      "Kansai": "4,530",
+      "Chugoku": "なし",
+      "Shikoku": "4,530",
+      "Kyushu": "4,530",
+      "Okinawa": "9,130"
+    },
+    "createdAt": "2026-09-05T06:01:56.280Z",
+    "updatedAt": "2026-09-05T06:01:56.280Z"
+  },
+  {
+    "_id": "6a9bb0548a4881c7752e7aad",
+    "departure": "Shikoku",
+    "__v": 0,
+    "charges": {
+      "Hokkaido": "4,530",
+      "Northern Tohoku": "4,530",
+      "Southern Tohoku": "4,530",
+      "Kanto": "4,530",
+      "Shinetsu": "4,530",
+      "Hokuriku": "4,530",
+      "Chubu": "4,530",
+      "Kansai": "4,530",
+      "Chugoku": "4,530",
+      "Shikoku": "なし",
+      "Kyushu": "4,530",
+      "Okinawa": "9,130"
+    },
+    "createdAt": "2026-09-05T06:01:56.281Z",
+    "updatedAt": "2026-09-05T06:01:56.281Z"
+  },
+  {
+    "_id": "6a9bb0548a4881c7752e7aae",
+    "departure": "Kyushu",
+    "__v": 0,
+    "charges": {
+      "Hokkaido": "4,530",
+      "Northern Tohoku": "4,530",
+      "Southern Tohoku": "4,530",
+      "Kanto": "4,530",
+      "Shinetsu": "4,530",
+      "Hokuriku": "4,530",
+      "Chubu": "4,530",
+      "Kansai": "4,530",
+      "Chugoku": "4,530",
+      "Shikoku": "4,530",
+      "Kyushu": "なし",
+      "Okinawa": "9,130"
+    },
+    "createdAt": "2026-09-05T06:01:56.283Z",
+    "updatedAt": "2026-09-05T06:01:56.283Z"
+  },
+  {
+    "_id": "6a9bb0548a4881c7752e7aaf",
+    "departure": "Okinawa",
+    "__v": 0,
+    "charges": {
+      "Hokkaido": "9,130",
+      "Northern Tohoku": "9,130",
+      "Southern Tohoku": "9,130",
+      "Kanto": "9,130",
+      "Shinetsu": "9,130",
+      "Hokuriku": "9,130",
+      "Chubu": "9,130",
+      "Kansai": "9,130",
+      "Chugoku": "9,130",
+      "Shikoku": "9,130",
+      "Kyushu": "9,130",
+      "Okinawa": "なし"
+    },
+    "createdAt": "2026-09-05T06:01:56.284Z",
+    "updatedAt": "2026-09-05T06:01:56.284Z"
+  }
+]
