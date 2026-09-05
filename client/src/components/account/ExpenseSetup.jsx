@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 
 const REGIONS = [
   'Hokkaido',
@@ -41,6 +41,31 @@ export default function ExpenseSetup() {
   const [activeTab, setActiveTab] = useState('postal');
   const [postalCharges, setPostalCharges] = useState(getInitialCharges());
   const [travelCharges, setTravelCharges] = useState(getInitialCharges());
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
+
+  useEffect(() => {
+    const fetchConfigurations = async () => {
+      try {
+        const [postalRes, travelRes] = await Promise.all([
+          fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/expensesetup/postal`),
+          fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/expensesetup/travel`)
+        ]);
+
+        const postalData = await postalRes.json();
+        const travelData = await travelRes.json();
+
+        if (postalData.data) setPostalCharges(postalData.data);
+        if (travelData.data) setTravelCharges(travelData.data);
+      } catch (error) {
+        console.error('Failed to load expense setups:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchConfigurations();
+  }, []);
 
   const currentCharges = activeTab === 'postal' ? postalCharges : travelCharges;
 
@@ -63,6 +88,32 @@ export default function ExpenseSetup() {
       }));
     }
   };
+
+  const handleSave = async () => {
+    setIsSaving(true);
+    try {
+      const dataToSave = activeTab === 'postal' ? postalCharges : travelCharges;
+      const res = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/expensesetup/${activeTab}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ data: dataToSave })
+      });
+      
+      if (!res.ok) throw new Error('Failed to save');
+      alert(`${activeTab === 'postal' ? 'Postal Charges' : 'Travel Expenses'} saved successfully!`);
+    } catch (error) {
+      console.error('Error saving configuration:', error);
+      alert('Error saving configuration. Please try again.');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  if (isLoading) {
+    return <div className="flex items-center justify-center h-full">Loading...</div>;
+  }
 
   return (
     <div className="flex flex-col h-full bg-[#F8F9FA]">
@@ -96,8 +147,12 @@ export default function ExpenseSetup() {
           <h2 className="text-xl font-bold text-[#162D50]">
             {activeTab === 'postal' ? 'Postal Charges Setup' : 'Travel Expenses Setup'}
           </h2>
-          <button className="px-4 py-2 bg-[#162D50] text-white rounded-md hover:bg-[#203c6b] transition-colors font-medium">
-            Save Changes
+          <button 
+            onClick={handleSave}
+            disabled={isSaving}
+            className={`px-4 py-2 text-white rounded-md transition-colors font-medium ${isSaving ? 'bg-gray-400 cursor-not-allowed' : 'bg-[#162D50] hover:bg-[#203c6b]'}`}
+          >
+            {isSaving ? 'Saving...' : 'Save Changes'}
           </button>
         </div>
 
