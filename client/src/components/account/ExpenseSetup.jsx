@@ -41,31 +41,70 @@ export default function ExpenseSetup() {
   const [activeTab, setActiveTab] = useState('postal');
   const [postalCharges, setPostalCharges] = useState(getInitialCharges());
   const [travelCharges, setTravelCharges] = useState(getInitialCharges());
-  const [isLoading, setIsLoading] = useState(true);
-  const [isSaving, setIsSaving] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
-    const fetchConfigurations = async () => {
+    const fetchCharges = async () => {
       try {
         const [postalRes, travelRes] = await Promise.all([
-          fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/expensesetup/postal`),
-          fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/expensesetup/travel`)
+          fetch(`${import.meta.env.VITE_API_URL}/api/expenses/postal`),
+          fetch(`${import.meta.env.VITE_API_URL}/api/expenses/travel`)
         ]);
-
-        const postalData = await postalRes.json();
-        const travelData = await travelRes.json();
-
-        if (postalData.data) setPostalCharges(postalData.data);
-        if (travelData.data) setTravelCharges(travelData.data);
-      } catch (error) {
-        console.error('Failed to load expense setups:', error);
-      } finally {
-        setIsLoading(false);
+        
+        if (postalRes.ok) {
+          const postalData = await postalRes.json();
+          if (Object.keys(postalData).length > 0) {
+            setPostalCharges(prev => mergeCharges(prev, postalData));
+          }
+        }
+        
+        if (travelRes.ok) {
+          const travelData = await travelRes.json();
+          if (Object.keys(travelData).length > 0) {
+            setTravelCharges(prev => mergeCharges(prev, travelData));
+          }
+        }
+      } catch (err) {
+        console.error("Failed to fetch charges:", err);
       }
     };
-
-    fetchConfigurations();
+    fetchCharges();
   }, []);
+
+  const mergeCharges = (initial, fetched) => {
+    const merged = { ...initial };
+    for (const departure in fetched) {
+      if (merged[departure]) {
+        merged[departure] = { ...merged[departure], ...fetched[departure] };
+      }
+    }
+    return merged;
+  };
+
+  const handleSave = async () => {
+    setIsLoading(true);
+    const endpoint = activeTab === 'postal' ? '/api/expenses/postal' : '/api/expenses/travel';
+    const payload = activeTab === 'postal' ? postalCharges : travelCharges;
+    
+    try {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}${endpoint}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      
+      if (res.ok) {
+        alert(`${activeTab === 'postal' ? 'Postal' : 'Travel'} charges saved successfully!`);
+      } else {
+        alert('Failed to save changes.');
+      }
+    } catch (err) {
+      console.error(err);
+      alert('Error saving changes.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const currentCharges = activeTab === 'postal' ? postalCharges : travelCharges;
 
@@ -88,32 +127,6 @@ export default function ExpenseSetup() {
       }));
     }
   };
-
-  const handleSave = async () => {
-    setIsSaving(true);
-    try {
-      const dataToSave = activeTab === 'postal' ? postalCharges : travelCharges;
-      const res = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/expensesetup/${activeTab}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ data: dataToSave })
-      });
-      
-      if (!res.ok) throw new Error('Failed to save');
-      alert(`${activeTab === 'postal' ? 'Postal Charges' : 'Travel Expenses'} saved successfully!`);
-    } catch (error) {
-      console.error('Error saving configuration:', error);
-      alert('Error saving configuration. Please try again.');
-    } finally {
-      setIsSaving(false);
-    }
-  };
-
-  if (isLoading) {
-    return <div className="flex items-center justify-center h-full">Loading...</div>;
-  }
 
   return (
     <div className="flex flex-col h-full bg-[#F8F9FA]">
@@ -149,10 +162,10 @@ export default function ExpenseSetup() {
           </h2>
           <button 
             onClick={handleSave}
-            disabled={isSaving}
-            className={`px-4 py-2 text-white rounded-md transition-colors font-medium ${isSaving ? 'bg-gray-400 cursor-not-allowed' : 'bg-[#162D50] hover:bg-[#203c6b]'}`}
+            disabled={isLoading}
+            className="px-4 py-2 bg-[#162D50] text-white rounded-md hover:bg-[#203c6b] transition-colors font-medium disabled:opacity-50"
           >
-            {isSaving ? 'Saving...' : 'Save Changes'}
+            {isLoading ? 'Saving...' : 'Save Changes'}
           </button>
         </div>
 
