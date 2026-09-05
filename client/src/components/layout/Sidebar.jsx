@@ -64,13 +64,15 @@ export default function Sidebar({ activeTab, setActiveTab, openMenus, toggleMenu
         { name: 'Case List', icon: ClipboardList }
       ]
     },
+    { name: 'Settings', icon: SettingsIcon },
     { 
-      name: 'Settings', 
-      icon: SettingsIcon,
+      name: 'Expense SetUp', 
+      icon: ClipboardList,
       subItems: [
-        { name: 'Expense SetUp', icon: Banknote }
+        { name: 'Expense Category', icon: FilePlus },
+        { name: 'Expense List', icon: List }
       ]
-    },
+    }
   ];
 
   const navItems = allNavItems.filter(item => {
@@ -82,7 +84,7 @@ export default function Sidebar({ activeTab, setActiveTab, openMenus, toggleMenu
     // Other roles see their department and Settings
     if (item.name === 'Settings') return true;
     if (user.role === 'hr' && item.name === 'HR Department') return true;
-    if (user.role === 'account' && item.name === 'Account Department') return true;
+    if (user.role === 'account' && (item.name === 'Account Department' || item.name === 'Expense SetUp')) return true;
     if (user.role === 'support' && item.name === 'Support Department') return true;
     
     return false;
