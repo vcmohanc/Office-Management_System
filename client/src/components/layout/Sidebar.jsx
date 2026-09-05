@@ -64,7 +64,13 @@ export default function Sidebar({ activeTab, setActiveTab, openMenus, toggleMenu
         { name: 'Case List', icon: ClipboardList }
       ]
     },
-    { name: 'Settings', icon: SettingsIcon },
+    { 
+      name: 'Settings', 
+      icon: SettingsIcon,
+      subItems: [
+        { name: 'Expense SetUp', icon: Banknote }
+      ]
+    },
   ];
 
   const navItems = allNavItems.filter(item => {
