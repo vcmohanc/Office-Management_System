@@ -202,12 +202,15 @@ export default function ExpenseSetup() {
                         {isDiagonal ? (
                           <span className="text-red-500 font-bold text-sm">なし</span>
                         ) : (
-                          <input
-                            type="text"
-                            value={value}
-                            onChange={(e) => handleChargeChange(departure, destination, e.target.value)}
-                            className="w-full text-center p-1.5 border border-gray-200 rounded text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
-                          />
+                          <div className="flex items-center">
+                            <span className="text-gray-500 mr-1">¥</span>
+                            <input
+                              type="text"
+                              value={value}
+                              onChange={(e) => handleChargeChange(departure, destination, e.target.value)}
+                              className="w-full text-center p-1.5 border border-gray-200 rounded text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                            />
+                          </div>
                         )}
                       </td>
                     );
