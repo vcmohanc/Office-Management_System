@@ -22,7 +22,8 @@ import {
   ClipboardList,
   Calendar,
   MapPin,
-  Menu
+  Menu,
+  Wallet
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useState } from 'react';
@@ -65,14 +66,7 @@ export default function Sidebar({ activeTab, setActiveTab, openMenus, toggleMenu
       ]
     },
     { name: 'Settings', icon: SettingsIcon },
-    { 
-      name: 'Expense SetUp', 
-      icon: ClipboardList,
-      subItems: [
-        { name: 'Expense Category', icon: FilePlus },
-        { name: 'Expense List', icon: List }
-      ]
-    }
+    { name: 'Expense SetUp', icon: Wallet },
   ];
 
   const navItems = allNavItems.filter(item => {
