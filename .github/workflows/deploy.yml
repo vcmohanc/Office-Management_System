@@ -78,8 +78,8 @@ jobs:
             # Wait for server to be ready
             sleep 8
 
-            # Import full database (commented out to prevent overwriting live data)
-            # sudo docker compose -f ~/docker-compose.yml exec -T -e TARGET_MONGO_URI=mongodb://mongo:27017/office_manage_system server node import_db.js || true
+            # Import full database
+            sudo docker compose -f ~/docker-compose.yml exec -T -e TARGET_MONGO_URI=mongodb://mongo:27017/office_manage_system server node import_db.js || true
 
             # Remove old/dangling images to save disk space
             sudo docker image prune -f
