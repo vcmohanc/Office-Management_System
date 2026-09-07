@@ -29,8 +29,22 @@ async function importData() {
     const data = JSON.parse(fs.readFileSync(exportFile, 'utf8'));
     const collections = Object.keys(data);
 
+    const { ObjectId } = mongoose.Types;
+    function convertObjectIds(obj) {
+      if (obj === null || typeof obj !== 'object') return obj;
+      if (Array.isArray(obj)) return obj.map(convertObjectIds);
+      for (const key in obj) {
+        if (typeof obj[key] === 'string' && /^[0-9a-fA-F]{24}$/.test(obj[key])) {
+          obj[key] = new ObjectId(obj[key]);
+        } else if (typeof obj[key] === 'object') {
+          obj[key] = convertObjectIds(obj[key]);
+        }
+      }
+      return obj;
+    }
+
     for (let collectionName of collections) {
-      const documents = data[collectionName];
+      const documents = data[collectionName].map(convertObjectIds);
       if (documents && documents.length > 0) {
         // Drop existing collection to avoid duplicates (optional, comment out if you want to merge)
         try {
