@@ -12,7 +12,7 @@ router.get('/postal', async (req, res) => {
     const matrix = {};
     charges.forEach(doc => {
       if (doc.departure) {
-        matrix[doc.departure._id] = Object.fromEntries(doc.charges);
+        matrix[doc.departure._id] = doc.charges ? Object.fromEntries(doc.charges) : {};
       }
     });
     res.json(matrix);
@@ -47,7 +47,7 @@ router.get('/travel', async (req, res) => {
     const matrix = {};
     charges.forEach(doc => {
       if (doc.departure) {
-        matrix[doc.departure._id] = Object.fromEntries(doc.charges);
+        matrix[doc.departure._id] = doc.charges ? Object.fromEntries(doc.charges) : {};
       }
     });
     res.json(matrix);
