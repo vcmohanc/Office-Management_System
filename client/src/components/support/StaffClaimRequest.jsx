@@ -333,8 +333,27 @@ export default function StaffClaimRequest() {
       // Submit all claims
       for (const claim of claims) {
         const payload = {
-          staffInfo,
-          ...claim
+          full_name: staffInfo.fullName,
+          staff_id: staffInfo.id,
+          location: staffInfo.location,
+          branch_farm_name: staffInfo.branchAndFarmName || null,
+          visa_status: staffInfo.visaStatus || null,
+          visa_available_time: staffInfo.visaAvailableTime || null,
+          
+          expense_type: claim.expenseType,
+          advancer_category: claim.advancerCategory,
+          payment_process_types: claim.advancerName || null,
+          bearing_party: claim.bearingParty,
+          expense_amount: parseFloat(claim.expenseAmount) || 0,
+          expense_period_start: claim.expensePeriodStart || null,
+          expense_period_end: claim.expensePeriodEnd || null,
+          bill_receipt_url: claim.receipts || [],
+          remarks: claim.remark || null,
+
+          total_expense_amount: parseFloat(claim.expenseAmount) || 0,
+          installment_count: 1,
+          collection_start_month: new Date().toISOString().slice(0, 7),
+          monthly_deduction: parseFloat(claim.expenseAmount) || 0
         };
         const response = await fetch(`${import.meta.env.VITE_API_URL}/api/claims`, {
           method: 'POST',
