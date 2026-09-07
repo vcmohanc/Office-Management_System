@@ -1,51 +1,21 @@
 import React, { useState, useEffect } from 'react';
 
-const REGIONS = [
-  'Hokkaido',
-  'Northern Tohoku',
-  'Southern Tohoku',
-  'Kanto',
-  'Shinetsu',
-  'Hokuriku',
-  'Chubu',
-  'Kansai',
-  'Chugoku',
-  'Shikoku',
-  'Kyushu',
-  'Okinawa'
-];
-
-// Initial dummy values based on the screenshot pattern
-const getInitialCharges = () => {
-  const matrix = {};
-  REGIONS.forEach(departure => {
-    matrix[departure] = {};
-    REGIONS.forEach(destination => {
-      // Default dummy value
-      let val = '4,530';
-      if (departure === destination) {
-        val = 'なし';
-      } else if (
-        (departure === 'Okinawa' && destination !== 'Okinawa') || 
-        (destination === 'Okinawa' && departure !== 'Okinawa')
-      ) {
-        val = '9,130'; // Just some dummy variability
-      }
-      matrix[departure][destination] = val;
-    });
-  });
-  return matrix;
-};
-
 export default function ExpenseSetup() {
   const [activeTab, setActiveTab] = useState('postal');
-  const [postalCharges, setPostalCharges] = useState(getInitialCharges());
-  const [travelCharges, setTravelCharges] = useState(getInitialCharges());
+  const [regions, setRegions] = useState([]);
+  const [postalCharges, setPostalCharges] = useState({});
+  const [travelCharges, setTravelCharges] = useState({});
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
-    const fetchCharges = async () => {
+    const fetchData = async () => {
       try {
+        const regionsRes = await fetch(`${import.meta.env.VITE_API_URL}/api/regions`);
+        if (regionsRes.ok) {
+          const fetchedRegions = await regionsRes.json();
+          setRegions(fetchedRegions);
+        }
+
         const [postalRes, travelRes] = await Promise.all([
           fetch(`${import.meta.env.VITE_API_URL}/api/expenses/postal`),
           fetch(`${import.meta.env.VITE_API_URL}/api/expenses/travel`)
@@ -53,33 +23,19 @@ export default function ExpenseSetup() {
         
         if (postalRes.ok) {
           const postalData = await postalRes.json();
-          if (Object.keys(postalData).length > 0) {
-            setPostalCharges(prev => mergeCharges(prev, postalData));
-          }
+          setPostalCharges(postalData);
         }
         
         if (travelRes.ok) {
           const travelData = await travelRes.json();
-          if (Object.keys(travelData).length > 0) {
-            setTravelCharges(prev => mergeCharges(prev, travelData));
-          }
+          setTravelCharges(travelData);
         }
       } catch (err) {
         console.error("Failed to fetch charges:", err);
       }
     };
-    fetchCharges();
+    fetchData();
   }, []);
-
-  const mergeCharges = (initial, fetched) => {
-    const merged = { ...initial };
-    for (const departure in fetched) {
-      if (merged[departure]) {
-        merged[departure] = { ...merged[departure], ...fetched[departure] };
-      }
-    }
-    return merged;
-  };
 
   const handleSave = async () => {
     setIsLoading(true);
@@ -108,21 +64,21 @@ export default function ExpenseSetup() {
 
   const currentCharges = activeTab === 'postal' ? postalCharges : travelCharges;
 
-  const handleChargeChange = (departure, destination, value) => {
+  const handleChargeChange = (departureId, destinationId, value) => {
     if (activeTab === 'postal') {
       setPostalCharges(prev => ({
         ...prev,
-        [departure]: {
-          ...prev[departure],
-          [destination]: value
+        [departureId]: {
+          ...(prev[departureId] || {}),
+          [destinationId]: value
         }
       }));
     } else {
       setTravelCharges(prev => ({
         ...prev,
-        [departure]: {
-          ...prev[departure],
-          [destination]: value
+        [departureId]: {
+          ...(prev[departureId] || {}),
+          [destinationId]: value
         }
       }));
     }
@@ -174,29 +130,29 @@ export default function ExpenseSetup() {
             <thead>
               <tr>
                 <th className="p-3 border border-gray-200 bg-gray-50 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider sticky left-0 z-10 w-32">
-                  DEPARTURE \ DEST.
+                  {activeTab === 'postal' ? 'Sender / Receiver' : 'Departure / Arrival'}
                 </th>
-                {REGIONS.map(region => (
-                  <th key={region} className="p-3 border border-gray-200 bg-gray-50 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider w-24">
-                    {region}
+                {regions.map(region => (
+                  <th key={region._id} className="p-3 border border-gray-200 bg-gray-50 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider w-24">
+                    {region.name1}
                   </th>
                 ))}
               </tr>
             </thead>
             <tbody>
-              {REGIONS.map((departure, rowIndex) => (
-                <tr key={departure} className={rowIndex % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'}>
+              {regions.map((departure, rowIndex) => (
+                <tr key={departure._id} className={rowIndex % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'}>
                   <td className="p-3 border border-gray-200 font-medium text-sm text-gray-700 bg-white sticky left-0 z-10 whitespace-nowrap">
-                    {departure}
+                    {departure.name1}
                   </td>
                   
-                  {REGIONS.map((destination) => {
-                    const isDiagonal = departure === destination;
-                    const value = currentCharges[departure][destination];
+                  {regions.map((destination) => {
+                    const isDiagonal = departure._id === destination._id;
+                    const value = currentCharges[departure._id]?.[destination._id] || '';
                     
                     return (
                       <td 
-                        key={`${departure}-${destination}`} 
+                        key={`${departure._id}-${destination._id}`} 
                         className={`p-2 border border-gray-200 text-center ${isDiagonal ? 'bg-red-50' : 'bg-white'}`}
                       >
                         {isDiagonal ? (
@@ -207,7 +163,7 @@ export default function ExpenseSetup() {
                             <input
                               type="text"
                               value={value}
-                              onChange={(e) => handleChargeChange(departure, destination, e.target.value)}
+                              onChange={(e) => handleChargeChange(departure._id, destination._id, e.target.value)}
                               className="w-full text-center p-1.5 border border-gray-200 rounded text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
                             />
                           </div>

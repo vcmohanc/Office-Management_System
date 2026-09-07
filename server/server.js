@@ -10,6 +10,7 @@ import claimRoutes from './routes/claims.js';
 import optionRoutes from './routes/options.js';
 import b2bRoutes from './routes/b2b.js';
 import expenseRoutes from './routes/expenses.js';
+import regionRoutes from './routes/regions.js';
 
 dotenv.config();
 
@@ -29,6 +30,7 @@ app.use('/api/claims', claimRoutes);
 app.use('/api/options', optionRoutes);
 app.use('/api/b2b', b2bRoutes);
 app.use('/api/expenses', expenseRoutes);
+app.use('/api/regions', regionRoutes);
 
 // MongoDB Connection
 mongoose.connect(process.env.MONGO_URI || 'mongodb://localhost:27017/office_manage_system')

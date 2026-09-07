@@ -21,6 +21,9 @@ export default function NewCase() {
   
   const [staffInfo, setStaffInfo] = useState({ fullName: '', id: '', location: '', branchAndFarmName: '', visaStatus: '', visaAvailableTime: '' });
   const [employees, setEmployees] = useState([]);
+  const [regions, setRegions] = useState([]);
+  const [postalMatrix, setPostalMatrix] = useState({});
+  const [travelMatrix, setTravelMatrix] = useState({});
   const [unsettledBalance, setUnsettledBalance] = useState(0);
   const [includeBalance, setIncludeBalance] = useState(false);
   const [settlementMethod, setSettlementMethod] = useState('Bank Transfer');
@@ -46,6 +49,18 @@ export default function NewCase() {
         const empResponse = await fetch(`${import.meta.env.VITE_API_URL}/api/employees`);
         const empData = await empResponse.json();
         setEmployees(empData);
+
+        const regionsResponse = await fetch(`${import.meta.env.VITE_API_URL}/api/regions`);
+        const regionsData = await regionsResponse.json();
+        setRegions(regionsData);
+
+        const postalResponse = await fetch(`${import.meta.env.VITE_API_URL}/api/expenses/postal`);
+        const postalData = await postalResponse.json();
+        setPostalMatrix(postalData);
+
+        const travelResponse = await fetch(`${import.meta.env.VITE_API_URL}/api/expenses/travel`);
+        const travelData = await travelResponse.json();
+        setTravelMatrix(travelData);
       } catch (error) {
         console.error('Error fetching options:', error);
       }
@@ -87,6 +102,36 @@ export default function NewCase() {
           newCases[index].bearingParty = 'Dispatch destination: Farm';
           newCases[index].advancerName = 'Invoice from the client company';
           break;
+      }
+    }
+
+    const currentExpenseType = field === 'expenseType' ? value : newCases[index].expenseType;
+
+    if (currentExpenseType === 'Postage' && (field === 'sender' || field === 'recipient' || field === 'expenseType')) {
+      const senderName = field === 'sender' ? value : newCases[index].sender;
+      const recipientName = field === 'recipient' ? value : newCases[index].recipient;
+      if (senderName && recipientName) {
+        const senderId = regions.find(r => r.name1 === senderName)?._id;
+        const recipientId = regions.find(r => r.name2 === recipientName)?._id;
+        if (senderId && recipientId && postalMatrix[senderId] && postalMatrix[senderId][recipientId]) {
+          const rawCost = postalMatrix[senderId][recipientId];
+          const numericCost = typeof rawCost === 'string' ? Number(rawCost.replace(/,/g, '')) : rawCost;
+          newCases[index].expenseAmount = numericCost || 0;
+        }
+      }
+    }
+
+    if (currentExpenseType === 'Transportation Expenses / Flight Fare' && (field === 'departure' || field === 'destination' || field === 'expenseType')) {
+      const departureName = field === 'departure' ? value : newCases[index].departure;
+      const destinationName = field === 'destination' ? value : newCases[index].destination;
+      if (departureName && destinationName) {
+        const departureId = regions.find(r => r.name1 === departureName)?._id;
+        const destinationId = regions.find(r => r.name2 === destinationName)?._id;
+        if (departureId && destinationId && travelMatrix[departureId] && travelMatrix[departureId][destinationId]) {
+          const rawCost = travelMatrix[departureId][destinationId];
+          const numericCost = typeof rawCost === 'string' ? Number(rawCost.replace(/,/g, '')) : rawCost;
+          newCases[index].expenseAmount = numericCost || 0;
+        }
       }
     }
 
@@ -190,11 +235,21 @@ export default function NewCase() {
           <div className="grid grid-cols-2 gap-6 mb-8 bg-blue-50 p-6 rounded-md">
             <div>
               <label className="block text-sm font-bold text-gray-700 mb-2">Sender</label>
-              <input type="text" value={caseItem.sender || ''} onChange={(e) => updateCase(index, 'sender', e.target.value)} placeholder="Enter sender" className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50]" />
+              <input type="text" list={`sender-list-${index}`} value={caseItem.sender || ''} onChange={(e) => updateCase(index, 'sender', e.target.value)} placeholder="Enter sender" className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50]" />
+              <datalist id={`sender-list-${index}`}>
+                {regions.map(r => (
+                  <option key={r._id} value={r.name1} />
+                ))}
+              </datalist>
             </div>
             <div>
               <label className="block text-sm font-bold text-gray-700 mb-2">Recipient</label>
-              <input type="text" value={caseItem.recipient || ''} onChange={(e) => updateCase(index, 'recipient', e.target.value)} placeholder="Enter recipient" className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50]" />
+              <input type="text" list={`recipient-list-${index}`} value={caseItem.recipient || ''} onChange={(e) => updateCase(index, 'recipient', e.target.value)} placeholder="Enter recipient" className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50]" />
+              <datalist id={`recipient-list-${index}`}>
+                {regions.map(r => (
+                  <option key={r._id} value={r.name2} />
+                ))}
+              </datalist>
             </div>
           </div>
         );
@@ -203,11 +258,21 @@ export default function NewCase() {
           <div className="grid grid-cols-2 gap-6 mb-8 bg-blue-50 p-6 rounded-md">
             <div>
               <label className="block text-sm font-bold text-gray-700 mb-2">Departure Location</label>
-              <input type="text" value={caseItem.departure || ''} onChange={(e) => updateCase(index, 'departure', e.target.value)} placeholder="Enter departure" className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50]" />
+              <input type="text" list={`departure-list-${index}`} value={caseItem.departure || ''} onChange={(e) => updateCase(index, 'departure', e.target.value)} placeholder="Enter departure" className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50]" />
+              <datalist id={`departure-list-${index}`}>
+                {regions.map(r => (
+                  <option key={r._id} value={r.name1} />
+                ))}
+              </datalist>
             </div>
             <div>
               <label className="block text-sm font-bold text-gray-700 mb-2">Destination</label>
-              <input type="text" value={caseItem.destination || ''} onChange={(e) => updateCase(index, 'destination', e.target.value)} placeholder="Enter destination" className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50]" />
+              <input type="text" list={`destination-list-${index}`} value={caseItem.destination || ''} onChange={(e) => updateCase(index, 'destination', e.target.value)} placeholder="Enter destination" className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50]" />
+              <datalist id={`destination-list-${index}`}>
+                {regions.map(r => (
+                  <option key={r._id} value={r.name2} />
+                ))}
+              </datalist>
             </div>
             <div>
               <label className="block text-sm font-bold text-gray-700 mb-2">Date Used</label>
