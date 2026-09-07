@@ -1,17 +1,19 @@
 import express from 'express';
 import PostalCharge from '../models/PostalCharge.js';
 import TravelCharge from '../models/TravelCharge.js';
+import Region from '../models/Region.js';
 
 const router = express.Router();
 
 // GET /api/expenses/postal
 router.get('/postal', async (req, res) => {
   try {
-    const charges = await PostalCharge.find({});
+    const charges = await PostalCharge.find({}).populate('departure');
     const matrix = {};
     charges.forEach(doc => {
-      // Map stores data in a slightly different format, convert to standard object
-      matrix[doc.departure] = Object.fromEntries(doc.charges);
+      if (doc.departure) {
+        matrix[doc.departure._id] = Object.fromEntries(doc.charges);
+      }
     });
     res.json(matrix);
   } catch (error) {
@@ -24,10 +26,10 @@ router.get('/postal', async (req, res) => {
 router.put('/postal', async (req, res) => {
   try {
     const matrix = req.body;
-    for (const [departure, charges] of Object.entries(matrix)) {
+    for (const [departureId, charges] of Object.entries(matrix)) {
       await PostalCharge.findOneAndUpdate(
-        { departure },
-        { departure, charges },
+        { departure: departureId },
+        { departure: departureId, charges },
         { upsert: true, new: true }
       );
     }
@@ -41,10 +43,12 @@ router.put('/postal', async (req, res) => {
 // GET /api/expenses/travel
 router.get('/travel', async (req, res) => {
   try {
-    const charges = await TravelCharge.find({});
+    const charges = await TravelCharge.find({}).populate('departure');
     const matrix = {};
     charges.forEach(doc => {
-      matrix[doc.departure] = Object.fromEntries(doc.charges);
+      if (doc.departure) {
+        matrix[doc.departure._id] = Object.fromEntries(doc.charges);
+      }
     });
     res.json(matrix);
   } catch (error) {
@@ -57,10 +61,10 @@ router.get('/travel', async (req, res) => {
 router.put('/travel', async (req, res) => {
   try {
     const matrix = req.body;
-    for (const [departure, charges] of Object.entries(matrix)) {
+    for (const [departureId, charges] of Object.entries(matrix)) {
       await TravelCharge.findOneAndUpdate(
-        { departure },
-        { departure, charges },
+        { departure: departureId },
+        { departure: departureId, charges },
         { upsert: true, new: true }
       );
     }

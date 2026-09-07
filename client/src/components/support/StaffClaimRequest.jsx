@@ -18,6 +18,9 @@ export default function StaffClaimRequest() {
     visaAvailableTime: ''
   });
   const [employees, setEmployees] = useState([]);
+  const [regions, setRegions] = useState([]);
+  const [postalMatrix, setPostalMatrix] = useState({});
+  const [travelMatrix, setTravelMatrix] = useState({});
 
   const initialClaim = {
     expenseType: '',
@@ -52,6 +55,18 @@ export default function StaffClaimRequest() {
         const empResponse = await fetch(`${import.meta.env.VITE_API_URL}/api/employees`);
         const empData = await empResponse.json();
         setEmployees(empData);
+
+        const regionsResponse = await fetch(`${import.meta.env.VITE_API_URL}/api/regions`);
+        const regionsData = await regionsResponse.json();
+        setRegions(regionsData);
+
+        const postalResponse = await fetch(`${import.meta.env.VITE_API_URL}/api/expenses/postal`);
+        const postalData = await postalResponse.json();
+        setPostalMatrix(postalData);
+
+        const travelResponse = await fetch(`${import.meta.env.VITE_API_URL}/api/expenses/travel`);
+        const travelData = await travelResponse.json();
+        setTravelMatrix(travelData);
       } catch (error) {
         console.error('Error fetching options:', error);
       }
@@ -96,6 +111,36 @@ export default function StaffClaimRequest() {
       }
     }
 
+    const currentExpenseType = field === 'expenseType' ? value : updatedClaims[index].expenseType;
+
+    if (currentExpenseType === 'Postage' && (field === 'postageFrom' || field === 'postageTo' || field === 'expenseType')) {
+      const senderName = field === 'postageFrom' ? value : updatedClaims[index].postageFrom;
+      const recipientName = field === 'postageTo' ? value : updatedClaims[index].postageTo;
+      if (senderName && recipientName) {
+        const senderId = regions.find(r => r.name1 === senderName)?._id;
+        const recipientId = regions.find(r => r.name2 === recipientName)?._id;
+        if (senderId && recipientId && postalMatrix[senderId] && postalMatrix[senderId][recipientId]) {
+          const rawCost = postalMatrix[senderId][recipientId];
+          const numericCost = typeof rawCost === 'string' ? Number(rawCost.replace(/,/g, '')) : rawCost;
+          updatedClaims[index].expenseAmount = numericCost || 0;
+        }
+      }
+    }
+
+    if (currentExpenseType === 'Transportation Expenses / Flight Fare' && (field === 'departure' || field === 'destination' || field === 'expenseType')) {
+      const departureName = field === 'departure' ? value : updatedClaims[index].departure;
+      const destinationName = field === 'destination' ? value : updatedClaims[index].destination;
+      if (departureName && destinationName) {
+        const departureId = regions.find(r => r.name1 === departureName)?._id;
+        const destinationId = regions.find(r => r.name2 === destinationName)?._id;
+        if (departureId && destinationId && travelMatrix[departureId] && travelMatrix[departureId][destinationId]) {
+          const rawCost = travelMatrix[departureId][destinationId];
+          const numericCost = typeof rawCost === 'string' ? Number(rawCost.replace(/,/g, '')) : rawCost;
+          updatedClaims[index].expenseAmount = numericCost || 0;
+        }
+      }
+    }
+
     setClaims(updatedClaims);
   };
 
@@ -131,11 +176,21 @@ export default function StaffClaimRequest() {
           <div className="grid grid-cols-2 gap-6 mb-8 bg-blue-50 p-6 rounded-md">
             <div>
               <label className="block text-sm font-bold text-gray-700 mb-2">From</label>
-              <input type="text" value={claimItem.postageFrom || ''} onChange={(e) => updateClaim(index, 'postageFrom', e.target.value)} placeholder="Enter sender details" className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50]" />
+              <input type="text" list={`from-list-${index}`} value={claimItem.postageFrom || ''} onChange={(e) => updateClaim(index, 'postageFrom', e.target.value)} placeholder="Enter sender details" className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50]" />
+              <datalist id={`from-list-${index}`}>
+                {regions.map(r => (
+                  <option key={r._id} value={r.name1} />
+                ))}
+              </datalist>
             </div>
             <div>
               <label className="block text-sm font-bold text-gray-700 mb-2">To</label>
-              <input type="text" value={claimItem.postageTo || ''} onChange={(e) => updateClaim(index, 'postageTo', e.target.value)} placeholder="Enter recipient details" className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50]" />
+              <input type="text" list={`to-list-${index}`} value={claimItem.postageTo || ''} onChange={(e) => updateClaim(index, 'postageTo', e.target.value)} placeholder="Enter recipient details" className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50]" />
+              <datalist id={`to-list-${index}`}>
+                {regions.map(r => (
+                  <option key={r._id} value={r.name2} />
+                ))}
+              </datalist>
             </div>
           </div>
         );
@@ -143,12 +198,22 @@ export default function StaffClaimRequest() {
         return (
           <div className="grid grid-cols-2 gap-6 mb-8 bg-blue-50 p-6 rounded-md">
             <div>
-              <label className="block text-sm font-bold text-gray-700 mb-2">Departure Route / Method</label>
-              <input type="text" value={claimItem.departureRoute || ''} onChange={(e) => updateClaim(index, 'departureRoute', e.target.value)} placeholder="Enter departure details" className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50]" />
+              <label className="block text-sm font-bold text-gray-700 mb-2">Departure Location</label>
+              <input type="text" list={`departure-list-${index}`} value={claimItem.departure || ''} onChange={(e) => updateClaim(index, 'departure', e.target.value)} placeholder="Enter departure" className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50]" />
+              <datalist id={`departure-list-${index}`}>
+                {regions.map(r => (
+                  <option key={r._id} value={r.name1} />
+                ))}
+              </datalist>
             </div>
             <div>
-              <label className="block text-sm font-bold text-gray-700 mb-2">Return Route / Method</label>
-              <input type="text" value={claimItem.returnRoute || ''} onChange={(e) => updateClaim(index, 'returnRoute', e.target.value)} placeholder="Enter return details" className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50]" />
+              <label className="block text-sm font-bold text-gray-700 mb-2">Destination</label>
+              <input type="text" list={`destination-list-${index}`} value={claimItem.destination || ''} onChange={(e) => updateClaim(index, 'destination', e.target.value)} placeholder="Enter destination" className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50]" />
+              <datalist id={`destination-list-${index}`}>
+                {regions.map(r => (
+                  <option key={r._id} value={r.name2} />
+                ))}
+              </datalist>
             </div>
             <div className="col-span-2">
               <label className="block text-sm font-bold text-gray-700 mb-2">Reason</label>
