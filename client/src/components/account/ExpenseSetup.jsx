@@ -51,7 +51,7 @@ export default function ExpenseSetup() {
     const payload = activeTab === 'postal' ? postalCharges : travelCharges;
     
     try {
-      const res = await fetch(`${import.meta.env.VITE_API_URL}${endpoint}`, {
+      const res = await fetch(`${import.meta.env.VITE_API_URL || ''}${endpoint}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
@@ -60,11 +60,18 @@ export default function ExpenseSetup() {
       if (res.ok) {
         alert(`${activeTab === 'postal' ? 'Postal' : 'Travel'} charges saved successfully!`);
       } else {
-        alert('Failed to save changes.');
+        let errMsg = 'Failed to save changes.';
+        try {
+          const errData = await res.json();
+          if (errData.message) errMsg = `Failed to save changes: ${errData.message}`;
+        } catch (e) {
+          errMsg = `Failed to save changes. Status: ${res.status}`;
+        }
+        alert(errMsg);
       }
     } catch (err) {
       console.error(err);
-      alert('Error saving changes.');
+      alert(`Error saving changes: ${err.message}`);
     } finally {
       setIsLoading(false);
     }
