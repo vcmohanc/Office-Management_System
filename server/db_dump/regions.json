@@ -1,0 +1,98 @@
+[
+  {
+    "_id": "6a9e183a439c43b997804ef5",
+    "createdAt": "2026-09-07T01:49:46.009Z",
+    "updatedAt": "2026-09-07T01:49:46.009Z",
+    "__v": 0,
+    "name1": "Hokkaido",
+    "name2": "Hokkaido"
+  },
+  {
+    "_id": "6a9e183a439c43b997804ef6",
+    "createdAt": "2026-09-07T01:49:46.022Z",
+    "updatedAt": "2026-09-07T01:49:46.022Z",
+    "__v": 0,
+    "name1": "Northern Tohoku",
+    "name2": "Northern Tohoku"
+  },
+  {
+    "_id": "6a9e183a439c43b997804ef7",
+    "createdAt": "2026-09-07T01:49:46.025Z",
+    "updatedAt": "2026-09-07T01:49:46.025Z",
+    "__v": 0,
+    "name1": "Southern Tohoku",
+    "name2": "Southern Tohoku"
+  },
+  {
+    "_id": "6a9e183a439c43b997804ef8",
+    "createdAt": "2026-09-07T01:49:46.026Z",
+    "updatedAt": "2026-09-07T01:49:46.026Z",
+    "__v": 0,
+    "name1": "Kanto",
+    "name2": "Kanto"
+  },
+  {
+    "_id": "6a9e183a439c43b997804ef9",
+    "createdAt": "2026-09-07T01:49:46.028Z",
+    "updatedAt": "2026-09-07T01:49:46.028Z",
+    "__v": 0,
+    "name1": "Shinetsu",
+    "name2": "Shinetsu"
+  },
+  {
+    "_id": "6a9e183a439c43b997804efa",
+    "createdAt": "2026-09-07T01:49:46.030Z",
+    "updatedAt": "2026-09-07T01:49:46.030Z",
+    "__v": 0,
+    "name1": "Hokuriku",
+    "name2": "Hokuriku"
+  },
+  {
+    "_id": "6a9e183a439c43b997804efb",
+    "createdAt": "2026-09-07T01:49:46.032Z",
+    "updatedAt": "2026-09-07T01:49:46.032Z",
+    "__v": 0,
+    "name1": "Chubu",
+    "name2": "Chubu"
+  },
+  {
+    "_id": "6a9e183a439c43b997804efc",
+    "createdAt": "2026-09-07T01:49:46.034Z",
+    "updatedAt": "2026-09-07T01:49:46.034Z",
+    "__v": 0,
+    "name1": "Kansai",
+    "name2": "Kansai"
+  },
+  {
+    "_id": "6a9e183a439c43b997804efd",
+    "createdAt": "2026-09-07T01:49:46.036Z",
+    "updatedAt": "2026-09-07T01:49:46.036Z",
+    "__v": 0,
+    "name1": "Chugoku",
+    "name2": "Chugoku"
+  },
+  {
+    "_id": "6a9e183a439c43b997804efe",
+    "createdAt": "2026-09-07T01:49:46.038Z",
+    "updatedAt": "2026-09-07T01:49:46.038Z",
+    "__v": 0,
+    "name1": "Shikoku",
+    "name2": "Shikoku"
+  },
+  {
+    "_id": "6a9e183a439c43b997804eff",
+    "createdAt": "2026-09-07T01:49:46.039Z",
+    "updatedAt": "2026-09-07T01:49:46.039Z",
+    "__v": 0,
+    "name1": "Kyushu",
+    "name2": "Kyushu"
+  },
+  {
+    "_id": "6a9e183a439c43b997804f00",
+    "createdAt": "2026-09-07T01:49:46.040Z",
+    "updatedAt": "2026-09-07T01:49:46.040Z",
+    "__v": 0,
+    "name1": "Okinawa",
+    "name2": "Okinawa"
+  }
+]
