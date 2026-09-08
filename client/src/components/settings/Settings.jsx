@@ -26,7 +26,7 @@ export default function Settings({ user }) {
 
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('/api/auth/update-password', {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/auth/update-password`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

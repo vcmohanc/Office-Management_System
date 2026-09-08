@@ -5,13 +5,13 @@ services:
     build:
       context: ./client
       dockerfile: Dockerfile
+      args:
+        - VITE_API_URL=${VITE_API_URL:-http://localhost:5000}
     image: mohanc35/oms-client
     ports:
       - "80:80"
     depends_on:
       - server
-    environment:
-      - VITE_API_URL=http://localhost:5000
 
   server:
     build:
