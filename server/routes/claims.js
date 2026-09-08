@@ -75,5 +75,41 @@ router.post('/', async (req, res) => {
     res.status(500).json({ message: 'Failed to save claim', error: error.message });
   }
 });
+router.delete('/:id', async (req, res) => {
+  try {
+    const claimId = req.params.id;
+    const deletedClaim = await Claim.findByIdAndDelete(claimId);
+    if (!deletedClaim) {
+      return res.status(404).json({ message: 'Claim not found' });
+    }
+    res.json({ message: 'Claim deleted successfully', deletedClaim });
+  } catch (error) {
+    console.error('Error deleting claim:', error);
+    res.status(500).json({ message: 'Server error deleting claim', error: error.message });
+  }
+});
+router.patch('/:id/status', async (req, res) => {
+  try {
+    const { status } = req.body;
+    if (!status) {
+      return res.status(400).json({ message: 'Status is required' });
+    }
+    
+    const updatedClaim = await Claim.findByIdAndUpdate(
+      req.params.id,
+      { status },
+      { new: true }
+    );
+    
+    if (!updatedClaim) {
+      return res.status(404).json({ message: 'Claim not found' });
+    }
+    
+    res.json(updatedClaim);
+  } catch (error) {
+    console.error('Error updating claim status:', error);
+    res.status(500).json({ message: 'Server error updating status' });
+  }
+});
 
 export default router;
