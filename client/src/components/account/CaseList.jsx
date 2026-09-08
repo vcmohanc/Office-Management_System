@@ -45,43 +45,78 @@ export default function CaseList() {
     }).catch(err => console.error('Failed to update status', err));
   };
 
+  const handleDelete = async (e, record) => {
+    e.stopPropagation();
+    if (!window.confirm(`Are you sure you want to delete ${record.displayId}?`)) return;
+
+    const isClaim = record.type === 'Staff Case';
+    const endpoint = isClaim ? `/api/claims/${record._id}` : `/api/cases/${record._id}`;
+
+    try {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}${endpoint}`, {
+        method: 'DELETE'
+      });
+      
+      if (response.ok) {
+        if (isClaim) {
+          setClaims(prev => prev.filter(c => c._id !== record._id));
+        } else {
+          setCases(prev => prev.filter(c => c._id !== record._id));
+        }
+        if (selectedCase?._id === record._id) {
+          setSelectedCase(null);
+        }
+      } else {
+        console.error('Failed to delete record');
+      }
+    } catch (error) {
+      console.error('Error deleting record', error);
+    }
+  };
+
+
   // Map Cases
   const mappedCases = cases.map(c => ({
     ...c,
     type: 'Office Case',
-    displayId: `#CAS-${c._id.slice(-6).toUpperCase()}`,
-    displayDate: new Date(c.expense_period_start || c.createdAt).toLocaleDateString('en-US'),
-    displayName: c.staff_name,
-    displayTotal: c.total_expense || c.final_total_amount || 0,
+    displayId: c.case_id || c.caseId || `#CAS-${(c._id || '').slice(-6).toUpperCase()}`,
+    displayDate: new Date(c.expensePeriodStart || c.expense_period_start || c.createdAt).toLocaleDateString('en-US'),
+    displayName: c.staffName || c.staff_name || 'N/A',
+    displayTotal: c.finalTotal || c.totalExpense || c.total_expense || c.final_total_amount || 0,
     currencySymbol: c.currency === 'JPY' ? '¥' : '$',
+    expense_type: c.expenseType || c.expense_type || 'N/A',
   }));
 
   // Map Claims
   const mappedClaims = claims.map(c => ({
     ...c,
     type: 'Staff Case',
-    displayId: `#CLM-${c._id.slice(-6).toUpperCase()}`,
-    displayDate: new Date(c.expense_period_start || c.createdAt).toLocaleDateString('en-US'),
-    displayName: c.full_name,
-    displayTotal: c.total_expense_amount || 0,
+    displayId: c.claim_id || c.claimId || `#CLM-${(c._id || '').slice(-6).toUpperCase()}`,
+    displayDate: new Date(c.expensePeriodStart || c.expense_period_start || c.createdAt).toLocaleDateString('en-US'),
+    displayName: c.fullName || c.full_name || 'N/A',
+    displayTotal: c.totalExpenseAmount || c.total_expense_amount || 0,
     currencySymbol: c.currency === 'JPY' ? '¥' : '$',
+    expense_type: c.expenseType || c.expense_type || 'N/A',
   }));
 
-  const allRecords = [...mappedCases, ...mappedClaims];
+  const isPreApprovalStatus = (status) => ['New', 'Pending', 'Pending Correction', 'Rejected', 'Registered', 'New Case'].includes(status);
 
-  const officeCasesCount = mappedCases.length;
-  const staffCasesCount = mappedClaims.length;
+  const preApprovalCases = mappedCases.filter(c => isPreApprovalStatus(c.status));
+  const preApprovalClaims = mappedClaims.filter(c => isPreApprovalStatus(c.status));
+
+  const allRecords = [...preApprovalCases, ...preApprovalClaims];
+
+  const officeCasesCount = preApprovalCases.length;
+  const staffCasesCount = preApprovalClaims.length;
   const hostCompanyCasesCount = 0; // Placeholder
 
   const filteredRecords = allRecords.filter(c => {
-    const isPreApproval = ['New', 'Pending', 'Pending Correction', 'Rejected', 'Registered'].includes(c.status);
-    
     const activeCaseType = activeTab + ' Case';
     const matchesTab = c.type === activeCaseType || (activeTab === 'Host Company' && false);
     const matchesStatus = statusFilter === 'All Statuses' || c.status === statusFilter;
     const matchesType = expenseTypeFilter === 'All Types' || c.expense_type === expenseTypeFilter;
     
-    return isPreApproval && matchesTab && matchesStatus && matchesType;
+    return matchesTab && matchesStatus && matchesType;
   });
 
   useEffect(() => {
@@ -138,7 +173,7 @@ export default function CaseList() {
             <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)} className="w-full pl-4 pr-10 py-2 border border-gray-300 rounded-md text-sm appearance-none focus:outline-none focus:ring-1 focus:ring-[#162D50] text-gray-600">
               <option value="All Statuses">All Statuses</option>
               {[...new Set(cases.map(c => c.status))].filter(Boolean).map(status => (
-                <option key={status} value={status}>{status}</option>
+                <option key={status} value={status}>{status === 'Pending' ? 'New-Case' : status}</option>
               ))}
             </select>
             <ChevronDown className="w-4 h-4 absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none" />
@@ -211,16 +246,24 @@ export default function CaseList() {
                       c.status === 'Pending' ? 'bg-yellow-100 text-yellow-700 border-yellow-200' :
                       'bg-gray-100 text-gray-700 border-gray-200'
                     }`}>
-                      {c.status}
+                      {c.status === 'Pending' ? 'New-Case' : c.status}
                     </span>
                   </td>
                   <td className="py-4 px-6">
-                    <button 
-                      onClick={() => setSelectedCase(c)}
-                      className="text-[#162D50] font-bold hover:underline"
-                    >
-                      View Details
-                    </button>
+                    <div className="flex items-center space-x-3">
+                      <button 
+                        onClick={() => setSelectedCase(c)}
+                        className="text-[#162D50] font-bold hover:underline"
+                      >
+                        View Details
+                      </button>
+                      <button
+                        onClick={(e) => handleDelete(e, c)}
+                        className="text-red-500 font-bold hover:underline"
+                      >
+                        Delete
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))
@@ -304,6 +347,14 @@ export default function CaseList() {
 
           {/* Action Buttons */}
           <div className="p-4 border-t border-gray-200 flex justify-end items-center space-x-4 bg-gray-50 rounded-b-md">
+            {(selectedCase.status === 'Rejected' || selectedCase.status === 'Pending Correction') && (
+              <button 
+                onClick={() => handleUpdateStatus('Pending')}
+                className="text-blue-600 font-medium px-4 hover:underline mr-auto"
+              >
+                Revert to Pending
+              </button>
+            )}
             <button 
               onClick={() => handleUpdateStatus('Rejected')}
               className="text-red-500 font-medium px-4 hover:underline"

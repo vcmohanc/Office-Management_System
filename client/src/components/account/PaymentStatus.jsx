@@ -12,47 +12,63 @@ export default function PaymentStatus() {
   const [expenseTypeOptions, setExpenseTypeOptions] = useState([]);
 
   useEffect(() => {
-    fetch(`${import.meta.env.VITE_API_URL}/api/cases`)
-      .then(res => res.json())
-      .then(data => {
-        setCases(data);
-        setLoading(false);
-      })
-      .catch(err => {
-        console.error('Error fetching cases:', err);
-        setLoading(false);
-      });
+    Promise.all([
+      fetch(`${import.meta.env.VITE_API_URL}/api/cases`).then(res => res.json()).catch(() => []),
+      fetch(`${import.meta.env.VITE_API_URL}/api/claims`).then(res => res.json()).catch(() => []),
+      fetch(`${import.meta.env.VITE_API_URL}/api/options`).then(res => res.json()).catch(() => [])
+    ]).then(([casesData, claimsData, optionsData]) => {
+      const mappedCases = casesData.map(c => ({
+        ...c,
+        advancerCategory: c.advancerCategory || 'Office',
+        finalTotal: c.finalTotal || c.totalExpense || c.final_total_amount || 0,
+        staffId: c.staffId || c.staff_id || 'N/A',
+        staffName: c.staffName || c.staff_name || 'N/A'
+      }));
 
-    fetch(`${import.meta.env.VITE_API_URL}/api/options`)
-      .then(res => res.json())
-      .then(data => {
-        const types = data.filter(opt => opt.type === 'ExpenseType');
-        setExpenseTypeOptions(types);
-      })
-      .catch(err => console.error('Error fetching options:', err));
+      const mappedClaims = claimsData.map(c => ({
+        ...c,
+        advancerCategory: 'Staff',
+        finalTotal: c.totalExpenseAmount || c.total_expense_amount || 0,
+        staffId: c.staffId || c.staff_id || 'N/A',
+        staffName: c.fullName || c.full_name || 'N/A',
+        expenseType: c.expenseType || 'Claim',
+        expensePeriodStart: c.expensePeriodStart || c.expense_period_start || c.createdAt,
+        expensePeriodEnd: c.expensePeriodEnd || c.expense_period_end || c.createdAt,
+      }));
+
+      setCases([...mappedCases, ...mappedClaims]);
+      
+      const types = optionsData.filter(opt => opt.type === 'ExpenseType');
+      setExpenseTypeOptions(types);
+      setLoading(false);
+    }).catch(err => {
+      console.error('Error fetching data:', err);
+      setLoading(false);
+    });
   }, []);
 
-  const officeCasesCount = cases.filter(c => c.advancerCategory === 'Office').length;
-  const staffCasesCount = cases.filter(c => c.advancerCategory === 'Staff').length;
-  const hostCompanyCasesCount = cases.filter(c => c.advancerCategory === 'Host Company').length;
+  const postApprovalCases = cases.filter(c => ['Payment Pending', 'Processing', 'Completed', 'Overdue'].includes(c.status) || c.status === 'Approve for Payment' || c.status === 'Approved for Payment');
 
-  const filteredCases = cases.filter(c => {
-    // Only show post-approval cases in Payment Status
-    const isPostApproval = ['Payment Pending', 'Processing', 'Completed', 'Overdue'].includes(c.status);
-    
+  const officeCasesCount = postApprovalCases.filter(c => c.advancerCategory === 'Office').length;
+  const staffCasesCount = postApprovalCases.filter(c => c.advancerCategory === 'Staff').length;
+  const hostCompanyCasesCount = postApprovalCases.filter(c => c.advancerCategory === 'Host Company').length;
+
+  const filteredCases = postApprovalCases.filter(c => {
     const matchesTab = c.advancerCategory === activePaymentTab || (!c.advancerCategory && activePaymentTab === 'Office');
     const matchesStatus = statusFilter === 'All Statuses' || c.status === statusFilter;
     const matchesType = expenseTypeFilter === 'All Types' || c.expenseType === expenseTypeFilter;
     
-    return isPostApproval && matchesTab && matchesStatus && matchesType;
+    return matchesTab && matchesStatus && matchesType;
   });
 
-  const totalBankTransfers = cases.filter(c => c.settlementMethod === 'Bank Transfer').reduce((sum, c) => sum + (c.finalTotal || 0), 0);
-  const totalDeductions = cases.filter(c => c.collectionMethod === 'Deduction').reduce((sum, c) => sum + (c.finalTotal || 0), 0);
-  const pendingCount = cases.filter(c => c.status === 'Payment Pending').length;
-  const processingCount = cases.filter(c => c.status === 'Processing').length;
-  const completedCount = cases.filter(c => c.status === 'Completed').length;
-  const overdueCount = cases.filter(c => c.status === 'Overdue').length;
+  const tabCases = postApprovalCases.filter(c => c.advancerCategory === activePaymentTab || (!c.advancerCategory && activePaymentTab === 'Office'));
+
+  const totalBankTransfers = tabCases.filter(c => c.settlementMethod === 'Bank Transfer').reduce((sum, c) => sum + (c.finalTotal || 0), 0);
+  const totalDeductions = tabCases.filter(c => c.collectionMethod === 'Deduction').reduce((sum, c) => sum + (c.finalTotal || 0), 0);
+  const pendingCount = tabCases.filter(c => c.status === 'Payment Pending').length;
+  const processingCount = tabCases.filter(c => c.status === 'Processing').length;
+  const completedCount = tabCases.filter(c => c.status === 'Completed').length;
+  const overdueCount = tabCases.filter(c => c.status === 'Overdue').length;
 
   if (selectedCase) {
     const personCases = cases.filter(c => c.staffId === selectedCase.staffId);
@@ -77,88 +93,6 @@ export default function PaymentStatus() {
           Back to Payment List
         </button>
 
-        <div className="bg-white border border-gray-200 rounded-md p-6 shadow-sm print-area print:shadow-none print:border-none print:p-8 print:w-full print:bg-white print:[print-color-adjust:exact]">
-          
-          {/* Print Only Header */}
-          <div className="hidden print:flex justify-between items-end border-b-4 border-[#162D50] pb-6 mb-8">
-            <div>
-              <h1 className="text-3xl font-black text-[#162D50] tracking-tight uppercase">Settlement Record</h1>
-              <p className="text-gray-500 text-sm mt-2 font-medium">Generated: {new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
-            </div>
-            <div className="text-right flex flex-col items-end">
-              <div className="bg-[#162D50] text-white p-2 rounded-md mb-2">
-                <Building className="w-6 h-6" />
-              </div>
-              <p className="text-sm font-bold text-[#162D50]">OMS Corporation</p>
-            </div>
-          </div>
-
-          <div className="flex justify-between items-start mb-8">
-            <div>
-              <h2 className="text-2xl font-bold text-[#162D50] mb-1 print:text-3xl">Case Details: {selectedCase.staffName}</h2>
-              <p className="text-gray-500 text-sm print:text-base">Staff ID: <span className="font-medium text-gray-800">{selectedCase.staffId}</span></p>
-            </div>
-            <div className="flex items-center space-x-3">
-              <button 
-                onClick={() => window.print()}
-                className="flex items-center px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-medium rounded-md transition-colors print:hidden"
-              >
-                <Printer className="w-4 h-4 mr-1.5" />
-                Print
-              </button>
-              <span className={`px-4 py-1.5 rounded-full text-sm font-medium border print:border-2 ${
-                selectedCase.status === 'Pending' ? 'bg-yellow-100 text-yellow-700 border-yellow-200 print:bg-yellow-100 print:text-yellow-800' :
-                selectedCase.status === 'Processing' ? 'bg-blue-100 text-blue-700 border-blue-200 print:bg-blue-100 print:text-blue-800' :
-                selectedCase.status === 'Completed' ? 'bg-green-100 text-green-700 border-green-200 print:bg-green-100 print:text-green-800' :
-                'bg-gray-100 text-gray-700 border-gray-200 print:bg-gray-100 print:text-gray-800'
-              }`}>
-                {selectedCase.status}
-              </span>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 print:grid-cols-2 gap-8 print:gap-12">
-            <div className="bg-gray-50 print:bg-white rounded-lg p-5 print:p-0 border border-gray-100 print:border-none">
-              <div className="flex items-center mb-4 border-b border-gray-200 pb-3">
-                <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center mr-3 print:bg-blue-50">
-                  <Landmark className="w-4 h-4 text-blue-700" />
-                </div>
-                <h3 className="text-sm font-bold text-[#162D50] uppercase tracking-wider print:text-base">Expense Information</h3>
-              </div>
-              <div className="space-y-4 text-sm print:text-base">
-                <div className="flex justify-between items-center pb-2 border-b border-dashed border-gray-200"><span className="text-gray-500">Case ID</span> <span className="font-bold text-gray-800">#CAS-{selectedCase._id.slice(-6).toUpperCase()}</span></div>
-                <div className="flex justify-between items-center pb-2 border-b border-dashed border-gray-200"><span className="text-gray-500">Expense Type</span> <span className="font-medium text-gray-800">{selectedCase.expenseType}</span></div>
-                <div className="flex justify-between items-center pb-2 border-b border-dashed border-gray-200"><span className="text-gray-500">Total Amount</span> <span className="font-black text-[#162D50] text-lg">{selectedCase.currency === 'JPY' ? '¥' : '$'}{(selectedCase.finalTotal || selectedCase.totalExpense || 0).toLocaleString()}</span></div>
-                <div className="flex justify-between items-center pb-2 border-b border-dashed border-gray-200"><span className="text-gray-500">Period</span> <span className="font-medium text-gray-800">{new Date(selectedCase.expensePeriodStart).toLocaleDateString()} - {new Date(selectedCase.expensePeriodEnd).toLocaleDateString()}</span></div>
-                <div className="flex justify-between items-center pb-2 border-b border-dashed border-gray-200"><span className="text-gray-500">Location</span> <span className="font-medium text-gray-800">{selectedCase.location}</span></div>
-                <div className="flex justify-between items-center"><span className="text-gray-500">Remark</span> <span className="font-medium text-gray-800">{selectedCase.remark || 'N/A'}</span></div>
-              </div>
-            </div>
-
-            <div className="bg-gray-50 print:bg-white rounded-lg p-5 print:p-0 border border-gray-100 print:border-none">
-              <div className="flex items-center mb-4 border-b border-gray-200 pb-3">
-                <div className="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center mr-3 print:bg-indigo-50">
-                  <Download className="w-4 h-4 text-indigo-700" />
-                </div>
-                <h3 className="text-sm font-bold text-[#162D50] uppercase tracking-wider print:text-base">Settlement Details</h3>
-              </div>
-              <div className="space-y-4 text-sm print:text-base">
-                <div className="flex justify-between items-center pb-2 border-b border-dashed border-gray-200"><span className="text-gray-500">Category</span> <span className="font-medium text-gray-800">{selectedCase.advancerCategory}</span></div>
-                <div className="flex justify-between items-center pb-2 border-b border-dashed border-gray-200"><span className="text-gray-500">Payment Process Types</span> <span className="font-medium text-gray-800">{selectedCase.advancerName}</span></div>
-                <div className="flex justify-between items-center pb-2 border-b border-dashed border-gray-200"><span className="text-gray-500">Settlement Method</span> <span className="font-medium text-gray-800">{selectedCase.settlementMethod}</span></div>
-                <div className="flex justify-between items-center pb-2 border-b border-dashed border-gray-200"><span className="text-gray-500">Collection Method</span> <span className="font-medium text-gray-800">{selectedCase.collectionMethod}</span></div>
-                <div className="flex justify-between items-center pb-2 border-b border-dashed border-gray-200"><span className="text-gray-500">Installment Plan</span> <span className="font-medium text-gray-800">{selectedCase.installmentPlan}</span></div>
-                <div className="flex justify-between items-center"><span className="text-gray-500">Expected Settlement</span> <span className="font-bold text-[#162D50]">{new Date(selectedCase.expectedSettlementDate).toLocaleDateString()}</span></div>
-              </div>
-            </div>
-          </div>
-
-          {/* Print Footer */}
-          <div className="hidden print:flex justify-between items-center mt-16 pt-8 border-t border-gray-200 text-xs text-gray-400">
-            <p>This is a computer-generated document. No signature is required.</p>
-            <p>Ref: CAS-{selectedCase._id}</p>
-          </div>
-        </div>
 
         <div className="print:hidden space-y-6 mt-6">
           {/* Metric Cards */}
@@ -331,6 +265,88 @@ export default function PaymentStatus() {
           </tbody>
           </table>
         </div>
+        <div className="bg-white border border-gray-200 rounded-md p-6 shadow-sm print-area print:shadow-none print:border-none print:p-8 print:w-full print:bg-white print:[print-color-adjust:exact]">
+          
+          {/* Print Only Header */}
+          <div className="hidden print:flex justify-between items-end border-b-4 border-[#162D50] pb-6 mb-8">
+            <div>
+              <h1 className="text-3xl font-black text-[#162D50] tracking-tight uppercase">Settlement Record</h1>
+              <p className="text-gray-500 text-sm mt-2 font-medium">Generated: {new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
+            </div>
+            <div className="text-right flex flex-col items-end">
+              <div className="bg-[#162D50] text-white p-2 rounded-md mb-2">
+                <Building className="w-6 h-6" />
+              </div>
+              <p className="text-sm font-bold text-[#162D50]">OMS Corporation</p>
+            </div>
+          </div>
+
+          <div className="flex justify-between items-start mb-8">
+            <div>
+              <h2 className="text-2xl font-bold text-[#162D50] mb-1 print:text-3xl">Case Details: {selectedCase.staffName}</h2>
+              <p className="text-gray-500 text-sm print:text-base">Staff ID: <span className="font-medium text-gray-800">{selectedCase.staffId}</span></p>
+            </div>
+            <div className="flex items-center space-x-3">
+              <button 
+                onClick={() => window.print()}
+                className="flex items-center px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-medium rounded-md transition-colors print:hidden"
+              >
+                <Printer className="w-4 h-4 mr-1.5" />
+                Print
+              </button>
+              <span className={`px-4 py-1.5 rounded-full text-sm font-medium border print:border-2 ${
+                selectedCase.status === 'Pending' ? 'bg-yellow-100 text-yellow-700 border-yellow-200 print:bg-yellow-100 print:text-yellow-800' :
+                selectedCase.status === 'Processing' ? 'bg-blue-100 text-blue-700 border-blue-200 print:bg-blue-100 print:text-blue-800' :
+                selectedCase.status === 'Completed' ? 'bg-green-100 text-green-700 border-green-200 print:bg-green-100 print:text-green-800' :
+                'bg-gray-100 text-gray-700 border-gray-200 print:bg-gray-100 print:text-gray-800'
+              }`}>
+                {selectedCase.status}
+              </span>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 print:grid-cols-2 gap-8 print:gap-12">
+            <div className="bg-gray-50 print:bg-white rounded-lg p-5 print:p-0 border border-gray-100 print:border-none">
+              <div className="flex items-center mb-4 border-b border-gray-200 pb-3">
+                <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center mr-3 print:bg-blue-50">
+                  <Landmark className="w-4 h-4 text-blue-700" />
+                </div>
+                <h3 className="text-sm font-bold text-[#162D50] uppercase tracking-wider print:text-base">Expense Information</h3>
+              </div>
+              <div className="space-y-4 text-sm print:text-base">
+                <div className="flex justify-between items-center pb-2 border-b border-dashed border-gray-200"><span className="text-gray-500">Case ID</span> <span className="font-bold text-gray-800">#CAS-{selectedCase._id.slice(-6).toUpperCase()}</span></div>
+                <div className="flex justify-between items-center pb-2 border-b border-dashed border-gray-200"><span className="text-gray-500">Expense Type</span> <span className="font-medium text-gray-800">{selectedCase.expenseType}</span></div>
+                <div className="flex justify-between items-center pb-2 border-b border-dashed border-gray-200"><span className="text-gray-500">Total Amount</span> <span className="font-black text-[#162D50] text-lg">{selectedCase.currency === 'JPY' ? '¥' : '$'}{(selectedCase.finalTotal || selectedCase.totalExpense || 0).toLocaleString()}</span></div>
+                <div className="flex justify-between items-center pb-2 border-b border-dashed border-gray-200"><span className="text-gray-500">Period</span> <span className="font-medium text-gray-800">{new Date(selectedCase.expensePeriodStart).toLocaleDateString()} - {new Date(selectedCase.expensePeriodEnd).toLocaleDateString()}</span></div>
+                <div className="flex justify-between items-center pb-2 border-b border-dashed border-gray-200"><span className="text-gray-500">Location</span> <span className="font-medium text-gray-800">{selectedCase.location}</span></div>
+                <div className="flex justify-between items-center"><span className="text-gray-500">Remark</span> <span className="font-medium text-gray-800">{selectedCase.remark || 'N/A'}</span></div>
+              </div>
+            </div>
+
+            <div className="bg-gray-50 print:bg-white rounded-lg p-5 print:p-0 border border-gray-100 print:border-none">
+              <div className="flex items-center mb-4 border-b border-gray-200 pb-3">
+                <div className="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center mr-3 print:bg-indigo-50">
+                  <Download className="w-4 h-4 text-indigo-700" />
+                </div>
+                <h3 className="text-sm font-bold text-[#162D50] uppercase tracking-wider print:text-base">Settlement Details</h3>
+              </div>
+              <div className="space-y-4 text-sm print:text-base">
+                <div className="flex justify-between items-center pb-2 border-b border-dashed border-gray-200"><span className="text-gray-500">Category</span> <span className="font-medium text-gray-800">{selectedCase.advancerCategory}</span></div>
+                <div className="flex justify-between items-center pb-2 border-b border-dashed border-gray-200"><span className="text-gray-500">Payment Process Types</span> <span className="font-medium text-gray-800">{selectedCase.advancerName}</span></div>
+                <div className="flex justify-between items-center pb-2 border-b border-dashed border-gray-200"><span className="text-gray-500">Settlement Method</span> <span className="font-medium text-gray-800">{selectedCase.settlementMethod}</span></div>
+                <div className="flex justify-between items-center pb-2 border-b border-dashed border-gray-200"><span className="text-gray-500">Collection Method</span> <span className="font-medium text-gray-800">{selectedCase.collectionMethod}</span></div>
+                <div className="flex justify-between items-center pb-2 border-b border-dashed border-gray-200"><span className="text-gray-500">Installment Plan</span> <span className="font-medium text-gray-800">{selectedCase.installmentPlan}</span></div>
+                <div className="flex justify-between items-center"><span className="text-gray-500">Expected Settlement</span> <span className="font-bold text-[#162D50]">{new Date(selectedCase.expectedSettlementDate).toLocaleDateString()}</span></div>
+              </div>
+            </div>
+          </div>
+
+          {/* Print Footer */}
+          <div className="hidden print:flex justify-between items-center mt-16 pt-8 border-t border-gray-200 text-xs text-gray-400">
+            <p>This is a computer-generated document. No signature is required.</p>
+            <p>Ref: CAS-{selectedCase._id}</p>
+          </div>
+        </div>
       </div>
     );
   }
@@ -374,7 +390,7 @@ export default function PaymentStatus() {
                   <div className="w-3 h-3 rounded-full border-2 border-green-600 flex items-center justify-center mr-1">
                     <div className="w-1.5 h-1.5 bg-green-600 rounded-full"></div>
                   </div>
-                  {cases.filter(c => c.settlementMethod === 'Bank Transfer').length} Settlements Ready
+                  {tabCases.filter(c => c.settlementMethod === 'Bank Transfer').length} Settlements Ready
                 </div>
               </div>
               <Landmark className="w-10 h-10 text-gray-100" />
@@ -390,7 +406,7 @@ export default function PaymentStatus() {
                   <div className="w-3 h-3 rounded-full border-2 border-green-600 flex items-center justify-center mr-1">
                     <div className="w-1.5 h-1.5 bg-green-600 rounded-full"></div>
                   </div>
-                  {cases.filter(c => c.collectionMethod === 'Deduction').length} Recoveries Ready
+                  {tabCases.filter(c => c.collectionMethod === 'Deduction').length} Recoveries Ready
                 </div>
               </div>
             </div>
@@ -456,7 +472,7 @@ export default function PaymentStatus() {
               </div>
             </div>
             <div className="text-sm text-gray-500">
-              Total: {cases.length} items
+              Total: {tabCases.length} items
             </div>
           </div>
 
@@ -494,10 +510,10 @@ export default function PaymentStatus() {
               </tr>
             </thead>
             <tbody className="text-sm">
-              {cases.length === 0 ? (
+              {tabCases.length === 0 ? (
                 <tr><td colSpan="8" className="py-4 px-6 text-center text-gray-500">No data found.</td></tr>
               ) : (
-                cases.map((c, index) => (
+                tabCases.map((c, index) => (
                   <tr key={c._id || index} className="border-b border-gray-100 hover:bg-gray-50">
                     <td className="py-3 px-4">
                       <input type="checkbox" className="rounded border-gray-300" />
@@ -557,7 +573,7 @@ export default function PaymentStatus() {
                 <div className="w-3 h-3 rounded-full border-2 border-green-600 flex items-center justify-center mr-1">
                   <div className="w-1.5 h-1.5 bg-green-600 rounded-full"></div>
                 </div>
-                {cases.filter(c => c.settlementMethod === 'Bank Transfer').length} Settlements Ready
+                {tabCases.filter(c => c.settlementMethod === 'Bank Transfer').length} Settlements Ready
               </div>
             </div>
             <Landmark className="w-10 h-10 text-gray-100" />
@@ -573,7 +589,7 @@ export default function PaymentStatus() {
                 <div className="w-3 h-3 rounded-full border-2 border-green-600 flex items-center justify-center mr-1">
                   <div className="w-1.5 h-1.5 bg-green-600 rounded-full"></div>
                 </div>
-                {cases.filter(c => c.collectionMethod === 'Deduction').length} Recoveries Ready
+                {tabCases.filter(c => c.collectionMethod === 'Deduction').length} Recoveries Ready
               </div>
             </div>
           </div>
@@ -637,7 +653,7 @@ export default function PaymentStatus() {
           </div>
         </div>
         <div className="text-sm text-gray-500">
-          Total: {cases.length} items
+          Total: {tabCases.length} items
         </div>
       </div>
 
@@ -737,14 +753,16 @@ export default function PaymentStatus() {
             ) : (
               filteredCases.map(c => (
                 <tr key={c._id} className="border-b border-gray-100 hover:bg-gray-50">
-                  <td className="py-4 px-6 text-gray-600">#CAS-{c._id.slice(-6).toUpperCase()}</td>
+                  <td className="py-4 px-6 text-gray-600">
+                    {c.advancerCategory === 'Staff' ? '#CLM-' : '#CAS-'}{c._id.slice(-6).toUpperCase()}
+                  </td>
                   <td className="py-4 px-6 text-gray-600">
                     {new Date(c.expensePeriodStart).toLocaleDateString('en-US')}
                   </td>
                   <td className="py-4 px-6 text-gray-800">{c.staffName}</td>
                   <td className="py-4 px-6 text-gray-600">{c.expenseType}</td>
                   <td className="py-4 px-6 font-bold text-gray-800">
-                    {c.currency === 'JPY' ? '¥' : '$'}{c.totalExpense.toLocaleString()}
+                    {c.currency === 'JPY' ? '¥' : '$'}{(c.finalTotal || 0).toLocaleString()}
                   </td>
                   <td className="py-4 px-6">
                     <span className={`px-3 py-1 rounded-full text-xs font-medium border ${

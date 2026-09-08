@@ -102,16 +102,35 @@ export default function PaymentEntry() {
   };
 
   useEffect(() => {
-    fetch(`${import.meta.env.VITE_API_URL}/api/cases`)
-      .then(res => res.json())
-      .then(data => {
-        setCases(data);
-        setLoading(false);
-      })
-      .catch(err => {
-        console.error('Error fetching cases:', err);
-        setLoading(false);
-      });
+    Promise.all([
+      fetch(`${import.meta.env.VITE_API_URL}/api/cases`).then(res => res.json()).catch(() => []),
+      fetch(`${import.meta.env.VITE_API_URL}/api/claims`).then(res => res.json()).catch(() => [])
+    ]).then(([casesData, claimsData]) => {
+      const mappedCases = casesData.map(c => ({
+        ...c,
+        advancerCategory: c.advancerCategory || 'Office',
+        finalTotal: c.finalTotal || c.totalExpense || c.final_total_amount || 0,
+        staffId: c.staffId || c.staff_id || 'N/A',
+        staffName: c.staffName || c.staff_name || 'N/A'
+      }));
+
+      const mappedClaims = claimsData.map(c => ({
+        ...c,
+        advancerCategory: 'Staff',
+        finalTotal: c.totalExpenseAmount || c.total_expense_amount || 0,
+        staffId: c.staffId || c.staff_id || 'N/A',
+        staffName: c.fullName || c.full_name || 'N/A',
+        expenseType: c.expenseType || 'Claim',
+        expensePeriodStart: c.expensePeriodStart || c.expense_period_start || c.createdAt,
+        expensePeriodEnd: c.expensePeriodEnd || c.expense_period_end || c.createdAt,
+      }));
+
+      setCases([...mappedCases, ...mappedClaims]);
+      setLoading(false);
+    }).catch(err => {
+      console.error('Error fetching data:', err);
+      setLoading(false);
+    });
   }, []);
 
   const paymentOptions = [
@@ -178,7 +197,7 @@ export default function PaymentEntry() {
       else if (paidTerms >= totalTerms - 1 && totalTerms > 1) status = 'Near Completion';
       
       return {
-        id: `#CAS-${c._id.slice(-6).toUpperCase()}`,
+        id: `${c.advancerCategory === 'Staff' ? '#CLM-' : '#CAS-'}${c._id.slice(-6).toUpperCase()}`,
         rawId: c._id,
         name: c.staffName || c.advancerName || 'Unknown',
         paymentTerm: c.installmentPlan || 'N/A',

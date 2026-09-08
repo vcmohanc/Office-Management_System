@@ -165,6 +165,19 @@ router.post('/:id/settle', async (req, res) => {
     res.status(500).json({ message: 'Server error processing settlement', error: error.message });
   }
 });
+router.delete('/:id', async (req, res) => {
+  try {
+    const caseId = req.params.id;
+    const deletedCase = await Case.findByIdAndDelete(caseId);
+    if (!deletedCase) {
+      return res.status(404).json({ message: 'Case not found' });
+    }
+    res.json({ message: 'Case deleted successfully', deletedCase });
+  } catch (error) {
+    console.error('Error deleting case:', error);
+    res.status(500).json({ message: 'Server error deleting case', error: error.message });
+  }
+});
 
 export default router;
 
