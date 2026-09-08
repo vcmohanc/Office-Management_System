@@ -136,7 +136,7 @@ export default function CaseList() {
   }, []);
 
   return (
-    <div className="max-w-6xl mx-auto space-y-6 pb-10">
+    <div className="w-full px-4 sm:px-6 lg:px-8 xl:px-12 space-y-6 pb-10">
       <h2 className="text-2xl font-bold text-[#162D50] mb-4">Case List</h2>
       
       {/* Top Tabs */}
@@ -204,7 +204,7 @@ export default function CaseList() {
       </div>
 
       {/* Data Table */}
-      <div className="bg-white border border-gray-200 rounded-md overflow-hidden">
+      <div className="bg-white border border-gray-200 rounded-md overflow-hidden overflow-x-auto">
         <table className="w-full text-left border-collapse">
           <thead>
             <tr className="bg-[#F8F9FA] border-b border-gray-200 text-xs font-bold text-gray-600">

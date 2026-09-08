@@ -384,7 +384,7 @@ export default function NewCase() {
   };
 
   return (
-    <div className="max-w-6xl mx-auto space-y-8 pb-10">
+    <div className="w-full px-4 sm:px-6 lg:px-8 xl:px-12 space-y-8 pb-10">
       {/* Header and Stepper */}
       <div className="flex justify-between items-start pt-2">
         <div>

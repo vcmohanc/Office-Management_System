@@ -49,14 +49,21 @@ router.post('/', async (req, res) => {
 
     const today = new Date();
     const year = today.getFullYear();
-    const count = await Claim.countDocuments({
-      createdAt: {
-        $gte: new Date(year, 0, 1),
-        $lt: new Date(year + 1, 0, 1)
-      }
-    });
     
-    const sequenceNumber = (count + 1).toString().padStart(4, '0');
+    // Find the highest sequence number for this year
+    const lastClaim = await Claim.findOne({
+      claim_id: new RegExp(`^CLM-${year}-`)
+    }).sort({ claim_id: -1 });
+    
+    let nextCount = 1;
+    if (lastClaim && lastClaim.claim_id) {
+      const match = lastClaim.claim_id.match(/CLM-\d{4}-(\d{4})/);
+      if (match) {
+        nextCount = parseInt(match[1], 10) + 1;
+      }
+    }
+    
+    const sequenceNumber = nextCount.toString().padStart(4, '0');
     const claim_id = `CLM-${year}-${sequenceNumber}`;
 
     const newClaim = new Claim({
