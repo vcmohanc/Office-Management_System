@@ -213,7 +213,7 @@ export default function PaymentEntry() {
     });
     
     return (
-      <div className="max-w-6xl mx-auto pb-10">
+      <div className="w-full px-4 sm:px-6 lg:px-8 xl:px-12 pb-10">
         <button 
           onClick={() => {
             setSelectedEntryType(null);
@@ -225,7 +225,7 @@ export default function PaymentEntry() {
           Back to Selection
         </button>
 
-        <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden flex flex-col mb-6">
+        <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden overflow-x-auto flex flex-col mb-6">
           <div className="bg-[#F8F9FA] p-6 border-b border-gray-200 flex items-center space-x-4">
             <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${selectedOption.color}`}>
               <Icon className="w-6 h-6" />
@@ -238,7 +238,7 @@ export default function PaymentEntry() {
         </div>
 
         {/* Modern Payment Tracking Data Table */}
-        <div className="bg-white border border-gray-200 rounded-md shadow-sm overflow-hidden mb-8">
+        <div className="bg-white border border-gray-200 rounded-md shadow-sm overflow-hidden overflow-x-auto mb-8">
           <div className="px-6 py-4 border-b border-gray-200 bg-[#F8F9FA] flex justify-between items-center">
             <h3 className="text-lg font-bold text-[#162D50]">Installment / Payment Tracking</h3>
             <span className="text-sm text-gray-500">{mappedRecords.length} records found</span>
@@ -366,7 +366,7 @@ export default function PaymentEntry() {
 
         {/* Dynamic Settlement Form */}
         {selectedCaseToProcess ? (
-          <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden flex flex-col" id="settlement-form">
+          <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden overflow-x-auto flex flex-col" id="settlement-form">
             <div className="p-6 border-b border-gray-200 bg-[#F2F4F7] flex justify-between items-center">
               <h3 className="text-xl font-bold text-[#162D50]">Settlement Form: #CAS-{selectedCaseToProcess._id.slice(-6).toUpperCase()}</h3>
               <button 
@@ -497,7 +497,7 @@ export default function PaymentEntry() {
             </form>
           </div>
         ) : (
-          <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden flex flex-col">
+          <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden overflow-x-auto flex flex-col">
             <div className="p-8">
               <div className="flex flex-col items-center justify-center py-10 text-center">
                 <div className="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center mb-4">
@@ -516,7 +516,7 @@ export default function PaymentEntry() {
   }
 
   return (
-    <div className="max-w-6xl mx-auto space-y-6 pb-10">
+    <div className="w-full px-4 sm:px-6 lg:px-8 xl:px-12 space-y-6 pb-10">
       <div className="flex justify-between items-end mb-8">
         <div>
           <h2 className="text-2xl font-bold text-[#162D50] mb-2">Payment Entry Selection</h2>

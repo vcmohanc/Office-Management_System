@@ -11,6 +11,88 @@ export default function PaymentStatus() {
   const [expenseTypeFilter, setExpenseTypeFilter] = useState('All Types');
   const [expenseTypeOptions, setExpenseTypeOptions] = useState([]);
 
+  // Settlement Form State
+  const [paymentMethod, setPaymentMethod] = useState('');
+  const [deductions, setDeductions] = useState(0);
+  const [destinationDetails, setDestinationDetails] = useState({});
+  const [transactionRefId, setTransactionRefId] = useState('');
+  const [isConfirmed, setIsConfirmed] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  useEffect(() => {
+    if (selectedCase) {
+      const totalTerms = selectedCase.installmentPlan ? (selectedCase.installmentPlan.match(/\d+/) ? parseInt(selectedCase.installmentPlan.match(/\d+/)[0], 10) : 1) : 1;
+      const claimAmount = selectedCase.nextPaymentAmount || Math.round((selectedCase.finalTotal || selectedCase.totalExpense || 0) / totalTerms);
+      const advanceToRecover = selectedCase.previousBalance || 0;
+      
+      if (paymentMethod === 'Payroll Deduction') {
+        setDeductions(claimAmount);
+      } else if (advanceToRecover > 0) {
+        setDeductions(Math.round(advanceToRecover / totalTerms));
+      } else {
+        setDeductions(0);
+      }
+    }
+  }, [selectedCase, paymentMethod]);
+
+  const handleFormSubmit = async (e) => {
+    e.preventDefault();
+    if (!selectedCase || !isConfirmed) return;
+
+    setIsSubmitting(true);
+    const totalTerms = selectedCase.installmentPlan ? (selectedCase.installmentPlan.match(/\d+/) ? parseInt(selectedCase.installmentPlan.match(/\d+/)[0], 10) : 1) : 1;
+    const claimAmount = selectedCase.nextPaymentAmount || Math.round((selectedCase.finalTotal || selectedCase.totalExpense || 0) / totalTerms);
+    
+    const payload = {
+      processedBy: 'AdminUser', 
+      payeeName: selectedCase.staffName || selectedCase.advancerName || 'N/A',
+      paymentMethod,
+      destinationDetails,
+      financials: {
+        claimAmount,
+        deductions,
+        netPayable: claimAmount - deductions
+      },
+      transactionRefId,
+      paymentDate: e.target[e.target.length - 3].value,
+      isConfirmed
+    };
+
+    try {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/cases/${selectedCase._id}/settle`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+
+      if (response.ok) {
+        alert('Settlement processed successfully!');
+        setCases(cases.map(c => {
+          if (c._id === selectedCase._id) {
+            const newPaidTerms = (c.paidTerms || 0) + 1;
+            const newStatus = newPaidTerms >= totalTerms ? 'Completed' : 'Processing';
+            return { ...c, paidTerms: newPaidTerms, status: newStatus };
+          }
+          return c;
+        }));
+        setSelectedCase(null);
+        setPaymentMethod('');
+        setDeductions(0);
+        setDestinationDetails({});
+        setTransactionRefId('');
+        setIsConfirmed(false);
+      } else {
+        const errorData = await response.json();
+        alert(`Error: ${errorData.message}`);
+      }
+    } catch (error) {
+      console.error('Error processing settlement:', error);
+      alert('Network error while processing settlement');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   useEffect(() => {
     Promise.all([
       fetch(`${import.meta.env.VITE_API_URL}/api/cases`).then(res => res.json()).catch(() => []),
@@ -22,7 +104,8 @@ export default function PaymentStatus() {
         advancerCategory: c.advancerCategory || 'Office',
         finalTotal: c.finalTotal || c.totalExpense || c.final_total_amount || 0,
         staffId: c.staffId || c.staff_id || 'N/A',
-        staffName: c.staffName || c.staff_name || 'N/A'
+        staffName: c.staffName || c.staff_name || 'N/A',
+        expenseType: c.expenseType || c.expense_type || 'N/A'
       }));
 
       const mappedClaims = claimsData.map(c => ({
@@ -31,7 +114,7 @@ export default function PaymentStatus() {
         finalTotal: c.totalExpenseAmount || c.total_expense_amount || 0,
         staffId: c.staffId || c.staff_id || 'N/A',
         staffName: c.fullName || c.full_name || 'N/A',
-        expenseType: c.expenseType || 'Claim',
+        expenseType: c.expenseType || c.expense_type || 'Claim',
         expensePeriodStart: c.expensePeriodStart || c.expense_period_start || c.createdAt,
         expensePeriodEnd: c.expensePeriodEnd || c.expense_period_end || c.createdAt,
       }));
@@ -63,17 +146,17 @@ export default function PaymentStatus() {
 
   const tabCases = postApprovalCases.filter(c => c.advancerCategory === activePaymentTab || (!c.advancerCategory && activePaymentTab === 'Office'));
 
-  const totalBankTransfers = tabCases.filter(c => c.settlementMethod === 'Bank Transfer').reduce((sum, c) => sum + (c.finalTotal || 0), 0);
-  const totalDeductions = tabCases.filter(c => c.collectionMethod === 'Deduction').reduce((sum, c) => sum + (c.finalTotal || 0), 0);
-  const pendingCount = tabCases.filter(c => c.status === 'Payment Pending').length;
-  const processingCount = tabCases.filter(c => c.status === 'Processing').length;
-  const completedCount = tabCases.filter(c => c.status === 'Completed').length;
-  const overdueCount = tabCases.filter(c => c.status === 'Overdue').length;
+  const totalOfficePayment = postApprovalCases.filter(c => c.advancerCategory === 'Office').reduce((sum, c) => sum + (c.finalTotal || 0), 0);
+  const totalStaffPayment = postApprovalCases.filter(c => c.advancerCategory === 'Staff').reduce((sum, c) => sum + (c.finalTotal || 0), 0);
+  const pendingCount = postApprovalCases.filter(c => c.status === 'Payment Pending').length;
+  const processingCount = postApprovalCases.filter(c => c.status === 'Processing').length;
+  const completedCount = postApprovalCases.filter(c => c.status === 'Completed').length;
+  const overdueCount = postApprovalCases.filter(c => c.status === 'Overdue').length;
 
   if (selectedCase) {
     const personCases = cases.filter(c => c.staffId === selectedCase.staffId);
-    const personTotalBankTransfers = personCases.filter(c => c.settlementMethod === 'Bank Transfer').reduce((sum, c) => sum + (c.finalTotal || c.totalExpense || 0), 0);
-    const personTotalDeductions = personCases.filter(c => c.collectionMethod === 'Deduction').reduce((sum, c) => sum + (c.finalTotal || c.totalExpense || 0), 0);
+    const personTotalOfficePayment = personCases.filter(c => c.advancerCategory === 'Office').reduce((sum, c) => sum + (c.finalTotal || c.totalExpense || 0), 0);
+    const personTotalStaffPayment = personCases.filter(c => c.advancerCategory === 'Staff').reduce((sum, c) => sum + (c.finalTotal || c.totalExpense || 0), 0);
     const personPendingCount = personCases.filter(c => c.status === 'Payment Pending').length;
     const personProcessingCount = personCases.filter(c => c.status === 'Processing').length;
     
@@ -84,7 +167,7 @@ export default function PaymentStatus() {
     });
 
     return (
-      <div className="max-w-6xl mx-auto space-y-6 pb-10">
+      <div className="w-full px-4 sm:px-6 lg:px-8 xl:px-12 space-y-6 pb-10">
         <button 
           onClick={() => setSelectedCase(null)}
           className="flex items-center text-[#162D50] hover:underline font-medium mb-2"
@@ -98,15 +181,15 @@ export default function PaymentStatus() {
           {/* Metric Cards */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div className="bg-white border border-gray-200 p-5 rounded-md shadow-sm">
-              <h3 className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-2">TOTAL BANK TRANSFERS</h3>
+              <h3 className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-2">TOTAL OFFICE PAYMENT</h3>
               <div className="flex justify-between items-center">
                 <div>
-                  <p className="text-3xl font-bold text-[#162D50]">¥{personTotalBankTransfers.toLocaleString()}</p>
+                  <p className="text-3xl font-bold text-[#162D50]">¥{personTotalOfficePayment.toLocaleString()}</p>
                   <div className="flex items-center mt-2 text-xs text-green-600 font-medium">
                     <div className="w-3 h-3 rounded-full border-2 border-green-600 flex items-center justify-center mr-1">
                       <div className="w-1.5 h-1.5 bg-green-600 rounded-full"></div>
                     </div>
-                    {personCases.filter(c => c.settlementMethod === 'Bank Transfer').length} Settlements Ready
+                    {personCases.filter(c => c.advancerCategory === 'Office').length} Office Cases
                   </div>
                 </div>
                 <Landmark className="w-10 h-10 text-gray-100" />
@@ -114,15 +197,15 @@ export default function PaymentStatus() {
             </div>
 
             <div className="bg-white border border-gray-200 p-5 rounded-md shadow-sm">
-              <h3 className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-2">PAYROLL DEDUCTIONS</h3>
+              <h3 className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-2">TOTAL STAFF PAYMENT</h3>
               <div className="flex justify-between items-center">
                 <div>
-                  <p className="text-3xl font-bold text-[#162D50]">¥{personTotalDeductions.toLocaleString()}</p>
+                  <p className="text-3xl font-bold text-[#162D50]">¥{personTotalStaffPayment.toLocaleString()}</p>
                   <div className="flex items-center mt-2 text-xs text-green-600 font-medium">
                     <div className="w-3 h-3 rounded-full border-2 border-green-600 flex items-center justify-center mr-1">
                       <div className="w-1.5 h-1.5 bg-green-600 rounded-full"></div>
                     </div>
-                    {personCases.filter(c => c.collectionMethod === 'Deduction').length} Recoveries Ready
+                    {personCases.filter(c => c.advancerCategory === 'Staff').length} Staff Cases
                   </div>
                 </div>
               </div>
@@ -216,7 +299,7 @@ export default function PaymentStatus() {
         </div>
 
         {/* Payment History Section */}
-        <div className="bg-white border border-gray-200 rounded-md shadow-sm overflow-hidden mt-6 print:hidden">
+        <div className="bg-white border border-gray-200 rounded-md shadow-sm overflow-hidden overflow-x-auto mt-6 print:hidden">
           <div className="px-6 py-4 border-b border-gray-200 bg-[#F8F9FA]">
             <h3 className="text-lg font-bold text-[#162D50]">Payment History & Related Cases</h3>
           </div>
@@ -347,13 +430,134 @@ export default function PaymentStatus() {
             <p>Ref: CAS-{selectedCase._id}</p>
           </div>
         </div>
+
+        {/* Dynamic Settlement Form */}
+        <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden overflow-x-auto flex flex-col mt-6 print:hidden" id="settlement-form">
+          <div className="p-6 border-b border-gray-200 bg-[#F2F4F7] flex justify-between items-center">
+            <h3 className="text-xl font-bold text-[#162D50]">Settlement Form: #CAS-{selectedCase._id.slice(-6).toUpperCase()}</h3>
+          </div>
+          
+          <form className="p-8 space-y-6" onSubmit={handleFormSubmit}>
+            <div className="grid grid-cols-2 gap-6">
+              <div>
+                <label className="block text-sm font-bold text-gray-700 mb-1">Payee Name</label>
+                <input type="text" readOnly value={selectedCase.staffName || selectedCase.advancerName || 'N/A'} className="w-full px-4 py-2 border border-gray-300 rounded-md bg-gray-50 text-gray-500" />
+              </div>
+              <div>
+                <label className="block text-sm font-bold text-gray-700 mb-1">Total Claim Amount (This Term)</label>
+                <input type="text" readOnly value={(selectedCase.nextPaymentAmount || (selectedCase.finalTotal || selectedCase.totalExpense || 0) / (selectedCase.installmentPlan ? (selectedCase.installmentPlan.match(/\d+/) ? parseInt(selectedCase.installmentPlan.match(/\d+/)[0], 10) : 1) : 1)).toLocaleString()} className="w-full px-4 py-2 border border-gray-300 rounded-md bg-gray-50 text-gray-500 font-medium" />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-bold text-gray-700 mb-1">Payment Method</label>
+              <select 
+                value={paymentMethod} 
+                onChange={(e) => setPaymentMethod(e.target.value)}
+                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-[#162D50] focus:border-[#162D50]"
+                required
+              >
+                <option value="" disabled>Select Method</option>
+                <option value="Bank Transfer">Bank Transfer</option>
+                <option value="Corporate Card">Corporate Card</option>
+                <option value="Cash">Cash</option>
+                <option value="Payroll Deduction">Payroll Deduction</option>
+              </select>
+            </div>
+
+            {paymentMethod === 'Bank Transfer' && (
+              <div className="grid grid-cols-3 gap-4 p-4 bg-gray-50 rounded-md border border-gray-200">
+                <div>
+                  <label className="block text-xs font-bold text-gray-700 mb-1">Bank Name</label>
+                  <input type="text" onChange={(e) => setDestinationDetails({...destinationDetails, bankName: e.target.value})} className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm" required />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-gray-700 mb-1">Branch Code</label>
+                  <input type="text" onChange={(e) => setDestinationDetails({...destinationDetails, branchCode: e.target.value})} className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm" required />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-gray-700 mb-1">Account Number</label>
+                  <input type="text" onChange={(e) => setDestinationDetails({...destinationDetails, accountNumber: e.target.value})} className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm" required />
+                </div>
+              </div>
+            )}
+            {paymentMethod === 'Payroll Deduction' && (
+              <div className="p-4 bg-gray-50 rounded-md border border-gray-200">
+                <label className="block text-xs font-bold text-gray-700 mb-1">Target Payroll Period</label>
+                <input type="month" onChange={(e) => setDestinationDetails({...destinationDetails, payrollPeriod: e.target.value})} className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm" required />
+              </div>
+            )}
+
+            <div className="grid grid-cols-3 gap-6 p-4 bg-blue-50 border border-blue-100 rounded-md">
+              <div>
+                <label className="block text-sm font-bold text-gray-700 mb-1">Deductions (Tax/Advance)</label>
+                <div className="relative">
+                  <span className="absolute left-3 top-2 text-gray-500">¥</span>
+                  <input 
+                    type="number" 
+                    value={deductions} 
+                    onChange={(e) => setDeductions(Number(e.target.value) || 0)} 
+                    className="w-full pl-8 pr-4 py-2 border border-gray-300 rounded-md focus:ring-[#162D50] focus:border-[#162D50]" 
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-bold text-[#162D50] mb-1">Net Payable Amount</label>
+                <div className="w-full px-4 py-2 border border-blue-200 rounded-md bg-blue-100 text-[#162D50] font-black text-lg text-right shadow-inner">
+                  ¥ {((selectedCase.nextPaymentAmount || Math.round((selectedCase.finalTotal || selectedCase.totalExpense || 0) / (selectedCase.installmentPlan ? (selectedCase.installmentPlan.match(/\d+/) ? parseInt(selectedCase.installmentPlan.match(/\d+/)[0], 10) : 1) : 1))) - deductions).toLocaleString()}
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-bold text-gray-600 mb-1">New Remaining Balance</label>
+                <div className="w-full px-4 py-2 border border-gray-300 rounded-md bg-gray-100 text-gray-600 font-bold text-lg text-right">
+                  ¥ {Math.max(0, (selectedCase.finalTotal || selectedCase.totalExpense || 0) - (((selectedCase.paidTerms || 0) + 1) * (selectedCase.nextPaymentAmount || Math.round((selectedCase.finalTotal || selectedCase.totalExpense || 0) / (selectedCase.installmentPlan ? (selectedCase.installmentPlan.match(/\d+/) ? parseInt(selectedCase.installmentPlan.match(/\d+/)[0], 10) : 1) : 1))))).toLocaleString()}
+                </div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-6">
+              <div>
+                <label className="block text-sm font-bold text-gray-700 mb-1">Transaction Ref ID</label>
+                <input type="text" value={transactionRefId} onChange={(e) => setTransactionRefId(e.target.value)} className="w-full px-4 py-2 border border-gray-300 rounded-md" />
+              </div>
+              <div>
+                <label className="block text-sm font-bold text-gray-700 mb-1">Payment Date</label>
+                <input type="date" required defaultValue={new Date().toISOString().split('T')[0]} className="w-full px-4 py-2 border border-gray-300 rounded-md" />
+              </div>
+            </div>
+
+            <div className="flex items-center space-x-3 p-4 border border-gray-200 rounded-md bg-gray-50">
+              <input 
+                type="checkbox" 
+                id="confirm" 
+                checked={isConfirmed}
+                onChange={(e) => setIsConfirmed(e.target.checked)}
+                className="w-5 h-5 rounded border-gray-300 text-[#162D50] focus:ring-[#162D50]" 
+                required
+              />
+              <label htmlFor="confirm" className="text-sm font-medium text-gray-700">
+                I confirm that the above payment details are correct and authorize this settlement transition.
+              </label>
+            </div>
+
+            <div className="flex justify-end mt-6">
+              <button 
+                type="submit" 
+                disabled={isSubmitting || !isConfirmed || !paymentMethod}
+                className="bg-[#162D50] text-white px-8 py-3 rounded-md font-bold shadow-md hover:bg-[#0f1f38] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isSubmitting ? 'Processing...' : 'Submit Settlement'}
+              </button>
+            </div>
+          </form>
+        </div>
       </div>
     );
   }
 
   if (viewingDetails) {
     return (
-      <div className="max-w-6xl mx-auto pb-10">
+      <div className="w-full px-4 sm:px-6 lg:px-8 xl:px-12 pb-10">
         <button 
           onClick={() => setViewingDetails(false)}
           className="flex items-center text-[#162D50] hover:underline font-medium mb-6"
@@ -382,15 +586,15 @@ export default function PaymentStatus() {
         {/* Metric Cards */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
           <div className="bg-white border border-gray-200 p-5 rounded-md shadow-sm">
-            <h3 className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-2">TOTAL BANK TRANSFERS</h3>
+            <h3 className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-2">TOTAL OFFICE PAYMENT</h3>
             <div className="flex justify-between items-center">
               <div>
-                <p className="text-3xl font-bold text-[#162D50]">¥{totalBankTransfers.toLocaleString()}</p>
+                <p className="text-3xl font-bold text-[#162D50]">¥{totalOfficePayment.toLocaleString()}</p>
                 <div className="flex items-center mt-2 text-xs text-green-600 font-medium">
                   <div className="w-3 h-3 rounded-full border-2 border-green-600 flex items-center justify-center mr-1">
                     <div className="w-1.5 h-1.5 bg-green-600 rounded-full"></div>
                   </div>
-                  {tabCases.filter(c => c.settlementMethod === 'Bank Transfer').length} Settlements Ready
+                  {postApprovalCases.filter(c => c.advancerCategory === 'Office').length} Office Cases
                 </div>
               </div>
               <Landmark className="w-10 h-10 text-gray-100" />
@@ -398,15 +602,15 @@ export default function PaymentStatus() {
           </div>
 
           <div className="bg-white border border-gray-200 p-5 rounded-md shadow-sm">
-            <h3 className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-2">PAYROLL DEDUCTIONS</h3>
+            <h3 className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-2">TOTAL STAFF PAYMENT</h3>
             <div className="flex justify-between items-center">
               <div>
-                <p className="text-3xl font-bold text-[#162D50]">¥{totalDeductions.toLocaleString()}</p>
+                <p className="text-3xl font-bold text-[#162D50]">¥{totalStaffPayment.toLocaleString()}</p>
                 <div className="flex items-center mt-2 text-xs text-green-600 font-medium">
                   <div className="w-3 h-3 rounded-full border-2 border-green-600 flex items-center justify-center mr-1">
                     <div className="w-1.5 h-1.5 bg-green-600 rounded-full"></div>
                   </div>
-                  {tabCases.filter(c => c.collectionMethod === 'Deduction').length} Recoveries Ready
+                  {postApprovalCases.filter(c => c.advancerCategory === 'Staff').length} Staff Cases
                 </div>
               </div>
             </div>
@@ -448,7 +652,7 @@ export default function PaymentStatus() {
         </div>
 
         {/* Details Table Section */}
-        <div className="bg-white border border-gray-200 rounded-md overflow-hidden">
+        <div className="bg-white border border-gray-200 rounded-md overflow-hidden overflow-x-auto">
           {/* Tabs and counts */}
           <div className="p-4 border-b border-gray-200 flex justify-between items-center">
             <div className="flex items-center space-x-2">
@@ -525,7 +729,7 @@ export default function PaymentStatus() {
                     <td className="py-3 px-4 text-gray-600">{c.installmentPlan || '1 month'}</td>
                     <td className="py-3 px-4">
                       <div className="flex items-center space-x-2">
-                        <div className="w-full h-1.5 bg-gray-200 rounded-full overflow-hidden">
+                        <div className="w-full h-1.5 bg-gray-200 rounded-full overflow-hidden overflow-x-auto">
                           <div className="h-full bg-blue-500" style={{ width: c.status === 'Completed' ? '100%' : '50%' }}></div>
                         </div>
                         <span className="text-xs text-gray-500 whitespace-nowrap">{c.status === 'Completed' ? '1/1' : '0/1'}</span>
@@ -559,21 +763,21 @@ export default function PaymentStatus() {
   }
 
   return (
-    <div className="max-w-6xl mx-auto space-y-6 pb-10">
+    <div className="w-full px-4 sm:px-6 lg:px-8 xl:px-12 space-y-6 pb-10">
       <h2 className="text-2xl font-bold text-[#162D50] mb-4">Payment Application List</h2>
       
       {/* Metric Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
         <div className="bg-white border border-gray-200 p-5 rounded-md shadow-sm">
-          <h3 className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-2">TOTAL BANK TRANSFERS</h3>
+          <h3 className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-2">TOTAL OFFICE PAYMENT</h3>
           <div className="flex justify-between items-center">
             <div>
-              <p className="text-3xl font-bold text-[#162D50]">¥{totalBankTransfers.toLocaleString()}</p>
+              <p className="text-3xl font-bold text-[#162D50]">¥{totalOfficePayment.toLocaleString()}</p>
               <div className="flex items-center mt-2 text-xs text-green-600 font-medium">
                 <div className="w-3 h-3 rounded-full border-2 border-green-600 flex items-center justify-center mr-1">
                   <div className="w-1.5 h-1.5 bg-green-600 rounded-full"></div>
                 </div>
-                {tabCases.filter(c => c.settlementMethod === 'Bank Transfer').length} Settlements Ready
+                {postApprovalCases.filter(c => c.advancerCategory === 'Office').length} Office Cases
               </div>
             </div>
             <Landmark className="w-10 h-10 text-gray-100" />
@@ -581,15 +785,15 @@ export default function PaymentStatus() {
         </div>
 
         <div className="bg-white border border-gray-200 p-5 rounded-md shadow-sm">
-          <h3 className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-2">PAYROLL DEDUCTIONS</h3>
+          <h3 className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-2">TOTAL STAFF PAYMENT</h3>
           <div className="flex justify-between items-center">
             <div>
-              <p className="text-3xl font-bold text-[#162D50]">¥{totalDeductions.toLocaleString()}</p>
+              <p className="text-3xl font-bold text-[#162D50]">¥{totalStaffPayment.toLocaleString()}</p>
               <div className="flex items-center mt-2 text-xs text-green-600 font-medium">
                 <div className="w-3 h-3 rounded-full border-2 border-green-600 flex items-center justify-center mr-1">
                   <div className="w-1.5 h-1.5 bg-green-600 rounded-full"></div>
                 </div>
-                {tabCases.filter(c => c.collectionMethod === 'Deduction').length} Recoveries Ready
+                {postApprovalCases.filter(c => c.advancerCategory === 'Staff').length} Staff Cases
               </div>
             </div>
           </div>
@@ -728,7 +932,7 @@ export default function PaymentStatus() {
       </div>
 
       {/* Data Table */}
-      <div className="bg-white border border-gray-200 rounded-md overflow-hidden">
+      <div className="bg-white border border-gray-200 rounded-md overflow-hidden overflow-x-auto">
         <table className="w-full text-left border-collapse">
           <thead>
             <tr className="bg-[#F8F9FA] border-b border-gray-200 text-xs font-bold text-gray-600">
