@@ -1,0 +1,54 @@
+name: Docker CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install and Lint Client
+        run: |
+          npm ci
+          npm run lint
+        working-directory: ./client
+
+      # - name: Run Server Tests (if applicable)
+      #   run: |
+      #     npm ci
+      #     npm test
+      #   working-directory: ./server
+
+  deploy-to-live-server:
+    needs: build-and-test
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    steps:
+      - uses: actions/checkout@v4
+
+      # This step requires you to add your server's SSH Key to your GitHub Repository Secrets
+      - name: Deploy to Live Server via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        # Only run this step if SSH_PRIVATE_KEY is set in GitHub Secrets
+        if: env.SSH_PRIVATE_KEY != ''
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            cd /path/to/your/app/directory
+            git pull origin main
+            # Pull the latest changes and rebuild the containers
+            docker-compose up -d --build
