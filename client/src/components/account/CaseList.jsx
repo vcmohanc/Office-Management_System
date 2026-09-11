@@ -10,6 +10,32 @@ export default function CaseList() {
   const [cases, setCases] = useState([]);
   const [claims, setClaims] = useState([]);
   const [loading, setLoading] = useState(true);
+
+  // SSE Subscription
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    const sse = new EventSource(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/events?token=${token}`);
+
+    sse.addEventListener('CASE_REGISTERED', (e) => {
+      const newRecord = JSON.parse(e.data);
+      if (newRecord.claim_id) {
+        setClaims(prev => [newRecord, ...prev]);
+      } else {
+        setCases(prev => [newRecord, ...prev]);
+      }
+    });
+
+    sse.addEventListener('CASE_UPDATED', (e) => {
+      const updatedRecord = JSON.parse(e.data);
+      if (updatedRecord.claim_id) {
+        setClaims(prev => prev.map(c => c._id === updatedRecord._id ? updatedRecord : c));
+      } else {
+        setCases(prev => prev.map(c => c._id === updatedRecord._id ? updatedRecord : c));
+      }
+    });
+
+    return () => sse.close();
+  }, []);
   
   // Use sessionStorage to set initial tab, then clear it
   const [activeTab, setActiveTab] = useState(() => {
@@ -111,8 +137,26 @@ export default function CaseList() {
     const files = Array.from(e.target.files);
     if (files.length === 0) return;
 
+    const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'application/pdf'];
+    const MAX_SIZE = 2 * 1024 * 1024; // 2 MB
+
+    const validFiles = [];
+    for (const file of files) {
+      if (!ALLOWED_TYPES.includes(file.type)) {
+        alert(`Invalid file type: ${file.name}. Only JPG, PNG, and PDF files are allowed.`);
+        e.target.value = '';
+        return;
+      }
+      if (file.size > MAX_SIZE) {
+        alert(`File too large: ${file.name}. Maximum size is 2 MB per file.`);
+        e.target.value = '';
+        return;
+      }
+      validFiles.push(file);
+    }
+
     const formData = new FormData();
-    files.forEach(file => {
+    validFiles.forEach(file => {
       formData.append('files', file);
     });
 
@@ -239,11 +283,15 @@ export default function CaseList() {
     if (!selectedCase) return;
     
     let newMessage = null;
-    if (newStatus === 'Rejected' || newStatus === 'Pending Correction') {
-      const promptMessage = window.prompt(`Please enter a reason for this action:`);
+    if (newStatus === 'REJECTED' || newStatus === 'RETURNED_FOR_CORRECTION') {
+      const promptMessage = window.prompt(
+        newStatus === 'REJECTED' 
+          ? `Please enter mandatory reason for Rejecting:` 
+          : `Please enter feedback for Returning for Correction:`
+      );
       if (promptMessage === null) return; // User cancelled
       if (!promptMessage.trim()) {
-        alert("A reason is required for this action.");
+        alert("A reason/feedback is required for this action.");
         return;
       }
 
@@ -319,7 +367,7 @@ export default function CaseList() {
   thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
   const filterOldRejected = (c) => {
-    if (c.status === 'Rejected') {
+    if (c.status === 'Rejected' || c.status === 'REJECTED') {
       let rejectDate = c.updatedAt ? new Date(c.updatedAt) : new Date(c.createdAt || Date.now());
       if (c.messages && c.messages.length > 0) {
         const lastMsgDate = new Date(c.messages[c.messages.length - 1].date);
@@ -356,7 +404,7 @@ export default function CaseList() {
     expense_type: c.expenseType || c.expense_type || 'N/A',
   }));
 
-  const isPreApprovalStatus = (status) => ['New', 'Pending', 'Pending Correction', 'Rejected', 'Registered', 'New Case'].includes(status);
+  const isPreApprovalStatus = (status) => ['New', 'Pending', 'Pending Correction', 'RETURNED_FOR_CORRECTION', 'Rejected', 'REJECTED', 'Registered', 'New Case'].includes(status);
 
   const preApprovalCases = mappedCases.filter(c => isPreApprovalStatus(c.status));
   const preApprovalClaims = mappedClaims.filter(c => isPreApprovalStatus(c.status));
@@ -366,6 +414,16 @@ export default function CaseList() {
   const officeCasesCount = preApprovalCases.length;
   const staffCasesCount = preApprovalClaims.length;
   const hostCompanyCasesCount = 0; // Placeholder
+
+  const hasOfficeNotification = preApprovalCases.some(c => 
+    (user.role === 'support' && (c.hasSupportNotification || (c.messages && c.messages.some(m => !m.readBySupport)))) ||
+    (user.role !== 'support' && c.hasAccountNotification)
+  );
+
+  const hasStaffNotification = preApprovalClaims.some(c => 
+    (user.role === 'support' && (c.hasSupportNotification || (c.messages && c.messages.some(m => !m.readBySupport)))) ||
+    (user.role !== 'support' && c.hasAccountNotification)
+  );
 
   const filteredRecords = allRecords.filter(c => {
     const activeCaseType = activeTab + ' Case';
@@ -400,17 +458,29 @@ export default function CaseList() {
       <div className="bg-[#F2F4F7] p-1 rounded-md flex space-x-1 mb-4 border border-gray-200">
         <button 
           onClick={() => setActiveTab('Office')}
-          className={`flex-1 py-2 text-sm font-bold rounded-md transition-colors ${activeTab === 'Office' ? 'text-white bg-[#0A192F] shadow-sm' : 'text-gray-500 hover:bg-gray-200'}`}>
+          className={`relative flex-1 py-2 text-sm font-bold rounded-md transition-colors ${activeTab === 'Office' ? 'text-white bg-[#0A192F] shadow-sm' : 'text-gray-500 hover:bg-gray-200'}`}>
           Office Case <span className={`ml-2 px-2 py-0.5 rounded-full text-xs ${activeTab === 'Office' ? 'bg-white text-[#0A192F]' : 'bg-gray-200 text-gray-600'}`}>{officeCasesCount}</span>
+          {hasOfficeNotification && (
+            <span className="absolute top-2 right-4 flex h-3 w-3" title="New updates available">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
+            </span>
+          )}
         </button>
         <button 
           onClick={() => setActiveTab('Staff')}
-          className={`flex-1 py-2 text-sm font-bold rounded-md transition-colors ${activeTab === 'Staff' ? 'text-white bg-[#0A192F] shadow-sm' : 'text-gray-500 hover:bg-gray-200'}`}>
+          className={`relative flex-1 py-2 text-sm font-bold rounded-md transition-colors ${activeTab === 'Staff' ? 'text-white bg-[#0A192F] shadow-sm' : 'text-gray-500 hover:bg-gray-200'}`}>
           Staff Case <span className={`ml-2 px-2 py-0.5 rounded-full text-xs ${activeTab === 'Staff' ? 'bg-white text-[#0A192F]' : 'bg-gray-200 text-gray-600'}`}>{staffCasesCount}</span>
+          {hasStaffNotification && (
+            <span className="absolute top-2 right-4 flex h-3 w-3" title="New updates available">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
+            </span>
+          )}
         </button>
         <button 
           onClick={() => setActiveTab('Host Company')}
-          className={`flex-1 py-2 text-sm font-bold rounded-md transition-colors ${activeTab === 'Host Company' ? 'text-white bg-[#0A192F] shadow-sm' : 'text-gray-500 hover:bg-gray-200'}`}>
+          className={`relative flex-1 py-2 text-sm font-bold rounded-md transition-colors ${activeTab === 'Host Company' ? 'text-white bg-[#0A192F] shadow-sm' : 'text-gray-500 hover:bg-gray-200'}`}>
           Host Company Case <span className={`ml-2 px-2 py-0.5 rounded-full text-xs ${activeTab === 'Host Company' ? 'bg-white text-[#0A192F]' : 'bg-gray-200 text-gray-600'}`}>{hostCompanyCasesCount}</span>
         </button>
       </div>
@@ -497,8 +567,8 @@ export default function CaseList() {
                   </td>
                   <td className="py-4 px-6">
                     <span className={`px-3 py-1 rounded-full text-xs font-medium border ${
-                      c.status === 'Pending Correction' ? 'bg-orange-100 text-orange-700 border-orange-200' :
-                      c.status === 'Rejected' ? 'bg-red-100 text-red-700 border-red-200' :
+                      c.status === 'Pending Correction' || c.status === 'RETURNED_FOR_CORRECTION' ? 'bg-orange-100 text-orange-700 border-orange-200' :
+                      c.status === 'Rejected' || c.status === 'REJECTED' ? 'bg-red-100 text-red-700 border-red-200' :
                       c.status === 'New' || c.status === 'Registered' ? 'bg-blue-100 text-blue-700 border-blue-200' :
                       c.status === 'Pending' ? 'bg-yellow-100 text-yellow-700 border-yellow-200' :
                       'bg-gray-100 text-gray-700 border-gray-200'
@@ -672,7 +742,7 @@ export default function CaseList() {
                 {isEditing ? (
                   <>
                     <div className="border-2 border-dashed border-gray-300 rounded-md p-4 text-center hover:bg-gray-50 transition-colors cursor-pointer relative flex flex-col items-center justify-center">
-                      <input type="file" multiple className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" onChange={handleFileUpload} />
+                      <input type="file" multiple accept=".jpg,.jpeg,.png,.pdf,image/jpeg,image/png,application/pdf" className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" onChange={handleFileUpload} />
                       <FileText className="w-6 h-6 text-gray-400 mb-2" />
                       <p className="text-sm text-gray-600">Drag and drop files or click to upload</p>
                     </div>
@@ -768,7 +838,7 @@ export default function CaseList() {
           <div className="p-4 border-t border-gray-200 flex justify-end items-center space-x-4 bg-gray-50 rounded-b-md">
             {user.role !== 'support' && (
               <>
-                {(selectedCase.status === 'Rejected' || selectedCase.status === 'Pending Correction') && (
+                {(selectedCase.status === 'Rejected' || selectedCase.status === 'REJECTED' || selectedCase.status === 'Pending Correction' || selectedCase.status === 'RETURNED_FOR_CORRECTION') && (
                   <button 
                     onClick={() => handleUpdateStatus('Pending')}
                     className="text-blue-600 font-medium px-4 hover:underline mr-auto"
@@ -777,19 +847,22 @@ export default function CaseList() {
                   </button>
                 )}
                 <button 
-                  onClick={() => handleUpdateStatus('Rejected')}
+                  onClick={() => handleUpdateStatus('REJECTED')}
                   className="text-red-500 font-medium px-4 hover:underline"
                 >
                   Reject
                 </button>
                 <button 
-                  onClick={() => handleUpdateStatus('Pending Correction')}
+                  onClick={() => handleUpdateStatus('RETURNED_FOR_CORRECTION')}
                   className="border border-gray-300 bg-white text-gray-600 px-6 py-2 rounded-md font-medium hover:bg-gray-50"
                 >
                   Return for Correction
                 </button>
                 <button 
-                  onClick={() => handleUpdateStatus('Payment Pending')}
+                  onClick={() => {
+                    handleUpdateStatus('APPROVED_FOR_PAYMENT');
+                    // Additional toast or local UI feedback can go here
+                  }}
                   className="bg-[#0A192F] text-white px-6 py-2 rounded-md font-bold hover:bg-[#162D50] shadow-sm"
                 >
                   Approve for Payment

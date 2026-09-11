@@ -3,6 +3,7 @@ import { z } from 'zod';
 import Claim from '../models/Claim.js';
 import { requireRole } from '../middleware/auth.js';
 import { validateBackendExpenseAmount } from '../utils/amountHelper.js';
+import { caseEvents } from '../events.js';
 
 const router = express.Router();
 
@@ -95,6 +96,7 @@ router.post('/', requireRole('admin', 'support'), async (req, res) => {
     });
 
     const savedClaim = await newClaim.save();
+    caseEvents.emit('CASE_REGISTERED', savedClaim);
     res.status(201).json(savedClaim);
   } catch (error) {
     console.error('Error saving claim:', error);
@@ -168,6 +170,8 @@ router.patch('/:id/status', requireRole('admin', 'account'), async (req, res) =>
     if (!updatedClaim) {
       return res.status(404).json({ message: 'Claim not found' });
     }
+    
+    caseEvents.emit('CASE_UPDATED', updatedClaim);
     
     res.json(updatedClaim);
   } catch (error) {

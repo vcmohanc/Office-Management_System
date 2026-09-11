@@ -5,6 +5,7 @@ import Case from '../models/Case.js';
 import Settlement from '../models/Settlement.js';
 import { requireRole } from '../middleware/auth.js';
 import { validateBackendExpenseAmount } from '../utils/amountHelper.js';
+import { caseEvents } from '../events.js';
 
 const router = express.Router();
 
@@ -97,6 +98,8 @@ router.post('/', requireRole('admin', 'account'), async (req, res) => {
     const newCase = new Case(validatedData);
     await newCase.save();
     
+    caseEvents.emit('CASE_REGISTERED', newCase);
+    
     res.status(201).json(newCase);
   } catch (error) {
     console.error('Error creating case:', error);
@@ -157,6 +160,8 @@ router.patch('/:id/status', requireRole('admin', 'account'), async (req, res) =>
     if (!updatedCase) {
       return res.status(404).json({ message: 'Case not found' });
     }
+    
+    caseEvents.emit('CASE_UPDATED', updatedCase);
     
     res.json(updatedCase);
   } catch (error) {

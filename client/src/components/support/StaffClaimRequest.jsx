@@ -184,8 +184,26 @@ export default function StaffClaimRequest() {
     const files = Array.from(e.target.files);
     if (files.length === 0) return;
 
+    const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'application/pdf'];
+    const MAX_SIZE = 2 * 1024 * 1024; // 2 MB
+
+    const validFiles = [];
+    for (const file of files) {
+      if (!ALLOWED_TYPES.includes(file.type)) {
+        alert(`Invalid file type: ${file.name}. Only JPG, PNG, and PDF files are allowed.`);
+        e.target.value = '';
+        return;
+      }
+      if (file.size > MAX_SIZE) {
+        alert(`File too large: ${file.name}. Maximum size is 2 MB per file.`);
+        e.target.value = '';
+        return;
+      }
+      validFiles.push(file);
+    }
+
     const formData = new FormData();
-    files.forEach(file => {
+    validFiles.forEach(file => {
       formData.append('files', file);
     });
 
@@ -674,7 +692,7 @@ export default function StaffClaimRequest() {
               <div>
                 <label className="block text-sm font-bold text-gray-700 mb-2">Bill / Receipt Upload</label>
                 <div className="border-2 border-dashed border-gray-300 rounded-md p-6 text-center hover:bg-gray-50 transition-colors cursor-pointer relative flex flex-col items-center justify-center min-h-[120px]">
-                  <input type="file" multiple className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" onChange={(e) => handleFileUpload(index, e)} />
+                  <input type="file" multiple accept=".jpg,.jpeg,.png,.pdf,image/jpeg,image/png,application/pdf" className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" onChange={(e) => handleFileUpload(index, e)} />
                   <FileText className="w-8 h-8 text-gray-400 mb-2" />
                   <p className="text-sm text-gray-600">Drag and drop files or click to upload</p>
                 </div>

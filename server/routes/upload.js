@@ -20,12 +20,10 @@ const ALLOWED_MIME_TYPES = new Set([
   'image/jpeg',
   'image/jpg',
   'image/png',
-  'image/gif',
-  'image/webp',
   'application/pdf',
 ]);
 
-const ALLOWED_EXTENSIONS = /\.(jpeg|jpg|png|gif|webp|pdf)$/i;
+const ALLOWED_EXTENSIONS = /\.(jpeg|jpg|png|pdf)$/i;
 
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
@@ -51,7 +49,7 @@ const fileFilter = (req, file, cb) => {
     cb(null, true);
   } else {
     cb(
-      Object.assign(new Error('Invalid file type. Only JPEG, PNG, GIF, WebP, and PDF files are allowed.'), { code: 'INVALID_FILE_TYPE' }),
+      Object.assign(new Error('Invalid file type. Only JPG, PNG, and PDF files are allowed.'), { code: 'INVALID_FILE_TYPE' }),
       false
     );
   }
@@ -61,7 +59,7 @@ const upload = multer({
   storage,
   fileFilter,
   limits: {
-    fileSize: 10 * 1024 * 1024, // 10 MB per file
+    fileSize: 2 * 1024 * 1024, // 2 MB per file
     files: 10,                   // max 10 files per request
   },
 });
@@ -114,7 +112,7 @@ router.post('/', upload.array('files', 10), async (req, res) => {
 // Multer error handler (file size, type rejections)
 router.use((err, req, res, next) => {
   if (err.code === 'LIMIT_FILE_SIZE') {
-    return res.status(400).json({ message: 'File too large. Maximum size is 10 MB per file.' });
+    return res.status(400).json({ message: 'File too large. Maximum size is 2 MB per file.' });
   }
   if (err.code === 'INVALID_FILE_TYPE') {
     return res.status(400).json({ message: err.message });
