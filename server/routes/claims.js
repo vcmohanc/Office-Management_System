@@ -92,7 +92,8 @@ router.post('/', requireRole('admin', 'support'), async (req, res) => {
     const newClaim = new Claim({
       ...validatedData,
       claim_id,
-      status: 'Pending'
+      status: 'Pending',
+      hasAccountNotification: true
     });
 
     const savedClaim = await newClaim.save();

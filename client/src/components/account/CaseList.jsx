@@ -383,7 +383,7 @@ export default function CaseList() {
   // Map Cases
   const mappedCases = cases.filter(filterOldRejected).map(c => ({
     ...c,
-    type: 'Office Case',
+    type: c.case_type || 'Office Case',
     displayId: c.case_id || c.caseId || `#CAS-${(c._id || '').slice(-6).toUpperCase()}`,
     displayDate: new Date(c.expensePeriodStart || c.expense_period_start || c.createdAt).toLocaleDateString('en-US'),
     displayName: c.staffName || c.staff_name || 'N/A',
@@ -411,18 +411,27 @@ export default function CaseList() {
 
   const allRecords = [...preApprovalCases, ...preApprovalClaims];
 
-  const officeCasesCount = preApprovalCases.length;
+  const officeCasesCount = preApprovalCases.filter(c => c.type === 'Office Case').length;
   const staffCasesCount = preApprovalClaims.length;
-  const hostCompanyCasesCount = 0; // Placeholder
+  const hostCompanyCasesCount = preApprovalCases.filter(c => c.type === 'Host Company Case').length;
 
   const hasOfficeNotification = preApprovalCases.some(c => 
-    (user.role === 'support' && (c.hasSupportNotification || (c.messages && c.messages.some(m => !m.readBySupport)))) ||
-    (user.role !== 'support' && c.hasAccountNotification)
+    c.type === 'Office Case' && (
+      (user.role === 'support' && (c.hasSupportNotification || (c.messages && c.messages.some(m => !m.readBySupport)))) ||
+      (user.role !== 'support' && c.hasAccountNotification)
+    )
   );
 
   const hasStaffNotification = preApprovalClaims.some(c => 
     (user.role === 'support' && (c.hasSupportNotification || (c.messages && c.messages.some(m => !m.readBySupport)))) ||
     (user.role !== 'support' && c.hasAccountNotification)
+  );
+
+  const hasHostCompanyNotification = preApprovalCases.some(c => 
+    c.type === 'Host Company Case' && (
+      (user.role === 'support' && (c.hasSupportNotification || (c.messages && c.messages.some(m => !m.readBySupport)))) ||
+      (user.role !== 'support' && c.hasAccountNotification)
+    )
   );
 
   const filteredRecords = allRecords.filter(c => {
@@ -482,6 +491,12 @@ export default function CaseList() {
           onClick={() => setActiveTab('Host Company')}
           className={`relative flex-1 py-2 text-sm font-bold rounded-md transition-colors ${activeTab === 'Host Company' ? 'text-white bg-[#0A192F] shadow-sm' : 'text-gray-500 hover:bg-gray-200'}`}>
           Host Company Case <span className={`ml-2 px-2 py-0.5 rounded-full text-xs ${activeTab === 'Host Company' ? 'bg-white text-[#0A192F]' : 'bg-gray-200 text-gray-600'}`}>{hostCompanyCasesCount}</span>
+          {hasHostCompanyNotification && (
+            <span className="absolute top-2 right-4 flex h-3 w-3" title="New updates available">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
+            </span>
+          )}
         </button>
       </div>
 
