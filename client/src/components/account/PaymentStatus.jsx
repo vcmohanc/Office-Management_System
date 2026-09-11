@@ -1,11 +1,12 @@
 import { useState, useEffect, useRef } from 'react';
 import { apiFetch } from '../../utils/apiFetch.js';
 
-import { Search, ChevronDown, Calendar, Download, Building, Landmark, AlertCircle, AlertTriangle, ArrowRight, ArrowLeft, Printer } from 'lucide-react';
+import { Search, ChevronDown, Calendar, Download, Building, Landmark, AlertCircle, AlertTriangle, ArrowRight, ArrowLeft, Printer, Trash2 } from 'lucide-react';
 
 export default function PaymentStatus() {
   const [viewingDetails, setViewingDetails] = useState(false);
   const [selectedCase, setSelectedCase] = useState(null);
+  const [selectedBatchCases, setSelectedBatchCases] = useState([]);
   const [activePaymentTab, setActivePaymentTab] = useState('Office');
   const [cases, setCases] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -95,60 +96,133 @@ export default function PaymentStatus() {
     }
   }, [selectedCase, paymentMethod]);
 
+  useEffect(() => {
+    if (selectedCase) {
+      setSelectedBatchCases([selectedCase]);
+    } else {
+      setSelectedBatchCases([]);
+    }
+  }, [selectedCase]);
+
+  const handleSelectCase = (c) => {
+    setSelectedBatchCases(prev => 
+      prev.some(item => item._id === c._id) 
+        ? prev.filter(item => item._id !== c._id)
+        : [...prev, c]
+    );
+  };
+
+  const handleSelectAllCases = (e, currentCases) => {
+    if (e.target.checked) {
+      const newCases = [...selectedBatchCases];
+      currentCases.forEach(c => {
+        if (!newCases.some(item => item._id === c._id)) {
+          newCases.push(c);
+        }
+      });
+      setSelectedBatchCases(newCases);
+    } else {
+      const currentIds = currentCases.map(c => c._id);
+      setSelectedBatchCases(prev => prev.filter(item => !currentIds.includes(item._id)));
+    }
+  };
+
   const handleFormSubmit = async (e) => {
     e.preventDefault();
-    if (!selectedCase || !isConfirmed) return;
+    if (selectedBatchCases.length === 0 || !isConfirmed) return;
 
     setIsSubmitting(true);
-    const totalTerms = selectedCase.installmentPlan ? (selectedCase.installmentPlan.match(/\d+/) ? parseInt(selectedCase.installmentPlan.match(/\d+/)[0], 10) : 1) : 1;
-    const claimAmount = selectedCase.nextPaymentAmount || Math.round((selectedCase.finalTotal || selectedCase.totalExpense || 0) / totalTerms);
+    let allSuccess = true;
+    let remainingDeduction = deductions;
+    let newCases = [...cases];
     
-    const payload = {
-      processedBy: 'AdminUser', 
-      payeeName: selectedCase.staffName || selectedCase.advancerName || 'N/A',
-      paymentMethod,
-      destinationDetails,
-      financials: {
-        claimAmount,
-        deductions,
-        netPayable: claimAmount - deductions
-      },
-      transactionRefId,
-      paymentDate: e.target[e.target.length - 3].value,
-      isConfirmed
-    };
+    for (const currentCase of selectedBatchCases) {
+      const totalTerms = currentCase.installmentPlan ? (currentCase.installmentPlan.match(/\d+/) ? parseInt(currentCase.installmentPlan.match(/\d+/)[0], 10) : 1) : 1;
+      const claimAmount = currentCase.nextPaymentAmount || Math.round((currentCase.finalTotal || currentCase.totalExpense || 0) / totalTerms);
+      
+      let caseDeduction = 0;
+      if (remainingDeduction > 0) {
+        if (remainingDeduction <= claimAmount) {
+          caseDeduction = remainingDeduction;
+          remainingDeduction = 0;
+        } else {
+          caseDeduction = claimAmount;
+          remainingDeduction -= claimAmount;
+        }
+      }
+      
+      const payload = {
+        processedBy: 'AdminUser', 
+        payeeName: currentCase.staffName || currentCase.advancerName || 'N/A',
+        paymentMethod,
+        destinationDetails,
+        financials: {
+          claimAmount,
+          deductions: caseDeduction,
+          netPayable: claimAmount - caseDeduction
+        },
+        transactionRefId,
+        paymentDate: e.target[e.target.length - 3].value,
+        isConfirmed
+      };
 
+      try {
+        const response = await apiFetch(`/api/cases/${currentCase._id}/settle`, {
+          method: 'POST',
+          body: JSON.stringify(payload),
+        });
+
+        if (response.ok) {
+          newCases = newCases.map(c => {
+            if (c._id === currentCase._id) {
+              const newPaidTerms = (c.paidTerms || 0) + 1;
+              const newStatus = newPaidTerms >= totalTerms ? 'Completed' : 'Processing';
+              return { ...c, paidTerms: newPaidTerms, status: newStatus };
+            }
+            return c;
+          });
+        } else {
+          allSuccess = false;
+          const errorData = await response.json();
+          alert(`Error processing case ${currentCase._id}: ${errorData.message}`);
+        }
+      } catch (error) {
+        console.error('Error processing settlement:', error);
+        allSuccess = false;
+        alert(`Network error while processing case ${currentCase._id}`);
+      }
+    }
+    
+    setCases(newCases);
+    setIsSubmitting(false);
+    
+    if (allSuccess) {
+      alert('Settlement processed successfully for all selected cases!');
+      setSelectedCase(null);
+      setPaymentMethod('');
+      setDeductions(0);
+      setDestinationDetails({});
+      setTransactionRefId('');
+      setIsConfirmed(false);
+    }
+  };
+
+  const handleDeleteCase = async (caseObj) => {
+    if (!window.confirm('Are you sure you want to delete this case?')) return;
     try {
-      const response = await apiFetch(`/api/cases/${selectedCase._id}/settle`, {
-        method: 'POST',
-        body: JSON.stringify(payload),
+      const endpoint = caseObj.advancerCategory === 'Staff' ? `/api/claims/${caseObj._id}` : `/api/cases/${caseObj._id}`;
+      const response = await apiFetch(endpoint, {
+        method: 'DELETE',
       });
-
       if (response.ok) {
-        alert('Settlement processed successfully!');
-        setCases(cases.map(c => {
-          if (c._id === selectedCase._id) {
-            const newPaidTerms = (c.paidTerms || 0) + 1;
-            const newStatus = newPaidTerms >= totalTerms ? 'Completed' : 'Processing';
-            return { ...c, paidTerms: newPaidTerms, status: newStatus };
-          }
-          return c;
-        }));
-        setSelectedCase(null);
-        setPaymentMethod('');
-        setDeductions(0);
-        setDestinationDetails({});
-        setTransactionRefId('');
-        setIsConfirmed(false);
+        setCases(cases.filter(c => c._id !== caseObj._id));
       } else {
         const errorData = await response.json();
-        alert(`Error: ${errorData.message}`);
+        alert(`Error deleting: ${errorData.message}`);
       }
     } catch (error) {
-      console.error('Error processing settlement:', error);
-      alert('Network error while processing settlement');
-    } finally {
-      setIsSubmitting(false);
+      console.error('Error deleting:', error);
+      alert('Network error while deleting');
     }
   };
 
@@ -224,6 +298,17 @@ export default function PaymentStatus() {
       const matchesType = expenseTypeFilter === 'All Types' || c.expenseType === expenseTypeFilter;
       return matchesStatus && matchesType;
     });
+
+    const batchTotalClaimAmount = selectedBatchCases.reduce((total, currentCase) => {
+      const totalTerms = currentCase.installmentPlan ? (currentCase.installmentPlan.match(/\d+/) ? parseInt(currentCase.installmentPlan.match(/\d+/)[0], 10) : 1) : 1;
+      return total + (currentCase.nextPaymentAmount || Math.round((currentCase.finalTotal || currentCase.totalExpense || 0) / totalTerms));
+    }, 0);
+
+    const batchTotalRemainingBalance = selectedBatchCases.reduce((total, currentCase) => {
+      const totalTerms = currentCase.installmentPlan ? (currentCase.installmentPlan.match(/\d+/) ? parseInt(currentCase.installmentPlan.match(/\d+/)[0], 10) : 1) : 1;
+      const paymentAmount = currentCase.nextPaymentAmount || Math.round((currentCase.finalTotal || currentCase.totalExpense || 0) / totalTerms);
+      return total + Math.max(0, (currentCase.finalTotal || currentCase.totalExpense || 0) - (((currentCase.paidTerms || 0) + 1) * paymentAmount));
+    }, 0);
 
     return (
       <div className="w-full px-4 sm:px-6 lg:px-8 xl:px-12 space-y-6 pb-10">
@@ -369,6 +454,14 @@ export default function PaymentStatus() {
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="bg-white border-b border-gray-200 text-xs font-bold text-gray-500 uppercase tracking-wider">
+                <th className="py-3 px-6 w-10">
+                  <input 
+                    type="checkbox" 
+                    className="rounded border-gray-300 text-[#162D50] focus:ring-[#162D50]"
+                    checked={filteredPersonCases.length > 0 && filteredPersonCases.every(c => selectedBatchCases.some(item => item._id === c._id))}
+                    onChange={(e) => handleSelectAllCases(e, filteredPersonCases)}
+                  />
+                </th>
                 <th className="py-3 px-6">Case ID</th>
                 <th className="py-3 px-6">Period</th>
                 <th className="py-3 px-6">Expense Type</th>
@@ -382,7 +475,15 @@ export default function PaymentStatus() {
                 <tr><td colSpan="6" className="py-4 px-6 text-center text-gray-500">No cases found matching filters.</td></tr>
               ) : (
                 filteredPersonCases.map(c => (
-                <tr key={c._id} className={`hover:bg-gray-50 transition-colors ${c._id === selectedCase._id ? 'bg-blue-50' : ''}`}>
+                <tr key={c._id} className={`hover:bg-gray-50 transition-colors ${selectedBatchCases.some(item => item._id === c._id) ? 'bg-blue-50' : ''}`}>
+                  <td className="py-4 px-6">
+                    <input 
+                      type="checkbox" 
+                      className="rounded border-gray-300 text-[#162D50] focus:ring-[#162D50]"
+                      checked={selectedBatchCases.some(item => item._id === c._id)}
+                      onChange={() => handleSelectCase(c)}
+                    />
+                  </td>
                   <td className="py-4 px-6 font-medium text-[#162D50]">#CAS-{c._id.slice(-6).toUpperCase()}</td>
                   <td className="py-4 px-6 text-gray-600">{new Date(c.expensePeriodStart).toLocaleDateString()} - {new Date(c.expensePeriodEnd).toLocaleDateString()}</td>
                   <td className="py-4 px-6 text-gray-600">{c.expenseType}</td>
@@ -398,12 +499,7 @@ export default function PaymentStatus() {
                     </span>
                   </td>
                   <td className="py-4 px-6 text-right">
-                    {c._id !== selectedCase._id && (
-                      <button onClick={() => setSelectedCase(c)} className="text-[#162D50] font-bold hover:underline text-xs">View</button>
-                    )}
-                    {c._id === selectedCase._id && (
-                      <span className="text-gray-400 text-xs font-medium">Viewing</span>
-                    )}
+                    <button onClick={() => setSelectedCase(c)} className="text-[#162D50] font-bold hover:underline text-xs">View</button>
                   </td>
                 </tr>
               ))
@@ -411,208 +507,219 @@ export default function PaymentStatus() {
           </tbody>
           </table>
         </div>
-        <div className="bg-white border border-gray-200 rounded-md p-6 shadow-sm print-area print:shadow-none print:border-none print:p-8 print:w-full print:bg-white print:[print-color-adjust:exact]">
+        {/* Dynamic Settlement Form / Receipt */}
+        <div className="mt-12 font-sans print-area print:mt-0 print:w-full print:[print-color-adjust:exact]" id="settlement-form">
+          {/* Jagged top */}
+          <div className="h-4 w-full print:hidden" style={{
+            background: 'linear-gradient(-45deg, #F5F1E6 8px, transparent 0), linear-gradient(45deg, #F5F1E6 8px, transparent 0)',
+            backgroundPosition: 'left-bottom',
+            backgroundRepeat: 'repeat-x',
+            backgroundSize: '16px 16px'
+          }}></div>
           
-          {/* Print Only Header */}
-          <div className="hidden print:flex justify-between items-end border-b-4 border-[#162D50] pb-6 mb-8">
-            <div>
-              <h1 className="text-3xl font-black text-[#162D50] tracking-tight uppercase">Settlement Record</h1>
-              <p className="text-gray-500 text-sm mt-2 font-medium">Generated: {new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
-            </div>
-            <div className="text-right flex flex-col items-end">
-              <div className="bg-[#162D50] text-white p-2 rounded-md mb-2">
-                <Building className="w-6 h-6" />
+          <div className="bg-[#F5F1E6] p-8 md:p-12 text-[#20301F] rounded-b-md shadow-sm print:bg-white print:shadow-none print:p-4">
+            <div className="border-b-2 border-dashed border-[#20301F] pb-6 mb-8 print:pb-2 print:mb-4 relative text-center">
+              <div className="absolute right-0 top-0 print:hidden">
+                <button 
+                  type="button"
+                  onClick={() => window.print()}
+                  className="flex items-center px-4 py-2 border-2 border-[#20301F] hover:bg-[#20301F] hover:text-[#F5F1E6] text-xs font-bold uppercase tracking-widest transition-colors"
+                >
+                  <Printer className="w-4 h-4 mr-2" />
+                  Print
+                </button>
               </div>
-              <p className="text-sm font-bold text-[#162D50]">OMS Corporation</p>
+              <h3 className="text-2xl font-bold tracking-widest uppercase mb-2">
+                {selectedCase.advancerCategory === 'Staff' ? 'Reimbursement Receipt' : 'Settlement Ledger'}
+              </h3>
+              <p className="font-mono text-sm tracking-widest">
+                {selectedBatchCases.length} {selectedBatchCases.length === 1 ? 'CASE' : 'CASES'} SELECTED
+              </p>
             </div>
-          </div>
-
-          <div className="flex justify-between items-start mb-8">
-            <div>
-              <h2 className="text-2xl font-bold text-[#162D50] mb-1 print:text-3xl">Case Details: {selectedCase.staffName}</h2>
-              <p className="text-gray-500 text-sm print:text-base">Staff ID: <span className="font-medium text-gray-800">{selectedCase.staffId}</span></p>
-            </div>
-            <div className="flex items-center space-x-3">
-              <button 
-                onClick={() => window.print()}
-                className="flex items-center px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-medium rounded-md transition-colors print:hidden"
-              >
-                <Printer className="w-4 h-4 mr-1.5" />
-                Print
-              </button>
-              <span className={`px-4 py-1.5 rounded-full text-sm font-medium border print:border-2 ${
-                selectedCase.status === 'Pending' ? 'bg-yellow-100 text-yellow-700 border-yellow-200 print:bg-yellow-100 print:text-yellow-800' :
-                selectedCase.status === 'Processing' ? 'bg-blue-100 text-blue-700 border-blue-200 print:bg-blue-100 print:text-blue-800' :
-                selectedCase.status === 'Completed' ? 'bg-green-100 text-green-700 border-green-200 print:bg-green-100 print:text-green-800' :
-                'bg-gray-100 text-gray-700 border-gray-200 print:bg-gray-100 print:text-gray-800'
-              }`}>
-                {selectedCase.status}
-              </span>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 print:grid-cols-2 gap-8 print:gap-12">
-            <div className="bg-gray-50 print:bg-white rounded-lg p-5 print:p-0 border border-gray-100 print:border-none">
-              <div className="flex items-center mb-4 border-b border-gray-200 pb-3">
-                <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center mr-3 print:bg-blue-50">
-                  <Landmark className="w-4 h-4 text-blue-700" />
-                </div>
-                <h3 className="text-sm font-bold text-[#162D50] uppercase tracking-wider print:text-base">Expense Information</h3>
-              </div>
-              <div className="space-y-4 text-sm print:text-base">
-                <div className="flex justify-between items-center pb-2 border-b border-dashed border-gray-200"><span className="text-gray-500">Case ID</span> <span className="font-bold text-gray-800">#CAS-{selectedCase._id.slice(-6).toUpperCase()}</span></div>
-                <div className="flex justify-between items-center pb-2 border-b border-dashed border-gray-200"><span className="text-gray-500">Expense Type</span> <span className="font-medium text-gray-800">{selectedCase.expenseType}</span></div>
-                <div className="flex justify-between items-center pb-2 border-b border-dashed border-gray-200"><span className="text-gray-500">Total Amount</span> <span className="font-black text-[#162D50] text-lg">{selectedCase.currency === 'JPY' ? '¥' : '$'}{(selectedCase.finalTotal || selectedCase.totalExpense || 0).toLocaleString()}</span></div>
-                <div className="flex justify-between items-center pb-2 border-b border-dashed border-gray-200"><span className="text-gray-500">Period</span> <span className="font-medium text-gray-800">{new Date(selectedCase.expensePeriodStart).toLocaleDateString()} - {new Date(selectedCase.expensePeriodEnd).toLocaleDateString()}</span></div>
-                <div className="flex justify-between items-center pb-2 border-b border-dashed border-gray-200"><span className="text-gray-500">Location</span> <span className="font-medium text-gray-800">{selectedCase.location}</span></div>
-                <div className="flex justify-between items-center"><span className="text-gray-500">Remark</span> <span className="font-medium text-gray-800">{selectedCase.remark || 'N/A'}</span></div>
-              </div>
-            </div>
-
-            <div className="bg-gray-50 print:bg-white rounded-lg p-5 print:p-0 border border-gray-100 print:border-none">
-              <div className="flex items-center mb-4 border-b border-gray-200 pb-3">
-                <div className="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center mr-3 print:bg-indigo-50">
-                  <Download className="w-4 h-4 text-indigo-700" />
-                </div>
-                <h3 className="text-sm font-bold text-[#162D50] uppercase tracking-wider print:text-base">Settlement Details</h3>
-              </div>
-              <div className="space-y-4 text-sm print:text-base">
-                <div className="flex justify-between items-center pb-2 border-b border-dashed border-gray-200"><span className="text-gray-500">Category</span> <span className="font-medium text-gray-800">{selectedCase.advancerCategory}</span></div>
-                <div className="flex justify-between items-center pb-2 border-b border-dashed border-gray-200"><span className="text-gray-500">Payment Process Types</span> <span className="font-medium text-gray-800">{selectedCase.advancerName}</span></div>
-                <div className="flex justify-between items-center pb-2 border-b border-dashed border-gray-200"><span className="text-gray-500">Settlement Method</span> <span className="font-medium text-gray-800">{selectedCase.settlementMethod}</span></div>
-                <div className="flex justify-between items-center pb-2 border-b border-dashed border-gray-200"><span className="text-gray-500">Collection Method</span> <span className="font-medium text-gray-800">{selectedCase.collectionMethod}</span></div>
-                <div className="flex justify-between items-center pb-2 border-b border-dashed border-gray-200"><span className="text-gray-500">Installment Plan</span> <span className="font-medium text-gray-800">{selectedCase.installmentPlan}</span></div>
-                <div className="flex justify-between items-center"><span className="text-gray-500">Expected Settlement</span> <span className="font-bold text-[#162D50]">{new Date(selectedCase.expectedSettlementDate).toLocaleDateString()}</span></div>
-              </div>
-            </div>
-          </div>
-
-          {/* Print Footer */}
-          <div className="hidden print:flex justify-between items-center mt-16 pt-8 border-t border-gray-200 text-xs text-gray-400">
-            <p>This is a computer-generated document. No signature is required.</p>
-            <p>Ref: CAS-{selectedCase._id}</p>
-          </div>
-        </div>
-
-        {/* Dynamic Settlement Form */}
-        <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden overflow-x-auto flex flex-col mt-6 print:hidden" id="settlement-form">
-          <div className="p-6 border-b border-gray-200 bg-[#F2F4F7] flex justify-between items-center">
-            <h3 className="text-xl font-bold text-[#162D50]">Settlement Form: #CAS-{selectedCase._id.slice(-6).toUpperCase()}</h3>
-          </div>
-          
-          <form className="p-8 space-y-6" onSubmit={handleFormSubmit}>
-            <div className="grid grid-cols-2 gap-6">
-              <div>
-                <label className="block text-sm font-bold text-gray-700 mb-1">Payee Name</label>
-                <input type="text" readOnly value={selectedCase.staffName || selectedCase.advancerName || 'N/A'} className="w-full px-4 py-2 border border-gray-300 rounded-md bg-gray-50 text-gray-500" />
-              </div>
-              <div>
-                <label className="block text-sm font-bold text-gray-700 mb-1">Total Claim Amount (This Term)</label>
-                <input type="text" readOnly value={(selectedCase.nextPaymentAmount || (selectedCase.finalTotal || selectedCase.totalExpense || 0) / (selectedCase.installmentPlan ? (selectedCase.installmentPlan.match(/\d+/) ? parseInt(selectedCase.installmentPlan.match(/\d+/)[0], 10) : 1) : 1)).toLocaleString()} className="w-full px-4 py-2 border border-gray-300 rounded-md bg-gray-50 text-gray-500 font-medium" />
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-sm font-bold text-gray-700 mb-1">Payment Method</label>
-              <select 
-                value={paymentMethod} 
-                onChange={(e) => setPaymentMethod(e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-[#162D50] focus:border-[#162D50]"
-                required
-              >
-                <option value="" disabled>Select Method</option>
-                <option value="Bank Transfer">Bank Transfer</option>
-                <option value="Corporate Card">Corporate Card</option>
-                <option value="Cash">Cash</option>
-                <option value="Payroll Deduction">Payroll Deduction</option>
-              </select>
-            </div>
-
-            {paymentMethod === 'Bank Transfer' && (
-              <div className="grid grid-cols-3 gap-4 p-4 bg-gray-50 rounded-md border border-gray-200">
+            
+            <form className="space-y-8 print:space-y-4" onSubmit={handleFormSubmit}>
+              {/* Header Details */}
+              <div className="grid grid-cols-2 gap-8 print:gap-4 border-b border-dashed border-[#20301F] pb-8 print:pb-4">
                 <div>
-                  <label className="block text-xs font-bold text-gray-700 mb-1">Bank Name</label>
-                  <input type="text" onChange={(e) => setDestinationDetails({...destinationDetails, bankName: e.target.value})} className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm" required />
+                  <label className="block text-xs font-bold uppercase tracking-widest mb-1 text-gray-500">{selectedCase.advancerCategory === 'Staff' ? 'Employee' : 'Payee'}</label>
+                  <div className="font-mono text-xl">{selectedCase.staffName || selectedCase.advancerName || 'N/A'}</div>
+                  {selectedCase.staffId && <div className="font-mono text-xs text-gray-500 mt-1">ID: {selectedCase.staffId}</div>}
                 </div>
-                <div>
-                  <label className="block text-xs font-bold text-gray-700 mb-1">Branch Code</label>
-                  <input type="text" onChange={(e) => setDestinationDetails({...destinationDetails, branchCode: e.target.value})} className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm" required />
-                </div>
-                <div>
-                  <label className="block text-xs font-bold text-gray-700 mb-1">Account Number</label>
-                  <input type="text" onChange={(e) => setDestinationDetails({...destinationDetails, accountNumber: e.target.value})} className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm" required />
+                <div className="text-right">
+                  <label className="block text-xs font-bold uppercase tracking-widest mb-1 text-gray-500">Base Claim Amount</label>
+                  <div className="font-mono text-2xl">¥ {batchTotalClaimAmount.toLocaleString()}</div>
                 </div>
               </div>
-            )}
-            {paymentMethod === 'Payroll Deduction' && (
-              <div className="p-4 bg-gray-50 rounded-md border border-gray-200">
-                <label className="block text-xs font-bold text-gray-700 mb-1">Target Payroll Period</label>
-                <input type="month" onChange={(e) => setDestinationDetails({...destinationDetails, payrollPeriod: e.target.value})} className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm" required />
-              </div>
-            )}
 
-            <div className="grid grid-cols-3 gap-6 p-4 bg-blue-50 border border-blue-100 rounded-md">
-              <div>
-                <label className="block text-sm font-bold text-gray-700 mb-1">Deductions (Tax/Advance)</label>
-                <div className="relative">
-                  <span className="absolute left-3 top-2 text-gray-500">¥</span>
+              {/* Itemized Case Details */}
+              <div className="border-b border-dashed border-[#20301F] pb-8 mb-8 print:pb-4 print:mb-4">
+                <div className="text-xs font-bold uppercase tracking-widest text-gray-500 mb-6 print:mb-2">Itemized Claims</div>
+                <div className="space-y-4 print:space-y-2">
+                  {selectedBatchCases.map((c, idx) => {
+                    const totalTerms = c.installmentPlan ? (c.installmentPlan.match(/\d+/) ? parseInt(c.installmentPlan.match(/\d+/)[0], 10) : 1) : 1;
+                    const claimAmount = c.nextPaymentAmount || Math.round((c.finalTotal || c.totalExpense || 0) / totalTerms);
+                    return (
+                      <div key={c._id} className="grid grid-cols-12 gap-4 text-sm items-center">
+                        <div className="col-span-1 font-mono text-gray-500">{String(idx + 1).padStart(2, '0')}</div>
+                        <div className="col-span-3 font-mono">#{c._id.slice(-6).toUpperCase()}</div>
+                        <div className="col-span-4 truncate font-medium">{c.expenseType || 'General Expense'}</div>
+                        <div className="col-span-2 font-mono text-gray-500 text-xs">
+                          {new Date(c.expensePeriodStart || c.createdAt).toLocaleDateString()}
+                        </div>
+                        <div className="col-span-2 text-right font-mono font-bold">¥ {claimAmount.toLocaleString()}</div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Payment Method & Deductions */}
+              <div className="space-y-8 print:space-y-4 border-b border-dashed border-[#20301F] pb-8 print:pb-4">
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-widest mb-2">Payment Method <span className="text-[#B5482F]">*</span></label>
+                  <select 
+                    value={paymentMethod} 
+                    onChange={(e) => setPaymentMethod(e.target.value)}
+                    className="w-full bg-transparent border-b border-dashed border-[#20301F] focus:outline-none focus:border-[#2F6F4E] py-2 text-lg font-mono rounded-none appearance-none cursor-pointer"
+                    required
+                  >
+                    <option value="" disabled>Select Method</option>
+                    <option value="Bank Transfer">Bank Transfer</option>
+                    {selectedCase.advancerCategory === 'Staff' ? (
+                      <>
+                        <option value="Pay in Salary">Pay in Salary</option>
+                        <option value="Petty Cash">Petty Cash</option>
+                        <option value="Company Check">Company Check</option>
+                      </>
+                    ) : (
+                      <>
+                        <option value="Corporate Card">Corporate Card</option>
+                        <option value="Cash">Cash</option>
+                        <option value="Payroll Deduction">Payroll Deduction</option>
+                      </>
+                    )}
+                  </select>
+                </div>
+
+                {paymentMethod === 'Bank Transfer' && (
+                  <div className="grid grid-cols-3 gap-6">
+                    <div>
+                      <label className="block text-xs font-bold uppercase tracking-widest mb-2">Bank Name <span className="text-[#B5482F]">*</span></label>
+                      <input type="text" onChange={(e) => setDestinationDetails({...destinationDetails, bankName: e.target.value})} className="w-full bg-transparent border-b border-dashed border-[#20301F] focus:outline-none focus:border-[#2F6F4E] py-2 font-mono rounded-none" required />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-bold uppercase tracking-widest mb-2">Branch Code <span className="text-[#B5482F]">*</span></label>
+                      <input type="text" onChange={(e) => setDestinationDetails({...destinationDetails, branchCode: e.target.value})} className="w-full bg-transparent border-b border-dashed border-[#20301F] focus:outline-none focus:border-[#2F6F4E] py-2 font-mono rounded-none" required />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-bold uppercase tracking-widest mb-2">Account Number <span className="text-[#B5482F]">*</span></label>
+                      <input type="text" onChange={(e) => setDestinationDetails({...destinationDetails, accountNumber: e.target.value})} className="w-full bg-transparent border-b border-dashed border-[#20301F] focus:outline-none focus:border-[#2F6F4E] py-2 font-mono rounded-none" required />
+                    </div>
+                  </div>
+                )}
+                
+                {(paymentMethod === 'Payroll Deduction' || paymentMethod === 'Pay in Salary') && (
+                  <div>
+                    <label className="block text-xs font-bold uppercase tracking-widest mb-2">Target Payroll Period <span className="text-[#B5482F]">*</span></label>
+                    <input type="month" onChange={(e) => setDestinationDetails({...destinationDetails, payrollPeriod: e.target.value})} className="w-full bg-transparent border-b border-dashed border-[#20301F] focus:outline-none focus:border-[#2F6F4E] py-2 font-mono rounded-none" required />
+                  </div>
+                )}
+
+                {paymentMethod === 'Company Check' && (
+                  <div className="grid grid-cols-2 gap-6">
+                    <div>
+                      <label className="block text-xs font-bold uppercase tracking-widest mb-2">Check Number <span className="text-[#B5482F]">*</span></label>
+                      <input type="text" onChange={(e) => setDestinationDetails({...destinationDetails, checkNumber: e.target.value})} className="w-full bg-transparent border-b border-dashed border-[#20301F] focus:outline-none focus:border-[#2F6F4E] py-2 font-mono rounded-none" required />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-bold uppercase tracking-widest mb-2">Mailing Address / Delivery <span className="text-[#B5482F]">*</span></label>
+                      <input type="text" onChange={(e) => setDestinationDetails({...destinationDetails, checkDelivery: e.target.value})} className="w-full bg-transparent border-b border-dashed border-[#20301F] focus:outline-none focus:border-[#2F6F4E] py-2 font-mono rounded-none" required />
+                    </div>
+                  </div>
+                )}
+
+                {paymentMethod === 'Corporate Card' && (
+                  <div className="grid grid-cols-2 gap-6">
+                    <div>
+                      <label className="block text-xs font-bold uppercase tracking-widest mb-2">Card Used (Last 4) <span className="text-[#B5482F]">*</span></label>
+                      <input type="text" maxLength={4} pattern="\d{4}" onChange={(e) => setDestinationDetails({...destinationDetails, cardLast4: e.target.value})} className="w-full bg-transparent border-b border-dashed border-[#20301F] focus:outline-none focus:border-[#2F6F4E] py-2 font-mono rounded-none" required />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-bold uppercase tracking-widest mb-2">Cardholder Name <span className="text-[#B5482F]">*</span></label>
+                      <input type="text" onChange={(e) => setDestinationDetails({...destinationDetails, cardholderName: e.target.value})} className="w-full bg-transparent border-b border-dashed border-[#20301F] focus:outline-none focus:border-[#2F6F4E] py-2 font-mono rounded-none" required />
+                    </div>
+                  </div>
+                )}
+
+                {(paymentMethod === 'Cash' || paymentMethod === 'Petty Cash') && (
+                  <div>
+                    <label className="block text-xs font-bold uppercase tracking-widest mb-2">Collected By / Receiver Name <span className="text-[#B5482F]">*</span></label>
+                    <input type="text" onChange={(e) => setDestinationDetails({...destinationDetails, receiverName: e.target.value})} className="w-full bg-transparent border-b border-dashed border-[#20301F] focus:outline-none focus:border-[#2F6F4E] py-2 font-mono rounded-none" required />
+                  </div>
+                )}
+
+                <div className="grid grid-cols-3 gap-6">
+                  <div>
+                    <label className="block text-xs font-bold uppercase tracking-widest mb-2">Transaction Ref</label>
+                    <input type="text" value={transactionRefId} onChange={(e) => setTransactionRefId(e.target.value)} className="w-full bg-transparent border-b border-dashed border-[#20301F] focus:outline-none focus:border-[#2F6F4E] py-2 font-mono rounded-none" />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold uppercase tracking-widest mb-2">Payment Date <span className="text-[#B5482F]">*</span></label>
+                    <input type="date" required defaultValue={new Date().toISOString().split('T')[0]} className="w-full bg-transparent border-b border-dashed border-[#20301F] focus:outline-none focus:border-[#2F6F4E] py-2 font-mono rounded-none" />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold uppercase tracking-widest mb-2 text-[#B5482F]">Less Deductions</label>
+                    <div className="relative">
+                      <span className="absolute left-0 top-2 font-mono">¥</span>
+                      <input 
+                        type="number" 
+                        value={deductions} 
+                        onChange={(e) => setDeductions(Number(e.target.value) || 0)} 
+                        className="w-full pl-6 bg-transparent border-b border-dashed border-[#20301F] focus:outline-none focus:border-[#2F6F4E] py-2 font-mono rounded-none text-[#B5482F]" 
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Running Totals */}
+              <div className="pt-2 pb-8 print:pb-4 border-b-[3px] border-double border-[#20301F]">
+                <div className="flex justify-between items-end mb-4">
+                  <div className="text-sm font-bold uppercase tracking-widest">Net Payable</div>
+                  <div className="font-mono text-4xl font-bold tracking-tight">¥ {Math.max(0, batchTotalClaimAmount - deductions).toLocaleString()}</div>
+                </div>
+                <div className="flex justify-between items-end">
+                  <div className="text-xs font-bold uppercase tracking-widest text-gray-500">Remaining Balance (Post-Payment)</div>
+                  <div className="font-mono text-xl text-gray-500">¥ {batchTotalRemainingBalance.toLocaleString()}</div>
+                </div>
+              </div>
+
+              {/* Action / Stamp */}
+              <div className="flex flex-col md:flex-row justify-between items-center pt-8 print:pt-4">
+                <div className="flex items-start space-x-4 mb-8 md:mb-0 md:w-1/2 print:mb-0">
                   <input 
-                    type="number" 
-                    value={deductions} 
-                    onChange={(e) => setDeductions(Number(e.target.value) || 0)} 
-                    className="w-full pl-8 pr-4 py-2 border border-gray-300 rounded-md focus:ring-[#162D50] focus:border-[#162D50]" 
+                    type="checkbox" 
+                    id="confirm" 
+                    checked={isConfirmed}
+                    onChange={(e) => setIsConfirmed(e.target.checked)}
+                    className="mt-1 w-6 h-6 rounded-none border-2 border-[#20301F] text-[#2F6F4E] focus:ring-[#2F6F4E] bg-transparent cursor-pointer" 
+                    required
                   />
+                  <label htmlFor="confirm" className="text-sm font-bold uppercase tracking-wider leading-relaxed cursor-pointer">
+                    I confirm the above details are accurate and authorize this {selectedCase.advancerCategory === 'Staff' ? 'reimbursement' : 'settlement'} transaction.
+                  </label>
                 </div>
-              </div>
-              <div>
-                <label className="block text-sm font-bold text-[#162D50] mb-1">Net Payable Amount</label>
-                <div className="w-full px-4 py-2 border border-blue-200 rounded-md bg-blue-100 text-[#162D50] font-black text-lg text-right shadow-inner">
-                  ¥ {((selectedCase.nextPaymentAmount || Math.round((selectedCase.finalTotal || selectedCase.totalExpense || 0) / (selectedCase.installmentPlan ? (selectedCase.installmentPlan.match(/\d+/) ? parseInt(selectedCase.installmentPlan.match(/\d+/)[0], 10) : 1) : 1))) - deductions).toLocaleString()}
-                </div>
-              </div>
-              <div>
-                <label className="block text-sm font-bold text-gray-600 mb-1">New Remaining Balance</label>
-                <div className="w-full px-4 py-2 border border-gray-300 rounded-md bg-gray-100 text-gray-600 font-bold text-lg text-right">
-                  ¥ {Math.max(0, (selectedCase.finalTotal || selectedCase.totalExpense || 0) - (((selectedCase.paidTerms || 0) + 1) * (selectedCase.nextPaymentAmount || Math.round((selectedCase.finalTotal || selectedCase.totalExpense || 0) / (selectedCase.installmentPlan ? (selectedCase.installmentPlan.match(/\d+/) ? parseInt(selectedCase.installmentPlan.match(/\d+/)[0], 10) : 1) : 1))))).toLocaleString()}
-                </div>
-              </div>
-            </div>
 
-            <div className="grid grid-cols-2 gap-6">
-              <div>
-                <label className="block text-sm font-bold text-gray-700 mb-1">Transaction Ref ID</label>
-                <input type="text" value={transactionRefId} onChange={(e) => setTransactionRefId(e.target.value)} className="w-full px-4 py-2 border border-gray-300 rounded-md" />
+                <button 
+                  type="submit" 
+                  disabled={isSubmitting || !isConfirmed || !paymentMethod}
+                  className="border-[3px] border-[#2F6F4E] text-[#2F6F4E] bg-transparent px-8 py-4 uppercase font-black tracking-[0.2em] transform -rotate-3 hover:bg-[#2F6F4E] hover:text-[#F5F1E6] transition-all disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-[#2F6F4E] disabled:cursor-not-allowed disabled:transform-none shadow-[4px_4px_0_0_rgba(47,111,78,0.2)] hover:shadow-none"
+                >
+                  {isSubmitting ? 'PROCESSING' : 'APPROVED'}
+                </button>
               </div>
-              <div>
-                <label className="block text-sm font-bold text-gray-700 mb-1">Payment Date</label>
-                <input type="date" required defaultValue={new Date().toISOString().split('T')[0]} className="w-full px-4 py-2 border border-gray-300 rounded-md" />
-              </div>
-            </div>
-
-            <div className="flex items-center space-x-3 p-4 border border-gray-200 rounded-md bg-gray-50">
-              <input 
-                type="checkbox" 
-                id="confirm" 
-                checked={isConfirmed}
-                onChange={(e) => setIsConfirmed(e.target.checked)}
-                className="w-5 h-5 rounded border-gray-300 text-[#162D50] focus:ring-[#162D50]" 
-                required
-              />
-              <label htmlFor="confirm" className="text-sm font-medium text-gray-700">
-                I confirm that the above payment details are correct and authorize this settlement transition.
-              </label>
-            </div>
-
-            <div className="flex justify-end mt-6">
-              <button 
-                type="submit" 
-                disabled={isSubmitting || !isConfirmed || !paymentMethod}
-                className="bg-[#162D50] text-white px-8 py-3 rounded-md font-bold shadow-md hover:bg-[#0f1f38] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {isSubmitting ? 'Processing...' : 'Submit Settlement'}
-              </button>
-            </div>
-          </form>
+            </form>
+          </div>
         </div>
       </div>
     );
@@ -1041,8 +1148,12 @@ export default function PaymentStatus() {
                       {c.status}
                     </span>
                   </td>
-                  <td className="py-4 px-6 text-right">
-                    <button onClick={() => setSelectedCase(c)} className="text-[#162D50] font-bold hover:underline">View Details</button>
+                  <td className="py-4 px-6 text-right whitespace-nowrap">
+                    <button onClick={() => setSelectedCase(c)} className="text-[#162D50] font-bold hover:underline mr-4">View Details</button>
+                    <button onClick={() => handleDeleteCase(c)} className="text-red-500 font-bold hover:underline inline-flex items-center">
+                      <Trash2 className="w-4 h-4 mr-1" />
+                      Delete
+                    </button>
                   </td>
                 </tr>
               ))
