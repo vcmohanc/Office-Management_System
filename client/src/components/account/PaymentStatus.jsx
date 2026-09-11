@@ -21,6 +21,64 @@ export default function PaymentStatus() {
   const [isConfirmed, setIsConfirmed] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // SSE Subscription
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    const sse = new EventSource(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/events?token=${token}`);
+
+    sse.addEventListener('CASE_REGISTERED', (e) => {
+      const c = JSON.parse(e.data);
+      if (c.claim_id) {
+        setCases(prev => [{
+          ...c,
+          advancerCategory: 'Staff',
+          finalTotal: c.totalExpenseAmount || c.total_expense_amount || 0,
+          staffId: c.staffId || c.staff_id || 'N/A',
+          staffName: c.fullName || c.full_name || 'N/A',
+          expenseType: c.expenseType || c.expense_type || 'Claim',
+          expensePeriodStart: c.expensePeriodStart || c.expense_period_start || c.createdAt,
+          expensePeriodEnd: c.expensePeriodEnd || c.expense_period_end || c.createdAt,
+        }, ...prev]);
+      } else {
+        setCases(prev => [{
+          ...c,
+          advancerCategory: c.advancerCategory || 'Office',
+          finalTotal: c.finalTotal || c.totalExpense || c.final_total_amount || 0,
+          staffId: c.staffId || c.staff_id || 'N/A',
+          staffName: c.staffName || c.staff_name || 'N/A',
+          expenseType: c.expenseType || c.expense_type || 'N/A'
+        }, ...prev]);
+      }
+    });
+
+    sse.addEventListener('CASE_UPDATED', (e) => {
+      const c = JSON.parse(e.data);
+      if (c.claim_id) {
+        setCases(prev => prev.map(item => item._id === c._id ? {
+          ...c,
+          advancerCategory: 'Staff',
+          finalTotal: c.totalExpenseAmount || c.total_expense_amount || 0,
+          staffId: c.staffId || c.staff_id || 'N/A',
+          staffName: c.fullName || c.full_name || 'N/A',
+          expenseType: c.expenseType || c.expense_type || 'Claim',
+          expensePeriodStart: c.expensePeriodStart || c.expense_period_start || c.createdAt,
+          expensePeriodEnd: c.expensePeriodEnd || c.expense_period_end || c.createdAt,
+        } : item));
+      } else {
+        setCases(prev => prev.map(item => item._id === c._id ? {
+          ...c,
+          advancerCategory: c.advancerCategory || 'Office',
+          finalTotal: c.finalTotal || c.totalExpense || c.final_total_amount || 0,
+          staffId: c.staffId || c.staff_id || 'N/A',
+          staffName: c.staffName || c.staff_name || 'N/A',
+          expenseType: c.expenseType || c.expense_type || 'N/A'
+        } : item));
+      }
+    });
+
+    return () => sse.close();
+  }, []);
+
   useEffect(() => {
     if (selectedCase) {
       const totalTerms = selectedCase.installmentPlan ? (selectedCase.installmentPlan.match(/\d+/) ? parseInt(selectedCase.installmentPlan.match(/\d+/)[0], 10) : 1) : 1;
@@ -131,7 +189,7 @@ export default function PaymentStatus() {
     });
   }, []);
 
-  const postApprovalCases = cases.filter(c => ['Payment Pending', 'Processing', 'Completed', 'Overdue'].includes(c.status) || c.status === 'Approve for Payment' || c.status === 'Approved for Payment');
+  const postApprovalCases = cases.filter(c => ['APPROVED_FOR_PAYMENT', 'Payment Pending', 'Processing', 'Completed', 'Overdue'].includes(c.status) || c.status === 'Approve for Payment' || c.status === 'Approved for Payment');
 
   const officeCasesCount = postApprovalCases.filter(c => c.advancerCategory === 'Office').length;
   const staffCasesCount = postApprovalCases.filter(c => c.advancerCategory === 'Staff').length;
@@ -149,7 +207,7 @@ export default function PaymentStatus() {
 
   const totalOfficePayment = postApprovalCases.filter(c => c.advancerCategory === 'Office').reduce((sum, c) => sum + (c.finalTotal || 0), 0);
   const totalStaffPayment = postApprovalCases.filter(c => c.advancerCategory === 'Staff').reduce((sum, c) => sum + (c.finalTotal || 0), 0);
-  const pendingCount = postApprovalCases.filter(c => c.status === 'Payment Pending').length;
+  const pendingCount = postApprovalCases.filter(c => c.status === 'Payment Pending' || c.status === 'APPROVED_FOR_PAYMENT').length;
   const processingCount = postApprovalCases.filter(c => c.status === 'Processing').length;
   const completedCount = postApprovalCases.filter(c => c.status === 'Completed').length;
   const overdueCount = postApprovalCases.filter(c => c.status === 'Overdue').length;
@@ -158,7 +216,7 @@ export default function PaymentStatus() {
     const personCases = cases.filter(c => c.staffId === selectedCase.staffId);
     const personTotalOfficePayment = personCases.filter(c => c.advancerCategory === 'Office').reduce((sum, c) => sum + (c.finalTotal || c.totalExpense || 0), 0);
     const personTotalStaffPayment = personCases.filter(c => c.advancerCategory === 'Staff').reduce((sum, c) => sum + (c.finalTotal || c.totalExpense || 0), 0);
-    const personPendingCount = personCases.filter(c => c.status === 'Payment Pending').length;
+    const personPendingCount = personCases.filter(c => c.status === 'Payment Pending' || c.status === 'APPROVED_FOR_PAYMENT').length;
     const personProcessingCount = personCases.filter(c => c.status === 'Processing').length;
     
     const filteredPersonCases = personCases.filter(c => {
@@ -331,7 +389,7 @@ export default function PaymentStatus() {
                   <td className="py-4 px-6 font-bold text-[#162D50]">{c.currency === 'JPY' ? '¥' : '$'}{(c.finalTotal || c.totalExpense || 0).toLocaleString()}</td>
                   <td className="py-4 px-6">
                     <span className={`px-2 py-1 rounded-full text-xs font-medium border ${
-                      c.status === 'Payment Pending' ? 'bg-yellow-100 text-yellow-700 border-yellow-200' :
+                      c.status === 'Payment Pending' || c.status === 'APPROVED_FOR_PAYMENT' ? 'bg-yellow-100 text-yellow-700 border-yellow-200' :
                       c.status === 'Processing' ? 'bg-blue-100 text-blue-700 border-blue-200' :
                       c.status === 'Completed' ? 'bg-green-100 text-green-700 border-green-200' :
                       'bg-gray-100 text-gray-700 border-gray-200'

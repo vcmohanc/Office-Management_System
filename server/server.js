@@ -13,6 +13,7 @@ import expenseRoutes from './routes/expenses.js';
 import regionRoutes from './routes/regions.js';
 import uploadRoutes from './routes/upload.js';
 import { verifyToken, verifyFileToken } from './middleware/auth.js';
+import { sseHandler } from './events.js';
 import fs from 'fs';
 
 
@@ -60,6 +61,9 @@ app.use('/api/b2b', verifyToken, b2bRoutes);
 app.use('/api/expenses', verifyToken, expenseRoutes);
 app.use('/api/regions', verifyToken, regionRoutes);
 app.use('/api/upload', verifyToken, uploadRoutes);
+
+// SSE endpoint for real-time synchronization
+app.get('/api/events', verifyFileToken, sseHandler);
 
 // MongoDB Connection
 mongoose.connect(process.env.MONGO_URI || 'mongodb://localhost:27017/office_manage_system')
