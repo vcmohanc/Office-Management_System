@@ -2,6 +2,8 @@ import { useState, useEffect, useRef } from 'react';
 import { Search, Calendar, Filter, Eye, Edit2, MoreVertical } from 'lucide-react';
 import StaffSkillSheetModal from './StaffSkillSheetModal';
 import StaffEditModal from './StaffEditModal';
+import { apiFetch } from '../../utils/apiFetch.js';
+
 
 export default function StaffList({ setActiveTab }) {
   const [employees, setEmployees] = useState([]);
@@ -36,7 +38,7 @@ export default function StaffList({ setActiveTab }) {
   const isEmpOffice = (e) => e.staffType ? e.staffType === 'Office Staff' : (Array.isArray(e.department) ? e.department.some(isOffice) : isOffice(e.department || ''));
 
   useEffect(() => {
-    fetch(`${import.meta.env.VITE_API_URL}/api/employees`)
+    apiFetch('/api/employees')
       .then(res => res.json())
       .then(data => {
         setEmployees(data);

@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import { Briefcase, Building, Handshake, FileText, ChevronDown, Eye, FileSignature, TrendingUp } from 'lucide-react';
 import { useSearchParams } from 'react-router-dom';
+import { apiFetch } from '../../utils/apiFetch.js';
+
 
 export default function B2BDashboard() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -24,7 +26,7 @@ export default function B2BDashboard() {
     const controller = new AbortController();
     setLoadingMetrics(true);
 
-    fetch(`${import.meta.env.VITE_API_URL}/api/b2b/metrics`, { signal: controller.signal })
+    apiFetch('/api/b2b/metrics', { signal: controller.signal })
       .then(res => res.json())
       .then(data => {
         setMetrics(data);
@@ -51,7 +53,7 @@ export default function B2BDashboard() {
     query.set('page', '1'); // For simplicity, always fetch page 1 on filter change
     query.set('limit', '10');
 
-    fetch(`${import.meta.env.VITE_API_URL}/api/b2b/engagements?${query.toString()}`, { signal: controller.signal })
+    apiFetch(`/api/b2b/engagements?${query.toString()}`, { signal: controller.signal })
       .then(res => res.json())
       .then(data => {
         setEngagements(data.data || []);

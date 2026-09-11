@@ -1,5 +1,6 @@
 import { Calendar, Trash2, Plus, UploadCloud, AlertCircle } from 'lucide-react';
 import { useState, useEffect } from 'react';
+import { apiFetch } from '../../utils/apiFetch.js';
 import { ALL_DEPARTMENTS } from '../../constants';
 import MultiDatePicker from '../common/MultiDatePicker';
 
@@ -125,11 +126,8 @@ export default function StaffRegistration({ setActiveTab }) {
     data.staffId = staffId;
     
     try {
-      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/employees`, {
+      const res = await apiFetch('/api/employees', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
         body: JSON.stringify(data),
       });
       

@@ -1,5 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { FileText, Calendar, Plus, Trash2, CheckCircle, ChevronDown, User, Box } from 'lucide-react';
+import { FileText, Calendar, Plus, Trash2, CheckCircle, ChevronDown, User, Box, Image, X, Download } from 'lucide-react';
+import { apiFetch } from '../../utils/apiFetch.js';
+import { fileUrl } from '../../utils/fileUrl.js';
+import { validateExpenseAmount } from '../../utils/amountHelper.js';
+
 
 export default function StaffClaimRequest() {
   const [options, setOptions] = useState({
@@ -28,20 +32,34 @@ export default function StaffClaimRequest() {
     advancerName: '',
     bearingParty: '',
     expenseAmount: '',
+    suggestedAmount: 0,
     expensePeriodStart: '',
     expensePeriodEnd: '',
     remark: '',
     receipts: []
   };
 
+  const [currency, setCurrency] = useState('JPY');
+  const [previousUnsettledBalance, setPreviousUnsettledBalance] = useState(0);
+  const [includeBalance, setIncludeBalance] = useState(false);
+  const [previewImage, setPreviewImage] = useState(null);
+
   const [claims, setClaims] = useState([{ ...initialClaim }]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
 
+  const handleFileClick = (e, fileUrlStr) => {
+    const baseUrl = fileUrlStr.split('?')[0];
+    if (baseUrl.match(/\.(jpeg|jpg|gif|png|webp)$/i)) {
+      e.preventDefault();
+      setPreviewImage(fileUrlStr);
+    }
+  };
+
   useEffect(() => {
     const fetchOptions = async () => {
       try {
-        const response = await fetch(`${import.meta.env.VITE_API_URL}/api/options`);
+        const response = await apiFetch('/api/options');
         const data = await response.json();
         
         const groupedOptions = data.reduce((acc, opt) => {
@@ -52,19 +70,19 @@ export default function StaffClaimRequest() {
 
         setOptions(groupedOptions);
 
-        const empResponse = await fetch(`${import.meta.env.VITE_API_URL}/api/employees`);
+        const empResponse = await apiFetch('/api/employees');
         const empData = await empResponse.json();
         setEmployees(empData);
 
-        const regionsResponse = await fetch(`${import.meta.env.VITE_API_URL}/api/regions`);
+        const regionsResponse = await apiFetch('/api/regions');
         const regionsData = await regionsResponse.json();
         setRegions(regionsData);
 
-        const postalResponse = await fetch(`${import.meta.env.VITE_API_URL}/api/expenses/postal`);
+        const postalResponse = await apiFetch('/api/expenses/postal');
         const postalData = await postalResponse.json();
         setPostalMatrix(postalData);
 
-        const travelResponse = await fetch(`${import.meta.env.VITE_API_URL}/api/expenses/travel`);
+        const travelResponse = await apiFetch('/api/expenses/travel');
         const travelData = await travelResponse.json();
         setTravelMatrix(travelData);
       } catch (error) {
@@ -122,8 +140,12 @@ export default function StaffClaimRequest() {
         if (senderId && recipientId && postalMatrix[senderId] && postalMatrix[senderId][recipientId]) {
           const rawCost = postalMatrix[senderId][recipientId];
           const numericCost = typeof rawCost === 'string' ? Number(rawCost.replace(/,/g, '')) : rawCost;
-          updatedClaims[index].expenseAmount = numericCost || 0;
+          updatedClaims[index].suggestedAmount = numericCost || 0;
+        } else {
+          updatedClaims[index].suggestedAmount = 0;
         }
+      } else {
+        updatedClaims[index].suggestedAmount = 0;
       }
     }
 
@@ -136,8 +158,12 @@ export default function StaffClaimRequest() {
         if (departureId && destinationId && travelMatrix[departureId] && travelMatrix[departureId][destinationId]) {
           const rawCost = travelMatrix[departureId][destinationId];
           const numericCost = typeof rawCost === 'string' ? Number(rawCost.replace(/,/g, '')) : rawCost;
-          updatedClaims[index].expenseAmount = numericCost || 0;
+          updatedClaims[index].suggestedAmount = numericCost || 0;
+        } else {
+          updatedClaims[index].suggestedAmount = 0;
         }
+      } else {
+        updatedClaims[index].suggestedAmount = 0;
       }
     }
 
@@ -154,13 +180,32 @@ export default function StaffClaimRequest() {
     setClaims(updatedClaims);
   };
 
-  const handleFileUpload = (index, e) => {
+  const handleFileUpload = async (index, e) => {
     const files = Array.from(e.target.files);
-    const fileNames = files.map(f => f.name);
-    
-    const updatedClaims = [...claims];
-    updatedClaims[index].receipts = [...updatedClaims[index].receipts, ...fileNames];
-    setClaims(updatedClaims);
+    if (files.length === 0) return;
+
+    const formData = new FormData();
+    files.forEach(file => {
+      formData.append('files', file);
+    });
+
+    try {
+      const response = await apiFetch('/api/upload', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        const updatedClaims = [...claims];
+        updatedClaims[index].receipts = [...updatedClaims[index].receipts, ...data.fileNames];
+        setClaims(updatedClaims);
+      } else {
+        console.error('Failed to upload files');
+      }
+    } catch (error) {
+      console.error('Error uploading files:', error);
+    }
   };
 
   const removeFile = (claimIndex, fileIndex) => {
@@ -227,15 +272,13 @@ export default function StaffClaimRequest() {
             <div>
               <label className="block text-sm font-bold text-gray-700 mb-2">Usage Start Date</label>
               <div className="relative">
-                <input type="text" value={claimItem.dormitoryStartDate || ''} onChange={(e) => updateClaim(index, 'dormitoryStartDate', e.target.value)} placeholder="YYYY / MM / DD" className="w-full pl-4 pr-10 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50]" />
-                <Calendar className="w-4 h-4 absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-800" />
+                <input type="date" value={claimItem.dormitoryStartDate || ''} onChange={(e) => updateClaim(index, 'dormitoryStartDate', e.target.value)} className="w-full pl-4 pr-10 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50] text-gray-600" />
               </div>
             </div>
             <div>
               <label className="block text-sm font-bold text-gray-700 mb-2">Usage End Date</label>
               <div className="relative">
-                <input type="text" value={claimItem.dormitoryEndDate || ''} onChange={(e) => updateClaim(index, 'dormitoryEndDate', e.target.value)} placeholder="YYYY / MM / DD" className="w-full pl-4 pr-10 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50]" />
-                <Calendar className="w-4 h-4 absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-800" />
+                <input type="date" value={claimItem.dormitoryEndDate || ''} onChange={(e) => updateClaim(index, 'dormitoryEndDate', e.target.value)} className="w-full pl-4 pr-10 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50] text-gray-600" />
               </div>
             </div>
           </div>
@@ -246,8 +289,7 @@ export default function StaffClaimRequest() {
             <div>
               <label className="block text-sm font-bold text-gray-700 mb-2">Consultation Date</label>
               <div className="relative">
-                <input type="text" value={claimItem.consultationDate || ''} onChange={(e) => updateClaim(index, 'consultationDate', e.target.value)} placeholder="YYYY / MM / DD" className="w-full pl-4 pr-10 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50]" />
-                <Calendar className="w-4 h-4 absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-800" />
+                <input type="date" value={claimItem.consultationDate || ''} onChange={(e) => updateClaim(index, 'consultationDate', e.target.value)} className="w-full pl-4 pr-10 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50] text-gray-600" />
               </div>
             </div>
             <div>
@@ -274,8 +316,7 @@ export default function StaffClaimRequest() {
             <div>
               <label className="block text-sm font-bold text-gray-700 mb-2">Purchase Date</label>
               <div className="relative">
-                <input type="text" value={claimItem.purchaseDate || ''} onChange={(e) => updateClaim(index, 'purchaseDate', e.target.value)} placeholder="YYYY / MM / DD" className="w-full pl-4 pr-10 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50]" />
-                <Calendar className="w-4 h-4 absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-800" />
+                <input type="date" value={claimItem.purchaseDate || ''} onChange={(e) => updateClaim(index, 'purchaseDate', e.target.value)} className="w-full pl-4 pr-10 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50] text-gray-600" />
               </div>
             </div>
             <div className="col-span-2">
@@ -294,8 +335,7 @@ export default function StaffClaimRequest() {
             <div>
               <label className="block text-sm font-bold text-gray-700 mb-2">Usage Start Date</label>
               <div className="relative">
-                <input type="text" value={claimItem.wifiStartDate || ''} onChange={(e) => updateClaim(index, 'wifiStartDate', e.target.value)} placeholder="YYYY / MM / DD" className="w-full pl-4 pr-10 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50]" />
-                <Calendar className="w-4 h-4 absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-800" />
+                <input type="date" value={claimItem.wifiStartDate || ''} onChange={(e) => updateClaim(index, 'wifiStartDate', e.target.value)} className="w-full pl-4 pr-10 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50] text-gray-600" />
               </div>
             </div>
           </div>
@@ -328,6 +368,12 @@ export default function StaffClaimRequest() {
           setIsSubmitting(false);
           return;
         }
+        const validation = validateExpenseAmount(c.expenseAmount, c.suggestedAmount);
+        if (!validation.isValid) {
+          alert(`Row ${i + 1}: ${validation.message}`);
+          setIsSubmitting(false);
+          return;
+        }
       }
 
       // Submit all claims
@@ -345,6 +391,10 @@ export default function StaffClaimRequest() {
           payment_process_types: claim.advancerName || null,
           bearing_party: claim.bearingParty,
           expense_amount: parseFloat(claim.expenseAmount) || 0,
+          sender: claim.sender || "",
+          recipient: claim.recipient || "",
+          departure: claim.departure || "",
+          destination: claim.destination || "",
           expense_period_start: claim.expensePeriodStart || null,
           expense_period_end: claim.expensePeriodEnd || null,
           bill_receipt_url: claim.receipts || [],
@@ -355,12 +405,9 @@ export default function StaffClaimRequest() {
           collection_start_month: new Date().toISOString().slice(0, 7),
           monthly_deduction: parseFloat(claim.expenseAmount) || 0
         };
-        const response = await fetch(`${import.meta.env.VITE_API_URL}/api/claims`, {
+        const response = await apiFetch('/api/claims', {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify(payload)
+          body: JSON.stringify(payload),
         });
 
         if (!response.ok) {
@@ -587,20 +634,32 @@ export default function StaffClaimRequest() {
                 type="number" 
                 value={claimItem.expenseAmount} 
                 onChange={(e) => updateClaim(index, 'expenseAmount', e.target.value)} 
-                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50] text-gray-600" 
+                placeholder="Enter amount"
+                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50] text-gray-900 font-medium" 
               />
+              {(() => {
+                const validation = validateExpenseAmount(claimItem.expenseAmount, claimItem.suggestedAmount);
+                if (!validation.isValid) {
+                  return (
+                    <div 
+                      onClick={() => updateClaim(index, 'expenseAmount', claimItem.suggestedAmount)}
+                      className="mt-2 text-xs text-red-600 font-medium flex items-center bg-red-50 px-3 py-1.5 rounded border border-red-200 cursor-pointer hover:bg-red-100 transition-colors">
+                      {validation.message} (Click to apply)
+                    </div>
+                  );
+                }
+                return null;
+              })()}
             </div>
             <div>
               <label className="block text-sm font-bold text-gray-700 mb-2">Expense Period</label>
               <div className="flex items-center space-x-2">
                 <div className="relative flex-1">
-                  <input type="text" value={claimItem.expensePeriodStart} onChange={(e) => updateClaim(index, 'expensePeriodStart', e.target.value)} placeholder="YYYY / MM / DD" className="w-full pl-4 pr-10 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50] text-gray-600 text-sm" />
-                  <Calendar className="w-4 h-4 absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-800" />
+                  <input type="date" value={claimItem.expensePeriodStart || ''} onChange={(e) => updateClaim(index, 'expensePeriodStart', e.target.value)} className="w-full pl-4 pr-10 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50] text-gray-600 text-sm" />
                 </div>
                 <span className="text-gray-500">-</span>
                 <div className="relative flex-1">
-                  <input type="text" value={claimItem.expensePeriodEnd} onChange={(e) => updateClaim(index, 'expensePeriodEnd', e.target.value)} placeholder="YYYY / MM / DD" className="w-full pl-4 pr-10 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50] text-gray-600 text-sm" />
-                  <Calendar className="w-4 h-4 absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-800" />
+                  <input type="date" value={claimItem.expensePeriodEnd || ''} onChange={(e) => updateClaim(index, 'expensePeriodEnd', e.target.value)} className="w-full pl-4 pr-10 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50] text-gray-600 text-sm" />
                 </div>
               </div>
               <p className="text-xs text-gray-400 mt-2 leading-tight">Note: Claims are typically processed for expenses between the 11th and 27th of the month.</p>
@@ -614,16 +673,19 @@ export default function StaffClaimRequest() {
             <div className="grid grid-cols-2 gap-6">
               <div>
                 <label className="block text-sm font-bold text-gray-700 mb-2">Bill / Receipt Upload</label>
-                <div className="border-2 border-dashed border-gray-300 rounded-md p-4 text-center hover:bg-gray-50 transition-colors cursor-pointer relative flex flex-col items-center justify-center min-h-[120px]">
+                <div className="border-2 border-dashed border-gray-300 rounded-md p-6 text-center hover:bg-gray-50 transition-colors cursor-pointer relative flex flex-col items-center justify-center min-h-[120px]">
                   <input type="file" multiple className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" onChange={(e) => handleFileUpload(index, e)} />
-                  <FileText className="w-6 h-6 text-gray-400 mb-2" />
+                  <FileText className="w-8 h-8 text-gray-400 mb-2" />
                   <p className="text-sm text-gray-600">Drag and drop files or click to upload</p>
                 </div>
                 {claimItem.receipts && claimItem.receipts.length > 0 && (
                   <div className="mt-3 flex flex-wrap gap-2">
                     {claimItem.receipts.map((file, i) => (
                       <div key={i} className="text-xs bg-gray-100 text-gray-700 px-2 py-1 rounded flex items-center">
-                        <FileText className="w-3 h-3 mr-1" /> {file}
+                        <FileText className="w-3 h-3 mr-1" /> 
+                        <a href={fileUrl(file)} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline" onClick={(e) => handleFileClick(e, fileUrl(file))}>
+                          {typeof file === 'string' ? file.split('-').slice(1).join('-') : file.name}
+                        </a>
                         <button onClick={() => removeFile(index, i)} className="ml-2 text-red-500 hover:text-red-700"><Trash2 className="w-3 h-3" /></button>
                       </div>
                     ))}
@@ -674,6 +736,54 @@ export default function StaffClaimRequest() {
           </div>
         </div>
       </div>
+
+
+      {/* Image Preview Modal */}
+      {previewImage && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 sm:p-6" onClick={() => setPreviewImage(null)}>
+          <div className="relative bg-white rounded-xl shadow-2xl w-full max-w-4xl flex flex-col overflow-hidden" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 bg-gray-50/80">
+              <h3 className="text-base font-semibold text-gray-800 flex items-center">
+                <Image className="w-4 h-4 mr-2 text-blue-600" />
+                Image Preview
+              </h3>
+              <button 
+                onClick={() => setPreviewImage(null)}
+                className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-200 rounded-full transition-colors focus:outline-none"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            
+            <div className="p-4 bg-gray-100/50 flex items-center justify-center min-h-[300px]">
+              <img 
+                src={previewImage} 
+                alt="Preview" 
+                className="max-w-full max-h-[65vh] object-contain rounded border border-gray-200 shadow-sm bg-white"
+              />
+            </div>
+            
+            <div className="px-5 py-4 border-t border-gray-100 bg-white flex justify-end">
+              <button 
+                onClick={() => setPreviewImage(null)}
+                className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+              >
+                Close
+              </button>
+              <a 
+                href={previewImage} 
+                download
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="ml-3 px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors flex items-center focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+              >
+                <Download className="w-4 h-4 mr-2" />
+                Download Image
+              </a>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

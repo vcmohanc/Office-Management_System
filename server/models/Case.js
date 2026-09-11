@@ -18,6 +18,8 @@ const caseSchema = new mongoose.Schema({
   expense_period_end: { type: Date, required: true },
   sender: { type: String },
   recipient: { type: String },
+  departure: { type: String },
+  destination: { type: String },
   receipts: [{ type: String }],
   remark: { type: String },
   total_expense: { type: Number, required: true },
@@ -36,7 +38,17 @@ const caseSchema = new mongoose.Schema({
   bouncedCount: { type: Number, default: 0 },
   nextPaymentDate: { type: Date },
   nextPaymentAmount: { type: Number },
-  status: { type: String, default: 'Pending' }
+  status: { type: String, default: 'Pending' },
+  statusMessage: { type: String, default: '' },
+  messages: [{
+    text: String,
+    date: Date,
+    author: String,
+    readBySupport: { type: Boolean, default: false }
+  }],
+  hasAccountNotification: { type: Boolean, default: false },
+  hasSupportNotification: { type: Boolean, default: false },
+  supportUpdatedFields: [{ type: String }]
 }, { timestamps: true });
 
 export default mongoose.model('Case', caseSchema);

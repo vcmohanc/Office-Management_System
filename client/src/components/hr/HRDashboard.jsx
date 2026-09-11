@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { UserPlus, BedDouble, Radio, Tractor, Building, UserCheck, ChevronDown, Eye, Edit, Search, Filter, Download, Printer } from 'lucide-react';
+import { apiFetch } from '../../utils/apiFetch.js';
+
 
 export default function HRDashboard() {
   const [employees, setEmployees] = useState([]);
@@ -22,7 +24,7 @@ export default function HRDashboard() {
 
   const fetchStaff = () => {
     setLoading(true);
-    fetch(`${import.meta.env.VITE_API_URL}/api/employees`)
+    apiFetch('/api/employees')
       .then(res => res.json())
       .then(data => {
         setEmployees(data);
@@ -147,10 +149,9 @@ export default function HRDashboard() {
     if (!selectedStaff) return;
     setIsSubmitting(true);
     try {
-      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/employees/${selectedStaff._id}`, {
+      const res = await apiFetch(`/api/employees/${selectedStaff._id}`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...selectedStaff, onboardingStatus: newOnboardingStatus })
+        body: JSON.stringify({ ...selectedStaff, onboardingStatus: newOnboardingStatus }),
       });
       
       if (res.ok) {

@@ -2,6 +2,7 @@ import express from 'express';
 import PostalCharge from '../models/PostalCharge.js';
 import TravelCharge from '../models/TravelCharge.js';
 import Region from '../models/Region.js';
+import { requireRole } from '../middleware/auth.js';
 
 const router = express.Router();
 
@@ -23,7 +24,7 @@ router.get('/postal', async (req, res) => {
 });
 
 // PUT /api/expenses/postal
-router.put('/postal', async (req, res) => {
+router.put('/postal', requireRole('admin'), async (req, res) => {
   try {
     const matrix = req.body;
     for (const [departureId, charges] of Object.entries(matrix)) {
@@ -58,7 +59,7 @@ router.get('/travel', async (req, res) => {
 });
 
 // PUT /api/expenses/travel
-router.put('/travel', async (req, res) => {
+router.put('/travel', requireRole('admin'), async (req, res) => {
   try {
     const matrix = req.body;
     for (const [departureId, charges] of Object.entries(matrix)) {
