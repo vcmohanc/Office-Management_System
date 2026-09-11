@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Search, Filter, Download, MoreVertical, ChevronLeft, ChevronRight } from 'lucide-react';
+import { apiFetch } from '../../utils/apiFetch.js';
+
 
 export default function VisaManagement() {
   const [employees, setEmployees] = useState([]);
@@ -18,7 +20,7 @@ export default function VisaManagement() {
 
   const fetchStaff = () => {
     setLoading(true);
-    fetch(`${import.meta.env.VITE_API_URL}/api/employees`)
+    apiFetch('/api/employees')
       .then(res => res.json())
       .then(data => {
         setEmployees(data);
@@ -77,11 +79,8 @@ export default function VisaManagement() {
         history.push(selectedStaff.visaEndDate);
       }
 
-      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/employees/${selectedStaff._id}`, {
+      const res = await apiFetch(`/api/employees/${selectedStaff._id}`, {
         method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json'
-        },
         body: JSON.stringify({ 
           ...selectedStaff, 
           visaEndDate: newExpiryDate, 
@@ -89,7 +88,7 @@ export default function VisaManagement() {
           visaStatus: newVisaStatus, 
           visaAppStatus: newVisaAppStatus,
           visaExpiryHistory: history
-        })
+        }),
       });
       
       if (res.ok) {

@@ -1,4 +1,6 @@
 import { useState, useEffect } from 'react';
+import { apiFetch } from '../../utils/apiFetch.js';
+import { validateExpenseAmount } from '../../utils/amountHelper.js';
 import { User, ChevronDown, Box, Calendar, UploadCloud, ArrowRight, Wallet, Landmark, FileText, ArrowLeft, Image } from 'lucide-react';
 
 
@@ -35,7 +37,7 @@ export default function NewCase() {
   useEffect(() => {
     const fetchOptions = async () => {
       try {
-        const response = await fetch(`${import.meta.env.VITE_API_URL}/api/options`);
+        const response = await apiFetch('/api/options');
         const data = await response.json();
         
         const groupedOptions = data.reduce((acc, opt) => {
@@ -46,19 +48,19 @@ export default function NewCase() {
 
         setOptions(groupedOptions);
 
-        const empResponse = await fetch(`${import.meta.env.VITE_API_URL}/api/employees`);
+        const empResponse = await apiFetch('/api/employees');
         const empData = await empResponse.json();
         setEmployees(empData);
 
-        const regionsResponse = await fetch(`${import.meta.env.VITE_API_URL}/api/regions`);
+        const regionsResponse = await apiFetch('/api/regions');
         const regionsData = await regionsResponse.json();
         setRegions(regionsData);
 
-        const postalResponse = await fetch(`${import.meta.env.VITE_API_URL}/api/expenses/postal`);
+        const postalResponse = await apiFetch('/api/expenses/postal');
         const postalData = await postalResponse.json();
         setPostalMatrix(postalData);
 
-        const travelResponse = await fetch(`${import.meta.env.VITE_API_URL}/api/expenses/travel`);
+        const travelResponse = await apiFetch('/api/expenses/travel');
         const travelData = await travelResponse.json();
         setTravelMatrix(travelData);
       } catch (error) {
@@ -116,8 +118,12 @@ export default function NewCase() {
         if (senderId && recipientId && postalMatrix[senderId] && postalMatrix[senderId][recipientId]) {
           const rawCost = postalMatrix[senderId][recipientId];
           const numericCost = typeof rawCost === 'string' ? Number(rawCost.replace(/,/g, '')) : rawCost;
-          newCases[index].expenseAmount = numericCost || 0;
+          newCases[index].suggestedAmount = numericCost || 0;
+        } else {
+          newCases[index].suggestedAmount = 0;
         }
+      } else {
+        newCases[index].suggestedAmount = 0;
       }
     }
 
@@ -130,8 +136,12 @@ export default function NewCase() {
         if (departureId && destinationId && travelMatrix[departureId] && travelMatrix[departureId][destinationId]) {
           const rawCost = travelMatrix[departureId][destinationId];
           const numericCost = typeof rawCost === 'string' ? Number(rawCost.replace(/,/g, '')) : rawCost;
-          newCases[index].expenseAmount = numericCost || 0;
+          newCases[index].suggestedAmount = numericCost || 0;
+        } else {
+          newCases[index].suggestedAmount = 0;
         }
+      } else {
+        newCases[index].suggestedAmount = 0;
       }
     }
 
@@ -144,7 +154,8 @@ export default function NewCase() {
       expenseType: 'Select Type',
       advancerCategory: 'Select Category',
       bearingParty: 'Select Bearing Party',
-      expenseAmount: 0,
+      expenseAmount: '',
+      suggestedAmount: 0,
       advancerName: '',
       receipts: [],
       remark: ''
@@ -156,6 +167,36 @@ export default function NewCase() {
       const newCases = [...cases];
       newCases.splice(index, 1);
       setCases(newCases);
+    }
+  };
+
+  const handleFileUpload = async (e, index) => {
+    const files = Array.from(e.target.files);
+    if (files.length === 0) return;
+
+    const formData = new FormData();
+    files.forEach(file => {
+      formData.append('files', file);
+    });
+
+    try {
+      const response = await apiFetch('/api/upload', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        const newCases = [...cases];
+        newCases[index].receipts = [...(newCases[index].receipts || []), ...data.fileNames];
+        setCases(newCases);
+      } else {
+        console.error('Failed to upload files');
+        alert('Failed to upload files.');
+      }
+    } catch (error) {
+      console.error('Error uploading files:', error);
+      alert('Error uploading files.');
     }
   };
 
@@ -182,13 +223,15 @@ export default function NewCase() {
           advancer_category: caseItem.advancerCategory,
           payment_process_type: caseItem.advancerName || "N/A",
           bearing_party: caseItem.bearingParty,
-          expense_amount: Number(caseItem.expenseAmount) || 0,
-          expense_period_start: caseItem.expensePeriodStart || new Date().toISOString(),
-          expense_period_end: caseItem.expensePeriodEnd || new Date().toISOString(),
+          expense_amount: parseFloat(caseItem.expenseAmount) || 0,
+          expense_period_start: caseItem.expensePeriodStart || caseItem.dateUsed || caseItem.dormitoryStartDate || caseItem.consultationDate || caseItem.purchaseDate || caseItem.wifiStartDate || new Date().toISOString(),
+          expense_period_end: caseItem.expensePeriodEnd || caseItem.dormitoryEndDate || caseItem.expensePeriodStart || caseItem.dateUsed || caseItem.dormitoryStartDate || caseItem.consultationDate || caseItem.purchaseDate || caseItem.wifiStartDate || new Date().toISOString(),
           sender: caseItem.sender || "",
           recipient: caseItem.recipient || "",
-          receipts: (caseItem.receipts || []).map(f => f.name),
-          remark: caseItem.remark || "",
+          departure: caseItem.departure || "",
+          destination: caseItem.destination || "",
+          receipts: caseItem.receipts || [],
+          remark: caseItem.remark || caseItem.damageReason || "",
           total_expense: totalExpenseAmount,
           currency: 'JPY',
           previous_unsettled_balance: unsettledBalance,
@@ -204,10 +247,15 @@ export default function NewCase() {
           status: 'Pending'
         };
 
-        return fetch(`${import.meta.env.VITE_API_URL}/api/cases`, {
+        return apiFetch('/api/cases', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
+          body: JSON.stringify(payload),
+        }).then(async res => {
+          if (!res.ok) {
+            const err = await res.json().catch(() => ({}));
+            throw new Error(err.message || 'Failed to submit case');
+          }
+          return res;
         });
       });
 
@@ -221,7 +269,8 @@ export default function NewCase() {
         expenseType: 'Select Type',
         advancerCategory: 'Select Category',
         bearingParty: 'Select Bearing Party',
-        expenseAmount: 0,
+        expenseAmount: '',
+        suggestedAmount: 0,
         advancerName: '',
         receipts: [],
         remark: ''
@@ -600,8 +649,22 @@ export default function NewCase() {
                 type="number" 
                 value={caseItem.expenseAmount} 
                 onChange={(e) => updateCase(index, 'expenseAmount', e.target.value)} 
-                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50] text-gray-600" 
+                placeholder="Enter amount"
+                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50] text-gray-900 font-medium" 
               />
+              {(() => {
+                const validation = validateExpenseAmount(caseItem.expenseAmount, caseItem.suggestedAmount);
+                if (!validation.isValid) {
+                  return (
+                    <div 
+                      onClick={() => updateCase(index, 'expenseAmount', caseItem.suggestedAmount)}
+                      className="mt-2 text-xs text-red-600 font-medium flex items-center bg-red-50 px-3 py-1.5 rounded border border-red-200 cursor-pointer hover:bg-red-100 transition-colors">
+                      {validation.message} (Click to apply)
+                    </div>
+                  );
+                }
+                return null;
+              })()}
             </div>
             <div>
               <label className="block text-sm font-bold text-gray-700 mb-2">Expense Period</label>
@@ -628,12 +691,7 @@ export default function NewCase() {
               <div>
                 <label className="block text-sm font-bold text-gray-700 mb-2">Bill / Receipt Upload</label>
                 <div className="border-2 border-dashed border-gray-300 rounded-md p-4 text-center hover:bg-gray-50 transition-colors cursor-pointer relative">
-                  <input type="file" multiple className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" onChange={(e) => {
-                    const files = Array.from(e.target.files);
-                    const newCases = [...cases];
-                    newCases[index].receipts = [...(newCases[index].receipts || []), ...files];
-                    setCases(newCases);
-                  }} />
+                  <input type="file" multiple className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" onChange={(e) => handleFileUpload(e, index)} />
                   <FileText className="w-6 h-6 mx-auto text-gray-400 mb-2" />
                   <p className="text-sm text-gray-600">Drag and drop files or click to upload</p>
                 </div>
@@ -641,7 +699,7 @@ export default function NewCase() {
                   <div className="mt-3 flex flex-wrap gap-2">
                     {caseItem.receipts.map((file, i) => (
                       <div key={i} className="text-xs bg-gray-100 text-gray-700 px-2 py-1 rounded flex items-center">
-                        <FileText className="w-3 h-3 mr-1" /> {file.name}
+                        <FileText className="w-3 h-3 mr-1" /> {typeof file === 'string' ? (file.includes('-') ? file.split('-').slice(1).join('-') : file) : file.name}
                       </div>
                     ))}
                   </div>
@@ -698,6 +756,11 @@ export default function NewCase() {
               const c = cases[i];
               if (c.expenseType === 'Select Type' || c.advancerCategory === 'Select Category' || c.bearingParty === 'Select Bearing Party' || !c.expenseAmount) {
                 alert(`Please fill out all required fields for Case Category #${i+1}.`);
+                return;
+              }
+              const validation = validateExpenseAmount(c.expenseAmount, c.suggestedAmount);
+              if (!validation.isValid) {
+                alert(`Row ${i + 1}: ${validation.message}`);
                 return;
               }
               if (c.advancerCategory !== 'Office' && !c.advancerName) {

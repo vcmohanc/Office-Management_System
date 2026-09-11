@@ -3,6 +3,8 @@ import mongoose from 'mongoose';
 import { z } from 'zod';
 import Case from '../models/Case.js';
 import Settlement from '../models/Settlement.js';
+import { requireRole } from '../middleware/auth.js';
+import { validateBackendExpenseAmount } from '../utils/amountHelper.js';
 
 const router = express.Router();
 
@@ -23,6 +25,8 @@ const caseSchemaZod = z.object({
   expense_period_end: z.coerce.date(),
   sender: z.string().optional().nullable().or(z.literal('')),
   recipient: z.string().optional().nullable().or(z.literal('')),
+  departure: z.string().optional().nullable().or(z.literal('')),
+  destination: z.string().optional().nullable().or(z.literal('')),
   receipts: z.array(z.string()).optional(),
   remark: z.string().optional().nullable().or(z.literal('')),
   total_expense: z.number(),
@@ -36,8 +40,10 @@ const caseSchemaZod = z.object({
   installment_plan: z.string().min(1),
   installment_count: z.number().min(1),
   collection_start_month: z.string().min(1),
-  monthly_deduction: z.number().min(0)
-}).passthrough();
+  monthly_deduction: z.number().min(0),
+  hasAccountNotification: z.boolean().optional(),
+  supportUpdatedFields: z.array(z.string()).optional()
+});
 
 router.get('/', async (req, res) => {
   try {
@@ -48,14 +54,44 @@ router.get('/', async (req, res) => {
     res.status(500).json({ message: 'Server error fetching cases' });
   }
 });
-router.post('/', async (req, res) => {
+router.post('/', requireRole('admin', 'account'), async (req, res) => {
   try {
     // Validate request
     const validatedData = caseSchemaZod.parse(req.body);
     
+    const validation = await validateBackendExpenseAmount(
+      validatedData.expense_type, 
+      validatedData.expense_amount, 
+      {
+        sender: validatedData.sender,
+        recipient: validatedData.recipient,
+        departure: validatedData.departure,
+        destination: validatedData.destination
+      }
+    );
+    if (!validation.isValid) {
+      return res.status(400).json({ message: `Entered amount exceeds the suggested amount of ¥${validation.expected.toLocaleString()}` });
+    }
+
     // Auto-generate case_id if not present
     if (!validatedData.case_id) {
-      validatedData.case_id = `CAS-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`;
+      const today = new Date();
+      const year = today.getFullYear();
+      
+      const lastCase = await Case.findOne({
+        case_id: new RegExp(`^CAS-${year}-`)
+      }).sort({ case_id: -1 });
+      
+      let nextCount = 1;
+      if (lastCase && lastCase.case_id) {
+        const match = lastCase.case_id.match(/CAS-\d{4}-(\d{4})/);
+        if (match) {
+          nextCount = parseInt(match[1], 10) + 1;
+        }
+      }
+      
+      const sequenceNumber = nextCount.toString().padStart(4, '0');
+      validatedData.case_id = `CAS-${year}-${sequenceNumber}`;
     }
 
     const newCase = new Case(validatedData);
@@ -70,16 +106,51 @@ router.post('/', async (req, res) => {
     res.status(400).json({ message: 'Error creating case: ' + error.message, error: error.message });
   }
 });
-router.patch('/:id/status', async (req, res) => {
+router.put('/:id', requireRole('admin', 'account', 'support'), async (req, res) => {
   try {
-    const { status } = req.body;
+    const validatedData = caseSchemaZod.partial().parse(req.body);
+    const updatedCase = await Case.findByIdAndUpdate(
+      req.params.id,
+      validatedData,
+      { new: true, runValidators: true }
+    );
+    if (!updatedCase) {
+      return res.status(404).json({ message: 'Case not found' });
+    }
+    res.json(updatedCase);
+  } catch (error) {
+    console.error('Error updating case:', error);
+    res.status(500).json({ message: 'Server error updating case', error: error.message });
+  }
+});
+
+router.patch('/:id/status', requireRole('admin', 'account'), async (req, res) => {
+  try {
+    const { status, statusMessage, newMessage, clearSupportUpdatedFields, hasSupportNotification } = req.body;
     if (!status) {
       return res.status(400).json({ message: 'Status is required' });
     }
     
+    let updateQuery = { $set: { status } };
+    if (statusMessage !== undefined) {
+      updateQuery.$set.statusMessage = statusMessage;
+    }
+    if (clearSupportUpdatedFields) {
+      updateQuery.$set.supportUpdatedFields = [];
+    }
+    if (hasSupportNotification) {
+      updateQuery.$set.hasSupportNotification = true;
+    }
+    
+    if (newMessage) {
+      // Whitelist fields to prevent arbitrary subdocument injection
+      const { text, date, author } = newMessage;
+      updateQuery.$push = { messages: { text, date, author } };
+    }
+
     const updatedCase = await Case.findByIdAndUpdate(
       req.params.id,
-      { status },
+      updateQuery,
       { new: true }
     );
     
@@ -95,7 +166,7 @@ router.patch('/:id/status', async (req, res) => {
 });
 
 // Create a settlement for a case
-router.post('/:id/settle', async (req, res) => {
+router.post('/:id/settle', requireRole('admin', 'account'), async (req, res) => {
   try {
     const caseId = req.params.id;
     const {
@@ -120,9 +191,9 @@ router.post('/:id/settle', async (req, res) => {
       return res.status(404).json({ message: 'Case not found' });
     }
 
-    // Verify financials
+    // Verify financials with floating point tolerance
     const calculatedNet = financials.claimAmount - (financials.deductions || 0);
-    if (calculatedNet !== financials.netPayable) {
+    if (Math.abs(calculatedNet - financials.netPayable) > 0.01) {
       return res.status(400).json({ message: 'Net payable mismatch' });
     }
 
@@ -165,7 +236,7 @@ router.post('/:id/settle', async (req, res) => {
     res.status(500).json({ message: 'Server error processing settlement', error: error.message });
   }
 });
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', requireRole('admin', 'account'), async (req, res) => {
   try {
     const caseId = req.params.id;
     const deletedCase = await Case.findByIdAndDelete(caseId);
@@ -176,6 +247,23 @@ router.delete('/:id', async (req, res) => {
   } catch (error) {
     console.error('Error deleting case:', error);
     res.status(500).json({ message: 'Server error deleting case', error: error.message });
+  }
+});
+
+router.patch('/:id/messages/read', async (req, res) => {
+  try {
+    const updatedCase = await Case.findOneAndUpdate(
+      { _id: req.params.id },
+      { $set: { "messages.$[].readBySupport": true } },
+      { new: true }
+    );
+    if (!updatedCase) {
+      return res.status(404).json({ message: 'Case not found' });
+    }
+    res.json(updatedCase);
+  } catch (error) {
+    console.error('Error updating read status:', error);
+    res.status(500).json({ message: 'Server error updating read status' });
   }
 });
 

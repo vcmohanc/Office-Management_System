@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from 'react';
+import { apiFetch } from '../../utils/apiFetch.js';
+
 import { 
   Search, 
   MapPin, 
@@ -106,7 +108,7 @@ export default function AssignWorkPlace() {
 
   const fetchStaff = () => {
     setLoading(true);
-    fetch(`${import.meta.env.VITE_API_URL}/api/employees`)
+    apiFetch('/api/employees')
       .then(res => res.json())
       .then(data => {
         // Fetch all staff so we can route non-active ones to Unassigned
@@ -123,12 +125,9 @@ export default function AssignWorkPlace() {
     if (!selectedStaff) return;
     setAssigning(true);
     try {
-      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/employees/${selectedStaff._id}`, {
+      const res = await apiFetch(`/api/employees/${selectedStaff._id}`, {
         method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ ...selectedStaff, assignedWorkPlace: draftWorkPlaces, department: draftDepartments, office: draftOffices, staffType: draftStaffType, onboardingStatus: 'Active' })
+        body: JSON.stringify({ ...selectedStaff, assignedWorkPlace: draftWorkPlaces, department: draftDepartments, office: draftOffices, staffType: draftStaffType, onboardingStatus: 'Active' }),
       });
       
       if (res.ok) {

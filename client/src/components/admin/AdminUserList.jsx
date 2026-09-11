@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Users, ArrowLeft, Edit2, Check, X } from 'lucide-react';
+import { apiFetch } from '../../utils/apiFetch.js';
+
 
 export default function AdminUserList({ setActiveTab }) {
   const [users, setUsers] = useState([]);
@@ -16,15 +18,8 @@ export default function AdminUserList({ setActiveTab }) {
 
   const fetchUsers = async () => {
     try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/auth/users`, {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-      
+      const response = await apiFetch('/api/auth/users');
       const data = await response.json();
-      
       if (response.ok) {
         setUsers(data);
       } else {
@@ -54,14 +49,9 @@ export default function AdminUserList({ setActiveTab }) {
   const saveEdit = async (id) => {
     setUpdateLoading(true);
     try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/auth/users/${id}`, {
+      const response = await apiFetch(`/api/auth/users/${id}`, {
         method: 'PUT',
-        headers: { 
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify(editForm)
+        body: JSON.stringify(editForm),
       });
       
       const data = await response.json();

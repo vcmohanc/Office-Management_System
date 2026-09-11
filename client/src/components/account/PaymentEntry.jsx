@@ -1,4 +1,6 @@
 import { useState, useEffect } from 'react';
+import { apiFetch } from '../../utils/apiFetch.js';
+
 import { Landmark, Users, Briefcase, ArrowRight, ArrowLeft, Building2, Building, AlertTriangle } from 'lucide-react';
 
 // Removed mockPaymentRecords
@@ -59,12 +61,9 @@ export default function PaymentEntry() {
     };
 
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/cases/${selectedCaseToProcess._id}/settle`, {
+      const response = await apiFetch(`/api/cases/${selectedCaseToProcess._id}/settle`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(payload)
+        body: JSON.stringify(payload),
       });
 
       if (response.ok) {
@@ -103,8 +102,8 @@ export default function PaymentEntry() {
 
   useEffect(() => {
     Promise.all([
-      fetch(`${import.meta.env.VITE_API_URL}/api/cases`).then(res => res.json()).catch(() => []),
-      fetch(`${import.meta.env.VITE_API_URL}/api/claims`).then(res => res.json()).catch(() => [])
+      apiFetch('/api/cases').then(res => res.json()).catch(() => []),
+      apiFetch('/api/claims').then(res => res.json()).catch(() => [])
     ]).then(([casesData, claimsData]) => {
       const mappedCases = casesData.map(c => ({
         ...c,

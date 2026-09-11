@@ -1,12 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { Filter, Download, Eye, ChevronDown } from 'lucide-react';
+import { apiFetch } from '../../utils/apiFetch.js';
+
 
 export default function ClaimList() {
   const [claims, setClaims] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch(`${import.meta.env.VITE_API_URL}/api/claims`)
+    apiFetch('/api/claims')
       .then(res => res.json())
       .then(data => {
         setClaims(data);

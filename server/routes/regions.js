@@ -2,6 +2,7 @@ import express from 'express';
 import Region from '../models/Region.js';
 import PostalCharge from '../models/PostalCharge.js';
 import TravelCharge from '../models/TravelCharge.js';
+import { requireRole } from '../middleware/auth.js';
 
 const router = express.Router();
 
@@ -17,7 +18,7 @@ router.get('/', async (req, res) => {
 });
 
 // POST /api/regions
-router.post('/', async (req, res) => {
+router.post('/', requireRole('admin'), async (req, res) => {
   try {
     const { name1, name2 } = req.body;
     const region = new Region({ name1, name2 });
@@ -30,7 +31,7 @@ router.post('/', async (req, res) => {
 });
 
 // PUT /api/regions/:id
-router.put('/:id', async (req, res) => {
+router.put('/:id', requireRole('admin'), async (req, res) => {
   try {
     const { name1, name2 } = req.body;
     const region = await Region.findByIdAndUpdate(
@@ -49,7 +50,7 @@ router.put('/:id', async (req, res) => {
 });
 
 // DELETE /api/regions/:id
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', requireRole('admin'), async (req, res) => {
   try {
     const regionId = req.params.id;
     const region = await Region.findByIdAndDelete(regionId);

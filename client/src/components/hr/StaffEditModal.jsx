@@ -1,4 +1,6 @@
 import React, { useState } from 'react';
+import { apiFetch } from '../../utils/apiFetch.js';
+
 import { X, Save, User, Globe, Briefcase, Heart, AlertCircle, Plus, Trash2 } from 'lucide-react';
 import { ALL_DEPARTMENTS } from '../../constants';
 import MultiDatePicker from '../common/MultiDatePicker';
@@ -114,11 +116,8 @@ export default function StaffEditModal({ employee, onClose, onEditComplete, init
     setError('');
 
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/employees/${employee._id}`, {
+      const response = await apiFetch(`/api/employees/${employee._id}`, {
         method: 'PUT',
-        headers: { 
-          'Content-Type': 'application/json' 
-        },
         body: JSON.stringify({
           ...formData,
           photo: photoPreview

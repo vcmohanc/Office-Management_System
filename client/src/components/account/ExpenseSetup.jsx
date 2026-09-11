@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from 'react';
+import { apiFetch } from '../../utils/apiFetch.js';
+
 
 export default function ExpenseSetup() {
   const [activeTab, setActiveTab] = useState('postal');
@@ -16,15 +18,15 @@ export default function ExpenseSetup() {
 
   const fetchData = async () => {
     try {
-      const regionsRes = await fetch(`${import.meta.env.VITE_API_URL}/api/regions`);
+      const regionsRes = await apiFetch('/api/regions');
       if (regionsRes.ok) {
         const fetchedRegions = await regionsRes.json();
         setRegions(fetchedRegions);
       }
 
       const [postalRes, travelRes] = await Promise.all([
-        fetch(`${import.meta.env.VITE_API_URL}/api/expenses/postal`),
-        fetch(`${import.meta.env.VITE_API_URL}/api/expenses/travel`)
+        apiFetch('/api/expenses/postal'),
+        apiFetch('/api/expenses/travel')
       ]);
       
       if (postalRes.ok) {
@@ -51,10 +53,9 @@ export default function ExpenseSetup() {
     const payload = activeTab === 'postal' ? postalCharges : travelCharges;
     
     try {
-      const res = await fetch(`${import.meta.env.VITE_API_URL || ''}${endpoint}`, {
+      const res = await apiFetch(endpoint, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
+        body: JSON.stringify(payload),
       });
       
       if (res.ok) {
@@ -104,10 +105,9 @@ export default function ExpenseSetup() {
     }
     setIsLoading(true);
     try {
-      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/regions`, {
+      const res = await apiFetch('/api/regions', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name1: newName1, name2: newName2 })
+        body: JSON.stringify({ name1: newName1, name2: newName2 }),
       });
       if (res.ok) {
         setNewName1('');
@@ -131,10 +131,9 @@ export default function ExpenseSetup() {
     }
     setIsLoading(true);
     try {
-      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/regions/${id}`, {
+      const res = await apiFetch(`/api/regions/${id}`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name1: editName1, name2: editName2 })
+        body: JSON.stringify({ name1: editName1, name2: editName2 }),
       });
       if (res.ok) {
         setEditingRegion(null);
@@ -156,9 +155,7 @@ export default function ExpenseSetup() {
     }
     setIsLoading(true);
     try {
-      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/regions/${id}`, {
-        method: 'DELETE'
-      });
+      const res = await apiFetch(`/api/regions/${id}`, { method: 'DELETE' });
       if (res.ok) {
         fetchData();
       } else {

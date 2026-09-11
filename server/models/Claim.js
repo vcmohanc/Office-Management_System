@@ -16,6 +16,10 @@ const claimSchema = new mongoose.Schema({
   expense_amount: { type: Number, required: true },
   expense_period_start: { type: Date, default: null },
   expense_period_end: { type: Date, default: null },
+  sender: { type: String, default: '' },
+  recipient: { type: String, default: '' },
+  departure: { type: String, default: '' },
+  destination: { type: String, default: '' },
   bill_receipt_url: [{ type: String }],
   remarks: { type: String, default: '' },
 
@@ -28,7 +32,17 @@ const claimSchema = new mongoose.Schema({
   installment_count: { type: Number, required: true },
   collection_start_month: { type: String, required: true },
   monthly_deduction: { type: Number, required: true },
-  status: { type: String, default: 'Pending' }
+  status: { type: String, default: 'Pending' },
+  statusMessage: { type: String, default: '' },
+  messages: [{
+    text: String,
+    date: Date,
+    author: String,
+    readBySupport: { type: Boolean, default: false }
+  }],
+  hasAccountNotification: { type: Boolean, default: false },
+  hasSupportNotification: { type: Boolean, default: false },
+  supportUpdatedFields: [{ type: String }]
 }, { timestamps: true });
 
 export default mongoose.model('Claim', claimSchema);

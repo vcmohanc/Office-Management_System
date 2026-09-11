@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import { UserPlus, ArrowLeft } from 'lucide-react';
+import { apiFetch } from '../../utils/apiFetch.js';
+
 
 export default function AdminNewRegistration({ setActiveTab }) {
   const [formData, setFormData] = useState({
@@ -30,14 +32,13 @@ export default function AdminNewRegistration({ setActiveTab }) {
     }
 
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/auth/register`, {
+      const response = await apiFetch('/api/auth/register', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           username: formData.username,
           password: formData.password,
           role: formData.role
-        })
+        }),
       });
 
       const data = await response.json();

@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import { User, Lock, Save, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { apiFetch } from '../../utils/apiFetch.js';
+
 
 export default function Settings({ user }) {
   const [currentPassword, setCurrentPassword] = useState('');
@@ -25,14 +27,9 @@ export default function Settings({ user }) {
     setStatus({ type: '', message: '' });
 
     try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/auth/update-password`, {
+      const response = await apiFetch('/api/auth/update-password', {
         method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({ currentPassword, newPassword })
+        body: JSON.stringify({ currentPassword, newPassword }),
       });
 
       const data = await response.json();

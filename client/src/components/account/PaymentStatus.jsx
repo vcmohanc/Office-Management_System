@@ -1,4 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
+import { apiFetch } from '../../utils/apiFetch.js';
+
 import { Search, ChevronDown, Calendar, Download, Building, Landmark, AlertCircle, AlertTriangle, ArrowRight, ArrowLeft, Printer } from 'lucide-react';
 
 export default function PaymentStatus() {
@@ -59,10 +61,9 @@ export default function PaymentStatus() {
     };
 
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/cases/${selectedCase._id}/settle`, {
+      const response = await apiFetch(`/api/cases/${selectedCase._id}/settle`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
+        body: JSON.stringify(payload),
       });
 
       if (response.ok) {
@@ -95,9 +96,9 @@ export default function PaymentStatus() {
 
   useEffect(() => {
     Promise.all([
-      fetch(`${import.meta.env.VITE_API_URL}/api/cases`).then(res => res.json()).catch(() => []),
-      fetch(`${import.meta.env.VITE_API_URL}/api/claims`).then(res => res.json()).catch(() => []),
-      fetch(`${import.meta.env.VITE_API_URL}/api/options`).then(res => res.json()).catch(() => [])
+      apiFetch('/api/cases').then(res => res.json()).catch(() => []),
+      apiFetch('/api/claims').then(res => res.json()).catch(() => []),
+      apiFetch('/api/options').then(res => res.json()).catch(() => [])
     ]).then(([casesData, claimsData, optionsData]) => {
       const mappedCases = casesData.map(c => ({
         ...c,
@@ -170,14 +171,18 @@ export default function PaymentStatus() {
       <div className="w-full px-4 sm:px-6 lg:px-8 xl:px-12 space-y-6 pb-10">
         <button 
           onClick={() => setSelectedCase(null)}
-          className="flex items-center text-[#162D50] hover:underline font-medium mb-2"
+          className="flex items-center text-[#162D50] hover:underline font-medium mb-4"
         >
           <ArrowLeft className="w-4 h-4 mr-1" />
           Back to Payment List
         </button>
 
+        <div className="mb-6 print:hidden">
+          <h2 className="text-2xl font-bold text-[#162D50] mb-1">Staff Name: {selectedCase.staffName}</h2>
+          <p className="text-gray-500 text-sm">Staff ID: {selectedCase.staffId}</p>
+        </div>
 
-        <div className="print:hidden space-y-6 mt-6">
+        <div className="print:hidden space-y-6">
           {/* Metric Cards */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div className="bg-white border border-gray-200 p-5 rounded-md shadow-sm">

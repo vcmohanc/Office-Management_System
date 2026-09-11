@@ -1,6 +1,8 @@
 import express from 'express';
 import { z } from 'zod';
 import Claim from '../models/Claim.js';
+import { requireRole } from '../middleware/auth.js';
+import { validateBackendExpenseAmount } from '../utils/amountHelper.js';
 
 const router = express.Router();
 
@@ -31,6 +33,10 @@ const claimSchemaZod = z.object({
   expense_period_end: z.string().optional().nullable(),
   bill_receipt_url: z.array(z.string()).optional(),
   remarks: z.string().optional().nullable(),
+  sender: z.string().optional().nullable().or(z.literal('')),
+  recipient: z.string().optional().nullable().or(z.literal('')),
+  departure: z.string().optional().nullable().or(z.literal('')),
+  destination: z.string().optional().nullable().or(z.literal('')),
 
   total_expense_amount: z.number().min(0),
   currency: z.string().default('JPY'),
@@ -40,12 +46,28 @@ const claimSchemaZod = z.object({
   installment_plan: z.string().optional().nullable(),
   installment_count: z.number().min(1),
   collection_start_month: z.string().min(1, 'Collection start month is required'),
-  monthly_deduction: z.number().min(0)
+  monthly_deduction: z.number().min(0),
+  hasAccountNotification: z.boolean().optional(),
+  supportUpdatedFields: z.array(z.string()).optional()
 });
 
-router.post('/', async (req, res) => {
+router.post('/', requireRole('admin', 'support'), async (req, res) => {
   try {
     const validatedData = claimSchemaZod.parse(req.body);
+
+    const validation = await validateBackendExpenseAmount(
+      validatedData.expense_type, 
+      validatedData.expense_amount, 
+      {
+        sender: validatedData.sender,
+        recipient: validatedData.recipient,
+        departure: validatedData.departure,
+        destination: validatedData.destination
+      }
+    );
+    if (!validation.isValid) {
+      return res.status(400).json({ message: `Entered amount exceeds the suggested amount of ¥${validation.expected.toLocaleString()}` });
+    }
 
     const today = new Date();
     const year = today.getFullYear();
@@ -82,7 +104,7 @@ router.post('/', async (req, res) => {
     res.status(500).json({ message: 'Failed to save claim', error: error.message });
   }
 });
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', requireRole('admin', 'account'), async (req, res) => {
   try {
     const claimId = req.params.id;
     const deletedClaim = await Claim.findByIdAndDelete(claimId);
@@ -95,16 +117,51 @@ router.delete('/:id', async (req, res) => {
     res.status(500).json({ message: 'Server error deleting claim', error: error.message });
   }
 });
-router.patch('/:id/status', async (req, res) => {
+router.put('/:id', requireRole('admin', 'account', 'support'), async (req, res) => {
   try {
-    const { status } = req.body;
+    const validatedData = claimSchemaZod.partial().parse(req.body);
+    const updatedClaim = await Claim.findByIdAndUpdate(
+      req.params.id,
+      validatedData,
+      { new: true, runValidators: true }
+    );
+    if (!updatedClaim) {
+      return res.status(404).json({ message: 'Claim not found' });
+    }
+    res.json(updatedClaim);
+  } catch (error) {
+    console.error('Error updating claim:', error);
+    res.status(500).json({ message: 'Server error updating claim', error: error.message });
+  }
+});
+
+router.patch('/:id/status', requireRole('admin', 'account'), async (req, res) => {
+  try {
+    const { status, statusMessage, newMessage, clearSupportUpdatedFields, hasSupportNotification } = req.body;
     if (!status) {
       return res.status(400).json({ message: 'Status is required' });
     }
     
+    let updateQuery = { $set: { status } };
+    if (statusMessage !== undefined) {
+      updateQuery.$set.statusMessage = statusMessage;
+    }
+    if (clearSupportUpdatedFields) {
+      updateQuery.$set.supportUpdatedFields = [];
+    }
+    if (hasSupportNotification) {
+      updateQuery.$set.hasSupportNotification = true;
+    }
+    
+    if (newMessage) {
+      // Whitelist fields to prevent arbitrary subdocument injection
+      const { text, date, author } = newMessage;
+      updateQuery.$push = { messages: { text, date, author } };
+    }
+
     const updatedClaim = await Claim.findByIdAndUpdate(
       req.params.id,
-      { status },
+      updateQuery,
       { new: true }
     );
     
@@ -116,6 +173,23 @@ router.patch('/:id/status', async (req, res) => {
   } catch (error) {
     console.error('Error updating claim status:', error);
     res.status(500).json({ message: 'Server error updating status' });
+  }
+});
+
+router.patch('/:id/messages/read', async (req, res) => {
+  try {
+    const updatedClaim = await Claim.findOneAndUpdate(
+      { _id: req.params.id },
+      { $set: { "messages.$[].readBySupport": true } },
+      { new: true }
+    );
+    if (!updatedClaim) {
+      return res.status(404).json({ message: 'Claim not found' });
+    }
+    res.json(updatedClaim);
+  } catch (error) {
+    console.error('Error updating read status:', error);
+    res.status(500).json({ message: 'Server error updating read status' });
   }
 });
 
