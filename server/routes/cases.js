@@ -95,7 +95,10 @@ router.post('/', requireRole('admin', 'account'), async (req, res) => {
       validatedData.case_id = `CAS-${year}-${sequenceNumber}`;
     }
 
-    const newCase = new Case(validatedData);
+    const newCase = new Case({
+      ...validatedData,
+      hasSupportNotification: true
+    });
     await newCase.save();
     
     caseEvents.emit('CASE_REGISTERED', newCase);
