@@ -50,7 +50,7 @@ export default function StaffClaimRequest() {
 
   const handleFileClick = (e, fileUrlStr) => {
     const baseUrl = fileUrlStr.split('?')[0];
-    if (baseUrl.match(/\.(jpeg|jpg|gif|png|webp)$/i)) {
+    if (baseUrl.match(/\.(jpeg|jpg|gif|png|webp|pdf)$/i)) {
       e.preventDefault();
       setPreviewImage(fileUrlStr);
     }
@@ -756,11 +756,19 @@ export default function StaffClaimRequest() {
             </div>
             
             <div className="p-4 bg-gray-100/50 flex items-center justify-center min-h-[300px]">
-              <img 
-                src={previewImage} 
-                alt="Preview" 
-                className="max-w-full max-h-[65vh] object-contain rounded border border-gray-200 shadow-sm bg-white"
-              />
+              {previewImage && previewImage.split('?')[0].match(/\.pdf$/i) ? (
+                <iframe
+                  src={previewImage}
+                  title="PDF Preview"
+                  className="w-full h-[65vh] rounded border border-gray-200 shadow-sm bg-white"
+                />
+              ) : (
+                <img 
+                  src={previewImage} 
+                  alt="Preview" 
+                  className="max-w-full max-h-[65vh] object-contain rounded border border-gray-200 shadow-sm bg-white"
+                />
+              )}
             </div>
             
             <div className="px-5 py-4 border-t border-gray-100 bg-white flex justify-end">
