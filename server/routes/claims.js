@@ -38,6 +38,7 @@ const claimSchemaZod = z.object({
   recipient: z.string().optional().nullable().or(z.literal('')),
   departure: z.string().optional().nullable().or(z.literal('')),
   destination: z.string().optional().nullable().or(z.literal('')),
+  transport_method: z.string().optional().nullable().or(z.literal('')),
 
   total_expense_amount: z.number().min(0),
   currency: z.string().default('JPY'),
@@ -63,7 +64,8 @@ router.post('/', requireRole('admin', 'support'), async (req, res) => {
         sender: validatedData.sender,
         recipient: validatedData.recipient,
         departure: validatedData.departure,
-        destination: validatedData.destination
+        destination: validatedData.destination,
+        transport_method: validatedData.transport_method
       }
     );
     if (!validation.isValid) {

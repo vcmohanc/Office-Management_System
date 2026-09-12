@@ -18,9 +18,10 @@ export default function ExpenseSetup() {
 
   const fetchData = async () => {
     try {
+      let fetchedRegions = [];
       const regionsRes = await apiFetch('/api/regions');
       if (regionsRes.ok) {
-        const fetchedRegions = await regionsRes.json();
+        fetchedRegions = await regionsRes.json();
         setRegions(fetchedRegions);
       }
 
@@ -36,7 +37,21 @@ export default function ExpenseSetup() {
       
       if (travelRes.ok) {
         const travelData = await travelRes.json();
-        setTravelCharges(travelData);
+        const transformedData = {};
+        for (const [depId, charges] of Object.entries(travelData)) {
+          transformedData[depId] = {};
+          const depRegion = fetchedRegions.find(r => r._id === depId);
+          for (const [destId, val] of Object.entries(charges)) {
+            const destRegion = fetchedRegions.find(r => r._id === destId);
+            if (typeof val === 'string' || typeof val === 'number') {
+              const isEligible = isFlightEligible(depRegion, destRegion);
+              transformedData[depId][destId] = { bus: String(val), flight: isEligible ? String(val) : '' };
+            } else {
+              transformedData[depId][destId] = val;
+            }
+          }
+        }
+        setTravelCharges(transformedData);
       }
     } catch (err) {
       console.error("Failed to fetch charges:", err);
@@ -46,6 +61,10 @@ export default function ExpenseSetup() {
   useEffect(() => {
     fetchData();
   }, []);
+
+  const isFlightEligible = (dep, dest) => {
+    return true;
+  };
 
   const handleSave = async () => {
     setIsLoading(true);
@@ -78,7 +97,7 @@ export default function ExpenseSetup() {
     }
   };
 
-  const handleChargeChange = (departureId, destinationId, value) => {
+  const handleChargeChange = (departureId, destinationId, value, type) => {
     if (activeTab === 'postal') {
       setPostalCharges(prev => ({
         ...prev,
@@ -88,13 +107,18 @@ export default function ExpenseSetup() {
         }
       }));
     } else {
-      setTravelCharges(prev => ({
-        ...prev,
-        [departureId]: {
-          ...(prev[departureId] || {}),
-          [destinationId]: value
-        }
-      }));
+      setTravelCharges(prev => {
+        const existing = prev[departureId]?.[destinationId];
+        const newObj = (existing && typeof existing === 'object') ? { ...existing } : { bus: existing || '', flight: '' };
+        newObj[type] = value;
+        return {
+          ...prev,
+          [departureId]: {
+            ...(prev[departureId] || {}),
+            [destinationId]: newObj
+          }
+        };
+      });
     }
   };
 
@@ -350,14 +374,40 @@ export default function ExpenseSetup() {
                           key={`${departure._id}-${destination._id}`} 
                           className={`p-2 border border-gray-200 text-center ${isDiagonal ? 'bg-red-50' : 'bg-white'}`}
                         >
-                          {isDiagonal ? (
+                          {isDiagonal && activeTab === 'postal' ? (
                             <span className="text-red-500 font-bold text-sm">なし</span>
+                          ) : activeTab === 'travel' ? (
+                            <div className="flex flex-col space-y-1">
+                              <div className="flex items-center">
+                                <span className="text-gray-500 text-xs w-8 text-left">Bus</span>
+                                <span className="text-gray-500 mx-1">¥</span>
+                                <input
+                                  type="text"
+                                  value={value?.bus || ''}
+                                  onChange={(e) => handleChargeChange(departure._id, destination._id, e.target.value, 'bus')}
+                                  className="w-full text-center p-1 border border-gray-200 rounded text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                                />
+                              </div>
+                              {!isDiagonal && (
+                                <div className={`flex items-center ${!isFlightEligible(departure, destination) ? 'opacity-50' : ''}`}>
+                                  <span className="text-gray-500 text-xs w-8 text-left">Flight</span>
+                                  <span className="text-gray-500 mx-1">¥</span>
+                                  <input
+                                    type="text"
+                                    value={value?.flight || ''}
+                                    onChange={(e) => handleChargeChange(departure._id, destination._id, e.target.value, 'flight')}
+                                    disabled={!isFlightEligible(departure, destination)}
+                                    className="w-full text-center p-1 border border-gray-200 rounded text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100"
+                                  />
+                                </div>
+                              )}
+                            </div>
                           ) : (
                             <div className="flex items-center">
                               <span className="text-gray-500 mr-1">¥</span>
                               <input
                                 type="text"
-                                value={value}
+                                value={typeof value === 'object' ? (value.bus || '') : value}
                                 onChange={(e) => handleChargeChange(departure._id, destination._id, e.target.value)}
                                 className="w-full text-center p-1.5 border border-gray-200 rounded text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
                               />
