@@ -24,7 +24,7 @@ router.get('/postal', async (req, res) => {
 });
 
 // PUT /api/expenses/postal
-router.put('/postal', requireRole('admin'), async (req, res) => {
+router.put('/postal', requireRole('admin', 'account'), async (req, res) => {
   try {
     const matrix = req.body;
     for (const [departureId, charges] of Object.entries(matrix)) {
@@ -59,7 +59,7 @@ router.get('/travel', async (req, res) => {
 });
 
 // PUT /api/expenses/travel
-router.put('/travel', requireRole('admin'), async (req, res) => {
+router.put('/travel', requireRole('admin', 'account'), async (req, res) => {
   try {
     const matrix = req.body;
     for (const [departureId, charges] of Object.entries(matrix)) {
