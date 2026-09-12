@@ -20,6 +20,7 @@ const claimSchema = new mongoose.Schema({
   recipient: { type: String, default: '' },
   departure: { type: String, default: '' },
   destination: { type: String, default: '' },
+  transport_method: { type: String, default: '' },
   bill_receipt_url: [{ type: String }],
   remarks: { type: String, default: '' },
 

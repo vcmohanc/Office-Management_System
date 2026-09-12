@@ -149,15 +149,25 @@ export default function StaffClaimRequest() {
       }
     }
 
-    if (currentExpenseType === 'Transportation Expenses / Flight Fare' && (field === 'departure' || field === 'destination' || field === 'expenseType')) {
+    if (currentExpenseType === 'Transportation Expenses / Flight Fare' && (field === 'departure' || field === 'destination' || field === 'expenseType' || field === 'transportMethod')) {
       const departureName = field === 'departure' ? value : updatedClaims[index].departure;
       const destinationName = field === 'destination' ? value : updatedClaims[index].destination;
+      const method = field === 'transportMethod' ? value : updatedClaims[index].transportMethod;
       if (departureName && destinationName) {
         const departureId = regions.find(r => r.name1 === departureName)?._id;
         const destinationId = regions.find(r => r.name2 === destinationName)?._id;
         if (departureId && destinationId && travelMatrix[departureId] && travelMatrix[departureId][destinationId]) {
           const rawCost = travelMatrix[departureId][destinationId];
-          const numericCost = typeof rawCost === 'string' ? Number(rawCost.replace(/,/g, '')) : rawCost;
+          let numericCost = 0;
+          if (typeof rawCost === 'string' || typeof rawCost === 'number') {
+            numericCost = typeof rawCost === 'string' ? Number(String(rawCost).replace(/,/g, '')) : Number(rawCost);
+          } else if (rawCost && typeof rawCost === 'object') {
+            const busCost = rawCost.bus ? Number(String(rawCost.bus).replace(/,/g, '')) : 0;
+            const flightCost = rawCost.flight ? Number(String(rawCost.flight).replace(/,/g, '')) : 0;
+            if (method === 'Bus') numericCost = busCost;
+            else if (method === 'Flight') numericCost = flightCost;
+            else numericCost = Math.max(busCost, flightCost);
+          }
           updatedClaims[index].suggestedAmount = numericCost || 0;
         } else {
           updatedClaims[index].suggestedAmount = 0;
@@ -277,6 +287,14 @@ export default function StaffClaimRequest() {
                   <option key={r._id} value={r.name2} />
                 ))}
               </datalist>
+            </div>
+            <div className="col-span-2">
+              <label className="block text-sm font-bold text-gray-700 mb-2">Transport Method</label>
+              <select value={claimItem.transportMethod || ''} onChange={(e) => updateClaim(index, 'transportMethod', e.target.value)} className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50]">
+                <option value="">Select method...</option>
+                <option value="Bus">Bus</option>
+                <option value="Flight">Flight</option>
+              </select>
             </div>
             <div className="col-span-2">
               <label className="block text-sm font-bold text-gray-700 mb-2">Reason</label>
@@ -409,10 +427,11 @@ export default function StaffClaimRequest() {
           payment_process_types: claim.advancerName || null,
           bearing_party: claim.bearingParty,
           expense_amount: parseFloat(claim.expenseAmount) || 0,
-          sender: claim.sender || "",
-          recipient: claim.recipient || "",
+          sender: claim.postageFrom || claim.sender || "",
+          recipient: claim.postageTo || claim.recipient || "",
           departure: claim.departure || "",
           destination: claim.destination || "",
+          transport_method: claim.transportMethod || "",
           expense_period_start: claim.expensePeriodStart || null,
           expense_period_end: claim.expensePeriodEnd || null,
           bill_receipt_url: claim.receipts || [],

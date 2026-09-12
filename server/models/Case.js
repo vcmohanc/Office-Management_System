@@ -20,6 +20,7 @@ const caseSchema = new mongoose.Schema({
   recipient: { type: String },
   departure: { type: String },
   destination: { type: String },
+  transport_method: { type: String },
   receipts: [{ type: String }],
   remark: { type: String },
   total_expense: { type: Number, required: true },

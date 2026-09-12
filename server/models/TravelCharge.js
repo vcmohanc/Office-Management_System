@@ -9,7 +9,7 @@ const TravelChargeSchema = new mongoose.Schema({
   },
   charges: {
     type: Map,
-    of: String
+    of: mongoose.Schema.Types.Mixed
   }
 }, {
   timestamps: true

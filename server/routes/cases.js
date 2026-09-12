@@ -28,6 +28,7 @@ const caseSchemaZod = z.object({
   recipient: z.string().optional().nullable().or(z.literal('')),
   departure: z.string().optional().nullable().or(z.literal('')),
   destination: z.string().optional().nullable().or(z.literal('')),
+  transport_method: z.string().optional().nullable().or(z.literal('')),
   receipts: z.array(z.string()).optional(),
   remark: z.string().optional().nullable().or(z.literal('')),
   total_expense: z.number(),
@@ -67,7 +68,8 @@ router.post('/', requireRole('admin', 'account'), async (req, res) => {
         sender: validatedData.sender,
         recipient: validatedData.recipient,
         departure: validatedData.departure,
-        destination: validatedData.destination
+        destination: validatedData.destination,
+        transport_method: validatedData.transport_method
       }
     );
     if (!validation.isValid) {

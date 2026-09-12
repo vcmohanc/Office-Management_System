@@ -27,7 +27,22 @@ export const validateBackendExpenseAmount = async (expenseType, expenseAmount, l
       const charge = await TravelCharge.findOne({ departure: departure._id });
       if (charge && charge.charges && charge.charges.has(destination._id.toString())) {
         const rawCost = charge.charges.get(destination._id.toString());
-        const suggestedAmount = typeof rawCost === 'string' ? Number(rawCost.replace(/,/g, '')) : Number(rawCost);
+        let suggestedAmount = 0;
+        if (typeof rawCost === 'string' || typeof rawCost === 'number') {
+          suggestedAmount = typeof rawCost === 'string' ? Number(String(rawCost).replace(/,/g, '')) : Number(rawCost);
+        } else if (rawCost && typeof rawCost === 'object') {
+          const method = locations.transport_method ? locations.transport_method.toLowerCase() : '';
+          const busRate = rawCost.bus ? Number(String(rawCost.bus).replace(/,/g, '')) : 0;
+          const flightRate = rawCost.flight ? Number(String(rawCost.flight).replace(/,/g, '')) : 0;
+          
+          if (method === 'bus') {
+            suggestedAmount = busRate;
+          } else if (method === 'flight') {
+            suggestedAmount = flightRate;
+          } else {
+            suggestedAmount = Math.max(busRate, flightRate);
+          }
+        }
         if (suggestedAmount > 0 && expenseAmount > suggestedAmount) {
           return { isValid: false, expected: suggestedAmount };
         }
