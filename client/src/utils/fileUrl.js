@@ -19,5 +19,5 @@
 export function fileUrl(filename) {
   const base = import.meta.env.VITE_API_URL || '';
   const token = localStorage.getItem('token') || '';
-  return `${base}/uploads/${encodeURIComponent(filename)}?token=${encodeURIComponent(token)}`;
+  return `${base}/api/uploads/${encodeURIComponent(filename)}?token=${encodeURIComponent(token)}`;
 }

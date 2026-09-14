@@ -37,7 +37,7 @@ app.use(express.json());
 // Authenticated file serving — replaces the public express.static for /uploads.
 // Supports token via Authorization header OR ?token= query param so that
 // browser <a href> and <img src> links (which can't set headers) still work.
-app.get('/uploads/:filename', verifyFileToken, (req, res) => {
+app.get('/api/uploads/:filename', verifyFileToken, (req, res) => {
   const safeFile = path.basename(req.params.filename); // strip any path traversal
   const filePath = path.join(__dirname, 'uploads', safeFile);
 
