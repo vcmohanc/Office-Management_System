@@ -62,7 +62,7 @@ export default function CaseList() {
 
     if (user.role !== 'support' && caseObj.hasAccountNotification) {
       try {
-        const isClaim = caseObj.type === 'Staff Case';
+        const isClaim = caseObj._isClaim;
         const endpoint = isClaim ? `/api/claims/${caseObj._id}` : `/api/cases/${caseObj._id}`;
         await apiFetch(`${endpoint}`, {
           method: 'PUT',
@@ -80,7 +80,7 @@ export default function CaseList() {
     }
     
     if (user.role === 'support' && (caseObj.hasSupportNotification || (caseObj.messages && caseObj.messages.some(m => !m.readBySupport)))) {
-      const isClaim = caseObj.type === 'Staff Case';
+      const isClaim = caseObj._isClaim;
       
       // Clear support notification flag
       if (caseObj.hasSupportNotification) {
@@ -188,7 +188,7 @@ export default function CaseList() {
   };
 
   const handleSaveEdit = async () => {
-    const isClaim = selectedCase.type === 'Staff Case';
+    const isClaim = selectedCase._isClaim;
     const endpoint = isClaim ? `/api/claims/${selectedCase._id}` : `/api/cases/${selectedCase._id}`;
 
     // Map properties back to their correct names based on isClaim
@@ -302,7 +302,7 @@ export default function CaseList() {
       };
     }
 
-    const isClaim = selectedCase.type === 'Staff Case';
+    const isClaim = selectedCase._isClaim;
     const endpoint = isClaim ? `/api/claims/${selectedCase._id}/status` : `/api/cases/${selectedCase._id}/status`;
 
     // Update main list
@@ -339,7 +339,7 @@ export default function CaseList() {
     e.stopPropagation();
     if (!window.confirm(`Are you sure you want to delete ${record.displayId}?`)) return;
 
-    const isClaim = record.type === 'Staff Case';
+    const isClaim = record._isClaim;
     const endpoint = isClaim ? `/api/claims/${record._id}` : `/api/cases/${record._id}`;
 
     try {
@@ -383,6 +383,7 @@ export default function CaseList() {
   // Map Cases
   const mappedCases = cases.filter(filterOldRejected).map(c => ({
     ...c,
+    _isClaim: false,
     type: c.case_type || 'Office Case',
     displayId: c.case_id || c.caseId || `#CAS-${(c._id || '').slice(-6).toUpperCase()}`,
     displayDate: new Date(c.expensePeriodStart || c.expense_period_start || c.createdAt).toLocaleDateString('en-US'),
@@ -395,6 +396,7 @@ export default function CaseList() {
   // Map Claims
   const mappedClaims = claims.filter(filterOldRejected).map(c => ({
     ...c,
+    _isClaim: true,
     type: 'Staff Case',
     displayId: c.claim_id || c.claimId || `#CLM-${(c._id || '').slice(-6).toUpperCase()}`,
     displayDate: new Date(c.expensePeriodStart || c.expense_period_start || c.createdAt).toLocaleDateString('en-US'),
@@ -411,9 +413,9 @@ export default function CaseList() {
 
   const allRecords = [...preApprovalCases, ...preApprovalClaims];
 
-  const officeCasesCount = preApprovalCases.filter(c => c.type === 'Office Case').length;
-  const staffCasesCount = preApprovalClaims.length;
-  const hostCompanyCasesCount = preApprovalCases.filter(c => c.type === 'Host Company Case').length;
+  const officeCasesCount = allRecords.filter(c => c.type === 'Office Case').length;
+  const staffCasesCount = allRecords.filter(c => c.type === 'Staff Case').length;
+  const hostCompanyCasesCount = allRecords.filter(c => c.type === 'Host Company Case').length;
 
   const hasOfficeNotification = preApprovalCases.some(c => 
     c.type === 'Office Case' && (
