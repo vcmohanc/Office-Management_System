@@ -229,8 +229,16 @@ router.post('/:id/settle', requireRole('admin', 'account'), async (req, res) => 
     // Update case status and installment progress
     existingCase.paidTerms = (existingCase.paidTerms || 0) + 1;
     
-    // Parse total terms from installmentPlan (e.g. "12 months" -> 12)
-    const totalTerms = existingCase.installmentPlan ? (existingCase.installmentPlan.match(/\d+/) ? parseInt(existingCase.installmentPlan.match(/\d+/)[0], 10) : 1) || 1 : 1;
+    // Find next pending record and mark it DEDUCTED
+    if (existingCase.installment_records && existingCase.installment_records.length > 0) {
+      const nextPending = existingCase.installment_records.find(r => r.status === 'PENDING');
+      if (nextPending) {
+        nextPending.status = 'DEDUCTED';
+      }
+    }
+
+    // Parse total terms
+    const totalTerms = existingCase.installment_count || (existingCase.installmentPlan ? (existingCase.installmentPlan.match(/\d+/) ? parseInt(existingCase.installmentPlan.match(/\d+/)[0], 10) : 1) : 1);
     
     if (existingCase.paidTerms >= totalTerms) {
       existingCase.status = 'Completed';
@@ -274,6 +282,43 @@ router.patch('/:id/messages/read', async (req, res) => {
   } catch (error) {
     console.error('Error updating read status:', error);
     res.status(500).json({ message: 'Server error updating read status' });
+  }
+});
+
+router.post('/:id/deduct-term', requireRole('admin', 'account'), async (req, res) => {
+  try {
+    const caseId = req.params.id;
+    const existingCase = await Case.findById(caseId);
+    if (!existingCase) {
+      return res.status(404).json({ message: 'Case not found' });
+    }
+
+    // Increment paidTerms
+    existingCase.paidTerms = (existingCase.paidTerms || 0) + 1;
+    
+    // Find next pending record and mark it DEDUCTED
+    if (existingCase.installment_records && existingCase.installment_records.length > 0) {
+      const nextPending = existingCase.installment_records.find(r => r.status === 'PENDING');
+      if (nextPending) {
+        nextPending.status = 'DEDUCTED';
+      }
+    }
+
+    // Recalculate pending terms
+    const totalTerms = existingCase.installment_count || 1;
+    if (existingCase.paidTerms >= totalTerms) {
+      existingCase.status = 'Completed';
+    } else {
+      existingCase.status = 'Processing';
+    }
+
+    await existingCase.save();
+    caseEvents.emit('CASE_UPDATED', existingCase);
+
+    res.status(200).json({ message: 'Term deducted successfully', case: existingCase });
+  } catch (error) {
+    console.error('Error deducting term:', error);
+    res.status(500).json({ message: 'Server error deducting term', error: error.message });
   }
 });
 

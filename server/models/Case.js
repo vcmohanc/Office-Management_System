@@ -39,6 +39,12 @@ const caseSchema = new mongoose.Schema({
   bouncedCount: { type: Number, default: 0 },
   nextPaymentDate: { type: Date },
   nextPaymentAmount: { type: Number },
+  installment_records: [{
+    term_number: Number,
+    due_date: Date,
+    amount: Number,
+    status: { type: String, enum: ['PENDING', 'DEDUCTED', 'SKIPPED'], default: 'PENDING' }
+  }],
   status: { type: String, default: 'Pending' },
   statusMessage: { type: String, default: '' },
   messages: [{

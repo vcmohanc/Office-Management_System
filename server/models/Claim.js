@@ -33,6 +33,13 @@ const claimSchema = new mongoose.Schema({
   installment_count: { type: Number, required: true },
   collection_start_month: { type: String, required: true },
   monthly_deduction: { type: Number, required: true },
+  paidTerms: { type: Number, default: 0 },
+  installment_records: [{
+    term_number: Number,
+    due_date: Date,
+    amount: Number,
+    status: { type: String, enum: ['PENDING', 'DEDUCTED', 'SKIPPED'], default: 'PENDING' }
+  }],
   status: { type: String, default: 'Pending' },
   statusMessage: { type: String, default: '' },
   messages: [{

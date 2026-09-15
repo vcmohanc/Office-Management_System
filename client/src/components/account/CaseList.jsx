@@ -14,7 +14,7 @@ export default function CaseList() {
   // SSE Subscription
   useEffect(() => {
     const token = localStorage.getItem('token');
-    const sse = new EventSource(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/events?token=${token}`);
+    const sse = new EventSource(`${import.meta.env.VITE_API_URL || 'http://localhost:5001'}/api/events?token=${token}`);
 
     sse.addEventListener('CASE_REGISTERED', (e) => {
       const newRecord = JSON.parse(e.data);
