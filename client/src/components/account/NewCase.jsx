@@ -364,8 +364,7 @@ export default function NewCase() {
             <div>
               <label className="block text-sm font-bold text-gray-700 mb-2">Date Used</label>
               <div className="relative">
-                <input type="text" value={caseItem.dateUsed || ''} onChange={(e) => updateCase(index, 'dateUsed', e.target.value)} placeholder="YYYY / MM / DD" className="w-full pl-4 pr-10 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50]" />
-                <Calendar className="w-4 h-4 absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-800" />
+                <input type="date" value={caseItem.dateUsed || ''} onChange={(e) => updateCase(index, 'dateUsed', e.target.value)} className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50] text-gray-600" />
               </div>
             </div>
             <div>
@@ -388,15 +387,13 @@ export default function NewCase() {
             <div>
               <label className="block text-sm font-bold text-gray-700 mb-2">Usage Start Date</label>
               <div className="relative">
-                <input type="text" value={caseItem.dormitoryStartDate || ''} onChange={(e) => updateCase(index, 'dormitoryStartDate', e.target.value)} placeholder="YYYY / MM / DD" className="w-full pl-4 pr-10 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50]" />
-                <Calendar className="w-4 h-4 absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-800" />
+                <input type="date" value={caseItem.dormitoryStartDate || ''} onChange={(e) => updateCase(index, 'dormitoryStartDate', e.target.value)} className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50] text-gray-600" />
               </div>
             </div>
             <div>
               <label className="block text-sm font-bold text-gray-700 mb-2">Usage End Date</label>
               <div className="relative">
-                <input type="text" value={caseItem.dormitoryEndDate || ''} onChange={(e) => updateCase(index, 'dormitoryEndDate', e.target.value)} placeholder="YYYY / MM / DD" className="w-full pl-4 pr-10 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50]" />
-                <Calendar className="w-4 h-4 absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-800" />
+                <input type="date" value={caseItem.dormitoryEndDate || ''} onChange={(e) => updateCase(index, 'dormitoryEndDate', e.target.value)} className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50] text-gray-600" />
               </div>
             </div>
           </div>
@@ -407,8 +404,7 @@ export default function NewCase() {
             <div>
               <label className="block text-sm font-bold text-gray-700 mb-2">Consultation Date</label>
               <div className="relative">
-                <input type="text" value={caseItem.consultationDate || ''} onChange={(e) => updateCase(index, 'consultationDate', e.target.value)} placeholder="YYYY / MM / DD" className="w-full pl-4 pr-10 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50]" />
-                <Calendar className="w-4 h-4 absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-800" />
+                <input type="date" value={caseItem.consultationDate || ''} onChange={(e) => updateCase(index, 'consultationDate', e.target.value)} className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50] text-gray-600" />
               </div>
             </div>
             <div>
@@ -435,8 +431,7 @@ export default function NewCase() {
             <div>
               <label className="block text-sm font-bold text-gray-700 mb-2">Purchase Date</label>
               <div className="relative">
-                <input type="text" value={caseItem.purchaseDate || ''} onChange={(e) => updateCase(index, 'purchaseDate', e.target.value)} placeholder="YYYY / MM / DD" className="w-full pl-4 pr-10 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50]" />
-                <Calendar className="w-4 h-4 absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-800" />
+                <input type="date" value={caseItem.purchaseDate || ''} onChange={(e) => updateCase(index, 'purchaseDate', e.target.value)} className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50] text-gray-600" />
               </div>
             </div>
             <div className="col-span-2">
@@ -455,8 +450,7 @@ export default function NewCase() {
             <div>
               <label className="block text-sm font-bold text-gray-700 mb-2">Usage Start Date</label>
               <div className="relative">
-                <input type="text" value={caseItem.wifiStartDate || ''} onChange={(e) => updateCase(index, 'wifiStartDate', e.target.value)} placeholder="YYYY / MM / DD" className="w-full pl-4 pr-10 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50]" />
-                <Calendar className="w-4 h-4 absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-800" />
+                <input type="date" value={caseItem.wifiStartDate || ''} onChange={(e) => updateCase(index, 'wifiStartDate', e.target.value)} className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50] text-gray-600" />
               </div>
             </div>
           </div>
@@ -704,13 +698,11 @@ export default function NewCase() {
               <label className="block text-sm font-bold text-gray-700 mb-2">Expense Period</label>
               <div className="flex items-center space-x-2">
                 <div className="relative flex-1">
-                  <input type="text" placeholder="YYYY / MM / DD" className="w-full pl-4 pr-10 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50]" />
-                  <Calendar className="w-4 h-4 absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-800" />
+                  <input type="date" value={caseItem.expensePeriodStart || ''} onChange={(e) => updateCase(index, 'expensePeriodStart', e.target.value)} className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50] text-gray-600" />
                 </div>
                 <span className="text-gray-500">-</span>
                 <div className="relative flex-1">
-                  <input type="text" placeholder="YYYY / MM / DD" className="w-full pl-4 pr-10 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50]" />
-                  <Calendar className="w-4 h-4 absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-800" />
+                  <input type="date" value={caseItem.expensePeriodEnd || ''} onChange={(e) => updateCase(index, 'expensePeriodEnd', e.target.value)} className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50] text-gray-600" />
                 </div>
               </div>
               <p className="text-xs text-gray-400 mt-2 leading-tight">Note: Claims are typically processed for expenses between the 11th and 27th of the month.</p>

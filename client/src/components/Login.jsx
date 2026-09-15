@@ -11,13 +11,24 @@ export default function Login({ setToken }) {
   const handleLogin = async (e) => {
     e.preventDefault();
     try {
-      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/auth/login`, {
+      const apiUrl = import.meta.env.VITE_API_URL || '';
+      const res = await fetch(`${apiUrl}/api/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username, password }),
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error);
+      
+      const text = await res.text();
+      let data = {};
+      try {
+        if (text) data = JSON.parse(text);
+      } catch (err) {
+        throw new Error(`Server returned invalid response (HTTP ${res.status}).`);
+      }
+
+      if (!res.ok) {
+        throw new Error(data.error || data.message || `Login failed (HTTP ${res.status})`);
+      }
 
       localStorage.setItem('token', data.token);
       localStorage.setItem('user', JSON.stringify(data.user));

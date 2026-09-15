@@ -4,6 +4,7 @@ import Claim from '../models/Claim.js';
 import { requireRole } from '../middleware/auth.js';
 import { validateBackendExpenseAmount } from '../utils/amountHelper.js';
 import { caseEvents } from '../events.js';
+import Settlement from '../models/Settlement.js';
 
 const router = express.Router();
 
@@ -197,6 +198,123 @@ router.patch('/:id/messages/read', async (req, res) => {
   } catch (error) {
     console.error('Error updating read status:', error);
     res.status(500).json({ message: 'Server error updating read status' });
+  }
+});
+
+router.post('/:id/deduct-term', requireRole('admin', 'account'), async (req, res) => {
+  try {
+    const claimId = req.params.id;
+    const existingClaim = await Claim.findById(claimId);
+    if (!existingClaim) {
+      return res.status(404).json({ message: 'Claim not found' });
+    }
+
+    // Increment paidTerms
+    existingClaim.paidTerms = (existingClaim.paidTerms || 0) + 1;
+    
+    // Find next pending record and mark it DEDUCTED
+    if (existingClaim.installment_records && existingClaim.installment_records.length > 0) {
+      const nextPending = existingClaim.installment_records.find(r => r.status === 'PENDING');
+      if (nextPending) {
+        nextPending.status = 'DEDUCTED';
+      }
+    }
+
+    // Recalculate pending terms
+    const totalTerms = existingClaim.installment_count || 1;
+    if (existingClaim.paidTerms >= totalTerms) {
+      existingClaim.status = 'Completed';
+    } else {
+      existingClaim.status = 'Processing';
+    }
+
+    await existingClaim.save();
+    caseEvents.emit('CASE_UPDATED', existingClaim);
+
+    res.status(200).json({ message: 'Term deducted successfully', claim: existingClaim });
+  } catch (error) {
+    console.error('Error deducting term:', error);
+    res.status(500).json({ message: 'Server error deducting term', error: error.message });
+  }
+});
+
+// Create a settlement for a claim
+router.post('/:id/settle', requireRole('admin', 'account'), async (req, res) => {
+  try {
+    const claimId = req.params.id;
+    const {
+      processedBy,
+      payeeName,
+      paymentMethod,
+      destinationDetails,
+      financials,
+      transactionRefId,
+      paymentDate,
+      proofDocument,
+      isConfirmed
+    } = req.body;
+
+    if (!isConfirmed) {
+      return res.status(400).json({ message: 'Settlement must be confirmed' });
+    }
+
+    // Verify claim exists
+    const existingClaim = await Claim.findById(claimId);
+    if (!existingClaim) {
+      return res.status(404).json({ message: 'Claim not found' });
+    }
+
+    // Verify financials with floating point tolerance
+    const calculatedNet = financials.claimAmount - (financials.deductions || 0);
+    if (Math.abs(calculatedNet - financials.netPayable) > 0.01) {
+      return res.status(400).json({ message: 'Net payable mismatch' });
+    }
+
+    const settlement = new Settlement({
+      caseId: claimId,
+      processedBy,
+      payeeName,
+      paymentMethod,
+      destinationDetails,
+      financials,
+      transactionRefId,
+      paymentDate,
+      proofDocument,
+      isConfirmed,
+      auditLog: [{
+        action: 'Settlement Created',
+        user: processedBy
+      }]
+    });
+
+    await settlement.save();
+
+    // Update claim status and installment progress
+    existingClaim.paidTerms = (existingClaim.paidTerms || 0) + 1;
+    
+    // Find next pending record and mark it DEDUCTED
+    if (existingClaim.installment_records && existingClaim.installment_records.length > 0) {
+      const nextPending = existingClaim.installment_records.find(r => r.status === 'PENDING');
+      if (nextPending) {
+        nextPending.status = 'DEDUCTED';
+      }
+    }
+
+    // Parse total terms from installment_count
+    const totalTerms = existingClaim.installment_count || 1;
+    
+    if (existingClaim.paidTerms >= totalTerms) {
+      existingClaim.status = 'Completed';
+    } else {
+      existingClaim.status = 'Processing';
+    }
+    
+    await existingClaim.save();
+
+    res.status(201).json({ message: 'Settlement processed successfully', settlement });
+  } catch (error) {
+    console.error('Error processing settlement:', error);
+    res.status(500).json({ message: 'Server error processing settlement', error: error.message });
   }
 });
 

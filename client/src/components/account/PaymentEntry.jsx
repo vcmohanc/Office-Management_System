@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react';
 import { apiFetch } from '../../utils/apiFetch.js';
+import { jsPDF } from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
-import { Landmark, Users, Briefcase, ArrowRight, ArrowLeft, Building2, Building, AlertTriangle } from 'lucide-react';
+import { Landmark, Users, Briefcase, ArrowRight, ArrowLeft, Building2, Building, AlertTriangle, Trash2, Download, Printer } from 'lucide-react';
 
 // Removed mockPaymentRecords
 export default function PaymentEntry() {
@@ -100,6 +102,236 @@ export default function PaymentEntry() {
     }
   };
 
+  const handleDeleteRecord = async (record) => {
+    if (!window.confirm(`Are you sure you want to delete ${record.id}?`)) return;
+    try {
+      const endpoint = record.originalCase.advancerCategory === 'Staff' ? `/api/claims/${record.rawId}` : `/api/cases/${record.rawId}`;
+      const response = await apiFetch(endpoint, { method: 'DELETE' });
+      if (response.ok) {
+        setCases(cases.filter(c => c._id !== record.rawId));
+        alert('Record deleted successfully');
+      } else {
+        const err = await response.json();
+        alert(`Error: ${err.message}`);
+      }
+    } catch (e) {
+      alert('Network error during deletion');
+    }
+  };
+
+  const handleDownloadPDF = async (record) => {
+    try {
+      // Use existing case details and fetch settlements
+      const caseData = record.originalCase;
+      
+      const settlementsRes = await apiFetch(`/api/settlements/case/${record.rawId}`);
+      const settlements = settlementsRes.ok ? await settlementsRes.json() : [];
+
+      const doc = new jsPDF();
+      
+      // Constants & Colors
+      const primaryColor = [22, 45, 80]; // #162D50
+      const accentColor = [100, 100, 100];
+      const pageHeight = doc.internal.pageSize.height;
+      
+      // Header - Card Style
+      let title = 'Client Payment';
+      let subtitle = 'Record incoming payments from clients for services rendered.';
+      let catColor = [22, 45, 80]; // Blue
+      let iconColor = [230, 240, 255]; 
+      
+      const cat = caseData.advancerCategory || '';
+      if (cat.toLowerCase().includes('staff')) {
+        title = 'Staff Payment / Advance';
+        subtitle = 'Process salary, advances, or expense reimbursements for staff.';
+        catColor = [30, 130, 70]; // Green
+        iconColor = [220, 245, 225];
+      } else if (cat.toLowerCase().includes('vendor') || cat.toLowerCase().includes('host')) {
+        title = 'Vendor / Host Company';
+        subtitle = 'Process payments to external vendors or host companies.';
+        catColor = [200, 100, 30]; // Orange
+        iconColor = [255, 235, 220];
+      } else if (cat.toLowerCase().includes('vc')) {
+        title = 'VC Fund Transfer';
+        subtitle = 'Log fund transfers and recoveries related to VC fund management.';
+        catColor = [130, 50, 180]; // Purple
+        iconColor = [245, 230, 255];
+      }
+      
+      // Draw Card Border
+      doc.setDrawColor(220, 220, 220);
+      doc.setFillColor(255, 255, 255);
+      doc.roundedRect(14, 15, 182, 24, 2, 2, 'FD');
+      
+      // Draw Icon Box
+      doc.setFillColor(...iconColor);
+      doc.roundedRect(18, 19, 12, 12, 2, 2, 'F');
+      
+      // Draw Text
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(12);
+      doc.setTextColor(30, 30, 30);
+      doc.text(title, 34, 24);
+      
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(8);
+      doc.setTextColor(120, 120, 120);
+      doc.text(subtitle, 34, 30);
+      
+      // Document meta info
+      doc.setFontSize(8);
+      doc.text(`Generated: ${new Date().toLocaleString()}`, 14, 45);
+      doc.text(`Document ID: REF-${Date.now().toString().slice(-6)}`, 142, 45);
+      
+      let nextY = 50;
+      
+      const addSectionHeader = (title, y) => {
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(10);
+        doc.setTextColor(...primaryColor);
+        doc.text(title, 14, y);
+        return y + 4;
+      };
+
+      // 1. CASE DETAILS
+      nextY = addSectionHeader('CASE DETAILS', nextY);
+      autoTable(doc, {
+        startY: nextY,
+        theme: 'plain',
+        styles: { fontSize: 10, cellPadding: 3 },
+        columnStyles: { 0: { fontStyle: 'bold', textColor: accentColor, cellWidth: 50 } },
+        body: [
+          ['Case ID:', record.id],
+          ['Staff ID:', caseData.staffId || 'N/A'],
+          ['Staff Name:', caseData.staffName || caseData.advancerName || 'N/A'],
+          ['Expense Type:', caseData.expenseType || 'N/A'],
+          ['Category:', caseData.advancerCategory || 'N/A']
+        ]
+      });
+      nextY = doc.lastAutoTable.finalY + 6;
+
+      // 2. PAYMENT PROGRESS & FINANCIAL SUMMARY
+      nextY = addSectionHeader('FINANCIAL & PROGRESS SUMMARY', nextY);
+      
+      const totalTerms = caseData.installment_count || (caseData.installmentPlan ? (caseData.installmentPlan.match(/\d+/) ? parseInt(caseData.installmentPlan.match(/\d+/)[0], 10) : 1) : 1);
+      const finalTotal = caseData.finalTotal || caseData.totalExpense || 0;
+      const nextPaymentAmount = caseData.nextPaymentAmount || Math.round(finalTotal / totalTerms);
+      const remainingBalance = Math.max(0, finalTotal - ((caseData.paidTerms || 0) * nextPaymentAmount));
+
+      autoTable(doc, {
+        startY: nextY,
+        theme: 'grid',
+        headStyles: { fillColor: primaryColor, textColor: 255, fontSize: 10 },
+        styles: { fontSize: 10, cellPadding: 4 },
+        head: [['Base Claim Amount', 'Status', 'Installment Plan', 'Terms Paid', 'Remaining Balance']],
+        body: [
+          [
+            `${caseData.currency === 'JPY' ? '¥' : '$'}${finalTotal.toLocaleString()}`,
+            caseData.status || 'N/A',
+            caseData.installmentPlan || caseData.installment_plan || 'N/A',
+            `${caseData.paidTerms || 0} / ${totalTerms}`,
+            `${caseData.currency === 'JPY' ? '¥' : '$'}${remainingBalance.toLocaleString()}`
+          ]
+        ]
+      });
+      nextY = doc.lastAutoTable.finalY + 6;
+
+      // 3. SETTLEMENT DETAILS
+      nextY = addSectionHeader('SETTLEMENT DETAILS', nextY);
+      autoTable(doc, {
+        startY: nextY,
+        theme: 'plain',
+        styles: { fontSize: 10, cellPadding: 3 },
+        columnStyles: { 0: { fontStyle: 'bold', textColor: accentColor, cellWidth: 50 } },
+        body: [
+          ['Settlement Method:', caseData.advancerCategory === 'Staff' ? (caseData.settlement_method || caseData.settlementMethod || 'N/A') : (caseData.collection_method || caseData.collectionMethod || 'N/A')],
+          ['Start Month:', caseData.collection_start_month || caseData.collectionStartMonth || 'N/A']
+        ]
+      });
+      nextY = doc.lastAutoTable.finalY + 6;
+
+      // 4. TRANSACTION DETAILS
+      nextY = addSectionHeader('TRANSACTION DETAILS', nextY);
+      
+      const transactionsBody = Array.from({ length: totalTerms }).map((_, index) => {
+        const settlement = settlements[index];
+        return [
+          `Term ${index + 1}/${totalTerms}`,
+          settlement ? new Date(settlement.paymentDate).toLocaleDateString() : '-',
+          `${caseData.currency === 'JPY' ? '¥' : '$'}${nextPaymentAmount.toLocaleString()}`,
+          settlement ? 'Paid' : 'Pending',
+          settlement ? (settlement.destinationDetails?.bankName || 'N/A') : '-',
+          settlement ? (settlement.destinationDetails?.accountNumber || 'N/A') : '-',
+          settlement ? (settlement.transactionRefId || 'N/A') : '-'
+        ];
+      });
+
+      autoTable(doc, {
+        startY: nextY,
+        theme: 'striped',
+        headStyles: { fillColor: primaryColor, textColor: 255, fontSize: 9 },
+        styles: { fontSize: 9, cellPadding: 3 },
+        head: [['Term', 'Date', 'Amount', 'Status', 'Bank', 'Account', 'Ref No.']],
+        body: transactionsBody
+      });
+      
+      // Footer
+      const totalPages = doc.internal.getNumberOfPages();
+      for (let i = 1; i <= totalPages; i++) {
+        doc.setPage(i);
+        doc.setFontSize(8);
+        doc.setTextColor(150);
+        doc.text(`Page ${i} of ${totalPages}`, 196, pageHeight - 10, { align: 'right' });
+        doc.text('This document is system-generated and valid without signature.', 14, pageHeight - 10);
+      }
+
+      doc.save(`${record.id}_Payment_Ledger.pdf`);
+    } catch (e) {
+      console.error(e);
+      alert('Error fetching settlement details for PDF extraction.');
+    }
+  };
+
+  const handlePrintRecord = async (record) => {
+    try {
+      const response = await apiFetch(`/api/settlements/case/${record.rawId}`);
+      const settlements = response.ok ? await response.json() : [];
+      const latestSettlement = settlements.length > 0 ? settlements[0] : null;
+
+      const printWindow = window.open('', '_blank');
+      printWindow.document.write(`
+        <html>
+          <head>
+            <title>Print - ${record.id}</title>
+            <style>
+              body { font-family: sans-serif; padding: 20px; color: #333; }
+              table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+              th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
+              th { background-color: #f8f9fa; width: 30%; font-weight: bold; }
+              h2 { color: #162D50; border-bottom: 2px solid #162D50; padding-bottom: 10px; }
+            </style>
+          </head>
+          <body>
+            <h2>Payment Record: ${record.id}</h2>
+            <table>
+              <tr><th>Name</th><td>${latestSettlement ? latestSettlement.payeeName : record.name}</td></tr>
+              <tr><th>Payment Method</th><td>${latestSettlement ? latestSettlement.paymentMethod : 'N/A'}</td></tr>
+              <tr><th>Transaction Ref ID</th><td>${latestSettlement && latestSettlement.transactionRefId ? latestSettlement.transactionRefId : 'N/A'}</td></tr>
+              <tr><th>Net Payable</th><td>¥${latestSettlement ? latestSettlement.financials.netPayable.toLocaleString() : '0'}</td></tr>
+              <tr><th>Payment Date</th><td>${latestSettlement ? new Date(latestSettlement.paymentDate).toLocaleDateString() : 'N/A'}</td></tr>
+            </table>
+            <script>
+              window.onload = () => { window.print(); window.close(); }
+            </script>
+          </body>
+        </html>
+      `);
+      printWindow.document.close();
+    } catch (e) {
+      alert('Error fetching settlement details for printing.');
+    }
+  };
+
   useEffect(() => {
     Promise.all([
       apiFetch('/api/cases').then(res => res.json()).catch(() => []),
@@ -110,7 +342,8 @@ export default function PaymentEntry() {
         advancerCategory: c.advancerCategory || 'Office',
         finalTotal: c.finalTotal || c.totalExpense || c.final_total_amount || 0,
         staffId: c.staffId || c.staff_id || 'N/A',
-        staffName: c.staffName || c.staff_name || 'N/A'
+        staffName: c.staffName || c.staff_name || 'N/A',
+        expenseType: c.expenseType || c.expense_type || 'N/A'
       }));
 
       const mappedClaims = claimsData.map(c => ({
@@ -119,7 +352,7 @@ export default function PaymentEntry() {
         finalTotal: c.totalExpenseAmount || c.total_expense_amount || 0,
         staffId: c.staffId || c.staff_id || 'N/A',
         staffName: c.fullName || c.full_name || 'N/A',
-        expenseType: c.expenseType || 'Claim',
+        expenseType: c.expenseType || c.expense_type || 'Claim',
         expensePeriodStart: c.expensePeriodStart || c.expense_period_start || c.createdAt,
         expensePeriodEnd: c.expensePeriodEnd || c.expense_period_end || c.createdAt,
       }));
@@ -184,7 +417,7 @@ export default function PaymentEntry() {
     );
 
     const mappedRecords = relatedCases.map(c => {
-      const totalTerms = c.installmentPlan ? (c.installmentPlan.match(/\d+/) ? parseInt(c.installmentPlan.match(/\d+/)[0], 10) : 1) : 1;
+      const totalTerms = c.installment_count || (c.installmentPlan ? (c.installmentPlan.match(/\d+/) ? parseInt(c.installmentPlan.match(/\d+/)[0], 10) : 1) : 1);
       const paidTerms = c.paidTerms || 0;
       const nextPaymentAmount = c.nextPaymentAmount || (c.finalTotal || c.totalExpense || 0) / totalTerms;
       const remainingBalance = (c.finalTotal || c.totalExpense || 0) - (paidTerms * nextPaymentAmount);
@@ -192,12 +425,13 @@ export default function PaymentEntry() {
       // Status mapping based on overdue logic
       let status = 'On Track';
       if (c.bouncedCount > 0) status = 'Overdue';
-      else if (paidTerms === totalTerms) status = 'Completed';
+      else if (paidTerms === totalTerms) status = 'Paid';
       else if (paidTerms >= totalTerms - 1 && totalTerms > 1) status = 'Near Completion';
       
       return {
         id: `${c.advancerCategory === 'Staff' ? '#CLM-' : '#CAS-'}${c._id.slice(-6).toUpperCase()}`,
         rawId: c._id,
+        staffId: c.staffId || 'N/A',
         name: c.staffName || c.advancerName || 'Unknown',
         paymentTerm: c.installmentPlan || 'N/A',
         paidTerms,
@@ -207,10 +441,13 @@ export default function PaymentEntry() {
         bouncedCount: c.bouncedCount || 0,
         remainingBalance: Math.max(0, remainingBalance),
         status,
+        expenseType: c.expenseType || 'N/A',
         originalCase: c
       };
-    });
+    }).filter(r => r.paidTerms > 0);
     
+    const hasBouncedPayments = mappedRecords.some(r => r.bouncedCount > 0);
+
     return (
       <div className="w-full px-4 sm:px-6 lg:px-8 xl:px-12 pb-10">
         <button 
@@ -258,10 +495,11 @@ export default function PaymentEntry() {
                     />
                   </th>
                   <th className="py-4 px-6">Staff ID & Name</th>
+                  <th className="py-4 px-6">Expense Type</th>
                   <th className="py-4 px-6">Payment Term</th>
                   <th className="py-4 px-6">Progress</th>
-                  <th className="py-4 px-6">Next Payment</th>
-                  <th className="py-4 px-6 text-center">Bounced</th>
+                  <th className="py-4 px-6">Next Payment / Total Paid</th>
+                  {hasBouncedPayments && <th className="py-4 px-6 text-center">Bounced</th>}
                   <th className="py-4 px-6 text-right">Remaining Balance</th>
                   <th className="py-4 px-6 text-center">Status</th>
                   <th className="py-4 px-6 text-right">Action</th>
@@ -308,7 +546,11 @@ export default function PaymentEntry() {
                       </td>
                       <td className="py-4 px-6">
                         <div className="font-bold text-[#162D50]">{record.id}</div>
-                        <div className="text-xs text-gray-500 mt-0.5">{record.name}</div>
+                        <div className="text-xs font-semibold text-gray-600 mt-1">{record.staffId}</div>
+                        <div className="text-xs text-gray-500">{record.name}</div>
+                      </td>
+                      <td className="py-4 px-6 text-gray-700 font-medium">
+                        {record.expenseType}
                       </td>
                       <td className="py-4 px-6 text-gray-700 font-medium">
                         {record.paymentTerm}
@@ -322,23 +564,38 @@ export default function PaymentEntry() {
                         </div>
                       </td>
                       <td className="py-4 px-6">
-                        <div className={`font-medium ${isOverdue || isActionRequired ? 'text-rose-600 font-bold' : 'text-gray-700'}`}>
-                          ¥{record.nextPaymentAmount.toLocaleString()}
-                        </div>
-                        <div className={`text-xs mt-0.5 ${isOverdue || isActionRequired ? 'text-rose-500' : 'text-gray-500'}`}>
-                          {record.nextPaymentDate}
-                        </div>
-                      </td>
-                      <td className="py-4 px-6 text-center">
-                        {record.bouncedCount === 0 ? (
-                          <span className="text-gray-400">-</span>
+                        {record.status === 'Paid' ? (
+                          <>
+                            <div className="font-medium text-green-600 font-bold">
+                              ¥{(record.originalCase.finalTotal || record.originalCase.totalExpense || 0).toLocaleString()}
+                            </div>
+                            <div className="text-xs mt-0.5 text-green-500 font-bold uppercase tracking-wider">
+                              Total Paid
+                            </div>
+                          </>
                         ) : (
-                          <div className="inline-flex items-center px-2 py-1 bg-red-50 border border-red-100 rounded-md text-red-600 text-xs font-bold">
-                            <AlertTriangle className="w-3 h-3 mr-1" />
-                            {record.bouncedCount} item(s)
-                          </div>
+                          <>
+                            <div className={`font-medium ${isOverdue || isActionRequired ? 'text-rose-600 font-bold' : 'text-gray-700'}`}>
+                              ¥{Math.round(record.nextPaymentAmount).toLocaleString()}
+                            </div>
+                            <div className={`text-xs mt-0.5 ${isOverdue || isActionRequired ? 'text-rose-500' : 'text-gray-500'}`}>
+                              {record.nextPaymentDate}
+                            </div>
+                          </>
                         )}
                       </td>
+                      {hasBouncedPayments && (
+                        <td className="py-4 px-6 text-center">
+                          {record.bouncedCount === 0 ? (
+                            <span className="text-gray-400">-</span>
+                          ) : (
+                            <div className="inline-flex items-center px-2 py-1 bg-red-50 border border-red-100 rounded-md text-red-600 text-xs font-bold">
+                              <AlertTriangle className="w-3 h-3 mr-1" />
+                              {record.bouncedCount} item(s)
+                            </div>
+                          )}
+                        </td>
+                      )}
                       <td className="py-4 px-6 text-right font-bold text-[#162D50]">
                         ¥{record.remainingBalance.toLocaleString()}
                       </td>
@@ -348,12 +605,31 @@ export default function PaymentEntry() {
                         </span>
                       </td>
                       <td className="py-4 px-6 text-right">
-                        <button 
-                          onClick={() => setSelectedCaseToProcess(record.originalCase)}
-                          className="text-[#162D50] font-bold hover:underline text-xs bg-gray-100 px-3 py-1 rounded-md hover:bg-gray-200 transition-colors"
-                        >
-                          Process
-                        </button>
+                        {record.status === 'Paid' ? (
+                          <div className="flex items-center justify-end space-x-2">
+                            <button 
+                              onClick={() => handleDownloadPDF(record)}
+                              title="Download PDF Receipt"
+                              className="p-1.5 text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-md transition-colors"
+                            >
+                              <Download className="w-4 h-4" />
+                            </button>
+                            <button 
+                              onClick={() => handlePrintRecord(record)}
+                              title="Print Record"
+                              className="p-1.5 text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-md transition-colors"
+                            >
+                              <Printer className="w-4 h-4" />
+                            </button>
+                            <button 
+                              onClick={() => handleDeleteRecord(record)}
+                              title="Delete Record"
+                              className="p-1.5 text-red-600 bg-red-50 hover:bg-red-100 rounded-md transition-colors"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
+                        ) : null}
                       </td>
                     </tr>
                   );
@@ -363,153 +639,6 @@ export default function PaymentEntry() {
           </div>
         </div>
 
-        {/* Dynamic Settlement Form */}
-        {selectedCaseToProcess ? (
-          <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden overflow-x-auto flex flex-col" id="settlement-form">
-            <div className="p-6 border-b border-gray-200 bg-[#F2F4F7] flex justify-between items-center">
-              <h3 className="text-xl font-bold text-[#162D50]">Settlement Form: #CAS-{selectedCaseToProcess._id.slice(-6).toUpperCase()}</h3>
-              <button 
-                onClick={() => setSelectedCaseToProcess(null)}
-                className="text-gray-500 hover:text-gray-700 text-sm font-medium"
-              >
-                Cancel Process
-              </button>
-            </div>
-            
-            <form className="p-8 space-y-6" onSubmit={handleFormSubmit}>
-              {/* Payee Info (Read Only for now) */}
-              <div className="grid grid-cols-2 gap-6">
-                <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-1">Payee Name</label>
-                  <input type="text" readOnly value={selectedCaseToProcess.staffName || selectedCaseToProcess.advancerName || 'N/A'} className="w-full px-4 py-2 border border-gray-300 rounded-md bg-gray-50 text-gray-500" />
-                </div>
-                <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-1">Total Claim Amount (This Term)</label>
-                  <input type="text" readOnly value={(selectedCaseToProcess.nextPaymentAmount || (selectedCaseToProcess.finalTotal || selectedCaseToProcess.totalExpense || 0) / (selectedCaseToProcess.installmentPlan ? (selectedCaseToProcess.installmentPlan.match(/\d+/) ? parseInt(selectedCaseToProcess.installmentPlan.match(/\d+/)[0], 10) : 1) : 1)).toLocaleString()} className="w-full px-4 py-2 border border-gray-300 rounded-md bg-gray-50 text-gray-500 font-medium" />
-                </div>
-              </div>
-
-              {/* Payment Method */}
-              <div>
-                <label className="block text-sm font-bold text-gray-700 mb-1">Payment Method</label>
-                <select 
-                  value={paymentMethod} 
-                  onChange={(e) => setPaymentMethod(e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-[#162D50] focus:border-[#162D50]"
-                  required
-                >
-                  <option value="" disabled>Select Method</option>
-                  <option value="Bank Transfer">Bank Transfer</option>
-                  <option value="Corporate Card">Corporate Card</option>
-                  <option value="Cash">Cash</option>
-                  <option value="Payroll Deduction">Payroll Deduction</option>
-                </select>
-              </div>
-
-              {/* Dynamic Destination Details */}
-              {paymentMethod === 'Bank Transfer' && (
-                <div className="grid grid-cols-3 gap-4 p-4 bg-gray-50 rounded-md border border-gray-200">
-                  <div>
-                    <label className="block text-xs font-bold text-gray-700 mb-1">Bank Name</label>
-                    <input type="text" onChange={(e) => setDestinationDetails({...destinationDetails, bankName: e.target.value})} className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm" required />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-bold text-gray-700 mb-1">Branch Code</label>
-                    <input type="text" onChange={(e) => setDestinationDetails({...destinationDetails, branchCode: e.target.value})} className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm" required />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-bold text-gray-700 mb-1">Account Number</label>
-                    <input type="text" onChange={(e) => setDestinationDetails({...destinationDetails, accountNumber: e.target.value})} className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm" required />
-                  </div>
-                </div>
-              )}
-              {paymentMethod === 'Payroll Deduction' && (
-                <div className="p-4 bg-gray-50 rounded-md border border-gray-200">
-                  <label className="block text-xs font-bold text-gray-700 mb-1">Target Payroll Period</label>
-                  <input type="month" onChange={(e) => setDestinationDetails({...destinationDetails, payrollPeriod: e.target.value})} className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm" required />
-                </div>
-              )}
-
-              {/* Financial Breakdown */}
-              <div className="grid grid-cols-3 gap-6 p-4 bg-blue-50 border border-blue-100 rounded-md">
-                <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-1">Deductions (Tax/Advance)</label>
-                  <div className="relative">
-                    <span className="absolute left-3 top-2 text-gray-500">¥</span>
-                    <input 
-                      type="number" 
-                      value={deductions} 
-                      onChange={(e) => setDeductions(Number(e.target.value) || 0)} 
-                      className="w-full pl-8 pr-4 py-2 border border-gray-300 rounded-md focus:ring-[#162D50] focus:border-[#162D50]" 
-                    />
-                  </div>
-                </div>
-                <div>
-                  <label className="block text-sm font-bold text-[#162D50] mb-1">Net Payable Amount</label>
-                  <div className="w-full px-4 py-2 border border-blue-200 rounded-md bg-blue-100 text-[#162D50] font-black text-lg text-right shadow-inner">
-                    ¥ {((selectedCaseToProcess.nextPaymentAmount || Math.round((selectedCaseToProcess.finalTotal || selectedCaseToProcess.totalExpense || 0) / (selectedCaseToProcess.installmentPlan ? (selectedCaseToProcess.installmentPlan.match(/\d+/) ? parseInt(selectedCaseToProcess.installmentPlan.match(/\d+/)[0], 10) : 1) : 1))) - deductions).toLocaleString()}
-                  </div>
-                </div>
-                <div>
-                  <label className="block text-sm font-bold text-gray-600 mb-1">New Remaining Balance</label>
-                  <div className="w-full px-4 py-2 border border-gray-300 rounded-md bg-gray-100 text-gray-600 font-bold text-lg text-right">
-                    ¥ {Math.max(0, (selectedCaseToProcess.finalTotal || selectedCaseToProcess.totalExpense || 0) - (((selectedCaseToProcess.paidTerms || 0) + 1) * (selectedCaseToProcess.nextPaymentAmount || Math.round((selectedCaseToProcess.finalTotal || selectedCaseToProcess.totalExpense || 0) / (selectedCaseToProcess.installmentPlan ? (selectedCaseToProcess.installmentPlan.match(/\d+/) ? parseInt(selectedCaseToProcess.installmentPlan.match(/\d+/)[0], 10) : 1) : 1))))).toLocaleString()}
-                  </div>
-                </div>
-              </div>
-
-              {/* Confirmation */}
-              <div className="grid grid-cols-2 gap-6">
-                <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-1">Transaction Ref ID</label>
-                  <input type="text" value={transactionRefId} onChange={(e) => setTransactionRefId(e.target.value)} className="w-full px-4 py-2 border border-gray-300 rounded-md" />
-                </div>
-                <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-1">Payment Date</label>
-                  <input type="date" required defaultValue={new Date().toISOString().split('T')[0]} className="w-full px-4 py-2 border border-gray-300 rounded-md" />
-                </div>
-              </div>
-
-              <div className="flex items-center space-x-3 p-4 border border-gray-200 rounded-md bg-gray-50">
-                <input 
-                  type="checkbox" 
-                  id="confirm" 
-                  checked={isConfirmed}
-                  onChange={(e) => setIsConfirmed(e.target.checked)}
-                  className="w-5 h-5 rounded border-gray-300 text-[#162D50] focus:ring-[#162D50]" 
-                  required
-                />
-                <label htmlFor="confirm" className="text-sm font-medium text-gray-700">
-                  I confirm that the above payment details are correct and authorize this settlement transition.
-                </label>
-              </div>
-
-              <div className="flex justify-end mt-6">
-                <button 
-                  type="submit" 
-                  disabled={isSubmitting || !isConfirmed || !paymentMethod}
-                  className="bg-[#162D50] text-white px-8 py-3 rounded-md font-bold shadow-md hover:bg-[#0f1f38] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {isSubmitting ? 'Processing...' : 'Submit Settlement'}
-                </button>
-              </div>
-            </form>
-          </div>
-        ) : (
-          <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden overflow-x-auto flex flex-col">
-            <div className="p-8">
-              <div className="flex flex-col items-center justify-center py-10 text-center">
-                <div className="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center mb-4">
-                  <Icon className="w-10 h-10 text-gray-300" />
-                </div>
-                <h3 className="text-xl font-bold text-gray-700 mb-2">Select a case to process</h3>
-                <p className="text-gray-500 max-w-md">
-                  Click the "Process" button on any related application above to open the settlement form.
-                </p>
-              </div>
-            </div>
-          </div>
-        )}
       </div>
     );
   }
@@ -538,22 +667,13 @@ export default function PaymentEntry() {
               onClick={() => setSelectedEntryType(option.id)}
               className={`bg-white rounded-xl border ${option.borderColor} p-6 cursor-pointer shadow-sm hover:shadow-md transition-all group flex flex-col relative`}
             >
-              {relatedCount > 0 && (
-                <div className="absolute top-4 right-4 bg-red-500 text-white text-xs font-bold px-2.5 py-1 rounded-full shadow-sm flex items-center">
-                  <span className="w-1.5 h-1.5 bg-white rounded-full mr-1.5 animate-pulse"></span>
-                  {relatedCount} pending
-                </div>
-              )}
-
               <div className="flex items-start justify-between mb-4 mt-2">
                 <div className={`w-14 h-14 rounded-xl flex items-center justify-center ${option.color} group-hover:scale-110 transition-transform`}>
                   <Icon className="w-7 h-7" />
                 </div>
-                {!relatedCount && (
-                  <div className="w-8 h-8 rounded-full bg-gray-50 flex items-center justify-center group-hover:bg-[#162D50] transition-colors">
-                    <ArrowRight className="w-4 h-4 text-gray-400 group-hover:text-white transition-colors" />
-                  </div>
-                )}
+                <div className="w-8 h-8 rounded-full bg-gray-50 flex items-center justify-center group-hover:bg-[#162D50] transition-colors">
+                  <ArrowRight className="w-4 h-4 text-gray-400 group-hover:text-white transition-colors" />
+                </div>
               </div>
               
               <h3 className="text-lg font-bold text-[#162D50] mb-2">{option.title}</h3>

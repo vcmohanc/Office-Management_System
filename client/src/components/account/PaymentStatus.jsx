@@ -13,6 +13,8 @@ export default function PaymentStatus() {
   const [statusFilter, setStatusFilter] = useState('All Statuses');
   const [expenseTypeFilter, setExpenseTypeFilter] = useState('All Types');
   const [expenseTypeOptions, setExpenseTypeOptions] = useState([]);
+  const [dateFilterStart, setDateFilterStart] = useState('');
+  const [dateFilterEnd, setDateFilterEnd] = useState('');
 
   // Settlement Form State
   const [paymentMethod, setPaymentMethod] = useState('');
@@ -25,7 +27,7 @@ export default function PaymentStatus() {
   // SSE Subscription
   useEffect(() => {
     const token = localStorage.getItem('token');
-    const sse = new EventSource(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/events?token=${token}`);
+    const sse = new EventSource(`${import.meta.env.VITE_API_URL || 'http://localhost:5001'}/api/events?token=${token}`);
 
     sse.addEventListener('CASE_REGISTERED', (e) => {
       const c = JSON.parse(e.data);
@@ -47,7 +49,9 @@ export default function PaymentStatus() {
           finalTotal: c.finalTotal || c.totalExpense || c.final_total_amount || 0,
           staffId: c.staffId || c.staff_id || 'N/A',
           staffName: c.staffName || c.staff_name || 'N/A',
-          expenseType: c.expenseType || c.expense_type || 'N/A'
+          expenseType: c.expenseType || c.expense_type || 'N/A',
+          expensePeriodStart: c.expensePeriodStart || c.expense_period_start || c.createdAt,
+          expensePeriodEnd: c.expensePeriodEnd || c.expense_period_end || c.createdAt
         }, ...prev]);
       }
     });
@@ -72,7 +76,9 @@ export default function PaymentStatus() {
           finalTotal: c.finalTotal || c.totalExpense || c.final_total_amount || 0,
           staffId: c.staffId || c.staff_id || 'N/A',
           staffName: c.staffName || c.staff_name || 'N/A',
-          expenseType: c.expenseType || c.expense_type || 'N/A'
+          expenseType: c.expenseType || c.expense_type || 'N/A',
+          expensePeriodStart: c.expensePeriodStart || c.expense_period_start || c.createdAt,
+          expensePeriodEnd: c.expensePeriodEnd || c.expense_period_end || c.createdAt
         } : item));
       }
     });
@@ -95,6 +101,20 @@ export default function PaymentStatus() {
       }
     }
   }, [selectedCase, paymentMethod]);
+
+  useEffect(() => {
+    if (selectedCase) {
+      // Auto-populate Payment Method based on agreed terms
+      if (selectedCase.advancerCategory === 'Staff') {
+        let method = selectedCase.settlement_method || selectedCase.settlementMethod || '';
+        if (method === 'Cash') method = 'Petty Cash';
+        setPaymentMethod(method);
+      } else {
+        let method = selectedCase.collection_method || selectedCase.collectionMethod || '';
+        setPaymentMethod(method);
+      }
+    }
+  }, [selectedCase]);
 
   useEffect(() => {
     if (selectedCase) {
@@ -167,7 +187,8 @@ export default function PaymentStatus() {
       };
 
       try {
-        const response = await apiFetch(`/api/cases/${currentCase._id}/settle`, {
+        const endpoint = currentCase.advancerCategory === 'Staff' ? `/api/claims/${currentCase._id}/settle` : `/api/cases/${currentCase._id}/settle`;
+        const response = await apiFetch(endpoint, {
           method: 'POST',
           body: JSON.stringify(payload),
         });
@@ -204,6 +225,7 @@ export default function PaymentStatus() {
       setDestinationDetails({});
       setTransactionRefId('');
       setIsConfirmed(false);
+      window.location.reload();
     }
   };
 
@@ -238,7 +260,9 @@ export default function PaymentStatus() {
         finalTotal: c.finalTotal || c.totalExpense || c.final_total_amount || 0,
         staffId: c.staffId || c.staff_id || 'N/A',
         staffName: c.staffName || c.staff_name || 'N/A',
-        expenseType: c.expenseType || c.expense_type || 'N/A'
+        expenseType: c.expenseType || c.expense_type || 'N/A',
+        expensePeriodStart: c.expensePeriodStart || c.expense_period_start || c.createdAt,
+        expensePeriodEnd: c.expensePeriodEnd || c.expense_period_end || c.createdAt
       }));
 
       const mappedClaims = claimsData.map(c => ({
@@ -263,7 +287,13 @@ export default function PaymentStatus() {
     });
   }, []);
 
-  const postApprovalCases = cases.filter(c => ['APPROVED_FOR_PAYMENT', 'Payment Pending', 'Processing', 'Completed', 'Overdue'].includes(c.status) || c.status === 'Approve for Payment' || c.status === 'Approved for Payment');
+  const postApprovalCases = cases.filter(c => {
+    if (c.status === 'Completed') return false;
+    const totalTerms = c.installment_count || (c.installmentPlan ? (c.installmentPlan.match(/\d+/) ? parseInt(c.installmentPlan.match(/\d+/)[0], 10) : 1) : 1);
+    if (c.paidTerms >= totalTerms && totalTerms > 0) return false;
+    
+    return ['APPROVED_FOR_PAYMENT', 'Payment Pending', 'Processing', 'Overdue'].includes(c.status) || c.status === 'Approve for Payment' || c.status === 'Approved for Payment';
+  });
 
   const officeCasesCount = postApprovalCases.filter(c => c.advancerCategory === 'Office').length;
   const staffCasesCount = postApprovalCases.filter(c => c.advancerCategory === 'Staff').length;
@@ -279,36 +309,54 @@ export default function PaymentStatus() {
 
   const tabCases = postApprovalCases.filter(c => c.advancerCategory === activePaymentTab || (!c.advancerCategory && activePaymentTab === 'Office'));
 
-  const totalOfficePayment = postApprovalCases.filter(c => c.advancerCategory === 'Office').reduce((sum, c) => sum + (c.finalTotal || 0), 0);
-  const totalStaffPayment = postApprovalCases.filter(c => c.advancerCategory === 'Staff').reduce((sum, c) => sum + (c.finalTotal || 0), 0);
+  const getRemainingBalance = (c) => {
+    const totalTerms = c.installment_count || (c.installmentPlan ? (c.installmentPlan.match(/\d+/) ? parseInt(c.installmentPlan.match(/\d+/)[0], 10) : 1) : 1);
+    const paidTerms = c.paidTerms || 0;
+    const nextPaymentAmount = c.nextPaymentAmount || (c.finalTotal || c.totalExpense || 0) / totalTerms;
+    return Math.max(0, (c.finalTotal || c.totalExpense || 0) - (paidTerms * nextPaymentAmount));
+  };
+
+  const totalOfficePayment = postApprovalCases.filter(c => c.advancerCategory === 'Office').reduce((sum, c) => sum + getRemainingBalance(c), 0);
+  const totalStaffPayment = postApprovalCases.filter(c => c.advancerCategory === 'Staff').reduce((sum, c) => sum + getRemainingBalance(c), 0);
   const pendingCount = postApprovalCases.filter(c => c.status === 'Payment Pending' || c.status === 'APPROVED_FOR_PAYMENT').length;
   const processingCount = postApprovalCases.filter(c => c.status === 'Processing').length;
   const completedCount = postApprovalCases.filter(c => c.status === 'Completed').length;
   const overdueCount = postApprovalCases.filter(c => c.status === 'Overdue').length;
 
   if (selectedCase) {
-    const personCases = cases.filter(c => c.staffId === selectedCase.staffId);
-    const personTotalOfficePayment = personCases.filter(c => c.advancerCategory === 'Office').reduce((sum, c) => sum + (c.finalTotal || c.totalExpense || 0), 0);
-    const personTotalStaffPayment = personCases.filter(c => c.advancerCategory === 'Staff').reduce((sum, c) => sum + (c.finalTotal || c.totalExpense || 0), 0);
+    const personCases = postApprovalCases.filter(c => c.staffId === selectedCase.staffId && (c.advancerCategory === activePaymentTab || (!c.advancerCategory && activePaymentTab === 'Office')));
+    const personTotalOfficePayment = personCases.filter(c => c.advancerCategory === 'Office').reduce((sum, c) => sum + getRemainingBalance(c), 0);
+    const personTotalStaffPayment = personCases.filter(c => c.advancerCategory === 'Staff').reduce((sum, c) => sum + getRemainingBalance(c), 0);
     const personPendingCount = personCases.filter(c => c.status === 'Payment Pending' || c.status === 'APPROVED_FOR_PAYMENT').length;
     const personProcessingCount = personCases.filter(c => c.status === 'Processing').length;
     
     const filteredPersonCases = personCases.filter(c => {
       const matchesStatus = statusFilter === 'All Statuses' || c.status === statusFilter;
       const matchesType = expenseTypeFilter === 'All Types' || c.expenseType === expenseTypeFilter;
-      return matchesStatus && matchesType;
+      const matchesDateStart = !dateFilterStart || new Date(c.expensePeriodStart || c.createdAt) >= new Date(dateFilterStart);
+      const matchesDateEnd = !dateFilterEnd || new Date(c.expensePeriodEnd || c.createdAt) <= new Date(dateFilterEnd);
+      return matchesStatus && matchesType && matchesDateStart && matchesDateEnd;
     });
 
-    const batchTotalClaimAmount = selectedBatchCases.reduce((total, currentCase) => {
-      const totalTerms = currentCase.installmentPlan ? (currentCase.installmentPlan.match(/\d+/) ? parseInt(currentCase.installmentPlan.match(/\d+/)[0], 10) : 1) : 1;
+    let batchTotalClaimAmount = selectedBatchCases.reduce((total, currentCase) => {
+      const totalTerms = currentCase.installment_count || (currentCase.installmentPlan ? (currentCase.installmentPlan.match(/\d+/) ? parseInt(currentCase.installmentPlan.match(/\d+/)[0], 10) : 1) : 1);
       return total + (currentCase.nextPaymentAmount || Math.round((currentCase.finalTotal || currentCase.totalExpense || 0) / totalTerms));
     }, 0);
 
-    const batchTotalRemainingBalance = selectedBatchCases.reduce((total, currentCase) => {
-      const totalTerms = currentCase.installmentPlan ? (currentCase.installmentPlan.match(/\d+/) ? parseInt(currentCase.installmentPlan.match(/\d+/)[0], 10) : 1) : 1;
+    let batchTotalRemainingBalance = selectedBatchCases.reduce((total, currentCase) => {
+      const totalTerms = currentCase.installment_count || (currentCase.installmentPlan ? (currentCase.installmentPlan.match(/\d+/) ? parseInt(currentCase.installmentPlan.match(/\d+/)[0], 10) : 1) : 1);
       const paymentAmount = currentCase.nextPaymentAmount || Math.round((currentCase.finalTotal || currentCase.totalExpense || 0) / totalTerms);
       return total + Math.max(0, (currentCase.finalTotal || currentCase.totalExpense || 0) - (((currentCase.paidTerms || 0) + 1) * paymentAmount));
     }, 0);
+
+    // Auto add remaining balance to Net Payable if less than 1000 yen
+    if (batchTotalRemainingBalance > 0 && batchTotalRemainingBalance < 1000) {
+      batchTotalClaimAmount += batchTotalRemainingBalance;
+      batchTotalRemainingBalance = 0;
+    }
+
+    const selectedCaseTotalTerms = selectedCase.installment_count || (selectedCase.installmentPlan ? (selectedCase.installmentPlan.match(/\d+/) ? parseInt(selectedCase.installmentPlan.match(/\d+/)[0], 10) : 1) : 1);
+    const selectedCaseCurrentTerm = Math.min((selectedCase.paidTerms || 0) + 1, selectedCaseTotalTerms);
 
     return (
       <div className="w-full px-4 sm:px-6 lg:px-8 xl:px-12 space-y-6 pb-10">
@@ -326,74 +374,6 @@ export default function PaymentStatus() {
         </div>
 
         <div className="print:hidden space-y-6">
-          {/* Metric Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div className="bg-white border border-gray-200 p-5 rounded-md shadow-sm">
-              <h3 className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-2">TOTAL OFFICE PAYMENT</h3>
-              <div className="flex justify-between items-center">
-                <div>
-                  <p className="text-3xl font-bold text-[#162D50]">¥{personTotalOfficePayment.toLocaleString()}</p>
-                  <div className="flex items-center mt-2 text-xs text-green-600 font-medium">
-                    <div className="w-3 h-3 rounded-full border-2 border-green-600 flex items-center justify-center mr-1">
-                      <div className="w-1.5 h-1.5 bg-green-600 rounded-full"></div>
-                    </div>
-                    {personCases.filter(c => c.advancerCategory === 'Office').length} Office Cases
-                  </div>
-                </div>
-                <Landmark className="w-10 h-10 text-gray-100" />
-              </div>
-            </div>
-
-            <div className="bg-white border border-gray-200 p-5 rounded-md shadow-sm">
-              <h3 className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-2">TOTAL STAFF PAYMENT</h3>
-              <div className="flex justify-between items-center">
-                <div>
-                  <p className="text-3xl font-bold text-[#162D50]">¥{personTotalStaffPayment.toLocaleString()}</p>
-                  <div className="flex items-center mt-2 text-xs text-green-600 font-medium">
-                    <div className="w-3 h-3 rounded-full border-2 border-green-600 flex items-center justify-center mr-1">
-                      <div className="w-1.5 h-1.5 bg-green-600 rounded-full"></div>
-                    </div>
-                    {personCases.filter(c => c.advancerCategory === 'Staff').length} Staff Cases
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-white border border-yellow-400 p-5 rounded-md shadow-sm border-l-4 border-l-yellow-400">
-              <h3 className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-2">PENDING ADJUSTMENTS</h3>
-              <div className="flex justify-between items-center">
-                <div>
-                  <p className="text-3xl font-bold text-[#162D50]">{personPendingCount} items</p>
-                  <div className="flex items-center mt-2 text-xs text-yellow-600 font-medium">
-                    Requires review before
-                    <br />export
-                  </div>
-                </div>
-                <div className="flex flex-col justify-between h-full items-end">
-                  <AlertCircle className="w-10 h-10 text-yellow-100" />
-                  <ArrowRight className="w-4 h-4 text-yellow-600 mt-2 cursor-pointer" />
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-white border border-red-400 p-5 rounded-md shadow-sm border-l-4 border-l-red-500">
-              <h3 className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-2">BOUNCED PAYMENTS</h3>
-              <div className="flex justify-between items-center">
-                <div>
-                  <p className="text-3xl font-bold text-red-600">{personProcessingCount} items</p>
-                  <div className="flex items-center mt-2 text-xs text-red-500 font-medium">
-                    Requires immediate
-                    <br />resolution
-                  </div>
-                </div>
-                <div className="flex flex-col justify-between h-full items-end">
-                  <AlertTriangle className="w-10 h-10 text-red-100" />
-                  <span className="text-red-500 font-bold mt-2 cursor-pointer">!</span>
-                </div>
-              </div>
-            </div>
-          </div>
-
           {/* Filter Bar */}
           <div className="bg-[#F8F9FA] border border-gray-200 rounded-md p-4 flex items-end space-x-4">
             <div className="flex-1">
@@ -427,11 +407,14 @@ export default function PaymentStatus() {
                 <ChevronDown className="w-4 h-4 absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none" />
               </div>
             </div>
-            <div className="w-48">
-              <label className="block text-xs font-bold text-gray-600 mb-1">Date Range</label>
-              <div className="relative">
-                <input type="text" placeholder="YYYY / MM / DD" className="w-full pl-4 pr-10 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-[#162D50]" />
-                <Calendar className="w-4 h-4 absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-800" />
+            <div className="flex space-x-2">
+              <div className="w-32">
+                <label className="block text-xs font-bold text-gray-600 mb-1">Start Date</label>
+                <input type="date" value={dateFilterStart} onChange={e => setDateFilterStart(e.target.value)} className="w-full px-2 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-[#162D50]" />
+              </div>
+              <div className="w-32">
+                <label className="block text-xs font-bold text-gray-600 mb-1">End Date</label>
+                <input type="date" value={dateFilterEnd} onChange={e => setDateFilterEnd(e.target.value)} className="w-full px-2 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-[#162D50]" />
               </div>
             </div>
             <div className="flex space-x-2">
@@ -465,7 +448,7 @@ export default function PaymentStatus() {
                 <th className="py-3 px-6">Case ID</th>
                 <th className="py-3 px-6">Period</th>
                 <th className="py-3 px-6">Expense Type</th>
-                <th className="py-3 px-6">Amount</th>
+                <th className="py-3 px-6">Remaining Amount</th>
                 <th className="py-3 px-6">Status</th>
                 <th className="py-3 px-6 text-right">Action</th>
               </tr>
@@ -485,9 +468,9 @@ export default function PaymentStatus() {
                     />
                   </td>
                   <td className="py-4 px-6 font-medium text-[#162D50]">#CAS-{c._id.slice(-6).toUpperCase()}</td>
-                  <td className="py-4 px-6 text-gray-600">{new Date(c.expensePeriodStart).toLocaleDateString()} - {new Date(c.expensePeriodEnd).toLocaleDateString()}</td>
+                  <td className="py-4 px-6 text-gray-600">{c.expensePeriodStart ? new Date(c.expensePeriodStart).toLocaleDateString() : 'N/A'} - {c.expensePeriodEnd ? new Date(c.expensePeriodEnd).toLocaleDateString() : 'N/A'}</td>
                   <td className="py-4 px-6 text-gray-600">{c.expenseType}</td>
-                  <td className="py-4 px-6 font-bold text-[#162D50]">{c.currency === 'JPY' ? '¥' : '$'}{(c.finalTotal || c.totalExpense || 0).toLocaleString()}</td>
+                  <td className="py-4 px-6 font-bold text-[#162D50]">{c.currency === 'JPY' ? '¥' : '$'}{Math.round(getRemainingBalance(c)).toLocaleString()}</td>
                   <td className="py-4 px-6">
                     <span className={`px-2 py-1 rounded-full text-xs font-medium border ${
                       c.status === 'Payment Pending' || c.status === 'APPROVED_FOR_PAYMENT' ? 'bg-yellow-100 text-yellow-700 border-yellow-200' :
@@ -572,6 +555,33 @@ export default function PaymentStatus() {
                   })}
                 </div>
               </div>
+
+              {/* Agreed Terms (Read-Only) */}
+              {selectedCase.advancerCategory !== 'Staff' && (
+                <div className="border-b border-dashed border-[#20301F] pb-8 mb-8 print:pb-4 print:mb-4">
+                  <div className="text-xs font-bold uppercase tracking-widest text-gray-500 mb-6 print:mb-2">Agreed Terms</div>
+                  <div className="grid grid-cols-4 gap-6">
+                    <div>
+                      <label className="block text-[10px] font-bold uppercase tracking-widest mb-1 text-gray-400">Collection / Settlement Method</label>
+                      <div className="font-mono text-sm">{selectedCase.advancerCategory === 'Staff' ? (selectedCase.settlement_method || selectedCase.settlementMethod || 'N/A') : (selectedCase.collection_method || selectedCase.collectionMethod || 'N/A')}</div>
+                    </div>
+                    <div>
+                      <label className="block text-[10px] font-bold uppercase tracking-widest mb-1 text-gray-400">Installment Plan</label>
+                      <div className="font-mono text-sm">{selectedCase.installment_plan || selectedCase.installmentPlan || 'N/A'}</div>
+                    </div>
+                    <div>
+                      <label className="block text-[10px] font-bold uppercase tracking-widest mb-1 text-gray-400">Start Month</label>
+                      <div className="font-mono text-sm">{selectedCase.collection_start_month || selectedCase.collectionStartMonth || 'N/A'}</div>
+                    </div>
+                    <div>
+                      <label className="block text-[10px] font-bold uppercase tracking-widest mb-1 text-gray-400">Current Term</label>
+                      <div className="font-mono text-sm">
+                        {selectedCaseTotalTerms > 1 ? `Term ${selectedCaseCurrentTerm} of ${selectedCaseTotalTerms}` : 'N/A'}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
 
               {/* Payment Method & Deductions */}
               <div className="space-y-8 print:space-y-4 border-b border-dashed border-[#20301F] pb-8 print:pb-4">
@@ -1004,32 +1014,6 @@ export default function PaymentStatus() {
         </div>
       </div>
       
-      {/* Installment Status Row */}
-      <div className="bg-white border border-gray-200 rounded-md p-4 flex justify-between items-center mb-6">
-        <div className="flex items-center space-x-2">
-          <button className="flex items-center px-4 py-1.5 bg-[#162D50] text-white rounded-full text-sm font-medium">
-            Active Installments <span className="ml-2 bg-blue-900 text-white px-2 rounded-full text-xs opacity-80">{pendingCount + processingCount}</span>
-          </button>
-          <button className="flex items-center px-4 py-1.5 text-gray-500 hover:bg-gray-100 rounded-full text-sm font-medium">
-            Completed <span className="ml-2 bg-gray-200 text-gray-600 px-2 rounded-full text-xs">{completedCount}</span>
-          </button>
-          <button className="flex items-center px-4 py-1.5 text-gray-500 hover:bg-gray-100 rounded-full text-sm font-medium">
-            Overdue <span className="ml-2 bg-gray-200 text-gray-600 px-2 rounded-full text-xs">{overdueCount}</span>
-          </button>
-          
-          <div className="flex items-center space-x-2 ml-4 border-l border-gray-200 pl-4">
-            <span className="bg-red-50 text-red-600 border border-red-200 px-2 py-0.5 rounded-md text-xs font-bold flex items-center">
-              ! {overdueCount} Overdue
-            </span>
-            <span className="bg-red-600 text-white px-2 py-0.5 rounded-md text-xs font-bold flex items-center">
-              <AlertTriangle className="w-3 h-3 mr-1" /> {processingCount} Bounced
-            </span>
-          </div>
-        </div>
-        <div className="text-sm text-gray-500">
-          Total: {tabCases.length} items
-        </div>
-      </div>
 
       {/* Top Tabs */}
       <div className="bg-[#F2F4F7] p-1 rounded-md flex space-x-1 mb-4 border border-gray-200">
@@ -1110,7 +1094,8 @@ export default function PaymentStatus() {
               <th className="py-3 px-6">Date</th>
               <th className="py-3 px-6">Staff Name</th>
               <th className="py-3 px-6">Expense Type</th>
-              <th className="py-3 px-6">Total Amount</th>
+              <th className="py-3 px-6">Remaining Amount</th>
+              <th className="py-3 px-6">Collection Terms</th>
               <th className="py-3 px-6">Status</th>
               <th className="py-3 px-6 text-right">Actions</th>
             </tr>
@@ -1118,45 +1103,68 @@ export default function PaymentStatus() {
           <tbody className="text-sm">
             {loading ? (
               <tr>
-                <td colSpan="7" className="py-4 px-6 text-center text-gray-500">Loading...</td>
+                <td colSpan="8" className="py-4 px-6 text-center text-gray-500">Loading...</td>
               </tr>
             ) : filteredCases.length === 0 ? (
               <tr>
-                <td colSpan="7" className="py-4 px-6 text-center text-gray-500">No cases found.</td>
+                <td colSpan="8" className="py-4 px-6 text-center text-gray-500">No cases found.</td>
               </tr>
             ) : (
-              filteredCases.map(c => (
-                <tr key={c._id} className="border-b border-gray-100 hover:bg-gray-50">
-                  <td className="py-4 px-6 text-gray-600">
-                    {c.advancerCategory === 'Staff' ? '#CLM-' : '#CAS-'}{c._id.slice(-6).toUpperCase()}
-                  </td>
-                  <td className="py-4 px-6 text-gray-600">
-                    {new Date(c.expensePeriodStart).toLocaleDateString('en-US')}
-                  </td>
-                  <td className="py-4 px-6 text-gray-800">{c.staffName}</td>
-                  <td className="py-4 px-6 text-gray-600">{c.expenseType}</td>
-                  <td className="py-4 px-6 font-bold text-gray-800">
-                    {c.currency === 'JPY' ? '¥' : '$'}{(c.finalTotal || 0).toLocaleString()}
-                  </td>
-                  <td className="py-4 px-6">
-                    <span className={`px-3 py-1 rounded-full text-xs font-medium border ${
-                      c.status === 'Pending' ? 'bg-yellow-100 text-yellow-700 border-yellow-200' :
-                      c.status === 'Processing' ? 'bg-blue-100 text-blue-700 border-blue-200' :
-                      c.status === 'Completed' ? 'bg-green-100 text-green-700 border-green-200' :
-                      'bg-gray-100 text-gray-700 border-gray-200'
-                    }`}>
-                      {c.status}
-                    </span>
-                  </td>
-                  <td className="py-4 px-6 text-right whitespace-nowrap">
-                    <button onClick={() => setSelectedCase(c)} className="text-[#162D50] font-bold hover:underline mr-4">View Details</button>
-                    <button onClick={() => handleDeleteCase(c)} className="text-red-500 font-bold hover:underline inline-flex items-center">
-                      <Trash2 className="w-4 h-4 mr-1" />
-                      Delete
-                    </button>
-                  </td>
-                </tr>
-              ))
+              filteredCases.map(c => {
+                const totalTerms = c.installment_count || (c.installmentPlan ? (c.installmentPlan.match(/\d+/) ? parseInt(c.installmentPlan.match(/\d+/)[0], 10) : 1) : 1);
+                const paidTerms = c.paidTerms || 0;
+                const pendingTerms = Math.max(0, totalTerms - paidTerms);
+                const isCompleted = paidTerms >= totalTerms;
+                
+                // Override status badge if completed via installment logic
+                const displayStatus = isCompleted ? 'Completed' : c.status;
+
+                return (
+                  <tr key={c._id} className="border-b border-gray-100 hover:bg-gray-50">
+                    <td className="py-4 px-6 text-gray-600">
+                      {c.advancerCategory === 'Staff' ? '#CLM-' : '#CAS-'}{c._id.slice(-6).toUpperCase()}
+                    </td>
+                    <td className="py-4 px-6 text-gray-600">
+                      {new Date(c.expensePeriodStart).toLocaleDateString('en-US')}
+                    </td>
+                    <td className="py-4 px-6 text-gray-800">{c.staffName}</td>
+                    <td className="py-4 px-6 text-gray-600">{c.expenseType}</td>
+                    <td className="py-4 px-6 font-bold text-gray-800">
+                      {c.currency === 'JPY' ? '¥' : '$'}{Math.round(getRemainingBalance(c)).toLocaleString()}
+                    </td>
+                    <td className="py-4 px-6">
+                      <div className="text-gray-800 font-medium whitespace-nowrap">
+                        {c.advancerCategory === 'Staff' ? (c.settlement_method || c.settlementMethod || 'N/A') : (c.collection_method || c.collectionMethod || 'N/A')}
+                      </div>
+                      <div className="text-xs text-gray-500 whitespace-nowrap mt-1">
+                        {c.installment_plan || c.installmentPlan || 'N/A'}
+                      </div>
+                      {totalTerms > 1 && (
+                        <div className="text-[10px] text-gray-400 mt-1 uppercase font-bold tracking-wider">
+                          Term {Math.min(paidTerms, totalTerms)} of {totalTerms} Completed ({pendingTerms} Pending)
+                        </div>
+                      )}
+                    </td>
+                    <td className="py-4 px-6">
+                      <span className={`px-3 py-1 rounded-full text-xs font-medium border ${
+                        displayStatus === 'Pending' ? 'bg-yellow-100 text-yellow-700 border-yellow-200' :
+                        (displayStatus === 'Processing' || displayStatus === 'APPROVED_FOR_PAYMENT') ? 'bg-blue-100 text-blue-700 border-blue-200' :
+                        displayStatus === 'Completed' ? 'bg-green-100 text-green-700 border-green-200' :
+                        'bg-gray-100 text-gray-700 border-gray-200'
+                      }`}>
+                        {totalTerms > 1 ? `${Math.min(paidTerms, totalTerms)}/${totalTerms} Completed` : (displayStatus === 'Processing' ? 'APPROVED_FOR_PAYMENT' : displayStatus)}
+                      </span>
+                    </td>
+                    <td className="py-4 px-6 text-right whitespace-nowrap">
+                      <button onClick={() => setSelectedCase(c)} className="text-[#162D50] font-bold hover:underline mr-4">View Details</button>
+                      <button onClick={() => handleDeleteCase(c)} className="text-red-500 font-bold hover:underline inline-flex items-center">
+                        <Trash2 className="w-4 h-4 mr-1" />
+                        Delete
+                      </button>
+                    </td>
+                  </tr>
+                );
+              })
             )}
           </tbody>
         </table>

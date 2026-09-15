@@ -12,6 +12,7 @@ import b2bRoutes from './routes/b2b.js';
 import expenseRoutes from './routes/expenses.js';
 import regionRoutes from './routes/regions.js';
 import uploadRoutes from './routes/upload.js';
+import settlementRoutes from './routes/settlements.js';
 import { verifyToken, verifyFileToken } from './middleware/auth.js';
 import { sseHandler } from './events.js';
 import fs from 'fs';
@@ -25,7 +26,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 5001;
 
 // Middleware
 app.use(cors({
@@ -61,6 +62,7 @@ app.use('/api/b2b', verifyToken, b2bRoutes);
 app.use('/api/expenses', verifyToken, expenseRoutes);
 app.use('/api/regions', verifyToken, regionRoutes);
 app.use('/api/upload', verifyToken, uploadRoutes);
+app.use('/api/settlements', verifyToken, settlementRoutes);
 
 // SSE endpoint for real-time synchronization
 app.get('/api/events', verifyFileToken, sseHandler);
