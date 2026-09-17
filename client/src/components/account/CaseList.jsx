@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react';
 import { Search, ChevronDown, Calendar, FileText, AlertTriangle, Image, Edit, X, Download } from 'lucide-react';
 import { fileUrl } from '../../utils/fileUrl.js';
 import { apiFetch } from '../../utils/apiFetch.js';
+import toast from 'react-hot-toast';
+import { toastConfirm } from '../../utils/toastConfirm.jsx';
 
 
 export default function CaseList() {
@@ -143,12 +145,12 @@ export default function CaseList() {
     const validFiles = [];
     for (const file of files) {
       if (!ALLOWED_TYPES.includes(file.type)) {
-        alert(`Invalid file type: ${file.name}. Only JPG, PNG, and PDF files are allowed.`);
+        toast.error(`Invalid file type: ${file.name}. Only JPG, PNG, and PDF files are allowed.`);
         e.target.value = '';
         return;
       }
       if (file.size > MAX_SIZE) {
-        alert(`File too large: ${file.name}. Maximum size is 2 MB per file.`);
+        toast.error(`File too large: ${file.name}. Maximum size is 2 MB per file.`);
         e.target.value = '';
         return;
       }
@@ -291,7 +293,7 @@ export default function CaseList() {
       );
       if (promptMessage === null) return; // User cancelled
       if (!promptMessage.trim()) {
-        alert("A reason/feedback is required for this action.");
+        toast.error("A reason/feedback is required for this action.");
         return;
       }
 
@@ -337,7 +339,8 @@ export default function CaseList() {
 
   const handleDelete = async (e, record) => {
     e.stopPropagation();
-    if (!window.confirm(`Are you sure you want to delete ${record.displayId}?`)) return;
+    const confirmed = await toastConfirm(`Are you sure you want to delete ${record.displayId}?`);
+    if (!confirmed) return;
 
     const isClaim = record._isClaim;
     const endpoint = isClaim ? `/api/claims/${record._id}` : `/api/cases/${record._id}`;

@@ -2,6 +2,8 @@ import { useState, useEffect, useRef } from 'react';
 import { apiFetch } from '../../utils/apiFetch.js';
 
 import { Search, ChevronDown, Calendar, Download, Building, Landmark, AlertCircle, AlertTriangle, ArrowRight, ArrowLeft, Printer, Trash2 } from 'lucide-react';
+import toast from 'react-hot-toast';
+import { toastConfirm } from '../../utils/toastConfirm.jsx';
 
 export default function PaymentStatus() {
   const [viewingDetails, setViewingDetails] = useState(false);
@@ -205,12 +207,12 @@ export default function PaymentStatus() {
         } else {
           allSuccess = false;
           const errorData = await response.json();
-          alert(`Error processing case ${currentCase._id}: ${errorData.message}`);
+          toast.error(`Error processing case ${currentCase._id}: ${errorData.message}`);
         }
       } catch (error) {
         console.error('Error processing settlement:', error);
         allSuccess = false;
-        alert(`Network error while processing case ${currentCase._id}`);
+        toast.error(`Network error while processing case ${currentCase._id}`);
       }
     }
     
@@ -218,7 +220,7 @@ export default function PaymentStatus() {
     setIsSubmitting(false);
     
     if (allSuccess) {
-      alert('Settlement processed successfully for all selected cases!');
+      toast.success('Settlement processed successfully for all selected cases!');
       setSelectedCase(null);
       setPaymentMethod('');
       setDeductions(0);
@@ -230,7 +232,8 @@ export default function PaymentStatus() {
   };
 
   const handleDeleteCase = async (caseObj) => {
-    if (!window.confirm('Are you sure you want to delete this case?')) return;
+    const confirmed = await toastConfirm('Are you sure you want to delete this case?');
+    if (!confirmed) return;
     try {
       const endpoint = caseObj.advancerCategory === 'Staff' ? `/api/claims/${caseObj._id}` : `/api/cases/${caseObj._id}`;
       const response = await apiFetch(endpoint, {
@@ -240,11 +243,11 @@ export default function PaymentStatus() {
         setCases(cases.filter(c => c._id !== caseObj._id));
       } else {
         const errorData = await response.json();
-        alert(`Error deleting: ${errorData.message}`);
+        toast.error(`Error deleting: ${errorData.message}`);
       }
     } catch (error) {
       console.error('Error deleting:', error);
-      alert('Network error while deleting');
+      toast.error('Network error while deleting');
     }
   };
 
