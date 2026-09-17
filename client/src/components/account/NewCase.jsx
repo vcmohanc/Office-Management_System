@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { apiFetch } from '../../utils/apiFetch.js';
 import { validateExpenseAmount } from '../../utils/amountHelper.js';
 import { User, ChevronDown, Box, Calendar, UploadCloud, ArrowRight, Wallet, Landmark, FileText, ArrowLeft, Image } from 'lucide-react';
+import toast from 'react-hot-toast';
 
 
 export default function NewCase() {
@@ -190,13 +191,13 @@ export default function NewCase() {
     const validFiles = [];
     for (const file of files) {
       if (!ALLOWED_TYPES.includes(file.type)) {
-        alert(`Invalid file type: ${file.name}. Only JPG, PNG, and PDF files are allowed.`);
+        toast.error(`Invalid file type: ${file.name}. Only JPG, PNG, and PDF files are allowed.`);
         // Clear the input so the user can try again
         e.target.value = '';
         return;
       }
       if (file.size > MAX_SIZE) {
-        alert(`File too large: ${file.name}. Maximum size is 2 MB per file.`);
+        toast.error(`File too large: ${file.name}. Maximum size is 2 MB per file.`);
         e.target.value = '';
         return;
       }
@@ -221,11 +222,11 @@ export default function NewCase() {
         setCases(newCases);
       } else {
         console.error('Failed to upload files');
-        alert('Failed to upload files.');
+        toast.error('Failed to upload files.');
       }
     } catch (error) {
       console.error('Error uploading files:', error);
-      alert('Error uploading files.');
+      toast.error('Error uploading files.');
     }
   };
 
@@ -290,7 +291,7 @@ export default function NewCase() {
       });
 
       await Promise.all(submissions);
-      alert(`Successfully Submitted ${cases.length} Cases to Database!`);
+      toast.success(`Successfully Submitted ${cases.length} Cases to Database!`);
       
       // Reset form
       setNewCaseStep(1);
@@ -311,7 +312,7 @@ export default function NewCase() {
       setCollectionStartMonth('');
     } catch (error) {
       console.error("Error submitting cases:", error);
-      alert("Failed to submit cases. Check console for details.");
+      toast.error("Failed to submit cases. Check console for details.");
     }
   };
 
@@ -523,7 +524,7 @@ export default function NewCase() {
                   const match = employees.find(emp => (emp.romajiName && emp.romajiName.toLowerCase() === staffInfo.fullName.toLowerCase()) || (emp.katakanaName && emp.katakanaName === staffInfo.fullName));
                   if (!match) {
                     setStaffInfo({...staffInfo, fullName: '', id: '', location: '', branchAndFarmName: '', visaStatus: '', visaAvailableTime: ''});
-                    alert('Please select a valid staff member from the list.');
+                    toast.error('Please select a valid staff member from the list.');
                   }
                 }
               }} className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50]" />
@@ -556,7 +557,7 @@ export default function NewCase() {
                   const match = employees.find(emp => emp._id.slice(-6) === searchId);
                   if (!match) {
                     setStaffInfo({...staffInfo, fullName: '', id: '', location: '', branchAndFarmName: '', visaStatus: '', visaAvailableTime: ''});
-                    alert('Please select a valid staff ID from the list.');
+                    toast.error('Please select a valid staff ID from the list.');
                   }
                 }
               }} className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50]" />
@@ -775,22 +776,22 @@ export default function NewCase() {
         <button 
           onClick={() => {
             if (!staffInfo.fullName || !staffInfo.id || !staffInfo.location || staffInfo.location === 'Select Location') {
-              alert('Please fill out all required Staff Information fields.');
+              toast.error('Please fill out all required Staff Information fields.');
               return;
             }
             for (let i = 0; i < cases.length; i++) {
               const c = cases[i];
               if (c.expenseType === 'Select Type' || c.advancerCategory === 'Select Category' || c.bearingParty === 'Select Bearing Party' || !c.expenseAmount) {
-                alert(`Please fill out all required fields for Case Category #${i+1}.`);
+                toast.error(`Please fill out all required fields for Case Category #${i+1}.`);
                 return;
               }
               const validation = validateExpenseAmount(c.expenseAmount, c.suggestedAmount);
               if (!validation.isValid) {
-                alert(`Row ${i + 1}: ${validation.message}`);
+                toast.error(`Row ${i + 1}: ${validation.message}`);
                 return;
               }
               if (c.advancerCategory !== 'Office' && !c.advancerName) {
-                alert(`Please provide the Payment Process Types for Case Category #${i+1}.`);
+                toast.error(`Please provide the Payment Process Types for Case Category #${i+1}.`);
                 return;
               }
             }
@@ -930,7 +931,7 @@ export default function NewCase() {
                 <button 
                   onClick={() => {
                     if (!settlementMethod || !expectedSettlementDate || collectionMethod === 'Select Method' || !collectionStartMonth) {
-                      alert('Please fill out all required Settlement and Collection fields.');
+                      toast.error('Please fill out all required Settlement and Collection fields.');
                       return;
                     }
                     setNewCaseStep(3);

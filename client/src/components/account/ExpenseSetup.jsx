@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { apiFetch } from '../../utils/apiFetch.js';
+import toast from 'react-hot-toast';
+import { toastConfirm } from '../../utils/toastConfirm.jsx';
 
 
 export default function ExpenseSetup() {
@@ -78,7 +80,7 @@ export default function ExpenseSetup() {
       });
       
       if (res.ok) {
-        alert(`${activeTab === 'postal' ? 'Postal' : 'Travel'} charges saved successfully!`);
+        toast.success(`${activeTab === 'postal' ? 'Postal' : 'Travel'} charges saved successfully!`);
       } else {
         let errMsg = 'Failed to save changes.';
         try {
@@ -87,11 +89,11 @@ export default function ExpenseSetup() {
         } catch (e) {
           errMsg = `Failed to save changes. Status: ${res.status}`;
         }
-        alert(errMsg);
+        toast.error(errMsg);
       }
     } catch (err) {
       console.error(err);
-      alert(`Error saving changes: ${err.message}`);
+      toast.error(`Error saving changes: ${err.message}`);
     } finally {
       setIsLoading(false);
     }
@@ -124,7 +126,7 @@ export default function ExpenseSetup() {
 
   const handleAddRegion = async () => {
     if (!newName1.trim() || !newName2.trim()) {
-      alert('Please provide both Sender/Departure and Recipient/Arrival names.');
+      toast.error('Please provide both Sender/Departure and Recipient/Arrival names.');
       return;
     }
     setIsLoading(true);
@@ -138,11 +140,11 @@ export default function ExpenseSetup() {
         setNewName2('');
         fetchData();
       } else {
-        alert('Failed to add region');
+        toast.error('Failed to add region');
       }
     } catch (err) {
       console.error(err);
-      alert('Error adding region');
+      toast.error('Error adding region');
     } finally {
       setIsLoading(false);
     }
@@ -150,7 +152,7 @@ export default function ExpenseSetup() {
 
   const handleUpdateRegion = async (id) => {
     if (!editName1.trim() || !editName2.trim()) {
-      alert('Please provide both Sender/Departure and Recipient/Arrival names.');
+      toast.error('Please provide both Sender/Departure and Recipient/Arrival names.');
       return;
     }
     setIsLoading(true);
@@ -163,18 +165,19 @@ export default function ExpenseSetup() {
         setEditingRegion(null);
         fetchData();
       } else {
-        alert('Failed to update region');
+        toast.error('Failed to update region');
       }
     } catch (err) {
       console.error(err);
-      alert('Error updating region');
+      toast.error('Error updating region');
     } finally {
       setIsLoading(false);
     }
   };
 
   const handleDeleteRegion = async (id) => {
-    if (!window.confirm('Are you sure you want to delete this region? This will also remove any saved prices for this region.')) {
+    const confirmed = await toastConfirm('Are you sure you want to delete this region? This will also remove any saved prices for this region.');
+    if (!confirmed) {
       return;
     }
     setIsLoading(true);
@@ -183,11 +186,11 @@ export default function ExpenseSetup() {
       if (res.ok) {
         fetchData();
       } else {
-        alert('Failed to delete region');
+        toast.error('Failed to delete region');
       }
     } catch (err) {
       console.error(err);
-      alert('Error deleting region');
+      toast.error('Error deleting region');
     } finally {
       setIsLoading(false);
     }

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Users, ArrowLeft, Edit2, Check, X } from 'lucide-react';
 import { apiFetch } from '../../utils/apiFetch.js';
+import toast from 'react-hot-toast';
 
 
 export default function AdminUserList({ setActiveTab }) {
@@ -60,10 +61,10 @@ export default function AdminUserList({ setActiveTab }) {
         setUsers(users.map(u => u._id === id ? data : u));
         setEditingId(null);
       } else {
-        alert(data.error || 'Update failed');
+        toast.error(data.error || 'Update failed');
       }
     } catch (err) {
-      alert('Server error. Please try again.');
+      toast.error('Server error. Please try again.');
     } finally {
       setUpdateLoading(false);
     }
