@@ -33,16 +33,15 @@ jobs:
     needs: build-and-test
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main'
+    env:
+      HAS_SSH_KEY: ${{ secrets.SSH_PRIVATE_KEY != '' }}
     steps:
       - uses: actions/checkout@v4
 
       # This step requires you to add your server's SSH Key to your GitHub Repository Secrets
       - name: Deploy to Live Server via SSH
         uses: appleboy/ssh-action@v1.0.3
-        # Only run this step if SSH_PRIVATE_KEY is set in GitHub Secrets
-        if: env.SSH_PRIVATE_KEY != ''
-        env:
-          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+        if: env.HAS_SSH_KEY == 'true'
         with:
           host: ${{ secrets.SERVER_HOST }}
           username: ${{ secrets.SERVER_USER }}
