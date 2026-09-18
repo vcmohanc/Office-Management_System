@@ -29,7 +29,8 @@ export default function PaymentStatus() {
   // SSE Subscription
   useEffect(() => {
     const token = localStorage.getItem('token');
-    const sse = new EventSource(`${import.meta.env.VITE_API_URL || 'http://localhost:5001'}/api/events?token=${token}`);
+    const apiUrl = import.meta.env.VITE_API_URL || '';
+    const sse = new EventSource(`${apiUrl}/api/events?token=${token}`);
 
     sse.addEventListener('CASE_REGISTERED', (e) => {
       const c = JSON.parse(e.data);
