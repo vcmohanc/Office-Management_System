@@ -326,94 +326,41 @@ export default function PaymentEntry() {
 
   const handlePrintRecord = async (record) => {
     try {
-      const doc = new jsPDF();
-      
-      const pageWidth = doc.internal.pageSize.width;
-      
-      doc.setFont('times', 'bold');
-      doc.setFontSize(18);
-      doc.setTextColor(30, 30, 30);
-      doc.text('OFFICE MANAGEMENT SYSTEM', 14, 22);
-      
-      doc.setFont('times', 'normal');
-      doc.setFontSize(12);
-      doc.setTextColor(80, 80, 80);
-      doc.text('Payment Tracking Report', 14, 28);
-      
-      doc.setFontSize(10);
-      doc.setTextColor(100, 100, 100);
-      const dateStr = `Date: ${new Date().toLocaleDateString()}`;
-      const recordStr = `Total Records: 1`;
-      doc.text(dateStr, pageWidth - 14 - doc.getTextWidth(dateStr), 22);
-      doc.text(recordStr, pageWidth - 14 - doc.getTextWidth(recordStr), 28);
-      
-      doc.setDrawColor(200, 200, 200);
-      doc.setLineWidth(0.5);
-      doc.line(14, 34, pageWidth - 14, 34);
-      
-      const tableData = [[
-        record.id,
-        record.name,
-        record.workPlace,
-        record.expenseType,
-        `${record.startDate}\n${record.endDate}`,
-        `${record.paidTerms} / ${record.totalTerms}`,
-        `¥${record.remainingBalance.toLocaleString()}`,
-        record.status
-      ]];
-      
-      autoTable(doc, {
-        startY: 40,
-        head: [['Case ID', 'Name', 'Work Place', 'Expense Type', 'Date (Start/End)', 'Progress', 'Remaining', 'Status']],
-        body: tableData,
-        theme: 'grid',
-        styles: { 
-          font: 'times',
-          fontSize: 9,
-          textColor: [40, 40, 40],
-          lineColor: [220, 220, 220],
-          lineWidth: 0.1,
-          cellPadding: 4
-        },
-        headStyles: { 
-          fillColor: [245, 245, 245], 
-          textColor: [20, 20, 20],
-          fontStyle: 'bold',
-          lineColor: [200, 200, 200]
-        },
-        alternateRowStyles: {
-          fillColor: [252, 252, 252]
-        },
-        didDrawPage: function (data) {
-          const str = "Page " + doc.internal.getNumberOfPages();
-          doc.setFont('times', 'italic');
-          doc.setFontSize(9);
-          doc.setTextColor(150, 150, 150);
-          doc.text(str, pageWidth / 2, doc.internal.pageSize.height - 10, { align: 'center' });
-        }
-      });
-      
-      doc.autoPrint();
-      const pdfBlob = doc.output('bloburl');
-      
-      const iframe = document.createElement('iframe');
-      iframe.style.position = 'fixed';
-      iframe.style.right = '0';
-      iframe.style.bottom = '0';
-      iframe.style.width = '0';
-      iframe.style.height = '0';
-      iframe.style.border = '0';
-      iframe.src = pdfBlob;
-      
-      document.body.appendChild(iframe);
-      
-      setTimeout(() => {
-        document.body.removeChild(iframe);
-      }, 30000);
-      
+      const response = await apiFetch(`/api/settlements/case/${record.rawId}`);
+      const settlements = response.ok ? await response.json() : [];
+      const latestSettlement = settlements.length > 0 ? settlements[0] : null;
+
+      const printWindow = window.open('', '_blank');
+      printWindow.document.write(`
+        <html>
+          <head>
+            <title>Print - ${record.id}</title>
+            <style>
+              body { font-family: sans-serif; padding: 20px; color: #333; }
+              table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+              th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
+              th { background-color: #f8f9fa; width: 30%; font-weight: bold; }
+              h2 { color: #162D50; border-bottom: 2px solid #162D50; padding-bottom: 10px; }
+            </style>
+          </head>
+          <body>
+            <h2>Payment Record: ${record.id}</h2>
+            <table>
+              <tr><th>Name</th><td>${latestSettlement ? latestSettlement.payeeName : record.name}</td></tr>
+              <tr><th>Payment Method</th><td>${latestSettlement ? latestSettlement.paymentMethod : 'N/A'}</td></tr>
+              <tr><th>Transaction Ref ID</th><td>${latestSettlement && latestSettlement.transactionRefId ? latestSettlement.transactionRefId : 'N/A'}</td></tr>
+              <tr><th>Net Payable</th><td>¥${latestSettlement ? latestSettlement.financials.netPayable.toLocaleString() : '0'}</td></tr>
+              <tr><th>Payment Date</th><td>${latestSettlement ? new Date(latestSettlement.paymentDate).toLocaleDateString() : 'N/A'}</td></tr>
+            </table>
+            <script>
+              window.onload = () => { window.print(); window.close(); }
+            </script>
+          </body>
+        </html>
+      `);
+      printWindow.document.close();
     } catch (e) {
-      console.error(e);
-      toast.error('Error generating print view.');
+      toast.error('Error fetching settlement details for printing.');
     }
   };
 
