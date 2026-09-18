@@ -244,214 +244,176 @@ export default function PaymentEntry() {
 
   const handleDownloadPDF = async (record) => {
     try {
-      // Use existing case details and fetch settlements
-      const caseData = record.originalCase;
-      
-      const settlementsRes = await apiFetch(`/api/settlements/case/${record.rawId}`);
-      const settlements = settlementsRes.ok ? await settlementsRes.json() : [];
-
       const doc = new jsPDF();
       
-      // Constants & Colors
-      const primaryColor = [22, 45, 80]; // #162D50
-      const accentColor = [100, 100, 100];
-      const pageHeight = doc.internal.pageSize.height;
+      // --- Classic & Professional Header ---
+      const pageWidth = doc.internal.pageSize.width;
       
-      // Header - Card Style
-      let title = 'Client Payment';
-      let subtitle = 'Record incoming payments from clients for services rendered.';
-      let catColor = [22, 45, 80]; // Blue
-      let iconColor = [230, 240, 255]; 
-      
-      const cat = caseData.advancerCategory || '';
-      if (cat.toLowerCase().includes('staff')) {
-        title = 'Staff Payment / Advance';
-        subtitle = 'Process salary, advances, or expense reimbursements for staff.';
-        catColor = [30, 130, 70]; // Green
-        iconColor = [220, 245, 225];
-      } else if (cat.toLowerCase().includes('vendor') || cat.toLowerCase().includes('host')) {
-        title = 'Vendor / Host Company';
-        subtitle = 'Process payments to external vendors or host companies.';
-        catColor = [200, 100, 30]; // Orange
-        iconColor = [255, 235, 220];
-      } else if (cat.toLowerCase().includes('vc')) {
-        title = 'VC Fund Transfer';
-        subtitle = 'Log fund transfers and recoveries related to VC fund management.';
-        catColor = [130, 50, 180]; // Purple
-        iconColor = [245, 230, 255];
-      }
-      
-      // Draw Card Border
-      doc.setDrawColor(220, 220, 220);
-      doc.setFillColor(255, 255, 255);
-      doc.roundedRect(14, 15, 182, 24, 2, 2, 'FD');
-      
-      // Draw Icon Box
-      doc.setFillColor(...iconColor);
-      doc.roundedRect(18, 19, 12, 12, 2, 2, 'F');
-      
-      // Draw Text
-      doc.setFont('helvetica', 'bold');
-      doc.setFontSize(12);
+      // Company Name / Logo Placeholder
+      doc.setFont('times', 'bold');
+      doc.setFontSize(18);
       doc.setTextColor(30, 30, 30);
-      doc.text(title, 34, 24);
+      doc.text('OFFICE MANAGEMENT SYSTEM', 14, 22);
       
-      doc.setFont('helvetica', 'normal');
-      doc.setFontSize(8);
-      doc.setTextColor(120, 120, 120);
-      doc.text(subtitle, 34, 30);
+      // Report Title
+      doc.setFont('times', 'normal');
+      doc.setFontSize(12);
+      doc.setTextColor(80, 80, 80);
+      doc.text('Payment Tracking Report', 14, 28);
       
-      // Document meta info
-      doc.setFontSize(8);
-      doc.text(`Generated: ${new Date().toLocaleString()}`, 14, 45);
-      doc.text(`Document ID: REF-${Date.now().toString().slice(-6)}`, 142, 45);
+      // Right-aligned Metadata
+      doc.setFontSize(10);
+      doc.setTextColor(100, 100, 100);
+      const dateStr = `Date: ${new Date().toLocaleDateString()}`;
+      const recordStr = `Total Records: 1`;
+      doc.text(dateStr, pageWidth - 14 - doc.getTextWidth(dateStr), 22);
+      doc.text(recordStr, pageWidth - 14 - doc.getTextWidth(recordStr), 28);
       
-      let nextY = 50;
+      // Horizontal divider line
+      doc.setDrawColor(200, 200, 200);
+      doc.setLineWidth(0.5);
+      doc.line(14, 34, pageWidth - 14, 34);
       
-      const addSectionHeader = (title, y) => {
-        doc.setFont('helvetica', 'bold');
-        doc.setFontSize(10);
-        doc.setTextColor(...primaryColor);
-        doc.text(title, 14, y);
-        return y + 4;
-      };
-
-      // 1. CASE DETAILS
-      nextY = addSectionHeader('CASE DETAILS', nextY);
+      const tableData = [[
+        record.id,
+        record.name,
+        record.workPlace,
+        record.expenseType,
+        `${record.startDate}\n${record.endDate}`,
+        `${record.paidTerms} / ${record.totalTerms}`,
+        `¥${record.remainingBalance.toLocaleString()}`,
+        record.status
+      ]];
+      
       autoTable(doc, {
-        startY: nextY,
-        theme: 'plain',
-        styles: { fontSize: 10, cellPadding: 3 },
-        columnStyles: { 0: { fontStyle: 'bold', textColor: accentColor, cellWidth: 50 } },
-        body: [
-          ['Case ID:', record.id],
-          ['Staff ID:', caseData.staffId || 'N/A'],
-          ['Staff Name:', caseData.staffName || caseData.advancerName || 'N/A'],
-          ['Expense Type:', caseData.expenseType || 'N/A'],
-          ['Category:', caseData.advancerCategory || 'N/A']
-        ]
-      });
-      nextY = doc.lastAutoTable.finalY + 6;
-
-      // 2. PAYMENT PROGRESS & FINANCIAL SUMMARY
-      nextY = addSectionHeader('FINANCIAL & PROGRESS SUMMARY', nextY);
-      
-      const totalTerms = caseData.installment_count || (caseData.installmentPlan ? (caseData.installmentPlan.match(/\d+/) ? parseInt(caseData.installmentPlan.match(/\d+/)[0], 10) : 1) : 1);
-      const finalTotal = caseData.finalTotal || caseData.totalExpense || 0;
-      const nextPaymentAmount = caseData.nextPaymentAmount || Math.round(finalTotal / totalTerms);
-      const remainingBalance = Math.max(0, finalTotal - ((caseData.paidTerms || 0) * nextPaymentAmount));
-
-      autoTable(doc, {
-        startY: nextY,
+        startY: 40,
+        head: [['Case ID', 'Name', 'Work Place', 'Expense Type', 'Date (Start/End)', 'Progress', 'Remaining', 'Status']],
+        body: tableData,
         theme: 'grid',
-        headStyles: { fillColor: primaryColor, textColor: 255, fontSize: 10 },
-        styles: { fontSize: 10, cellPadding: 4 },
-        head: [['Base Claim Amount', 'Status', 'Installment Plan', 'Terms Paid', 'Remaining Balance']],
-        body: [
-          [
-            `${caseData.currency === 'JPY' ? '¥' : '$'}${finalTotal.toLocaleString()}`,
-            caseData.status || 'N/A',
-            caseData.installmentPlan || caseData.installment_plan || 'N/A',
-            `${caseData.paidTerms || 0} / ${totalTerms}`,
-            `${caseData.currency === 'JPY' ? '¥' : '$'}${remainingBalance.toLocaleString()}`
-          ]
-        ]
-      });
-      nextY = doc.lastAutoTable.finalY + 6;
-
-      // 3. SETTLEMENT DETAILS
-      nextY = addSectionHeader('SETTLEMENT DETAILS', nextY);
-      autoTable(doc, {
-        startY: nextY,
-        theme: 'plain',
-        styles: { fontSize: 10, cellPadding: 3 },
-        columnStyles: { 0: { fontStyle: 'bold', textColor: accentColor, cellWidth: 50 } },
-        body: [
-          ['Settlement Method:', caseData.advancerCategory === 'Staff' ? (caseData.settlement_method || caseData.settlementMethod || 'N/A') : (caseData.collection_method || caseData.collectionMethod || 'N/A')],
-          ['Start Month:', caseData.collection_start_month || caseData.collectionStartMonth || 'N/A']
-        ]
-      });
-      nextY = doc.lastAutoTable.finalY + 6;
-
-      // 4. TRANSACTION DETAILS
-      nextY = addSectionHeader('TRANSACTION DETAILS', nextY);
-      
-      const transactionsBody = Array.from({ length: totalTerms }).map((_, index) => {
-        const settlement = settlements[index];
-        return [
-          `Term ${index + 1}/${totalTerms}`,
-          settlement ? new Date(settlement.paymentDate).toLocaleDateString() : '-',
-          `${caseData.currency === 'JPY' ? '¥' : '$'}${nextPaymentAmount.toLocaleString()}`,
-          settlement ? 'Paid' : 'Pending',
-          settlement ? (settlement.destinationDetails?.bankName || 'N/A') : '-',
-          settlement ? (settlement.destinationDetails?.accountNumber || 'N/A') : '-',
-          settlement ? (settlement.transactionRefId || 'N/A') : '-'
-        ];
-      });
-
-      autoTable(doc, {
-        startY: nextY,
-        theme: 'striped',
-        headStyles: { fillColor: primaryColor, textColor: 255, fontSize: 9 },
-        styles: { fontSize: 9, cellPadding: 3 },
-        head: [['Term', 'Date', 'Amount', 'Status', 'Bank', 'Account', 'Ref No.']],
-        body: transactionsBody
+        styles: { 
+          font: 'times',
+          fontSize: 9,
+          textColor: [40, 40, 40],
+          lineColor: [220, 220, 220],
+          lineWidth: 0.1,
+          cellPadding: 4
+        },
+        headStyles: { 
+          fillColor: [245, 245, 245], 
+          textColor: [20, 20, 20],
+          fontStyle: 'bold',
+          lineColor: [200, 200, 200]
+        },
+        alternateRowStyles: {
+          fillColor: [252, 252, 252]
+        },
+        didDrawPage: function (data) {
+          // Footer with page number
+          const str = "Page " + doc.internal.getNumberOfPages();
+          doc.setFont('times', 'italic');
+          doc.setFontSize(9);
+          doc.setTextColor(150, 150, 150);
+          doc.text(str, pageWidth / 2, doc.internal.pageSize.height - 10, { align: 'center' });
+        }
       });
       
-      // Footer
-      const totalPages = doc.internal.getNumberOfPages();
-      for (let i = 1; i <= totalPages; i++) {
-        doc.setPage(i);
-        doc.setFontSize(8);
-        doc.setTextColor(150);
-        doc.text(`Page ${i} of ${totalPages}`, 196, pageHeight - 10, { align: 'right' });
-        doc.text('This document is system-generated and valid without signature.', 14, pageHeight - 10);
-      }
-
-      doc.save(`${record.id}_Payment_Ledger.pdf`);
+      doc.save(`${record.id}_Payment_Tracking.pdf`);
     } catch (e) {
       console.error(e);
-      toast.error('Error fetching settlement details for PDF extraction.');
+      toast.error('Error generating PDF.');
     }
   };
 
   const handlePrintRecord = async (record) => {
     try {
-      const response = await apiFetch(`/api/settlements/case/${record.rawId}`);
-      const settlements = response.ok ? await response.json() : [];
-      const latestSettlement = settlements.length > 0 ? settlements[0] : null;
-
-      const printWindow = window.open('', '_blank');
-      printWindow.document.write(`
-        <html>
-          <head>
-            <title>Print - ${record.id}</title>
-            <style>
-              body { font-family: sans-serif; padding: 20px; color: #333; }
-              table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-              th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
-              th { background-color: #f8f9fa; width: 30%; font-weight: bold; }
-              h2 { color: #162D50; border-bottom: 2px solid #162D50; padding-bottom: 10px; }
-            </style>
-          </head>
-          <body>
-            <h2>Payment Record: ${record.id}</h2>
-            <table>
-              <tr><th>Name</th><td>${latestSettlement ? latestSettlement.payeeName : record.name}</td></tr>
-              <tr><th>Payment Method</th><td>${latestSettlement ? latestSettlement.paymentMethod : 'N/A'}</td></tr>
-              <tr><th>Transaction Ref ID</th><td>${latestSettlement && latestSettlement.transactionRefId ? latestSettlement.transactionRefId : 'N/A'}</td></tr>
-              <tr><th>Net Payable</th><td>¥${latestSettlement ? latestSettlement.financials.netPayable.toLocaleString() : '0'}</td></tr>
-              <tr><th>Payment Date</th><td>${latestSettlement ? new Date(latestSettlement.paymentDate).toLocaleDateString() : 'N/A'}</td></tr>
-            </table>
-            <script>
-              window.onload = () => { window.print(); window.close(); }
-            </script>
-          </body>
-        </html>
-      `);
-      printWindow.document.close();
+      const doc = new jsPDF();
+      
+      const pageWidth = doc.internal.pageSize.width;
+      
+      doc.setFont('times', 'bold');
+      doc.setFontSize(18);
+      doc.setTextColor(30, 30, 30);
+      doc.text('OFFICE MANAGEMENT SYSTEM', 14, 22);
+      
+      doc.setFont('times', 'normal');
+      doc.setFontSize(12);
+      doc.setTextColor(80, 80, 80);
+      doc.text('Payment Tracking Report', 14, 28);
+      
+      doc.setFontSize(10);
+      doc.setTextColor(100, 100, 100);
+      const dateStr = `Date: ${new Date().toLocaleDateString()}`;
+      const recordStr = `Total Records: 1`;
+      doc.text(dateStr, pageWidth - 14 - doc.getTextWidth(dateStr), 22);
+      doc.text(recordStr, pageWidth - 14 - doc.getTextWidth(recordStr), 28);
+      
+      doc.setDrawColor(200, 200, 200);
+      doc.setLineWidth(0.5);
+      doc.line(14, 34, pageWidth - 14, 34);
+      
+      const tableData = [[
+        record.id,
+        record.name,
+        record.workPlace,
+        record.expenseType,
+        `${record.startDate}\n${record.endDate}`,
+        `${record.paidTerms} / ${record.totalTerms}`,
+        `¥${record.remainingBalance.toLocaleString()}`,
+        record.status
+      ]];
+      
+      autoTable(doc, {
+        startY: 40,
+        head: [['Case ID', 'Name', 'Work Place', 'Expense Type', 'Date (Start/End)', 'Progress', 'Remaining', 'Status']],
+        body: tableData,
+        theme: 'grid',
+        styles: { 
+          font: 'times',
+          fontSize: 9,
+          textColor: [40, 40, 40],
+          lineColor: [220, 220, 220],
+          lineWidth: 0.1,
+          cellPadding: 4
+        },
+        headStyles: { 
+          fillColor: [245, 245, 245], 
+          textColor: [20, 20, 20],
+          fontStyle: 'bold',
+          lineColor: [200, 200, 200]
+        },
+        alternateRowStyles: {
+          fillColor: [252, 252, 252]
+        },
+        didDrawPage: function (data) {
+          const str = "Page " + doc.internal.getNumberOfPages();
+          doc.setFont('times', 'italic');
+          doc.setFontSize(9);
+          doc.setTextColor(150, 150, 150);
+          doc.text(str, pageWidth / 2, doc.internal.pageSize.height - 10, { align: 'center' });
+        }
+      });
+      
+      doc.autoPrint();
+      const pdfBlob = doc.output('bloburl');
+      
+      const iframe = document.createElement('iframe');
+      iframe.style.position = 'fixed';
+      iframe.style.right = '0';
+      iframe.style.bottom = '0';
+      iframe.style.width = '0';
+      iframe.style.height = '0';
+      iframe.style.border = '0';
+      iframe.src = pdfBlob;
+      
+      document.body.appendChild(iframe);
+      
+      setTimeout(() => {
+        document.body.removeChild(iframe);
+      }, 30000);
+      
     } catch (e) {
-      toast.error('Error fetching settlement details for printing.');
+      console.error(e);
+      toast.error('Error generating print view.');
     }
   };
 
