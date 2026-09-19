@@ -42,23 +42,14 @@ services:
     volumes:
       - mongo_data:/data/db
       - mongo_config:/data/configdb
-    # Port is only exposed to localhost for security
-    # ports:
-    #   - "127.0.0.1:27017:27017"
+    ports:
+      - "127.0.0.1:27017:27017"
     healthcheck:
-      test: echo 'db.runCommand("ping").ok' | mongosh localhost:27017/test --quiet
+      test: mongosh --quiet -u $$MONGO_INITDB_ROOT_USERNAME -p $$MONGO_INITDB_ROOT_PASSWORD --authenticationDatabase admin localhost:27017/test --eval "db.adminCommand('ping')"
       interval: 10s
       timeout: 5s
       retries: 5
       start_period: 40s
-    deploy:
-      resources:
-        limits:
-          cpus: '1.0'
-          memory: 1G
-        reservations:
-          cpus: '0.25'
-          memory: 512M
 
 volumes:
   mongo_data:
