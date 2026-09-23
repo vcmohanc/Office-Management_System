@@ -23,6 +23,7 @@ export default function PaymentStatus() {
   const [deductions, setDeductions] = useState(0);
   const [destinationDetails, setDestinationDetails] = useState({});
   const [transactionRefId, setTransactionRefId] = useState('');
+  const [paymentDate, setPaymentDate] = useState(new Date().toISOString().split('T')[0]);
   const [isConfirmed, setIsConfirmed] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -185,7 +186,7 @@ export default function PaymentStatus() {
           netPayable: claimAmount - caseDeduction
         },
         transactionRefId,
-        paymentDate: e.target[e.target.length - 3].value,
+        paymentDate,
         isConfirmed
       };
 
@@ -227,6 +228,7 @@ export default function PaymentStatus() {
       setDeductions(0);
       setDestinationDetails({});
       setTransactionRefId('');
+      setPaymentDate(new Date().toISOString().split('T')[0]);
       setIsConfirmed(false);
       window.location.reload();
     }
@@ -679,7 +681,7 @@ export default function PaymentStatus() {
                   </div>
                   <div>
                     <label className="block text-xs font-bold uppercase tracking-widest mb-2">Payment Date <span className="text-[#B5482F]">*</span></label>
-                    <input type="date" required defaultValue={new Date().toISOString().split('T')[0]} className="w-full bg-transparent border-b border-dashed border-[#20301F] focus:outline-none focus:border-[#2F6F4E] py-2 font-mono rounded-none" />
+                    <input type="date" required value={paymentDate} onChange={(e) => setPaymentDate(e.target.value)} className="w-full bg-transparent border-b border-dashed border-[#20301F] focus:outline-none focus:border-[#2F6F4E] py-2 font-mono rounded-none" />
                   </div>
                   <div>
                     <label className="block text-xs font-bold uppercase tracking-widest mb-2 text-[#B5482F]">Less Deductions</label>

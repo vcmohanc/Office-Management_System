@@ -102,10 +102,21 @@
       "_id": "6a9e183a439c43b997804f01",
       "departure": "6a9e183a439c43b997804ef5",
       "charges": {
-        "6a9e183a439c43b997804ef6": "110"
+        "6a9e183a439c43b997804ef5": "なし",
+        "6a9e183a439c43b997804ef6": "530",
+        "6a9e183a439c43b997804ef7": "430",
+        "6a9e183a439c43b997804ef8": "230",
+        "6a9e183a439c43b997804ef9": "4,530",
+        "6a9e183a439c43b997804efa": "4,530",
+        "6a9e183a439c43b997804efb": "4,530",
+        "6a9e183a439c43b997804efc": "4,530",
+        "6a9e183a439c43b997804efd": "4,530",
+        "6a9e183a439c43b997804efe": "4,530",
+        "6a9e183a439c43b997804eff": "4,530",
+        "6a9e183a439c43b997804f00": "9,130"
       },
       "createdAt": "2026-09-07T01:49:46.050Z",
-      "updatedAt": "2026-09-07T07:37:59.840Z",
+      "updatedAt": "2026-09-07T07:41:47.420Z",
       "__v": 0
     },
     {
@@ -126,7 +137,7 @@
         "6a9e183a439c43b997804f00": "9,130"
       },
       "createdAt": "2026-09-07T01:49:46.053Z",
-      "updatedAt": "2026-09-07T04:09:54.753Z",
+      "updatedAt": "2026-09-07T07:41:47.429Z",
       "__v": 0
     },
     {
@@ -147,7 +158,7 @@
         "6a9e183a439c43b997804f00": "9,130"
       },
       "createdAt": "2026-09-07T01:49:46.056Z",
-      "updatedAt": "2026-09-07T04:09:54.754Z",
+      "updatedAt": "2026-09-07T07:41:47.431Z",
       "__v": 0
     },
     {
@@ -168,7 +179,7 @@
         "6a9e183a439c43b997804f00": "9,130"
       },
       "createdAt": "2026-09-07T01:49:46.058Z",
-      "updatedAt": "2026-09-07T04:09:54.755Z",
+      "updatedAt": "2026-09-07T07:41:47.434Z",
       "__v": 0
     },
     {
@@ -189,7 +200,7 @@
         "6a9e183a439c43b997804f00": "9,130"
       },
       "createdAt": "2026-09-07T01:49:46.060Z",
-      "updatedAt": "2026-09-07T04:09:54.756Z",
+      "updatedAt": "2026-09-07T07:41:47.435Z",
       "__v": 0
     },
     {
@@ -210,7 +221,7 @@
         "6a9e183a439c43b997804f00": "9,130"
       },
       "createdAt": "2026-09-07T01:49:46.062Z",
-      "updatedAt": "2026-09-07T04:09:54.757Z",
+      "updatedAt": "2026-09-07T07:41:47.437Z",
       "__v": 0
     },
     {
@@ -231,7 +242,7 @@
         "6a9e183a439c43b997804f00": "9,130"
       },
       "createdAt": "2026-09-07T01:49:46.064Z",
-      "updatedAt": "2026-09-07T04:09:54.758Z",
+      "updatedAt": "2026-09-07T07:41:47.438Z",
       "__v": 0
     },
     {
@@ -252,7 +263,7 @@
         "6a9e183a439c43b997804f00": "9,130"
       },
       "createdAt": "2026-09-07T01:49:46.066Z",
-      "updatedAt": "2026-09-07T04:09:54.760Z",
+      "updatedAt": "2026-09-07T07:41:47.439Z",
       "__v": 0
     },
     {
@@ -273,7 +284,7 @@
         "6a9e183a439c43b997804f00": "9,130"
       },
       "createdAt": "2026-09-07T01:49:46.069Z",
-      "updatedAt": "2026-09-07T04:09:54.761Z",
+      "updatedAt": "2026-09-07T07:41:47.441Z",
       "__v": 0
     },
     {
@@ -294,7 +305,7 @@
         "6a9e183a439c43b997804f00": "9,130"
       },
       "createdAt": "2026-09-07T01:49:46.072Z",
-      "updatedAt": "2026-09-07T04:09:54.762Z",
+      "updatedAt": "2026-09-07T07:41:47.442Z",
       "__v": 0
     },
     {
@@ -315,7 +326,7 @@
         "6a9e183a439c43b997804f00": "9,130"
       },
       "createdAt": "2026-09-07T01:49:46.074Z",
-      "updatedAt": "2026-09-07T04:09:54.763Z",
+      "updatedAt": "2026-09-07T07:41:47.444Z",
       "__v": 0
     },
     {
@@ -336,72 +347,35 @@
         "6a9e183a439c43b997804f00": "なし"
       },
       "createdAt": "2026-09-07T01:49:46.076Z",
-      "updatedAt": "2026-09-07T04:09:54.764Z",
+      "updatedAt": "2026-09-07T07:41:47.445Z",
       "__v": 0
     }
   ],
   "cases": [
     {
-      "_id": "6a9676d9f4fada758f19e3e8",
-      "case_id": "CAS-2026-5209",
-      "case_type": "Staff Case",
-      "staff_name": "Chaudhary Mohan",
-      "staff_id": "STF272CBF",
-      "location": "Tokyo Office",
-      "branch_farm_name": "Tokyo Office",
-      "visa_status": "Working Visa",
-      "visa_available_time": "2027-06-30T00:00:00.000Z",
-      "expense_type": "Postage",
-      "advancer_category": "Service staff",
-      "payment_process_type": "Transfer to the person concerned",
-      "bearing_party": "VC",
-      "expense_amount": 5000,
-      "expense_period_start": "2026-09-01T06:55:21.799Z",
-      "expense_period_end": "2026-09-01T06:55:21.799Z",
-      "sender": "Mohan",
-      "recipient": "Office",
-      "receipts": [],
-      "remark": "",
-      "total_expense": 5000,
-      "currency": "JPY",
-      "previous_unsettled_balance": 0,
-      "includeBalance": false,
-      "final_total_amount": 5000,
-      "settlement_method": "Bank Transfer",
-      "expected_settlement_date": "2026-09-27T00:00:00.000Z",
-      "collection_method": "Bank Transfer",
-      "installment_plan": "Payroll Deduction (3 Months)",
-      "installment_count": 3,
-      "collection_start_month": "2026-09",
-      "monthly_deduction": 1666.6666666666667,
-      "paidTerms": 0,
-      "bouncedCount": 0,
-      "status": "Pending",
-      "createdAt": "2026-09-01T06:55:21.803Z",
-      "updatedAt": "2026-09-01T06:55:21.803Z",
-      "__v": 0
-    },
-    {
-      "_id": "6a96848e99d604cdd34e16b6",
-      "case_id": "CAS-2026-6566",
-      "case_type": "Staff Case",
+      "_id": "6aa8a0a28bd5cf7c1177a15a",
+      "case_id": "CAS-2026-0002",
+      "case_type": "Office Case",
       "staff_name": "Kimura Takuya",
-      "staff_id": "STFE57336",
+      "staff_id": "ID-E57336",
       "location": "Tokyo Office",
       "branch_farm_name": "Tokyo Office",
       "visa_status": "Employment Visa",
       "visa_available_time": "2027-06-21T00:00:00.000Z",
-      "expense_type": "Visa application fee",
-      "advancer_category": "Service staff",
-      "payment_process_type": "Salary deduction",
-      "bearing_party": "VC",
+      "expense_type": "WIFI",
+      "advancer_category": "Dispatch destination: Farm",
+      "payment_process_type": "Invoice from the client company",
+      "bearing_party": "Dispatch destination: Farm",
       "expense_amount": 50000,
-      "expense_period_start": "2026-09-01T07:53:50.218Z",
-      "expense_period_end": "2026-09-01T07:53:50.218Z",
+      "expense_period_start": "2026-09-02T00:00:00.000Z",
+      "expense_period_end": "2026-09-26T00:00:00.000Z",
       "sender": "",
       "recipient": "",
+      "departure": "",
+      "destination": "",
+      "transport_method": "",
       "receipts": [
-        "IMG_0025.jpg"
+        "1789436020831-117249308-IMG_9781.jpg"
       ],
       "remark": "",
       "total_expense": 50000,
@@ -410,18 +384,75 @@
       "includeBalance": false,
       "final_total_amount": 50000,
       "settlement_method": "Bank Transfer",
-      "expected_settlement_date": "2026-09-01T00:00:00.000Z",
+      "expected_settlement_date": "2026-11-26T15:00:00.000Z",
       "collection_method": "Bank Transfer",
       "installment_plan": "Payroll Deduction (3 Months)",
       "installment_count": 3,
-      "collection_start_month": "2026-09",
+      "collection_start_month": "2026/11",
       "monthly_deduction": 16666.666666666668,
-      "paidTerms": 0,
+      "paidTerms": 3,
       "bouncedCount": 0,
-      "status": "Pending",
-      "createdAt": "2026-09-01T07:53:50.249Z",
-      "updatedAt": "2026-09-01T07:53:50.249Z",
-      "__v": 0
+      "status": "Completed",
+      "statusMessage": "",
+      "hasAccountNotification": false,
+      "hasSupportNotification": true,
+      "supportUpdatedFields": [],
+      "messages": [],
+      "createdAt": "2026-09-15T01:34:26.428Z",
+      "updatedAt": "2026-09-15T04:07:51.545Z",
+      "__v": 1,
+      "installment_records": []
+    },
+    {
+      "_id": "6aa8a38b8bd5cf7c1177a221",
+      "case_id": "CAS-2026-0003",
+      "case_type": "Office Case",
+      "staff_name": "Ito Emi",
+      "staff_id": "ID-E57333",
+      "location": "Tokyo Office",
+      "branch_farm_name": "Tokyo Office",
+      "visa_status": "Permanent Resident",
+      "visa_available_time": "2030-01-10T00:00:00.000Z",
+      "expense_type": "Waiting Dormitory Fee",
+      "advancer_category": "Service staff",
+      "payment_process_type": "Salary deduction",
+      "bearing_party": "Service staff",
+      "expense_amount": 30000,
+      "expense_period_start": "2026-09-01T00:00:00.000Z",
+      "expense_period_end": "2026-09-15T00:00:00.000Z",
+      "sender": "",
+      "recipient": "",
+      "departure": "",
+      "destination": "",
+      "transport_method": "",
+      "receipts": [
+        "1789436765975-705907686-IMG_9767.jpg"
+      ],
+      "remark": "",
+      "total_expense": 30000,
+      "currency": "JPY",
+      "previous_unsettled_balance": 0,
+      "includeBalance": false,
+      "final_total_amount": 30000,
+      "settlement_method": "Bank Transfer",
+      "expected_settlement_date": "2026-10-26T15:00:00.000Z",
+      "collection_method": "Bank Transfer",
+      "installment_plan": "Payroll Deduction (6 Months)",
+      "installment_count": 6,
+      "collection_start_month": "2026/10",
+      "monthly_deduction": 5000,
+      "paidTerms": 6,
+      "bouncedCount": 0,
+      "status": "Completed",
+      "statusMessage": "",
+      "hasAccountNotification": false,
+      "hasSupportNotification": true,
+      "supportUpdatedFields": [],
+      "messages": [],
+      "createdAt": "2026-09-15T01:46:51.470Z",
+      "updatedAt": "2026-09-15T06:29:21.280Z",
+      "__v": 1,
+      "installment_records": []
     }
   ],
   "travelcharges": [
@@ -429,252 +460,684 @@
       "_id": "6a9e183a439c43b997804f02",
       "departure": "6a9e183a439c43b997804ef5",
       "charges": {
-        "6a9e183a439c43b997804ef5": "なし",
-        "6a9e183a439c43b997804ef6": "1",
-        "6a9e183a439c43b997804ef7": "2",
-        "6a9e183a439c43b997804ef8": "3",
-        "6a9e183a439c43b997804ef9": "4",
-        "6a9e183a439c43b997804efa": "5",
-        "6a9e183a439c43b997804efb": "6",
-        "6a9e183a439c43b997804efc": "7",
-        "6a9e183a439c43b997804efd": "8",
-        "6a9e183a439c43b997804efe": "9",
-        "6a9e183a439c43b997804eff": "10",
-        "6a9e183a439c43b997804f00": "11"
+        "6a9e183a439c43b997804ef5": {
+          "bus": "100",
+          "flight": "なし"
+        },
+        "6a9e183a439c43b997804ef6": {
+          "bus": "100",
+          "flight": "200"
+        },
+        "6a9e183a439c43b997804ef7": {
+          "bus": "100",
+          "flight": "200"
+        },
+        "6a9e183a439c43b997804ef8": {
+          "bus": "100",
+          "flight": "200"
+        },
+        "6a9e183a439c43b997804ef9": {
+          "bus": "100",
+          "flight": "200"
+        },
+        "6a9e183a439c43b997804efa": {
+          "bus": "100",
+          "flight": "200"
+        },
+        "6a9e183a439c43b997804efb": {
+          "bus": "100",
+          "flight": "200"
+        },
+        "6a9e183a439c43b997804efc": {
+          "bus": "100",
+          "flight": "200"
+        },
+        "6a9e183a439c43b997804efd": {
+          "bus": "100",
+          "flight": "200"
+        },
+        "6a9e183a439c43b997804efe": {
+          "bus": "100",
+          "flight": "200"
+        },
+        "6a9e183a439c43b997804eff": {
+          "bus": "100",
+          "flight": "200"
+        },
+        "6a9e183a439c43b997804f00": {
+          "bus": "100",
+          "flight": "200"
+        }
       },
       "createdAt": "2026-09-07T01:49:46.052Z",
-      "updatedAt": "2026-09-07T04:12:02.895Z",
+      "updatedAt": "2026-09-12T01:47:02.818Z",
       "__v": 0
     },
     {
       "_id": "6a9e183a439c43b997804f04",
       "departure": "6a9e183a439c43b997804ef6",
       "charges": {
-        "6a9e183a439c43b997804ef5": "12",
-        "6a9e183a439c43b997804ef6": "なし",
-        "6a9e183a439c43b997804ef7": "13",
-        "6a9e183a439c43b997804ef8": "14",
-        "6a9e183a439c43b997804ef9": "15",
-        "6a9e183a439c43b997804efa": "16",
-        "6a9e183a439c43b997804efb": "17",
-        "6a9e183a439c43b997804efc": "19",
-        "6a9e183a439c43b997804efd": "20",
-        "6a9e183a439c43b997804efe": "4,530",
-        "6a9e183a439c43b997804eff": "4,530",
-        "6a9e183a439c43b997804f00": "9,130"
+        "6a9e183a439c43b997804ef5": {
+          "bus": "100",
+          "flight": "200"
+        },
+        "6a9e183a439c43b997804ef6": {
+          "bus": "110",
+          "flight": "なし"
+        },
+        "6a9e183a439c43b997804ef7": {
+          "bus": "100",
+          "flight": "200"
+        },
+        "6a9e183a439c43b997804ef8": {
+          "bus": "100",
+          "flight": "200"
+        },
+        "6a9e183a439c43b997804ef9": {
+          "bus": "100",
+          "flight": "200"
+        },
+        "6a9e183a439c43b997804efa": {
+          "bus": "100",
+          "flight": "200"
+        },
+        "6a9e183a439c43b997804efb": {
+          "bus": "100",
+          "flight": "200"
+        },
+        "6a9e183a439c43b997804efc": {
+          "bus": "100",
+          "flight": "200"
+        },
+        "6a9e183a439c43b997804efd": {
+          "bus": "100",
+          "flight": "200"
+        },
+        "6a9e183a439c43b997804efe": {
+          "bus": "100",
+          "flight": "200"
+        },
+        "6a9e183a439c43b997804eff": {
+          "bus": "100",
+          "flight": "200"
+        },
+        "6a9e183a439c43b997804f00": {
+          "bus": "100",
+          "flight": "200"
+        }
       },
       "createdAt": "2026-09-07T01:49:46.055Z",
-      "updatedAt": "2026-09-07T04:12:02.897Z",
+      "updatedAt": "2026-09-12T01:47:02.824Z",
       "__v": 0
     },
     {
       "_id": "6a9e183a439c43b997804f06",
       "departure": "6a9e183a439c43b997804ef7",
       "charges": {
-        "6a9e183a439c43b997804ef5": "4,530",
-        "6a9e183a439c43b997804ef6": "4,530",
-        "6a9e183a439c43b997804ef7": "なし",
-        "6a9e183a439c43b997804ef8": "4,530",
-        "6a9e183a439c43b997804ef9": "4,530",
-        "6a9e183a439c43b997804efa": "4,530",
-        "6a9e183a439c43b997804efb": "4,530",
-        "6a9e183a439c43b997804efc": "4,530",
-        "6a9e183a439c43b997804efd": "4,530",
-        "6a9e183a439c43b997804efe": "4,530",
-        "6a9e183a439c43b997804eff": "4,530",
-        "6a9e183a439c43b997804f00": "9,130"
+        "6a9e183a439c43b997804ef5": {
+          "bus": "4,530",
+          "flight": "4,530"
+        },
+        "6a9e183a439c43b997804ef6": {
+          "bus": "4,530",
+          "flight": "4,530"
+        },
+        "6a9e183a439c43b997804ef7": {
+          "bus": "なし",
+          "flight": "なし"
+        },
+        "6a9e183a439c43b997804ef8": {
+          "bus": "4,530",
+          "flight": "4,530"
+        },
+        "6a9e183a439c43b997804ef9": {
+          "bus": "4,530",
+          "flight": "4,530"
+        },
+        "6a9e183a439c43b997804efa": {
+          "bus": "4,530",
+          "flight": "4,530"
+        },
+        "6a9e183a439c43b997804efb": {
+          "bus": "4,530",
+          "flight": "4,530"
+        },
+        "6a9e183a439c43b997804efc": {
+          "bus": "4,530",
+          "flight": "4,530"
+        },
+        "6a9e183a439c43b997804efd": {
+          "bus": "4,530",
+          "flight": "4,530"
+        },
+        "6a9e183a439c43b997804efe": {
+          "bus": "4,530",
+          "flight": "4,530"
+        },
+        "6a9e183a439c43b997804eff": {
+          "bus": "4,530",
+          "flight": "4,530"
+        },
+        "6a9e183a439c43b997804f00": {
+          "bus": "9,130",
+          "flight": "9,130"
+        }
       },
       "createdAt": "2026-09-07T01:49:46.057Z",
-      "updatedAt": "2026-09-07T04:12:02.898Z",
+      "updatedAt": "2026-09-12T01:47:02.826Z",
       "__v": 0
     },
     {
       "_id": "6a9e183a439c43b997804f08",
       "departure": "6a9e183a439c43b997804ef8",
       "charges": {
-        "6a9e183a439c43b997804ef5": "4,530",
-        "6a9e183a439c43b997804ef6": "4,530",
-        "6a9e183a439c43b997804ef7": "4,530",
-        "6a9e183a439c43b997804ef8": "なし",
-        "6a9e183a439c43b997804ef9": "4,530",
-        "6a9e183a439c43b997804efa": "4,530",
-        "6a9e183a439c43b997804efb": "4,530",
-        "6a9e183a439c43b997804efc": "4,530",
-        "6a9e183a439c43b997804efd": "4,530",
-        "6a9e183a439c43b997804efe": "4,530",
-        "6a9e183a439c43b997804eff": "4,530",
-        "6a9e183a439c43b997804f00": "9,130"
+        "6a9e183a439c43b997804ef5": {
+          "bus": "4,530",
+          "flight": "4,530"
+        },
+        "6a9e183a439c43b997804ef6": {
+          "bus": "4,530",
+          "flight": "4,530"
+        },
+        "6a9e183a439c43b997804ef7": {
+          "bus": "4,530",
+          "flight": "4,530"
+        },
+        "6a9e183a439c43b997804ef8": {
+          "bus": "なし",
+          "flight": "なし"
+        },
+        "6a9e183a439c43b997804ef9": {
+          "bus": "4,530",
+          "flight": "4,530"
+        },
+        "6a9e183a439c43b997804efa": {
+          "bus": "4,530",
+          "flight": "4,530"
+        },
+        "6a9e183a439c43b997804efb": {
+          "bus": "4,530",
+          "flight": "4,530"
+        },
+        "6a9e183a439c43b997804efc": {
+          "bus": "4,530",
+          "flight": "4,530"
+        },
+        "6a9e183a439c43b997804efd": {
+          "bus": "4,530",
+          "flight": "4,530"
+        },
+        "6a9e183a439c43b997804efe": {
+          "bus": "4,530",
+          "flight": "4,530"
+        },
+        "6a9e183a439c43b997804eff": {
+          "bus": "4,530",
+          "flight": "4,530"
+        },
+        "6a9e183a439c43b997804f00": {
+          "bus": "9,130",
+          "flight": "9,130"
+        }
       },
       "createdAt": "2026-09-07T01:49:46.059Z",
-      "updatedAt": "2026-09-07T04:12:02.899Z",
+      "updatedAt": "2026-09-12T01:47:02.827Z",
       "__v": 0
     },
     {
       "_id": "6a9e183a439c43b997804f0a",
       "departure": "6a9e183a439c43b997804ef9",
       "charges": {
-        "6a9e183a439c43b997804ef5": "4,530",
-        "6a9e183a439c43b997804ef6": "4,530",
-        "6a9e183a439c43b997804ef7": "4,530",
-        "6a9e183a439c43b997804ef8": "4,530",
-        "6a9e183a439c43b997804ef9": "なし",
-        "6a9e183a439c43b997804efa": "4,530",
-        "6a9e183a439c43b997804efb": "4,530",
-        "6a9e183a439c43b997804efc": "4,530",
-        "6a9e183a439c43b997804efd": "4,530",
-        "6a9e183a439c43b997804efe": "4,530",
-        "6a9e183a439c43b997804eff": "4,530",
-        "6a9e183a439c43b997804f00": "9,130"
+        "6a9e183a439c43b997804ef5": {
+          "bus": "4,530",
+          "flight": "4,530"
+        },
+        "6a9e183a439c43b997804ef6": {
+          "bus": "4,530",
+          "flight": "4,530"
+        },
+        "6a9e183a439c43b997804ef7": {
+          "bus": "4,530",
+          "flight": "4,530"
+        },
+        "6a9e183a439c43b997804ef8": {
+          "bus": "4,530",
+          "flight": "4,530"
+        },
+        "6a9e183a439c43b997804ef9": {
+          "bus": "なし",
+          "flight": "なし"
+        },
+        "6a9e183a439c43b997804efa": {
+          "bus": "4,530",
+          "flight": "4,530"
+        },
+        "6a9e183a439c43b997804efb": {
+          "bus": "4,530",
+          "flight": "4,530"
+        },
+        "6a9e183a439c43b997804efc": {
+          "bus": "4,530",
+          "flight": "4,530"
+        },
+        "6a9e183a439c43b997804efd": {
+          "bus": "4,530",
+          "flight": "4,530"
+        },
+        "6a9e183a439c43b997804efe": {
+          "bus": "4,530",
+          "flight": "4,530"
+        },
+        "6a9e183a439c43b997804eff": {
+          "bus": "4,530",
+          "flight": "4,530"
+        },
+        "6a9e183a439c43b997804f00": {
+          "bus": "9,130",
+          "flight": "9,130"
+        }
       },
       "createdAt": "2026-09-07T01:49:46.061Z",
-      "updatedAt": "2026-09-07T04:12:02.900Z",
+      "updatedAt": "2026-09-12T01:47:02.829Z",
       "__v": 0
     },
     {
       "_id": "6a9e183a439c43b997804f0c",
       "departure": "6a9e183a439c43b997804efa",
       "charges": {
-        "6a9e183a439c43b997804ef5": "4,530",
-        "6a9e183a439c43b997804ef6": "4,530",
-        "6a9e183a439c43b997804ef7": "4,530",
-        "6a9e183a439c43b997804ef8": "4,530",
-        "6a9e183a439c43b997804ef9": "4,530",
-        "6a9e183a439c43b997804efa": "なし",
-        "6a9e183a439c43b997804efb": "4,530",
-        "6a9e183a439c43b997804efc": "4,530",
-        "6a9e183a439c43b997804efd": "4,530",
-        "6a9e183a439c43b997804efe": "4,530",
-        "6a9e183a439c43b997804eff": "4,530",
-        "6a9e183a439c43b997804f00": "9,130"
+        "6a9e183a439c43b997804ef5": {
+          "bus": "4,530",
+          "flight": "4,530"
+        },
+        "6a9e183a439c43b997804ef6": {
+          "bus": "4,530",
+          "flight": "4,530"
+        },
+        "6a9e183a439c43b997804ef7": {
+          "bus": "4,530",
+          "flight": "4,530"
+        },
+        "6a9e183a439c43b997804ef8": {
+          "bus": "4,530",
+          "flight": "4,530"
+        },
+        "6a9e183a439c43b997804ef9": {
+          "bus": "4,530",
+          "flight": "4,530"
+        },
+        "6a9e183a439c43b997804efa": {
+          "bus": "なし",
+          "flight": "なし"
+        },
+        "6a9e183a439c43b997804efb": {
+          "bus": "4,530",
+          "flight": "4,530"
+        },
+        "6a9e183a439c43b997804efc": {
+          "bus": "4,530",
+          "flight": "4,530"
+        },
+        "6a9e183a439c43b997804efd": {
+          "bus": "4,530",
+          "flight": "4,530"
+        },
+        "6a9e183a439c43b997804efe": {
+          "bus": "4,530",
+          "flight": "4,530"
+        },
+        "6a9e183a439c43b997804eff": {
+          "bus": "4,530",
+          "flight": "4,530"
+        },
+        "6a9e183a439c43b997804f00": {
+          "bus": "9,130",
+          "flight": "9,130"
+        }
       },
       "createdAt": "2026-09-07T01:49:46.063Z",
-      "updatedAt": "2026-09-07T04:12:02.902Z",
+      "updatedAt": "2026-09-12T01:47:02.830Z",
       "__v": 0
     },
     {
       "_id": "6a9e183a439c43b997804f0e",
       "departure": "6a9e183a439c43b997804efb",
       "charges": {
-        "6a9e183a439c43b997804ef5": "4,530",
-        "6a9e183a439c43b997804ef6": "4,530",
-        "6a9e183a439c43b997804ef7": "4,530",
-        "6a9e183a439c43b997804ef8": "4,530",
-        "6a9e183a439c43b997804ef9": "4,530",
-        "6a9e183a439c43b997804efa": "4,530",
-        "6a9e183a439c43b997804efb": "なし",
-        "6a9e183a439c43b997804efc": "4,530",
-        "6a9e183a439c43b997804efd": "4,530",
-        "6a9e183a439c43b997804efe": "4,530",
-        "6a9e183a439c43b997804eff": "4,530",
-        "6a9e183a439c43b997804f00": "9,130"
+        "6a9e183a439c43b997804ef5": {
+          "bus": "4,530",
+          "flight": "4,530"
+        },
+        "6a9e183a439c43b997804ef6": {
+          "bus": "4,530",
+          "flight": "4,530"
+        },
+        "6a9e183a439c43b997804ef7": {
+          "bus": "4,530",
+          "flight": "4,530"
+        },
+        "6a9e183a439c43b997804ef8": {
+          "bus": "4,530",
+          "flight": "4,530"
+        },
+        "6a9e183a439c43b997804ef9": {
+          "bus": "4,530",
+          "flight": "4,530"
+        },
+        "6a9e183a439c43b997804efa": {
+          "bus": "4,530",
+          "flight": "4,530"
+        },
+        "6a9e183a439c43b997804efb": {
+          "bus": "なし",
+          "flight": "なし"
+        },
+        "6a9e183a439c43b997804efc": {
+          "bus": "4,530",
+          "flight": "4,530"
+        },
+        "6a9e183a439c43b997804efd": {
+          "bus": "4,530",
+          "flight": "4,530"
+        },
+        "6a9e183a439c43b997804efe": {
+          "bus": "4,530",
+          "flight": "4,530"
+        },
+        "6a9e183a439c43b997804eff": {
+          "bus": "4,530",
+          "flight": "4,530"
+        },
+        "6a9e183a439c43b997804f00": {
+          "bus": "9,130",
+          "flight": "9,130"
+        }
       },
       "createdAt": "2026-09-07T01:49:46.065Z",
-      "updatedAt": "2026-09-07T04:12:02.903Z",
+      "updatedAt": "2026-09-12T01:47:02.831Z",
       "__v": 0
     },
     {
       "_id": "6a9e183a439c43b997804f10",
       "departure": "6a9e183a439c43b997804efc",
       "charges": {
-        "6a9e183a439c43b997804ef5": "4,530",
-        "6a9e183a439c43b997804ef6": "4,530",
-        "6a9e183a439c43b997804ef7": "4,530",
-        "6a9e183a439c43b997804ef8": "4,530",
-        "6a9e183a439c43b997804ef9": "4,530",
-        "6a9e183a439c43b997804efa": "4,530",
-        "6a9e183a439c43b997804efb": "4,530",
-        "6a9e183a439c43b997804efc": "なし",
-        "6a9e183a439c43b997804efd": "4,530",
-        "6a9e183a439c43b997804efe": "4,530",
-        "6a9e183a439c43b997804eff": "4,530",
-        "6a9e183a439c43b997804f00": "9,130"
+        "6a9e183a439c43b997804ef5": {
+          "bus": "4,530",
+          "flight": "4,530"
+        },
+        "6a9e183a439c43b997804ef6": {
+          "bus": "4,530",
+          "flight": "4,530"
+        },
+        "6a9e183a439c43b997804ef7": {
+          "bus": "4,530",
+          "flight": "4,530"
+        },
+        "6a9e183a439c43b997804ef8": {
+          "bus": "4,530",
+          "flight": "4,530"
+        },
+        "6a9e183a439c43b997804ef9": {
+          "bus": "4,530",
+          "flight": "4,530"
+        },
+        "6a9e183a439c43b997804efa": {
+          "bus": "4,530",
+          "flight": "4,530"
+        },
+        "6a9e183a439c43b997804efb": {
+          "bus": "4,530",
+          "flight": "4,530"
+        },
+        "6a9e183a439c43b997804efc": {
+          "bus": "なし",
+          "flight": "なし"
+        },
+        "6a9e183a439c43b997804efd": {
+          "bus": "4,530",
+          "flight": "4,530"
+        },
+        "6a9e183a439c43b997804efe": {
+          "bus": "4,530",
+          "flight": "4,530"
+        },
+        "6a9e183a439c43b997804eff": {
+          "bus": "4,530",
+          "flight": "4,530"
+        },
+        "6a9e183a439c43b997804f00": {
+          "bus": "9,130",
+          "flight": "9,130"
+        }
       },
       "createdAt": "2026-09-07T01:49:46.068Z",
-      "updatedAt": "2026-09-07T04:12:02.905Z",
+      "updatedAt": "2026-09-12T01:47:02.832Z",
       "__v": 0
     },
     {
       "_id": "6a9e183a439c43b997804f12",
       "departure": "6a9e183a439c43b997804efd",
       "charges": {
-        "6a9e183a439c43b997804ef5": "4,530",
-        "6a9e183a439c43b997804ef6": "4,530",
-        "6a9e183a439c43b997804ef7": "4,530",
-        "6a9e183a439c43b997804ef8": "4,530",
-        "6a9e183a439c43b997804ef9": "4,530",
-        "6a9e183a439c43b997804efa": "4,530",
-        "6a9e183a439c43b997804efb": "4,530",
-        "6a9e183a439c43b997804efc": "4,530",
-        "6a9e183a439c43b997804efd": "なし",
-        "6a9e183a439c43b997804efe": "4,530",
-        "6a9e183a439c43b997804eff": "4,530",
-        "6a9e183a439c43b997804f00": "9,130"
+        "6a9e183a439c43b997804ef5": {
+          "bus": "4,530",
+          "flight": "4,530"
+        },
+        "6a9e183a439c43b997804ef6": {
+          "bus": "4,530",
+          "flight": "4,530"
+        },
+        "6a9e183a439c43b997804ef7": {
+          "bus": "4,530",
+          "flight": "4,530"
+        },
+        "6a9e183a439c43b997804ef8": {
+          "bus": "4,530",
+          "flight": "4,530"
+        },
+        "6a9e183a439c43b997804ef9": {
+          "bus": "4,530",
+          "flight": "4,530"
+        },
+        "6a9e183a439c43b997804efa": {
+          "bus": "4,530",
+          "flight": "4,530"
+        },
+        "6a9e183a439c43b997804efb": {
+          "bus": "4,530",
+          "flight": "4,530"
+        },
+        "6a9e183a439c43b997804efc": {
+          "bus": "4,530",
+          "flight": "4,530"
+        },
+        "6a9e183a439c43b997804efd": {
+          "bus": "なし",
+          "flight": "なし"
+        },
+        "6a9e183a439c43b997804efe": {
+          "bus": "4,530",
+          "flight": "4,530"
+        },
+        "6a9e183a439c43b997804eff": {
+          "bus": "4,530",
+          "flight": "4,530"
+        },
+        "6a9e183a439c43b997804f00": {
+          "bus": "9,130",
+          "flight": "9,130"
+        }
       },
       "createdAt": "2026-09-07T01:49:46.070Z",
-      "updatedAt": "2026-09-07T04:12:02.906Z",
+      "updatedAt": "2026-09-12T01:47:02.833Z",
       "__v": 0
     },
     {
       "_id": "6a9e183a439c43b997804f14",
       "departure": "6a9e183a439c43b997804efe",
       "charges": {
-        "6a9e183a439c43b997804ef5": "4,530",
-        "6a9e183a439c43b997804ef6": "4,530",
-        "6a9e183a439c43b997804ef7": "4,530",
-        "6a9e183a439c43b997804ef8": "4,530",
-        "6a9e183a439c43b997804ef9": "4,530",
-        "6a9e183a439c43b997804efa": "4,530",
-        "6a9e183a439c43b997804efb": "4,530",
-        "6a9e183a439c43b997804efc": "4,530",
-        "6a9e183a439c43b997804efd": "4,530",
-        "6a9e183a439c43b997804efe": "なし",
-        "6a9e183a439c43b997804eff": "4,530",
-        "6a9e183a439c43b997804f00": "9,130"
+        "6a9e183a439c43b997804ef5": {
+          "bus": "4,530",
+          "flight": "4,530"
+        },
+        "6a9e183a439c43b997804ef6": {
+          "bus": "4,530",
+          "flight": "4,530"
+        },
+        "6a9e183a439c43b997804ef7": {
+          "bus": "4,530",
+          "flight": "4,530"
+        },
+        "6a9e183a439c43b997804ef8": {
+          "bus": "4,530",
+          "flight": "4,530"
+        },
+        "6a9e183a439c43b997804ef9": {
+          "bus": "4,530",
+          "flight": "4,530"
+        },
+        "6a9e183a439c43b997804efa": {
+          "bus": "4,530",
+          "flight": "4,530"
+        },
+        "6a9e183a439c43b997804efb": {
+          "bus": "4,530",
+          "flight": "4,530"
+        },
+        "6a9e183a439c43b997804efc": {
+          "bus": "4,530",
+          "flight": "4,530"
+        },
+        "6a9e183a439c43b997804efd": {
+          "bus": "4,530",
+          "flight": "4,530"
+        },
+        "6a9e183a439c43b997804efe": {
+          "bus": "なし",
+          "flight": "なし"
+        },
+        "6a9e183a439c43b997804eff": {
+          "bus": "4,530",
+          "flight": "4,530"
+        },
+        "6a9e183a439c43b997804f00": {
+          "bus": "9,130",
+          "flight": "9,130"
+        }
       },
       "createdAt": "2026-09-07T01:49:46.073Z",
-      "updatedAt": "2026-09-07T04:12:02.907Z",
+      "updatedAt": "2026-09-12T01:47:02.835Z",
       "__v": 0
     },
     {
       "_id": "6a9e183a439c43b997804f16",
       "departure": "6a9e183a439c43b997804eff",
       "charges": {
-        "6a9e183a439c43b997804ef5": "4,530",
-        "6a9e183a439c43b997804ef6": "4,530",
-        "6a9e183a439c43b997804ef7": "4,530",
-        "6a9e183a439c43b997804ef8": "4,530",
-        "6a9e183a439c43b997804ef9": "4,530",
-        "6a9e183a439c43b997804efa": "4,530",
-        "6a9e183a439c43b997804efb": "4,530",
-        "6a9e183a439c43b997804efc": "4,530",
-        "6a9e183a439c43b997804efd": "4,530",
-        "6a9e183a439c43b997804efe": "4,530",
-        "6a9e183a439c43b997804eff": "なし",
-        "6a9e183a439c43b997804f00": "9,130"
+        "6a9e183a439c43b997804ef5": {
+          "bus": "4,530",
+          "flight": "4,530"
+        },
+        "6a9e183a439c43b997804ef6": {
+          "bus": "4,530",
+          "flight": "4,530"
+        },
+        "6a9e183a439c43b997804ef7": {
+          "bus": "4,530",
+          "flight": "4,530"
+        },
+        "6a9e183a439c43b997804ef8": {
+          "bus": "4,530",
+          "flight": "4,530"
+        },
+        "6a9e183a439c43b997804ef9": {
+          "bus": "4,530",
+          "flight": "4,530"
+        },
+        "6a9e183a439c43b997804efa": {
+          "bus": "4,530",
+          "flight": "4,530"
+        },
+        "6a9e183a439c43b997804efb": {
+          "bus": "4,530",
+          "flight": "4,530"
+        },
+        "6a9e183a439c43b997804efc": {
+          "bus": "4,530",
+          "flight": "4,530"
+        },
+        "6a9e183a439c43b997804efd": {
+          "bus": "4,530",
+          "flight": "4,530"
+        },
+        "6a9e183a439c43b997804efe": {
+          "bus": "4,530",
+          "flight": "4,530"
+        },
+        "6a9e183a439c43b997804eff": {
+          "bus": "なし",
+          "flight": "なし"
+        },
+        "6a9e183a439c43b997804f00": {
+          "bus": "9,130",
+          "flight": "9,130"
+        }
       },
       "createdAt": "2026-09-07T01:49:46.075Z",
-      "updatedAt": "2026-09-07T04:12:02.908Z",
+      "updatedAt": "2026-09-12T01:47:02.838Z",
       "__v": 0
     },
     {
       "_id": "6a9e183a439c43b997804f18",
       "departure": "6a9e183a439c43b997804f00",
       "charges": {
-        "6a9e183a439c43b997804ef5": "9,130",
-        "6a9e183a439c43b997804ef6": "9,130",
-        "6a9e183a439c43b997804ef7": "9,130",
-        "6a9e183a439c43b997804ef8": "9,130",
-        "6a9e183a439c43b997804ef9": "9,130",
-        "6a9e183a439c43b997804efa": "9,130",
-        "6a9e183a439c43b997804efb": "9,130",
-        "6a9e183a439c43b997804efc": "9,130",
-        "6a9e183a439c43b997804efd": "9,130",
-        "6a9e183a439c43b997804efe": "9,130",
-        "6a9e183a439c43b997804eff": "9,130",
-        "6a9e183a439c43b997804f00": "なし"
+        "6a9e183a439c43b997804ef5": {
+          "bus": "9,130",
+          "flight": "9,130"
+        },
+        "6a9e183a439c43b997804ef6": {
+          "bus": "9,130",
+          "flight": "9,130"
+        },
+        "6a9e183a439c43b997804ef7": {
+          "bus": "9,130",
+          "flight": "9,130"
+        },
+        "6a9e183a439c43b997804ef8": {
+          "bus": "9,130",
+          "flight": "9,130"
+        },
+        "6a9e183a439c43b997804ef9": {
+          "bus": "9,130",
+          "flight": "9,130"
+        },
+        "6a9e183a439c43b997804efa": {
+          "bus": "9,130",
+          "flight": "9,130"
+        },
+        "6a9e183a439c43b997804efb": {
+          "bus": "9,130",
+          "flight": "9,130"
+        },
+        "6a9e183a439c43b997804efc": {
+          "bus": "9,130",
+          "flight": "9,130"
+        },
+        "6a9e183a439c43b997804efd": {
+          "bus": "9,130",
+          "flight": "9,130"
+        },
+        "6a9e183a439c43b997804efe": {
+          "bus": "9,130",
+          "flight": "9,130"
+        },
+        "6a9e183a439c43b997804eff": {
+          "bus": "9,130",
+          "flight": "9,130"
+        },
+        "6a9e183a439c43b997804f00": {
+          "bus": "なし",
+          "flight": "なし"
+        }
       },
       "createdAt": "2026-09-07T01:49:46.077Z",
-      "updatedAt": "2026-09-07T04:12:02.909Z",
+      "updatedAt": "2026-09-12T01:47:02.839Z",
       "__v": 0
     }
   ],
@@ -761,38 +1224,38 @@
     {
       "_id": "6a8ff7937618f03b9de57322",
       "username": "admin",
-      "password": "$2b$10$yjSsBYG1ZT8Im9TIuJAC1emcKZkmUAOWA.Msgs3OflIsg0DGNBQra",
+      "password": "$2b$10$p/ctvSO7FYQwT1J/m0sADOEapiF9yD2nL0JjStFnC68dg4jIwhOsS",
       "role": "admin",
       "__v": 0,
       "createdAt": "2026-08-27T08:38:43.055Z",
-      "updatedAt": "2026-08-27T08:38:43.055Z"
+      "updatedAt": "2026-09-18T00:33:23.563Z"
     },
     {
       "_id": "6a8ff7937618f03b9de57323",
       "username": "hr_user",
-      "password": "$2b$10$yjSsBYG1ZT8Im9TIuJAC1emcKZkmUAOWA.Msgs3OflIsg0DGNBQra",
+      "password": "$2b$10$p/ctvSO7FYQwT1J/m0sADOEapiF9yD2nL0JjStFnC68dg4jIwhOsS",
       "role": "hr",
       "__v": 0,
       "createdAt": "2026-08-27T08:38:43.055Z",
-      "updatedAt": "2026-08-27T08:38:43.055Z"
+      "updatedAt": "2026-09-18T00:33:23.563Z"
     },
     {
       "_id": "6a8ff7937618f03b9de57324",
       "username": "account_user",
-      "password": "$2b$10$yjSsBYG1ZT8Im9TIuJAC1emcKZkmUAOWA.Msgs3OflIsg0DGNBQra",
+      "password": "$2b$10$p/ctvSO7FYQwT1J/m0sADOEapiF9yD2nL0JjStFnC68dg4jIwhOsS",
       "role": "account",
       "__v": 0,
       "createdAt": "2026-08-27T08:38:43.055Z",
-      "updatedAt": "2026-08-27T08:38:43.055Z"
+      "updatedAt": "2026-09-18T00:33:23.563Z"
     },
     {
       "_id": "6a8ff7937618f03b9de57325",
       "username": "support_user",
-      "password": "$2b$10$yjSsBYG1ZT8Im9TIuJAC1emcKZkmUAOWA.Msgs3OflIsg0DGNBQra",
+      "password": "$2b$10$p/ctvSO7FYQwT1J/m0sADOEapiF9yD2nL0JjStFnC68dg4jIwhOsS",
       "role": "support",
       "__v": 0,
       "createdAt": "2026-08-27T08:38:43.055Z",
-      "updatedAt": "2026-08-27T08:38:43.055Z"
+      "updatedAt": "2026-09-18T00:33:23.563Z"
     }
   ],
   "departments": [
@@ -1895,6 +2358,619 @@
       "createdAt": "2026-08-28T08:54:32.861Z",
       "updatedAt": "2026-08-28T08:54:32.861Z",
       "__v": 0
+    },
+    {
+      "_id": "6aa7961fc048f05b9868c994",
+      "caseId": "6a9fbe1ab40d984ba00187a4",
+      "processedBy": "AdminUser",
+      "payeeName": "Ito Emi",
+      "paymentMethod": "Pay in Salary",
+      "destinationDetails": {
+        "payrollPeriod": "2026-09"
+      },
+      "financials": {
+        "claimAmount": 30000,
+        "deductions": 0,
+        "netPayable": 30000
+      },
+      "transactionRefId": "Salary2026-12",
+      "paymentDate": "1999-12-31T15:00:00.000Z",
+      "isConfirmed": true,
+      "auditLog": [
+        {
+          "action": "Settlement Created",
+          "user": "AdminUser",
+          "_id": "6aa7961fc048f05b9868c995",
+          "timestamp": "2026-09-14T06:37:19.665Z"
+        }
+      ],
+      "createdAt": "2026-09-14T06:37:19.669Z",
+      "updatedAt": "2026-09-14T06:37:19.669Z",
+      "__v": 0
+    },
+    {
+      "_id": "6aa7961fc048f05b9868c997",
+      "caseId": "6a9fbea4b40d984ba001882a",
+      "processedBy": "AdminUser",
+      "payeeName": "Ito Emi",
+      "paymentMethod": "Pay in Salary",
+      "destinationDetails": {
+        "payrollPeriod": "2026-09"
+      },
+      "financials": {
+        "claimAmount": 30000,
+        "deductions": 0,
+        "netPayable": 30000
+      },
+      "transactionRefId": "Salary2026-12",
+      "paymentDate": "1999-12-31T15:00:00.000Z",
+      "isConfirmed": true,
+      "auditLog": [
+        {
+          "action": "Settlement Created",
+          "user": "AdminUser",
+          "_id": "6aa7961fc048f05b9868c998",
+          "timestamp": "2026-09-14T06:37:19.694Z"
+        }
+      ],
+      "createdAt": "2026-09-14T06:37:19.694Z",
+      "updatedAt": "2026-09-14T06:37:19.694Z",
+      "__v": 0
+    },
+    {
+      "_id": "6aa7ab6af60d0bcff21e89ea",
+      "caseId": "6aa3844f9da3c5582a5e8d8d",
+      "processedBy": "AdminUser",
+      "payeeName": "John Smith",
+      "paymentMethod": "Cash",
+      "destinationDetails": {
+        "receiverName": "by Bank"
+      },
+      "financials": {
+        "claimAmount": 5006,
+        "deductions": 0,
+        "netPayable": 5006
+      },
+      "transactionRefId": "",
+      "paymentDate": "1999-12-31T15:00:00.000Z",
+      "isConfirmed": true,
+      "auditLog": [
+        {
+          "action": "Settlement Created",
+          "user": "AdminUser",
+          "_id": "6aa7ab6af60d0bcff21e89eb",
+          "timestamp": "2026-09-14T08:08:10.956Z"
+        }
+      ],
+      "createdAt": "2026-09-14T08:08:10.959Z",
+      "updatedAt": "2026-09-14T08:08:10.959Z",
+      "__v": 0
+    },
+    {
+      "_id": "6aa7ab92f60d0bcff21e89f9",
+      "caseId": "6a9fbe54b40d984ba00187e7",
+      "processedBy": "AdminUser",
+      "payeeName": "Yamada Taro",
+      "paymentMethod": "Company Check",
+      "destinationDetails": {
+        "checkNumber": "145224",
+        "checkDelivery": "mail"
+      },
+      "financials": {
+        "claimAmount": 30000,
+        "deductions": 0,
+        "netPayable": 30000
+      },
+      "transactionRefId": "",
+      "paymentDate": "1999-12-31T15:00:00.000Z",
+      "isConfirmed": true,
+      "auditLog": [
+        {
+          "action": "Settlement Created",
+          "user": "AdminUser",
+          "_id": "6aa7ab92f60d0bcff21e89fa",
+          "timestamp": "2026-09-14T08:08:50.520Z"
+        }
+      ],
+      "createdAt": "2026-09-14T08:08:50.521Z",
+      "updatedAt": "2026-09-14T08:08:50.521Z",
+      "__v": 0
+    },
+    {
+      "_id": "6aa8a59a8bd5cf7c1177a222",
+      "caseId": "6aa891058469ddbef615f64f",
+      "processedBy": "AdminUser",
+      "payeeName": "Ito Emi",
+      "paymentMethod": "Bank Transfer",
+      "destinationDetails": {
+        "bankName": "JP bank",
+        "branchCode": "12345",
+        "accountNumber": "1456687"
+      },
+      "financials": {
+        "claimAmount": 17453,
+        "deductions": 0,
+        "netPayable": 17453
+      },
+      "transactionRefId": "2564894744",
+      "paymentDate": "1999-12-31T15:00:00.000Z",
+      "isConfirmed": true,
+      "auditLog": [
+        {
+          "action": "Settlement Created",
+          "user": "AdminUser",
+          "_id": "6aa8a59a8bd5cf7c1177a223",
+          "timestamp": "2026-09-15T01:55:38.007Z"
+        }
+      ],
+      "createdAt": "2026-09-15T01:55:38.008Z",
+      "updatedAt": "2026-09-15T01:55:38.008Z",
+      "__v": 0
+    },
+    {
+      "_id": "6aa8a5e88bd5cf7c1177a224",
+      "caseId": "6aa891058469ddbef615f64f",
+      "processedBy": "AdminUser",
+      "payeeName": "Ito Emi",
+      "paymentMethod": "Bank Transfer",
+      "destinationDetails": {
+        "bankName": "mizuho bank",
+        "branchCode": "456",
+        "accountNumber": "78944"
+      },
+      "financials": {
+        "claimAmount": 17453,
+        "deductions": 0,
+        "netPayable": 17453
+      },
+      "transactionRefId": "5454878",
+      "paymentDate": "1999-12-31T15:00:00.000Z",
+      "isConfirmed": true,
+      "auditLog": [
+        {
+          "action": "Settlement Created",
+          "user": "AdminUser",
+          "_id": "6aa8a5e88bd5cf7c1177a225",
+          "timestamp": "2026-09-15T01:56:56.044Z"
+        }
+      ],
+      "createdAt": "2026-09-15T01:56:56.045Z",
+      "updatedAt": "2026-09-15T01:56:56.045Z",
+      "__v": 0
+    },
+    {
+      "_id": "6aa8bf6c4639d13221c1fa8e",
+      "caseId": "6aa8a0a28bd5cf7c1177a15a",
+      "processedBy": "AdminUser",
+      "payeeName": "Kimura Takuya",
+      "paymentMethod": "Bank Transfer",
+      "destinationDetails": {
+        "bankName": "JP bank",
+        "branchCode": "12354",
+        "accountNumber": "789456423"
+      },
+      "financials": {
+        "claimAmount": 50000,
+        "deductions": 0,
+        "netPayable": 50000
+      },
+      "transactionRefId": "36584",
+      "paymentDate": "1999-12-31T15:00:00.000Z",
+      "isConfirmed": true,
+      "auditLog": [
+        {
+          "action": "Settlement Created",
+          "user": "AdminUser",
+          "_id": "6aa8bf6c4639d13221c1fa8f",
+          "timestamp": "2026-09-15T03:45:48.378Z"
+        }
+      ],
+      "createdAt": "2026-09-15T03:45:48.382Z",
+      "updatedAt": "2026-09-15T03:45:48.382Z",
+      "__v": 0
+    },
+    {
+      "_id": "6aa8c37cbf5a5e4a161553be",
+      "caseId": "6aa8a0a28bd5cf7c1177a15a",
+      "processedBy": "AdminUser",
+      "payeeName": "Kimura Takuya",
+      "paymentMethod": "Bank Transfer",
+      "destinationDetails": {
+        "bankName": "miziho bank",
+        "branchCode": "4578",
+        "accountNumber": "154997"
+      },
+      "financials": {
+        "claimAmount": 50000,
+        "deductions": 0,
+        "netPayable": 50000
+      },
+      "transactionRefId": "53445646",
+      "paymentDate": "1999-12-31T15:00:00.000Z",
+      "isConfirmed": true,
+      "auditLog": [
+        {
+          "action": "Settlement Created",
+          "user": "AdminUser",
+          "_id": "6aa8c37cbf5a5e4a161553bf",
+          "timestamp": "2026-09-15T04:03:08.303Z"
+        }
+      ],
+      "createdAt": "2026-09-15T04:03:08.307Z",
+      "updatedAt": "2026-09-15T04:03:08.307Z",
+      "__v": 0
+    },
+    {
+      "_id": "6aa8c497bf5a5e4a161553c0",
+      "caseId": "6aa8a0a28bd5cf7c1177a15a",
+      "processedBy": "AdminUser",
+      "payeeName": "Kimura Takuya",
+      "paymentMethod": "Bank Transfer",
+      "destinationDetails": {
+        "bankName": "smbc bank",
+        "branchCode": "784",
+        "accountNumber": "457875"
+      },
+      "financials": {
+        "claimAmount": 50000,
+        "deductions": 0,
+        "netPayable": 50000
+      },
+      "transactionRefId": "51544454",
+      "paymentDate": "1999-12-31T15:00:00.000Z",
+      "isConfirmed": true,
+      "auditLog": [
+        {
+          "action": "Settlement Created",
+          "user": "AdminUser",
+          "_id": "6aa8c497bf5a5e4a161553c1",
+          "timestamp": "2026-09-15T04:07:51.543Z"
+        }
+      ],
+      "createdAt": "2026-09-15T04:07:51.544Z",
+      "updatedAt": "2026-09-15T04:07:51.544Z",
+      "__v": 0
+    },
+    {
+      "_id": "6aa8c838bf5a5e4a161553c8",
+      "caseId": "6aa8a38b8bd5cf7c1177a221",
+      "processedBy": "AdminUser",
+      "payeeName": "Ito Emi",
+      "paymentMethod": "Bank Transfer",
+      "destinationDetails": {
+        "bankName": "JP bnak",
+        "branchCode": "123456",
+        "accountNumber": "123789"
+      },
+      "financials": {
+        "claimAmount": 30000,
+        "deductions": 0,
+        "netPayable": 30000
+      },
+      "transactionRefId": "546655",
+      "paymentDate": "1999-12-31T15:00:00.000Z",
+      "isConfirmed": true,
+      "auditLog": [
+        {
+          "action": "Settlement Created",
+          "user": "AdminUser",
+          "_id": "6aa8c838bf5a5e4a161553c9",
+          "timestamp": "2026-09-15T04:23:20.684Z"
+        }
+      ],
+      "createdAt": "2026-09-15T04:23:20.685Z",
+      "updatedAt": "2026-09-15T04:23:20.685Z",
+      "__v": 0
+    },
+    {
+      "_id": "6aa8c87cbf5a5e4a161553ca",
+      "caseId": "6aa8a38b8bd5cf7c1177a221",
+      "processedBy": "AdminUser",
+      "payeeName": "Ito Emi",
+      "paymentMethod": "Bank Transfer",
+      "destinationDetails": {
+        "bankName": "mizuho bank",
+        "branchCode": "12323",
+        "accountNumber": "455647"
+      },
+      "financials": {
+        "claimAmount": 30000,
+        "deductions": 0,
+        "netPayable": 30000
+      },
+      "transactionRefId": "8655654",
+      "paymentDate": "1999-12-31T15:00:00.000Z",
+      "isConfirmed": true,
+      "auditLog": [
+        {
+          "action": "Settlement Created",
+          "user": "AdminUser",
+          "_id": "6aa8c87cbf5a5e4a161553cb",
+          "timestamp": "2026-09-15T04:24:28.437Z"
+        }
+      ],
+      "createdAt": "2026-09-15T04:24:28.437Z",
+      "updatedAt": "2026-09-15T04:24:28.437Z",
+      "__v": 0
+    },
+    {
+      "_id": "6aa8e43cbf5a5e4a16155494",
+      "caseId": "6aa8db53bf5a5e4a16155451",
+      "processedBy": "AdminUser",
+      "payeeName": "Ito Emi",
+      "paymentMethod": "Bank Transfer",
+      "destinationDetails": {
+        "bankName": "JP Bank",
+        "branchCode": "125",
+        "accountNumber": "7989846"
+      },
+      "financials": {
+        "claimAmount": 3600,
+        "deductions": 0,
+        "netPayable": 3600
+      },
+      "transactionRefId": "87846545645",
+      "paymentDate": "1999-12-31T15:00:00.000Z",
+      "isConfirmed": true,
+      "auditLog": [
+        {
+          "action": "Settlement Created",
+          "user": "AdminUser",
+          "_id": "6aa8e43cbf5a5e4a16155495",
+          "timestamp": "2026-09-15T06:22:52.704Z"
+        }
+      ],
+      "createdAt": "2026-09-15T06:22:52.704Z",
+      "updatedAt": "2026-09-15T06:22:52.704Z",
+      "__v": 0
+    },
+    {
+      "_id": "6aa8e556bf5a5e4a1615549c",
+      "caseId": "6aa8a38b8bd5cf7c1177a221",
+      "processedBy": "AdminUser",
+      "payeeName": "Ito Emi",
+      "paymentMethod": "Bank Transfer",
+      "destinationDetails": {
+        "bankName": "mizuho bank",
+        "branchCode": "125",
+        "accountNumber": "45445454"
+      },
+      "financials": {
+        "claimAmount": 30000,
+        "deductions": 0,
+        "netPayable": 30000
+      },
+      "transactionRefId": "５４５６４６５",
+      "paymentDate": "1999-12-31T15:00:00.000Z",
+      "isConfirmed": true,
+      "auditLog": [
+        {
+          "action": "Settlement Created",
+          "user": "AdminUser",
+          "_id": "6aa8e556bf5a5e4a1615549d",
+          "timestamp": "2026-09-15T06:27:34.619Z"
+        }
+      ],
+      "createdAt": "2026-09-15T06:27:34.619Z",
+      "updatedAt": "2026-09-15T06:27:34.619Z",
+      "__v": 0
+    },
+    {
+      "_id": "6aa8e575bf5a5e4a1615549e",
+      "caseId": "6aa8a38b8bd5cf7c1177a221",
+      "processedBy": "AdminUser",
+      "payeeName": "Ito Emi",
+      "paymentMethod": "Bank Transfer",
+      "destinationDetails": {
+        "bankName": "sbi bank",
+        "branchCode": "321",
+        "accountNumber": "321456468"
+      },
+      "financials": {
+        "claimAmount": 30000,
+        "deductions": 0,
+        "netPayable": 30000
+      },
+      "transactionRefId": "54545455",
+      "paymentDate": "1999-12-31T15:00:00.000Z",
+      "isConfirmed": true,
+      "auditLog": [
+        {
+          "action": "Settlement Created",
+          "user": "AdminUser",
+          "_id": "6aa8e575bf5a5e4a1615549f",
+          "timestamp": "2026-09-15T06:28:05.751Z"
+        }
+      ],
+      "createdAt": "2026-09-15T06:28:05.752Z",
+      "updatedAt": "2026-09-15T06:28:05.752Z",
+      "__v": 0
+    },
+    {
+      "_id": "6aa8e592bf5a5e4a161554a0",
+      "caseId": "6aa8a38b8bd5cf7c1177a221",
+      "processedBy": "AdminUser",
+      "payeeName": "Ito Emi",
+      "paymentMethod": "Bank Transfer",
+      "destinationDetails": {
+        "bankName": "resona bank",
+        "branchCode": "967",
+        "accountNumber": "564545"
+      },
+      "financials": {
+        "claimAmount": 30000,
+        "deductions": 0,
+        "netPayable": 30000
+      },
+      "transactionRefId": "646546",
+      "paymentDate": "1999-12-31T15:00:00.000Z",
+      "isConfirmed": true,
+      "auditLog": [
+        {
+          "action": "Settlement Created",
+          "user": "AdminUser",
+          "_id": "6aa8e592bf5a5e4a161554a1",
+          "timestamp": "2026-09-15T06:28:34.743Z"
+        }
+      ],
+      "createdAt": "2026-09-15T06:28:34.744Z",
+      "updatedAt": "2026-09-15T06:28:34.744Z",
+      "__v": 0
+    },
+    {
+      "_id": "6aa8e5c1bf5a5e4a161554a2",
+      "caseId": "6aa8a38b8bd5cf7c1177a221",
+      "processedBy": "AdminUser",
+      "payeeName": "Ito Emi",
+      "paymentMethod": "Bank Transfer",
+      "destinationDetails": {
+        "bankName": "resona bank",
+        "branchCode": "3565",
+        "accountNumber": "94645645"
+      },
+      "financials": {
+        "claimAmount": 30000,
+        "deductions": 0,
+        "netPayable": 30000
+      },
+      "transactionRefId": "5654464",
+      "paymentDate": "1999-12-31T15:00:00.000Z",
+      "isConfirmed": true,
+      "auditLog": [
+        {
+          "action": "Settlement Created",
+          "user": "AdminUser",
+          "_id": "6aa8e5c1bf5a5e4a161554a3",
+          "timestamp": "2026-09-15T06:29:21.278Z"
+        }
+      ],
+      "createdAt": "2026-09-15T06:29:21.278Z",
+      "updatedAt": "2026-09-15T06:29:21.278Z",
+      "__v": 0
+    },
+    {
+      "_id": "6aa9088cbf5a5e4a161556a2",
+      "caseId": "6aa90106bf5a5e4a161555e4",
+      "processedBy": "AdminUser",
+      "payeeName": "Kimura Takuya",
+      "paymentMethod": "Bank Transfer",
+      "destinationDetails": {
+        "bankName": "JP bank",
+        "branchCode": "215",
+        "accountNumber": "786854"
+      },
+      "financials": {
+        "claimAmount": 5000,
+        "deductions": 0,
+        "netPayable": 5000
+      },
+      "transactionRefId": "445465",
+      "paymentDate": "1999-12-31T15:00:00.000Z",
+      "isConfirmed": true,
+      "auditLog": [
+        {
+          "action": "Settlement Created",
+          "user": "AdminUser",
+          "_id": "6aa9088cbf5a5e4a161556a3",
+          "timestamp": "2026-09-15T08:57:48.206Z"
+        }
+      ],
+      "createdAt": "2026-09-15T08:57:48.207Z",
+      "updatedAt": "2026-09-15T08:57:48.207Z",
+      "__v": 0
+    },
+    {
+      "_id": "6aa908b1bf5a5e4a161556a4",
+      "caseId": "6aa90106bf5a5e4a161555e4",
+      "processedBy": "AdminUser",
+      "payeeName": "Kimura Takuya",
+      "paymentMethod": "Bank Transfer",
+      "destinationDetails": {
+        "bankName": "MIzuho bank",
+        "branchCode": "653",
+        "accountNumber": "867484"
+      },
+      "financials": {
+        "claimAmount": 5000,
+        "deductions": 0,
+        "netPayable": 5000
+      },
+      "transactionRefId": "4565465",
+      "paymentDate": "1999-12-31T15:00:00.000Z",
+      "isConfirmed": true,
+      "auditLog": [
+        {
+          "action": "Settlement Created",
+          "user": "AdminUser",
+          "_id": "6aa908b1bf5a5e4a161556a5",
+          "timestamp": "2026-09-15T08:58:25.028Z"
+        }
+      ],
+      "createdAt": "2026-09-15T08:58:25.028Z",
+      "updatedAt": "2026-09-15T08:58:25.028Z",
+      "__v": 0
+    },
+    {
+      "_id": "6aa908c8bf5a5e4a161556a6",
+      "caseId": "6aa90106bf5a5e4a161555e4",
+      "processedBy": "AdminUser",
+      "payeeName": "Kimura Takuya",
+      "paymentMethod": "Bank Transfer",
+      "destinationDetails": {
+        "bankName": "smbc",
+        "branchCode": "8989",
+        "accountNumber": "546546"
+      },
+      "financials": {
+        "claimAmount": 5000,
+        "deductions": 0,
+        "netPayable": 5000
+      },
+      "transactionRefId": "654654654",
+      "paymentDate": "1999-12-31T15:00:00.000Z",
+      "isConfirmed": true,
+      "auditLog": [
+        {
+          "action": "Settlement Created",
+          "user": "AdminUser",
+          "_id": "6aa908c8bf5a5e4a161556a7",
+          "timestamp": "2026-09-15T08:58:48.723Z"
+        }
+      ],
+      "createdAt": "2026-09-15T08:58:48.724Z",
+      "updatedAt": "2026-09-15T08:58:48.724Z",
+      "__v": 0
+    },
+    {
+      "_id": "6aab95e8715c62d54e6d4862",
+      "caseId": "6aa909fdbf5a5e4a161556f0",
+      "processedBy": "AdminUser",
+      "payeeName": "Kimura Takuya",
+      "paymentMethod": "Bank Transfer",
+      "destinationDetails": {
+        "bankName": "Mizuho Bank",
+        "branchCode": "985",
+        "accountNumber": "8787844"
+      },
+      "financials": {
+        "claimAmount": 5000,
+        "deductions": 0,
+        "netPayable": 5000
+      },
+      "transactionRefId": "7488564",
+      "paymentDate": "1999-12-31T15:00:00.000Z",
+      "isConfirmed": true,
+      "auditLog": [
+        {
+          "action": "Settlement Created",
+          "user": "AdminUser",
+          "_id": "6aab95e8715c62d54e6d4863",
+          "timestamp": "2026-09-17T07:25:28.075Z"
+        }
+      ],
+      "createdAt": "2026-09-17T07:25:28.083Z",
+      "updatedAt": "2026-09-17T07:25:28.083Z",
+      "__v": 0
     }
   ],
   "options": [
@@ -2233,69 +3309,49 @@
   ],
   "claims": [
     {
-      "_id": "6a9682c3ce94d1b9ceb7c654",
+      "_id": "6aa8db53bf5a5e4a16155451",
       "claim_id": "CLM-2026-0001",
-      "full_name": "N/A",
-      "staff_id": "N/A",
-      "location": "N/A",
-      "branch_farm_name": "",
-      "visa_status": "",
-      "visa_available_time": null,
-      "expense_type": "Select Type",
-      "advancer_category": "Select Category",
-      "payment_process_types": "N/A",
-      "bearing_party": "Select Bearing Party",
-      "expense_amount": 0,
-      "expense_period_start": null,
-      "expense_period_end": null,
-      "bill_receipt_url": [],
-      "remarks": "",
-      "total_expense_amount": 0,
-      "currency": "JPY",
-      "settlement_method": "Bank Transfer",
-      "expected_settlement_date": null,
-      "collection_method": "Select Method",
-      "installment_plan": "Payroll Deduction (3 Months)",
-      "installment_count": 3,
-      "collection_start_month": "TBD",
-      "monthly_deduction": 0,
-      "status": "Pending",
-      "createdAt": "2026-09-01T07:46:11.372Z",
-      "updatedAt": "2026-09-01T07:46:11.372Z",
-      "__v": 0
-    },
-    {
-      "_id": "6a968363ce94d1b9ceb7c6d9",
-      "claim_id": "CLM-2026-0002",
       "full_name": "Ito Emi",
-      "staff_id": "STFE57333",
+      "staff_id": "ID-E57333",
       "location": "Tokyo Office",
       "branch_farm_name": "Tokyo Office",
       "visa_status": "Permanent Resident",
       "visa_available_time": "2030-01-10T00:00:00.000Z",
-      "expense_type": "Hospital Fee",
-      "advancer_category": "Service staff",
-      "payment_process_types": "Salary deduction",
-      "bearing_party": "Service staff",
-      "expense_amount": 20000,
-      "expense_period_start": null,
-      "expense_period_end": null,
+      "expense_type": "WIFI",
+      "advancer_category": "Dispatch destination: Farm",
+      "payment_process_types": "Invoice from the client company",
+      "bearing_party": "Dispatch destination: Farm",
+      "expense_amount": 3600,
+      "expense_period_start": "2026-09-01T00:00:00.000Z",
+      "expense_period_end": "2026-09-15T00:00:00.000Z",
+      "sender": "",
+      "recipient": "",
+      "departure": "",
+      "destination": "",
+      "transport_method": "",
       "bill_receipt_url": [
-        "IMG_0026.jpg"
+        "1789451089875-78321116-IMG_9768.jpg"
       ],
-      "remarks": "",
-      "total_expense_amount": 20000,
+      "remarks": null,
+      "total_expense_amount": 3600,
       "currency": "JPY",
-      "settlement_method": "Bank Transfer",
+      "settlement_method": "",
       "expected_settlement_date": null,
-      "collection_method": "Select Method",
-      "installment_plan": "Payroll Deduction (3 Months)",
-      "installment_count": 3,
-      "collection_start_month": "TBD",
-      "monthly_deduction": 6666.666666666667,
-      "status": "Pending",
-      "createdAt": "2026-09-01T07:48:51.142Z",
-      "updatedAt": "2026-09-01T07:48:51.142Z",
+      "collection_method": "",
+      "installment_plan": "",
+      "installment_count": 1,
+      "collection_start_month": "2026-09",
+      "monthly_deduction": 3600,
+      "paidTerms": 1,
+      "status": "Completed",
+      "statusMessage": "",
+      "hasAccountNotification": false,
+      "hasSupportNotification": true,
+      "supportUpdatedFields": [],
+      "installment_records": [],
+      "messages": [],
+      "createdAt": "2026-09-15T05:44:51.838Z",
+      "updatedAt": "2026-09-15T06:22:52.706Z",
       "__v": 0
     }
   ]

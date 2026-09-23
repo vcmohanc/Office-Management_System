@@ -43,7 +43,7 @@ services:
       - mongo_data:/data/db
       - mongo_config:/data/configdb
     ports:
-      - "127.0.0.1:27017:27017"
+      - "127.0.0.1:27018:27017"
     healthcheck:
       test: mongosh --quiet -u $$MONGO_INITDB_ROOT_USERNAME -p $$MONGO_INITDB_ROOT_PASSWORD --authenticationDatabase admin localhost:27017/test --eval "db.adminCommand('ping')"
       interval: 10s

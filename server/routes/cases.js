@@ -6,8 +6,14 @@ import Settlement from '../models/Settlement.js';
 import { requireRole } from '../middleware/auth.js';
 import { validateBackendExpenseAmount } from '../utils/amountHelper.js';
 import { caseEvents } from '../events.js';
+import * as ledgerController from '../controllers/settlementLedgerController.js';
 
 const router = express.Router();
+
+router.get('/:caseId/ledger', ledgerController.getLedger);
+router.put('/:caseId/terms/:termNo/pay', ledgerController.payTerm);
+router.put('/:caseId/terms/:termNo/amount', ledgerController.updateTermAmount);
+router.get('/:caseId/payments', ledgerController.getPayments);
 
 const caseSchemaZod = z.object({
   case_type: z.string().min(1),
