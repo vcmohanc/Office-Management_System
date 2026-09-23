@@ -28,7 +28,7 @@ router.post('/', requireRole('admin', 'account'), async (req, res) => {
     console.error('Error creating region:', error);
     res.status(500).json({ message: error.message });
   }
-});
+});         
 
 // PUT /api/regions/:id
 router.put('/:id', requireRole('admin', 'account'), async (req, res) => {
