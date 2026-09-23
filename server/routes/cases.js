@@ -7,6 +7,7 @@ import { requireRole } from '../middleware/auth.js';
 import { validateBackendExpenseAmount } from '../utils/amountHelper.js';
 import { caseEvents } from '../events.js';
 import * as ledgerController from '../controllers/settlementLedgerController.js';
+import { generateLedgerForCase } from '../utils/calc_settlement.js';
 
 const router = express.Router();
 
@@ -108,6 +109,9 @@ router.post('/', requireRole('admin', 'account'), async (req, res) => {
       hasSupportNotification: true
     });
     await newCase.save();
+    
+    // Generate ledger and payment terms automatically
+    await generateLedgerForCase(newCase);
     
     caseEvents.emit('CASE_REGISTERED', newCase);
     
