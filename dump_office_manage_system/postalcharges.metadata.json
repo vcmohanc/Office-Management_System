@@ -1,0 +1,1 @@
+{"indexes":[{"v":{"$numberInt":"2"},"key":{"_id":{"$numberInt":"1"}},"name":"_id_"},{"v":{"$numberInt":"2"},"key":{"departure":{"$numberInt":"1"}},"name":"departure_1","unique":true}],"uuid":"cdabb2887eb34056b16cbd25c2f11691","collectionName":"postalcharges","type":"collection"}

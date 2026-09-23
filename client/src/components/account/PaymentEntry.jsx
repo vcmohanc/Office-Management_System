@@ -30,115 +30,155 @@ export default function PaymentEntry() {
   const [dateFilter, setDateFilter] = useState('');
 
   const generateGlobalPDF = (action = 'download', currentFilteredRecords = []) => {
-    // We use a small setTimeout to ensure we don't block the UI thread during PDF generation
     setTimeout(() => {
       try {
-        const recordsToExport = selectedRows.length > 0 
+        const recordsToExport = selectedRows.length > 0
           ? currentFilteredRecords.filter(r => selectedRows.includes(r.rawId))
           : currentFilteredRecords;
 
-        if (recordsToExport.length === 0) return toast.error("No records to export.");
+        if (recordsToExport.length === 0) return toast.error('No records to export.');
 
-        const doc = new jsPDF();
-        
-        // --- Classic & Professional Header ---
+        const doc = new jsPDF({ orientation: 'portrait' });
         const pageWidth = doc.internal.pageSize.width;
-        
-        // Company Name / Logo Placeholder
-        doc.setFont('times', 'bold');
-        doc.setFontSize(18);
-        doc.setTextColor(30, 30, 30);
-        doc.text('OFFICE MANAGEMENT SYSTEM', 14, 22);
-        
-        // Report Title
-        doc.setFont('times', 'normal');
-        doc.setFontSize(12);
-        doc.setTextColor(80, 80, 80);
-        doc.text('Payment Tracking Report', 14, 28);
-        
-        // Right-aligned Metadata
-        doc.setFontSize(10);
-        doc.setTextColor(100, 100, 100);
-        const dateStr = `Date: ${new Date().toLocaleDateString()}`;
-        const recordStr = `Total Records: ${recordsToExport.length}`;
-        doc.text(dateStr, pageWidth - 14 - doc.getTextWidth(dateStr), 22);
-        doc.text(recordStr, pageWidth - 14 - doc.getTextWidth(recordStr), 28);
-        
-        // Horizontal divider line
-        doc.setDrawColor(200, 200, 200);
-        doc.setLineWidth(0.5);
-        doc.line(14, 34, pageWidth - 14, 34);
-        
+        const pageHeight = doc.internal.pageSize.height;
+        const primaryColor = [22, 45, 80];   // #162D50 navy
+        const accentColor  = [59, 130, 246]; // blue-500
+        const lightBg      = [241, 245, 249]; // slate-100
+
+        // ── HEADER BAND ──────────────────────────────────────────
+        doc.setFillColor(...primaryColor);
+        doc.rect(0, 0, pageWidth, 28, 'F');
+
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(17);
+        doc.setTextColor(255, 255, 255);
+        doc.text('OFFICE MANAGEMENT SYSTEM', 14, 12);
+
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(9);
+        doc.setTextColor(180, 200, 230);
+        doc.text('Payment Tracking Report', 14, 20);
+
+        // Right side: date + record count
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(8.5);
+        doc.setTextColor(200, 215, 240);
+        const dateStr   = `Generated: ${new Date().toLocaleDateString('en-GB', { day:'2-digit', month:'short', year:'numeric' })}`;
+        const countStr  = `Total Records: ${recordsToExport.length}`;
+        doc.text(dateStr,  pageWidth - 14 - doc.getTextWidth(dateStr),  11);
+        doc.text(countStr, pageWidth - 14 - doc.getTextWidth(countStr), 20);
+
+        // ── SUMMARY STATS BAR ────────────────────────────────────
+        const totalPaid    = recordsToExport.filter(r => r.status === 'Paid' || r.status === 'Completed').length;
+        const totalOverdue = recordsToExport.filter(r => r.status === 'Overdue').length;
+        const totalAmt     = recordsToExport.reduce((s, r) => s + (r.originalCase.finalTotal || r.originalCase.totalExpense || 0), 0);
+
+        doc.setFillColor(...lightBg);
+        doc.rect(0, 28, pageWidth, 14, 'F');
+        doc.setDrawColor(220, 228, 240);
+        doc.setLineWidth(0.3);
+        doc.line(0, 42, pageWidth, 42);
+
+        const stats = [
+          { label: 'Total Cases', value: String(recordsToExport.length) },
+          { label: 'Paid',        value: String(totalPaid) },
+          { label: 'Overdue',     value: String(totalOverdue) },
+          { label: 'Total Amount',value: `JPY ${totalAmt.toLocaleString()}` },
+        ];
+        const colW = pageWidth / stats.length;
+        stats.forEach((s, i) => {
+          const cx = colW * i + colW / 2;
+          doc.setFont('helvetica', 'bold');
+          doc.setFontSize(10);
+          doc.setTextColor(...primaryColor);
+          doc.text(s.value, cx, 36, { align: 'center' });
+          doc.setFont('helvetica', 'normal');
+          doc.setFontSize(7);
+          doc.setTextColor(100, 116, 139);
+          doc.text(s.label, cx, 41, { align: 'center' });
+        });
+
+        // ── DATA TABLE ───────────────────────────────────────────
         const tableData = recordsToExport.map(r => [
           r.id,
           r.name,
+          r.staffId,
           r.workPlace,
           r.expenseType,
           `${r.startDate}\n${r.endDate}`,
           `${r.paidTerms} / ${r.totalTerms}`,
-          `¥${r.remainingBalance.toLocaleString()}`,
+          `JPY ${r.remainingBalance.toLocaleString()}`,
           r.status
         ]);
-        
+
         autoTable(doc, {
-          startY: 40,
-          head: [['Case ID', 'Name', 'Work Place', 'Expense Type', 'Date (Start/End)', 'Progress', 'Remaining', 'Status']],
+          startY: 46,
+          margin: { left: 10, right: 10 },
+          head: [['Case ID', 'Name', 'Staff ID', 'Work Place', 'Expense Type', 'Period', 'Progress', 'Remaining', 'Status']],
           body: tableData,
           theme: 'grid',
-          styles: { 
-            font: 'times',
-            fontSize: 9,
-            textColor: [40, 40, 40],
-            lineColor: [220, 220, 220],
-            lineWidth: 0.1,
-            cellPadding: 4
+          styles: {
+            font: 'helvetica',
+            fontSize: 6.5,
+            textColor: [30, 40, 55],
+            lineColor: [210, 220, 235],
+            lineWidth: 0.15,
+            cellPadding: { top: 2, bottom: 2, left: 2, right: 2 },
+            overflow: 'linebreak',
           },
-          headStyles: { 
-            fillColor: [245, 245, 245], 
-            textColor: [20, 20, 20],
+          headStyles: {
+            fillColor: primaryColor,
+            textColor: [255, 255, 255],
             fontStyle: 'bold',
-            lineColor: [200, 200, 200]
+            fontSize: 7,
+            halign: 'center',
+            cellPadding: { top: 3, bottom: 3, left: 2, right: 2 },
           },
-          alternateRowStyles: {
-            fillColor: [252, 252, 252]
+          alternateRowStyles: { fillColor: [248, 250, 253] },
+          columnStyles: {
+            0: { fontStyle: 'bold', textColor: primaryColor, cellWidth: 'auto' },
+            6: { halign: 'center' },
+            7: { halign: 'right', fontStyle: 'bold' },
+            8: { halign: 'center', fontStyle: 'bold' }
           },
-          didDrawPage: function (data) {
-            // Footer with page number
-            const str = "Page " + doc.internal.getNumberOfPages();
-            doc.setFont('times', 'italic');
-            doc.setFontSize(9);
-            doc.setTextColor(150, 150, 150);
-            doc.text(str, pageWidth / 2, doc.internal.pageSize.height - 10, { align: 'center' });
+          didParseCell: (hookData) => {
+            if (hookData.section === 'body' && hookData.column.index === 8) {
+              const val = hookData.cell.raw;
+              if (val === 'Paid' || val === 'Completed')      { hookData.cell.styles.textColor = [22, 163, 74];  hookData.cell.styles.fontStyle = 'bold'; }
+              else if (val === 'Overdue')                      { hookData.cell.styles.textColor = [220, 38, 38];  hookData.cell.styles.fontStyle = 'bold'; }
+              else if (val === 'Near Completion')              { hookData.cell.styles.textColor = [59, 130, 246]; hookData.cell.styles.fontStyle = 'bold'; }
+            }
+          },
+          didDrawPage: () => {
+            // Footer
+            doc.setFillColor(...primaryColor);
+            doc.rect(0, pageHeight - 10, pageWidth, 10, 'F');
+            doc.setFont('helvetica', 'italic');
+            doc.setFontSize(7);
+            doc.setTextColor(180, 200, 230);
+            const pageStr = `Page ${doc.getNumberOfPages()}`;
+            doc.text(pageStr, pageWidth / 2, pageHeight - 3.5, { align: 'center' });
+            doc.text('Office Management System — Confidential', 12, pageHeight - 3.5);
           }
         });
-        
+
+        const saveBlob = (blob, filename) => {
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url; a.download = filename;
+          document.body.appendChild(a); a.click(); document.body.removeChild(a);
+          setTimeout(() => URL.revokeObjectURL(url), 1000);
+        };
+
         if (action === 'print') {
-          doc.autoPrint();
-          const pdfBlob = doc.output('bloburl');
-          
-          // Print via a hidden iframe to avoid opening a new tab
-          const iframe = document.createElement('iframe');
-          iframe.style.position = 'fixed';
-          iframe.style.right = '0';
-          iframe.style.bottom = '0';
-          iframe.style.width = '0';
-          iframe.style.height = '0';
-          iframe.style.border = '0';
-          iframe.src = pdfBlob;
-          
-          document.body.appendChild(iframe);
-          
-          // Clean up the iframe after printing (giving it enough time to spool)
-          setTimeout(() => {
-            document.body.removeChild(iframe);
-            // URL.revokeObjectURL(pdfBlob) is handled internally by jsPDF/bloburl, but good practice
-          }, 30000); // 30 seconds is safe for the user to interact with the print dialog
+          const win = window.open(doc.output('bloburl'), '_blank');
+          if (win) win.focus();
         } else {
-          doc.save('payment_tracking_export.pdf');
+          saveBlob(doc.output('blob'), 'payment_tracking_export.pdf');
         }
       } catch (err) {
-        console.error("Error generating PDF:", err);
-        toast.error("Failed to generate PDF. See console for details.");
+        console.error('Error generating PDF:', err);
+        toast.error('Failed to generate PDF: ' + (err.message || 'Unknown error'));
       }
     }, 50);
   };
@@ -244,91 +284,323 @@ export default function PaymentEntry() {
 
   const handleDownloadPDF = async (record) => {
     try {
-      const doc = new jsPDF();
-      
-      // --- Classic & Professional Header ---
-      const pageWidth = doc.internal.pageSize.width;
-      
-      // Company Name / Logo Placeholder
-      doc.setFont('times', 'bold');
-      doc.setFontSize(18);
-      doc.setTextColor(30, 30, 30);
-      doc.text('OFFICE MANAGEMENT SYSTEM', 14, 22);
-      
-      // Report Title
-      doc.setFont('times', 'normal');
-      doc.setFontSize(12);
-      doc.setTextColor(80, 80, 80);
-      doc.text('Payment Tracking Report', 14, 28);
-      
-      // Right-aligned Metadata
-      doc.setFontSize(10);
-      doc.setTextColor(100, 100, 100);
-      const dateStr = `Date: ${new Date().toLocaleDateString()}`;
-      const recordStr = `Total Records: 1`;
-      doc.text(dateStr, pageWidth - 14 - doc.getTextWidth(dateStr), 22);
-      doc.text(recordStr, pageWidth - 14 - doc.getTextWidth(recordStr), 28);
-      
-      // Horizontal divider line
-      doc.setDrawColor(200, 200, 200);
-      doc.setLineWidth(0.5);
-      doc.line(14, 34, pageWidth - 14, 34);
-      
-      const tableData = [[
-        record.id,
-        record.name,
-        record.workPlace,
-        record.expenseType,
-        `${record.startDate}\n${record.endDate}`,
-        `${record.paidTerms} / ${record.totalTerms}`,
-        `¥${record.remainingBalance.toLocaleString()}`,
-        record.status
-      ]];
-      
+      // 1. Fetch ledger terms
+      const ledgerRes = await apiFetch(`/api/cases/${record.rawId}/ledger`);
+      const data = ledgerRes.ok ? await ledgerRes.json() : null;
+      const terms = data?.payments || [];
+
+      // 2. Auto-scale: estimate row count → pick a scale factor (0.7–1.0)
+      const txCount     = Math.max(terms.length, 1);
+      const totalRows   = 10 + 1 + 2 + txCount; // detail + summary + settle + tx
+      // Scale factor: compact when many rows, comfortable when few
+      const scale = totalRows <= 20 ? 1.0
+                  : totalRows <= 28 ? 0.85
+                  : 0.72;
+
+      // 3. Derived sizes — all driven by scale
+      const fs        = (base) => +(base * scale).toFixed(1);  // font size
+      const pad       = (base) => +(base * scale).toFixed(1);  // cell padding
+      const gap       = (base) => +(base * scale).toFixed(1);  // section gap
+      const headerH   = Math.round(26 * scale);                // header band height
+      const statusH   = Math.round(14 * scale);                // status bar height
+
+      const doc = new jsPDF({ unit: 'mm', format: 'a4', compress: true });
+      const pageWidth  = doc.internal.pageSize.width;
+      const pageHeight = doc.internal.pageSize.height;
+      const primaryColor = [22, 45, 80];
+      const lightBg     = [241, 245, 249];
+      const margin      = { left: 10, right: 10 };
+
+      const drawFooter = () => {
+        doc.setFillColor(...primaryColor);
+        doc.rect(0, pageHeight - 8, pageWidth, 8, 'F');
+        doc.setFont('helvetica', 'italic');
+        doc.setFontSize(fs(6.5));
+        doc.setTextColor(180, 200, 230);
+        doc.text('Office Management System — Confidential', 10, pageHeight - 2.8);
+        const pg = `Page ${doc.getNumberOfPages()}`;
+        doc.text(pg, pageWidth - 10 - doc.getTextWidth(pg), pageHeight - 2.8);
+      };
+
+      // ── HEADER BAND ───────────────────────────────────────────
+      doc.setFillColor(...primaryColor);
+      doc.rect(0, 0, pageWidth, headerH, 'F');
+      doc.setFillColor(59, 130, 246);
+      doc.rect(0, 0, 3.5, headerH, 'F');
+
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(fs(13));
+      doc.setTextColor(255, 255, 255);
+      doc.text('OFFICE MANAGEMENT SYSTEM', 11, headerH * 0.42);
+
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(fs(8));
+      doc.setTextColor(180, 200, 230);
+      doc.text('Individual Payment Record', 11, headerH * 0.78);
+
+      doc.setFontSize(fs(7));
+      doc.setTextColor(200, 215, 240);
+      const dateStr = `Generated: ${new Date().toLocaleDateString('en-GB', { day:'2-digit', month:'short', year:'numeric' })}`;
+      doc.text(dateStr, pageWidth - 10 - doc.getTextWidth(dateStr), headerH * 0.42);
+      const caseStr = `Case: ${record.id}`;
+      doc.text(caseStr, pageWidth - 10 - doc.getTextWidth(caseStr), headerH * 0.78);
+
+      // ── STATUS BAR ────────────────────────────────────────────
+      const statusTop = headerH;
+      doc.setFillColor(...lightBg);
+      doc.rect(0, statusTop, pageWidth, statusH, 'F');
+      doc.setDrawColor(210, 220, 235);
+      doc.setLineWidth(0.25);
+      doc.line(0, statusTop + statusH, pageWidth, statusTop + statusH);
+
+      const statusColor = record.status === 'Paid' || record.status === 'Completed'
+        ? [22, 163, 74] : record.status === 'Overdue'
+        ? [220, 38, 38] : [59, 130, 246];
+
+      const statusMidY = statusTop + statusH * 0.62;
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(fs(9.5));
+      doc.setTextColor(...statusColor);
+      doc.text(`Status: ${record.status}`, 11, statusMidY);
+
+      const progressPct = record.totalTerms > 0
+        ? Math.round((record.paidTerms / record.totalTerms) * 100) : 0;
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(fs(7.5));
+      doc.setTextColor(100, 116, 139);
+      doc.text(
+        `Progress: ${record.paidTerms}/${record.totalTerms} payments (${progressPct}%)`,
+        pageWidth / 2, statusMidY, { align: 'center' }
+      );
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(fs(8.5));
+      doc.setTextColor(...primaryColor);
+      const remStr = `Remaining: JPY ${record.remainingBalance.toLocaleString()}`;
+      doc.text(remStr, pageWidth - 10 - doc.getTextWidth(remStr), statusMidY);
+
+      // ── SHARED TABLE STYLES ───────────────────────────────────
+      const cp = pad(2.8); // cell padding
+      const sharedStyles = {
+        font: 'helvetica',
+        fontSize: fs(8),
+        textColor: [30, 40, 55],
+        lineColor: [210, 220, 235],
+        lineWidth: 0.15,
+        cellPadding: { top: cp, bottom: cp, left: cp + 1, right: cp + 1 },
+        overflow: 'linebreak',
+        minCellHeight: 0,
+      };
+      const headS = {
+        fillColor: primaryColor,
+        textColor: [255, 255, 255],
+        fontStyle: 'bold',
+        fontSize: fs(8),
+        cellPadding: { top: cp, bottom: cp, left: cp + 1, right: cp + 1 },
+      };
+      const secGap = gap(5);   // gap before section title
+      const titleGap = gap(3); // gap between title and table
+
+      let curY = statusTop + statusH + gap(3);
+
+      // ── CASE DETAIL TABLE ─────────────────────────────────────
       autoTable(doc, {
-        startY: 40,
-        head: [['Case ID', 'Name', 'Work Place', 'Expense Type', 'Date (Start/End)', 'Progress', 'Remaining', 'Status']],
-        body: tableData,
+        startY: curY,
+        margin,
+        head: [['Field', 'Details']],
+        body: [
+          ['Case ID',          record.id],
+          ['Staff Name',       record.name],
+          ['Staff ID',         record.staffId || '—'],
+          ['Work Place',       record.workPlace],
+          ['Expense Type',     record.expenseType],
+          ['Payment Period',   `${record.startDate} → ${record.endDate}`],
+          ['Installment Plan', `${record.paidTerms} of ${record.totalTerms} payments completed`],
+          ['Remaining Balance',`JPY ${record.remainingBalance.toLocaleString()}`],
+          ['Status',           record.status],
+          ['Export Date',      new Date().toLocaleDateString('en-GB', { day:'2-digit', month:'short', year:'numeric' })],
+        ],
         theme: 'grid',
-        styles: { 
-          font: 'times',
-          fontSize: 9,
-          textColor: [40, 40, 40],
-          lineColor: [220, 220, 220],
-          lineWidth: 0.1,
-          cellPadding: 4
+        styles: sharedStyles,
+        headStyles: headS,
+        columnStyles: {
+          0: { fontStyle: 'bold', cellWidth: 46, fillColor: lightBg, textColor: [50, 70, 100] },
+          1: { cellWidth: 'auto' },
         },
-        headStyles: { 
-          fillColor: [245, 245, 245], 
-          textColor: [20, 20, 20],
-          fontStyle: 'bold',
-          lineColor: [200, 200, 200]
+        didParseCell: (h) => {
+          if (h.section === 'body' && h.row.index === 8) {
+            h.cell.styles.textColor = statusColor;
+            h.cell.styles.fontStyle = 'bold';
+          }
         },
-        alternateRowStyles: {
-          fillColor: [252, 252, 252]
-        },
-        didDrawPage: function (data) {
-          // Footer with page number
-          const str = "Page " + doc.internal.getNumberOfPages();
-          doc.setFont('times', 'italic');
-          doc.setFontSize(9);
-          doc.setTextColor(150, 150, 150);
-          doc.text(str, pageWidth / 2, doc.internal.pageSize.height - 10, { align: 'center' });
-        }
+        didDrawPage: drawFooter,
       });
-      
-      doc.save(`${record.id}_Payment_Tracking.pdf`);
+
+      // ── FINANCIAL & PROGRESS SUMMARY ──────────────────────────
+      const baseClaimAmt = record.originalCase.finalTotal || record.originalCase.totalExpense || 0;
+      const installPlanLabel = record.originalCase.installmentPlan || `${record.totalTerms} Month${record.totalTerms !== 1 ? 's' : ''}`;
+
+      curY = doc.lastAutoTable.finalY + secGap;
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(fs(8.5));
+      doc.setTextColor(...primaryColor);
+      doc.text('FINANCIAL & PROGRESS SUMMARY', 10, curY);
+
+      autoTable(doc, {
+        startY: curY + titleGap,
+        margin,
+        head: [['Base Claim Amount', 'Status', 'Installment Plan', 'Terms Paid', 'Remaining Balance']],
+        body: [[
+          `JPY ${baseClaimAmt.toLocaleString()}`,
+          record.status,
+          installPlanLabel,
+          `${record.paidTerms} / ${record.totalTerms}`,
+          `JPY ${record.remainingBalance.toLocaleString()}`,
+        ]],
+        theme: 'grid',
+        styles: sharedStyles,
+        headStyles: headS,
+        alternateRowStyles: { fillColor: lightBg },
+        didParseCell: (h) => {
+          if (h.section === 'body' && h.column.index === 1) {
+            h.cell.styles.textColor = statusColor;
+            h.cell.styles.fontStyle = 'bold';
+          }
+          if (h.section === 'body' && h.column.index === 4) {
+            h.cell.styles.fontStyle = 'bold';
+            h.cell.styles.textColor = record.remainingBalance === 0 ? [22, 163, 74] : primaryColor;
+          }
+        },
+        didDrawPage: drawFooter,
+      });
+
+      // ── SETTLEMENT DETAILS ────────────────────────────────────
+      const settlementMethod = (terms.length > 0 ? terms[0].paymentMethod : null)
+        || record.originalCase.settlement_method
+        || record.originalCase.settlementMethod
+        || 'N/A';
+      const startMonth = record.originalCase.expensePeriodStart
+        ? new Date(record.originalCase.expensePeriodStart).toLocaleDateString('en-GB', { year: 'numeric', month: '2-digit' })
+        : record.startDate || 'N/A';
+
+      curY = doc.lastAutoTable.finalY + secGap;
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(fs(8.5));
+      doc.setTextColor(...primaryColor);
+      doc.text('SETTLEMENT DETAILS', 10, curY);
+
+      autoTable(doc, {
+        startY: curY + titleGap,
+        margin,
+        body: [
+          ['Settlement Method:', settlementMethod],
+          ['Start Month:', startMonth],
+        ],
+        theme: 'plain',
+        styles: { ...sharedStyles, cellPadding: { top: cp - 0.5, bottom: cp - 0.5, left: cp + 1, right: cp + 1 } },
+        columnStyles: {
+          0: { fontStyle: 'bold', cellWidth: 46, textColor: [50, 70, 100] },
+          1: { fontStyle: 'bold', textColor: [30, 40, 55] },
+        },
+        didDrawPage: drawFooter,
+      });
+
+      // ── TRANSACTION DETAILS ───────────────────────────────────
+      const txRows = [];
+      const totalTermsCount = Math.max(record.totalTerms || 1, terms.length);
+
+      for (let i = 0; i < totalTermsCount; i++) {
+        const s = terms[i];
+        if (s) {
+          // Parse date securely to avoid timezone shifting
+          let txDate = '—';
+          if (s.paymentDate) {
+            const d = new Date(s.paymentDate);
+            if (!isNaN(d)) {
+              // Extract the exact date entered (forces UTC interpretation)
+              txDate = d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric', timeZone: 'UTC' });
+            }
+          }
+          
+          // Use exact amount from the new term model
+          const amt = s.netPayable ?? 0;
+          
+          txRows.push([
+            `Term ${i + 1}/${record.totalTerms}`,
+            txDate,
+            `JPY ${amt.toLocaleString()}`,
+            s.status === 'paid' ? 'Paid' : 'Pending',
+            s.bankDetails?.bankName || s.bankDetails?.bank_name || '—',
+            s.bankDetails?.branchCode || s.bankDetails?.branch_code || '—',
+            s.bankDetails?.accountNumber || s.bankDetails?.account_number || '—',
+            s.transactionRef || '—',
+          ]);
+        } else {
+          // Empty dynamic padding for missing/future terms
+          // Even if missing, calculate an expected fallback
+          const amt = Math.round((record.originalCase.finalTotal || record.originalCase.totalExpense || 0) / (record.totalTerms || 1));
+          txRows.push([
+            `Term ${i + 1}/${record.totalTerms}`,
+            '—',
+            `JPY ${amt.toLocaleString()}`,
+            'Pending',
+            '—',
+            '—',
+            '—',
+            '—',
+          ]);
+        }
+      }
+
+      if (txRows.length === 0) {
+        txRows.push(['—', '—', '—', '—', '—', '—', '—', 'No transactions recorded']);
+      }
+
+      curY = doc.lastAutoTable.finalY + secGap;
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(fs(8.5));
+      doc.setTextColor(...primaryColor);
+      doc.text('TRANSACTION DETAILS', 10, curY);
+
+      autoTable(doc, {
+        startY: curY + titleGap,
+        margin,
+        head: [['Term', 'Date', 'Net Payable', 'Status', 'Bank', 'Branch', 'Account', 'Ref No.']],
+        body: txRows,
+        theme: 'grid',
+        styles: { ...sharedStyles, fontSize: fs(7.5) },
+        headStyles: { ...headS, fontSize: fs(7.5) },
+        alternateRowStyles: { fillColor: lightBg },
+        columnStyles: {
+          0: { fontStyle: 'bold', cellWidth: 20 },
+          2: { halign: 'right', fontStyle: 'bold' },
+          3: { halign: 'center', cellWidth: 18 },
+        },
+        didParseCell: (h) => {
+          if (h.section === 'body' && h.column.index === 3) {
+            h.cell.styles.textColor = h.cell.raw === 'Paid' ? [22, 163, 74] : [220, 38, 38];
+            h.cell.styles.fontStyle = 'bold';
+          }
+        },
+        didDrawPage: drawFooter,
+      });
+
+      // Final footer on last page
+      drawFooter();
+
+      const safeId = record.id ? record.id.replace(/#/g, '') : 'Record';
+      doc.save(`${safeId}_Payment_Record.pdf`);
     } catch (e) {
-      console.error(e);
-      toast.error('Error generating PDF.');
+      console.error('Error generating PDF:', e);
+      toast.error('Error generating PDF: ' + (e.message || 'Unknown error'));
     }
   };
 
   const handlePrintRecord = async (record) => {
     try {
-      const response = await apiFetch(`/api/settlements/case/${record.rawId}`);
-      const settlements = response.ok ? await response.json() : [];
-      const latestSettlement = settlements.length > 0 ? settlements[0] : null;
+      const response = await apiFetch(`/api/cases/${record.rawId}/ledger`);
+      const data = response.ok ? await response.json() : null;
+      const terms = data?.payments || [];
+      const latestTerm = terms.length > 0 ? terms[terms.length - 1] : null;
 
       const printWindow = window.open('', '_blank');
       printWindow.document.write(`
@@ -346,11 +618,11 @@ export default function PaymentEntry() {
           <body>
             <h2>Payment Record: ${record.id}</h2>
             <table>
-              <tr><th>Name</th><td>${latestSettlement ? latestSettlement.payeeName : record.name}</td></tr>
-              <tr><th>Payment Method</th><td>${latestSettlement ? latestSettlement.paymentMethod : 'N/A'}</td></tr>
-              <tr><th>Transaction Ref ID</th><td>${latestSettlement && latestSettlement.transactionRefId ? latestSettlement.transactionRefId : 'N/A'}</td></tr>
-              <tr><th>Net Payable</th><td>¥${latestSettlement ? latestSettlement.financials.netPayable.toLocaleString() : '0'}</td></tr>
-              <tr><th>Payment Date</th><td>${latestSettlement ? new Date(latestSettlement.paymentDate).toLocaleDateString() : 'N/A'}</td></tr>
+              <tr><th>Name</th><td>${record.name}</td></tr>
+              <tr><th>Payment Method</th><td>${latestTerm ? latestTerm.paymentMethod : 'N/A'}</td></tr>
+              <tr><th>Transaction Ref ID</th><td>${latestTerm && latestTerm.transactionRef ? latestTerm.transactionRef : 'N/A'}</td></tr>
+              <tr><th>Net Payable</th><td>¥${latestTerm ? latestTerm.netPayable.toLocaleString() : '0'}</td></tr>
+              <tr><th>Payment Date</th><td>${latestTerm && latestTerm.paymentDate ? new Date(latestTerm.paymentDate).toLocaleDateString() : 'N/A'}</td></tr>
             </table>
             <script>
               window.onload = () => { window.print(); window.close(); }
