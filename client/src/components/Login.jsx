@@ -6,6 +6,7 @@ export default function Login({ setToken }) {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [showForgotMessage, setShowForgotMessage] = useState(false);
   const navigate = useNavigate();
 
   const handleLogin = async (e) => {
@@ -53,6 +54,16 @@ export default function Login({ setToken }) {
             Sign in to access the dashboard
           </p>
         </div>
+        
+        {showForgotMessage && (
+          <div className="bg-blue-50 border-l-4 border-blue-500 p-4 mb-4">
+            <p className="text-sm text-blue-700">
+              <strong>Password Recovery:</strong><br />
+              Please contact your System Administrator to reset your password. Admins can assign a new password directly from the Admin Dashboard.
+            </p>
+          </div>
+        )}
+
         <form className="mt-8 space-y-6" onSubmit={handleLogin}>
           {error && (
             <div className="bg-red-50 text-red-500 p-3 rounded-md text-sm text-center">
@@ -81,6 +92,18 @@ export default function Login({ setToken }) {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
               />
+            </div>
+          </div>
+
+          <div className="flex items-center justify-end">
+            <div className="text-sm">
+              <button
+                type="button"
+                onClick={() => setShowForgotMessage(!showForgotMessage)}
+                className="font-medium text-indigo-600 hover:text-indigo-500"
+              >
+                Forgot your password?
+              </button>
             </div>
           </div>
 

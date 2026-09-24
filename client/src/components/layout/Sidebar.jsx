@@ -41,8 +41,8 @@ export default function Sidebar({ activeTab, setActiveTab, openMenus, toggleMenu
       subItems: [
         { name: 'New Case', icon: FilePlus },
         { name: 'Case List', icon: ListTodo },
-        { name: 'Payment Status', icon: CreditCard },
-        { name: 'Payment Entry', icon: Banknote }
+        { name: 'Payment Entry Status', icon: CreditCard },
+        { name: 'Paid Status', icon: Banknote }
       ]
     },
     { 
@@ -70,9 +70,9 @@ export default function Sidebar({ activeTab, setActiveTab, openMenus, toggleMenu
   ];
 
   const navItems = allNavItems.filter(item => {
-    // Admin sees all departments except Business Department, and Settings
+    // Admin sees all departments except Business Department, Expense SetUp, and Settings
     if (!user || user.role === 'admin') {
-      return item.name !== 'Business Department';
+      return item.name !== 'Business Department' && item.name !== 'Expense SetUp';
     }
     
     // Other roles see their department and Settings

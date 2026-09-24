@@ -1120,8 +1120,8 @@ export default function PaymentEntry() {
     <div className="w-full px-4 sm:px-6 lg:px-8 xl:px-12 space-y-6 pb-10">
       <div className="flex justify-between items-end mb-8">
         <div>
-          <h2 className="text-2xl font-bold text-[#162D50] mb-2">Payment Entry Selection</h2>
-          <p className="text-gray-500 text-sm">Please select the type of payment entry you want to process.</p>
+          <h2 className="text-2xl font-bold text-[#162D50] mb-2">Paid Status Selection</h2>
+          <p className="text-gray-500 text-sm">Please select the type of paid status you want to process.</p>
         </div>
       </div>
 
