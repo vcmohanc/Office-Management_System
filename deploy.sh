@@ -7,8 +7,6 @@ sudo apt-get install -y docker-compose docker-compose-plugin
 
 echo "Creating docker-compose.yml..."
 cat << 'EOF' > docker-compose.yml
-version: '3.8'
-
 services:
   client:
     image: mohanc35/oms-client

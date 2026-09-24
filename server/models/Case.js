@@ -55,7 +55,9 @@ const caseSchema = new mongoose.Schema({
   }],
   hasAccountNotification: { type: Boolean, default: false },
   hasSupportNotification: { type: Boolean, default: false },
-  supportUpdatedFields: [{ type: String }]
+  supportUpdatedFields: [{ type: String }],
+  consentRecorded: { type: Boolean, default: false },
+  consentDate: { type: Date }
 }, { timestamps: true });
 
 export default mongoose.model('Case', caseSchema);

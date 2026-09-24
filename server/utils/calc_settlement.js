@@ -51,9 +51,9 @@ export const generateLedgerForCase = async (caseDoc) => {
     const claim = new SettlementClaimItem({
       caseId: caseDoc._id,
       lineNo: 1,
-      claimRef: caseDoc.case_id || caseDoc._id.toString(),
+      claimCode: caseDoc.case_id || caseDoc._id.toString(),
       description: caseDoc.expense_type || 'General Expense',
-      claimDate: caseDoc.expense_period_start || caseDoc.createdAt || new Date(),
+      incurredDate: caseDoc.expense_period_start || caseDoc.createdAt || new Date(),
       amount: ledger.baseClaimAmount
     });
 
@@ -64,38 +64,42 @@ export const generateLedgerForCase = async (caseDoc) => {
     const baseAmount = ledger.baseClaimAmount;
     
     // Determine the monthly deduction amount
-    let termAmount = caseDoc.monthly_deduction || Math.round(baseAmount / totalTerms);
+    const termAmount = Math.floor(baseAmount / totalTerms);
+    const remainder = baseAmount - (termAmount * totalTerms);
     
-    let accumulated = 0;
     const payments = [];
 
     for (let i = 1; i <= totalTerms; i++) {
       let currentTermAmount = termAmount;
       
-      // If it's the last term, assign the remaining balance
+      // If it's the last term, add the remaining balance
       if (i === totalTerms) {
-        currentTermAmount = Math.max(0, baseAmount - accumulated);
-      } else if (accumulated + currentTermAmount > baseAmount) {
-        // Prevent overcharging if monthly_deduction is unusually high
-        currentTermAmount = Math.max(0, baseAmount - accumulated);
+        currentTermAmount += remainder;
       }
 
       const dueMonth = new Date(startMonthDate);
       dueMonth.setMonth(dueMonth.getMonth() + (i - 1));
+      const dueMonthStr = `${dueMonth.getFullYear()}-${String(dueMonth.getMonth() + 1).padStart(2, '0')}`;
 
       const payment = new SettlementPayment({
         caseId: caseDoc._id,
-        termNo: i,
-        dueMonth: dueMonth,
-        netPayable: currentTermAmount,
-        status: 'pending'
+        termNumber: i,
+        dueMonth: dueMonthStr,
+        scheduledAmount: currentTermAmount,
+        status: 'PENDING'
       });
 
       payments.push(payment);
-      accumulated += currentTermAmount;
     }
 
     await SettlementPayment.insertMany(payments);
+
+    // Assertion: The sum of all installments always equals the claim total
+    const sumOfInstallments = payments.reduce((acc, p) => acc + p.scheduledAmount, 0);
+    if (sumOfInstallments !== baseAmount) {
+      throw new Error(`Assertion failed: Sum of installments (${sumOfInstallments}) does not equal base amount (${baseAmount})`);
+    }
+
     console.log(`Generated ledger and ${payments.length} payment terms for case ${caseDoc._id}`);
     
     return ledger;

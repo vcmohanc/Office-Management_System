@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
 import { apiFetch } from '../../utils/apiFetch.js';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
@@ -9,6 +10,8 @@ import { Landmark, Users, Briefcase, ArrowRight, ArrowLeft, Building2, Building,
 
 // Removed mockPaymentRecords
 export default function PaymentEntry() {
+  const { caseId, termNumber } = useParams();
+  const navigate = useNavigate();
   const [selectedEntryType, setSelectedEntryType] = useState(null);
   const [selectedRows, setSelectedRows] = useState([]);
   const [cases, setCases] = useState([]);
@@ -171,8 +174,19 @@ export default function PaymentEntry() {
         };
 
         if (action === 'print') {
-          const win = window.open(doc.output('bloburl'), '_blank');
-          if (win) win.focus();
+          doc.autoPrint();
+          const blobUrl = doc.output('bloburl');
+          const iframe = document.createElement('iframe');
+          iframe.style.display = 'none';
+          iframe.src = blobUrl;
+          document.body.appendChild(iframe);
+          iframe.onload = () => {
+            setTimeout(() => {
+              if (iframe.contentWindow) {
+                iframe.contentWindow.print();
+              }
+            }, 100);
+          };
         } else {
           saveBlob(doc.output('blob'), 'payment_tracking_export.pdf');
         }
@@ -282,7 +296,7 @@ export default function PaymentEntry() {
     }
   };
 
-  const handleDownloadPDF = async (record) => {
+  const handleDownloadPDF = async (record, action = 'download') => {
     try {
       // 1. Fetch ledger terms
       const ledgerRes = await apiFetch(`/api/cases/${record.rawId}/ledger`);
@@ -504,52 +518,63 @@ export default function PaymentEntry() {
         didDrawPage: drawFooter,
       });
 
-      // ── TRANSACTION DETAILS ───────────────────────────────────
-      const txRows = [];
-      const totalTermsCount = Math.max(record.totalTerms || 1, terms.length);
+        // Fetch actual settlements to get dynamic bank/transaction details
+        const stlResponse = await apiFetch(`/api/settlements/case/${record.rawId}`);
+        const settlements = stlResponse.ok ? await stlResponse.json() : [];
+        // sort by date ascending
+        settlements.sort((a, b) => new Date(a.paymentDate) - new Date(b.paymentDate));
 
-      for (let i = 0; i < totalTermsCount; i++) {
-        const s = terms[i];
-        if (s) {
-          // Parse date securely to avoid timezone shifting
+        // ── TRANSACTION DETAILS ───────────────────────────────────
+        const txRows = [];
+        const totalTermsCount = Math.max(record.totalTerms || 1, terms.length);
+
+        for (let i = 0; i < totalTermsCount; i++) {
+          const s = terms[i];
+          const actualSettlement = settlements[i];
+          const totalTerms = record.originalCase.installment_count || (record.originalCase.installmentPlan ? (record.originalCase.installmentPlan.match(/\d+/) ? parseInt(record.originalCase.installmentPlan.match(/\d+/)[0], 10) : 1) : 1);
+          const fallbackAmt = Math.round((record.originalCase.finalTotal || record.originalCase.totalExpense || 0) / totalTerms);
+          
+          let amt = fallbackAmt;
+          const totalAmt = (record.originalCase.finalTotal || record.originalCase.totalExpense || 0);
+          
+          if (actualSettlement?.financials?.netPayable) {
+            // If the saved settlement accidentally saved the full amount for a multi-term plan (due to a previous bug), ignore it.
+            if (totalTerms > 1 && actualSettlement.financials.netPayable >= totalAmt) {
+              amt = s?.scheduledAmount ?? fallbackAmt;
+            } else {
+              amt = actualSettlement.financials.netPayable;
+            }
+          } else if (s?.scheduledAmount) {
+            amt = s.scheduledAmount;
+          }
+          
           let txDate = '—';
-          if (s.paymentDate) {
-            const d = new Date(s.paymentDate);
+          const dateSource = actualSettlement?.paymentDate || s?.paymentDate;
+          if (dateSource) {
+            const d = new Date(dateSource);
             if (!isNaN(d)) {
-              // Extract the exact date entered (forces UTC interpretation)
               txDate = d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric', timeZone: 'UTC' });
             }
           }
-          
-          // Use exact amount from the new term model
-          const amt = s.netPayable ?? 0;
-          
+
+          const status = actualSettlement || s?.status === 'PAID' ? 'Paid' : 'Pending';
+          const dest = actualSettlement?.destinationDetails || s?.bankDetails || {};
+          const bankName = dest.bankName || dest.bank_name || '—';
+          const branchCode = dest.branchCode || dest.branch_code || '—';
+          const accountNumber = dest.accountNumber || dest.account_number || '—';
+          const refNo = actualSettlement?.transactionRefId || s?.transactionRef || '—';
+
           txRows.push([
-            `Term ${i + 1}/${record.totalTerms}`,
+            `Term ${i + 1}/${record.totalTerms || totalTermsCount}`,
             txDate,
             `JPY ${amt.toLocaleString()}`,
-            s.status === 'paid' ? 'Paid' : 'Pending',
-            s.bankDetails?.bankName || s.bankDetails?.bank_name || '—',
-            s.bankDetails?.branchCode || s.bankDetails?.branch_code || '—',
-            s.bankDetails?.accountNumber || s.bankDetails?.account_number || '—',
-            s.transactionRef || '—',
-          ]);
-        } else {
-          // Empty dynamic padding for missing/future terms
-          // Even if missing, calculate an expected fallback
-          const amt = Math.round((record.originalCase.finalTotal || record.originalCase.totalExpense || 0) / (record.totalTerms || 1));
-          txRows.push([
-            `Term ${i + 1}/${record.totalTerms}`,
-            '—',
-            `JPY ${amt.toLocaleString()}`,
-            'Pending',
-            '—',
-            '—',
-            '—',
-            '—',
+            status,
+            bankName,
+            branchCode,
+            accountNumber,
+            refNo,
           ]);
         }
-      }
 
       if (txRows.length === 0) {
         txRows.push(['—', '—', '—', '—', '—', '—', '—', 'No transactions recorded']);
@@ -587,54 +612,31 @@ export default function PaymentEntry() {
       // Final footer on last page
       drawFooter();
 
-      const safeId = record.id ? record.id.replace(/#/g, '') : 'Record';
-      doc.save(`${safeId}_Payment_Record.pdf`);
+      if (action === 'print') {
+        doc.autoPrint();
+        const blobUrl = doc.output('bloburl');
+        const iframe = document.createElement('iframe');
+        iframe.style.display = 'none';
+        iframe.src = blobUrl;
+        document.body.appendChild(iframe);
+        iframe.onload = () => {
+          setTimeout(() => {
+            if (iframe.contentWindow) {
+              iframe.contentWindow.print();
+            }
+          }, 100);
+        };
+      } else {
+        const safeId = record.id ? record.id.replace(/#/g, '') : 'Record';
+        doc.save(`${safeId}_Payment_Record.pdf`);
+      }
     } catch (e) {
       console.error('Error generating PDF:', e);
       toast.error('Error generating PDF: ' + (e.message || 'Unknown error'));
     }
   };
 
-  const handlePrintRecord = async (record) => {
-    try {
-      const response = await apiFetch(`/api/cases/${record.rawId}/ledger`);
-      const data = response.ok ? await response.json() : null;
-      const terms = data?.payments || [];
-      const latestTerm = terms.length > 0 ? terms[terms.length - 1] : null;
 
-      const printWindow = window.open('', '_blank');
-      printWindow.document.write(`
-        <html>
-          <head>
-            <title>Print - ${record.id}</title>
-            <style>
-              body { font-family: sans-serif; padding: 20px; color: #333; }
-              table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-              th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
-              th { background-color: #f8f9fa; width: 30%; font-weight: bold; }
-              h2 { color: #162D50; border-bottom: 2px solid #162D50; padding-bottom: 10px; }
-            </style>
-          </head>
-          <body>
-            <h2>Payment Record: ${record.id}</h2>
-            <table>
-              <tr><th>Name</th><td>${record.name}</td></tr>
-              <tr><th>Payment Method</th><td>${latestTerm ? latestTerm.paymentMethod : 'N/A'}</td></tr>
-              <tr><th>Transaction Ref ID</th><td>${latestTerm && latestTerm.transactionRef ? latestTerm.transactionRef : 'N/A'}</td></tr>
-              <tr><th>Net Payable</th><td>¥${latestTerm ? latestTerm.netPayable.toLocaleString() : '0'}</td></tr>
-              <tr><th>Payment Date</th><td>${latestTerm && latestTerm.paymentDate ? new Date(latestTerm.paymentDate).toLocaleDateString() : 'N/A'}</td></tr>
-            </table>
-            <script>
-              window.onload = () => { window.print(); window.close(); }
-            </script>
-          </body>
-        </html>
-      `);
-      printWindow.document.close();
-    } catch (e) {
-      toast.error('Error fetching settlement details for printing.');
-    }
-  };
 
   useEffect(() => {
     Promise.all([
@@ -725,6 +727,10 @@ export default function PaymentEntry() {
       categoryMatch: 'Host Company'
     }
   ];
+
+  if (caseId) {
+    return <PaymentEntryForm caseId={caseId} termNumber={termNumber} navigate={navigate} />;
+  }
 
   if (selectedEntryType) {
     const selectedOption = paymentOptions.find(opt => opt.id === selectedEntryType);
@@ -1081,7 +1087,7 @@ export default function PaymentEntry() {
                               <Download className="w-4 h-4" />
                             </button>
                             <button 
-                              onClick={() => handlePrintRecord(record)}
+                              onClick={() => handleDownloadPDF(record, 'print')}
                               title="Print Record"
                               className="p-1.5 text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-md transition-colors"
                             >
@@ -1155,3 +1161,302 @@ export default function PaymentEntry() {
   );
 }
 
+
+
+function PaymentEntryForm({ caseId, termNumber, navigate }) {
+  const [caseData, setCaseData] = useState(null);
+  const [ledgerData, setLedgerData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  
+  const [paymentMethod, setPaymentMethod] = useState('');
+  const [deductions, setDeductions] = useState(0);
+  const [destinationDetails, setDestinationDetails] = useState({});
+  const [transactionRefId, setTransactionRefId] = useState('');
+  const [paymentDate, setPaymentDate] = useState(new Date().toISOString().split('T')[0]);
+  const [isConfirmed, setIsConfirmed] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [hasSaved, setHasSaved] = useState(false);
+  const [payRemainingBalance, setPayRemainingBalance] = useState(false);
+  
+  // Consent
+  const [consentGiven, setConsentGiven] = useState(false);
+
+  useEffect(() => {
+    // Fetch case data
+    Promise.all([
+      apiFetch(`/api/cases`).then(res => res.json()).catch(() => []),
+      apiFetch(`/api/cases/${caseId}/ledger`).then(res => res.json()).catch(() => null),
+      apiFetch(`/api/claims`).then(res => res.json()).catch(() => [])
+    ]).then(([casesObj, ledgerObj, claimsObj]) => {
+      const actualCase = (casesObj && Array.isArray(casesObj) ? casesObj.find(c => c._id === caseId || c.case_id === caseId) : null) || 
+                         (claimsObj && Array.isArray(claimsObj) ? claimsObj.find(c => c._id === caseId || c.claim_id === caseId) : null);
+      setCaseData(actualCase);
+      setLedgerData(ledgerObj);
+      if (actualCase) {
+        const method = actualCase.settlement_method || actualCase.settlementMethod || actualCase.collection_method || actualCase.collectionMethod || '';
+        setPaymentMethod(method === 'Cash' ? 'Petty Cash' : method);
+      }
+      setLoading(false);
+    });
+  }, [caseId]);
+
+  if (loading) return <div className="p-8 text-center">Loading payment details...</div>;
+  if (!caseData) return <div className="p-8 text-center">Case not found.</div>;
+
+  const totalTerms = caseData.installment_count || (caseData.installmentPlan ? (caseData.installmentPlan.match(/\d+/) ? parseInt(caseData.installmentPlan.match(/\d+/)[0], 10) : 1) : 1);
+  const paidTerms = caseData.paidTerms || 0;
+  
+  // Calculate next payment amount
+  let nextPaymentAmount = caseData.nextPaymentAmount || Math.round((caseData.finalTotal || caseData.totalExpenseAmount || caseData.totalExpense || 0) / totalTerms);
+  let termLabel = `Term ${Math.min(paidTerms + 1, totalTerms)} of ${totalTerms}`;
+  
+  if (ledgerData && ledgerData.payments) {
+    const pendingTerms = ledgerData.payments.filter(p => p.status !== 'paid');
+    if (pendingTerms.length > 0) {
+      let termToPay = pendingTerms[0];
+      if (termNumber) {
+        const t = pendingTerms.find(p => p.termNumber === parseInt(termNumber));
+        if (t) termToPay = t;
+      }
+      nextPaymentAmount = termToPay.expectedAmount || termToPay.netPayable || nextPaymentAmount;
+      termLabel = `Term ${termToPay.termNumber} of ${totalTerms}`;
+    }
+  }
+
+  let remainingBalance = caseData.finalTotal || caseData.totalExpenseAmount || caseData.totalExpense || 0;
+  if (ledgerData && ledgerData.payments) {
+    const paidAmount = ledgerData.payments.filter(p => p.status === 'paid').reduce((sum, p) => sum + (p.expectedAmount || 0), 0);
+    remainingBalance -= paidAmount;
+  }
+
+  if (payRemainingBalance) {
+    nextPaymentAmount = remainingBalance;
+    termLabel = 'Full Remaining Balance';
+  }
+
+  const handleFormSubmit = async (e) => {
+    e.preventDefault();
+    if (!isConfirmed) return;
+    if (paymentMethod === 'Payroll Deduction' && !consentGiven) {
+      toast.error('Consent is required for Payroll Deduction (Labor Standards Act Art. 24).');
+      return;
+    }
+
+    setIsSubmitting(true);
+    
+    const payload = {
+      processedBy: 'AdminUser',
+      payeeName: caseData.staffName || caseData.advancerName || caseData.fullName || 'N/A',
+      paymentMethod,
+      destinationDetails,
+      financials: {
+        claimAmount: nextPaymentAmount,
+        deductions,
+        netPayable: nextPaymentAmount - deductions
+      },
+      transactionRefId,
+      paymentDate,
+      isConfirmed,
+      consentGiven
+    };
+
+    try {
+      const endpoint = (caseData.advancerCategory === 'Staff' || caseData.expenseType) ? `/api/claims/${caseId}/settle` : `/api/cases/${caseId}/settle`;
+      const response = await apiFetch(endpoint, {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      });
+
+      if (response.ok) {
+        toast.success('Settlement processed successfully!');
+        setHasSaved(true);
+        setTimeout(() => navigate('/payments/status'), 2000);
+      } else {
+        const errorData = await response.json();
+        toast.error(`Error: ${errorData.message}`);
+      }
+    } catch (error) {
+      console.error('Error processing settlement:', error);
+      toast.error('Network error while processing settlement');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const isPayrollDeduction = paymentMethod === 'Payroll Deduction' || paymentMethod === 'Pay in Salary';
+
+  return (
+    <div className="w-full px-4 sm:px-6 lg:px-8 xl:px-12 pb-10 flex justify-center">
+      <div className="w-full max-w-3xl mt-4">
+        <button 
+          onClick={() => navigate(-1)}
+          className="flex items-center text-[#162D50] hover:underline font-medium mb-6 transition-colors"
+        >
+          <ArrowLeft className="w-4 h-4 mr-1" />
+          Back to Selection
+        </button>
+
+        <div className="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
+          <div className="bg-[#162D50] text-white px-8 py-6 flex justify-between items-center">
+            <div>
+              <h3 className="text-xl font-bold tracking-wide">Record Payment</h3>
+              <p className="text-blue-100 text-sm mt-1">Case #{caseId.slice(-6).toUpperCase()} • {caseData.staffName || caseData.advancerName || caseData.fullName || 'Unknown Payee'}</p>
+            </div>
+            <div className="text-right">
+              <span className="text-sm text-blue-200 uppercase font-semibold tracking-wider block mb-1">Term</span>
+              <span className="font-bold">{termLabel}</span>
+            </div>
+          </div>
+
+          <form className="p-8 space-y-6" onSubmit={(e) => { setIsConfirmed(true); handleFormSubmit(e); }}>
+            
+            <div className="flex flex-col sm:flex-row gap-6">
+              <div className="flex-1">
+                <label className="block text-sm font-semibold text-gray-700 mb-2">Payment Method <span className="text-red-500">*</span></label>
+                <select 
+                  value={paymentMethod} 
+                  onChange={(e) => setPaymentMethod(e.target.value)}
+                  className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-gray-700 focus:ring-2 focus:ring-[#162D50] focus:border-[#162D50] outline-none"
+                  required
+                >
+                  <option value="" disabled>Select Method</option>
+                  <option value="Bank Transfer">Bank Transfer</option>
+                  <option value="Pay in Salary">Pay in Salary</option>
+                  <option value="Petty Cash">Petty Cash</option>
+                  <option value="Company Check">Company Check</option>
+                  <option value="Corporate Card">Corporate Card</option>
+                  <option value="Cash">Cash</option>
+                  <option value="Payroll Deduction">Payroll Deduction</option>
+                </select>
+              </div>
+              
+              <div className="flex-1">
+                <label className="block text-sm font-semibold text-gray-700 mb-2">Payment Date <span className="text-red-500">*</span></label>
+                <input 
+                  type="date" 
+                  required 
+                  value={paymentDate} 
+                  onChange={(e) => setPaymentDate(e.target.value)} 
+                  className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-gray-700 focus:ring-2 focus:ring-[#162D50] focus:border-[#162D50] outline-none" 
+                />
+              </div>
+            </div>
+
+            {paymentMethod === 'Bank Transfer' && (
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 bg-gray-50 p-5 rounded-lg border border-gray-100">
+                <div>
+                  <label className="block text-xs font-semibold text-gray-600 uppercase mb-2">Bank Name <span className="text-red-500">*</span></label>
+                  <input type="text" onChange={(e) => setDestinationDetails({...destinationDetails, bankName: e.target.value})} className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-[#162D50] focus:border-[#162D50] outline-none" required />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-gray-600 uppercase mb-2">Branch Code <span className="text-red-500">*</span></label>
+                  <input type="text" onChange={(e) => setDestinationDetails({...destinationDetails, branchCode: e.target.value})} className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-[#162D50] focus:border-[#162D50] outline-none" required />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-gray-600 uppercase mb-2">Account No <span className="text-red-500">*</span></label>
+                  <input type="text" onChange={(e) => setDestinationDetails({...destinationDetails, accountNumber: e.target.value})} className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-[#162D50] focus:border-[#162D50] outline-none" required />
+                </div>
+              </div>
+            )}
+
+            {isPayrollDeduction && (
+              <div className="space-y-4 bg-red-50 p-5 rounded-lg border border-red-100">
+                <div>
+                  <label className="block text-xs font-semibold text-gray-700 mb-2">Target Payroll Period <span className="text-red-500">*</span></label>
+                  <input type="month" onChange={(e) => setDestinationDetails({...destinationDetails, payrollPeriod: e.target.value})} className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-red-600 focus:border-red-600 outline-none" required />
+                </div>
+                <div className="flex items-start space-x-3 mt-2">
+                  <input 
+                    type="checkbox" 
+                    id="consent" 
+                    checked={consentGiven}
+                    onChange={(e) => setConsentGiven(e.target.checked)}
+                    className="mt-0.5 w-4 h-4 text-red-600 focus:ring-red-500 border-gray-300 rounded cursor-pointer" 
+                    required
+                  />
+                  <label htmlFor="consent" className="text-xs font-semibold text-red-900 cursor-pointer">
+                    I confirm that explicit consent has been obtained for this payroll deduction in compliance with Labor Standards Act Article 24.
+                  </label>
+                </div>
+              </div>
+            )}
+
+            <div className="flex flex-col sm:flex-row gap-6">
+              <div className="flex-1">
+                <label className="block text-sm font-semibold text-gray-700 mb-2">Transaction Ref</label>
+                <input 
+                  type="text" 
+                  value={transactionRefId} 
+                  onChange={(e) => setTransactionRefId(e.target.value)} 
+                  className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-gray-700 focus:ring-2 focus:ring-[#162D50] focus:border-[#162D50] outline-none" 
+                  placeholder="Optional"
+                />
+              </div>
+              <div className="flex-1">
+                <label className="block text-sm font-semibold text-gray-700 mb-2">Less Deductions</label>
+                <div className="relative">
+                  <span className="absolute left-4 top-2.5 text-gray-500 font-medium">¥</span>
+                  <input 
+                    type="number" 
+                    value={deductions} 
+                    onChange={(e) => setDeductions(Number(e.target.value) || 0)} 
+                    className="w-full pl-9 border border-gray-300 rounded-lg px-4 py-2.5 text-red-600 font-medium focus:ring-2 focus:ring-[#162D50] focus:border-[#162D50] outline-none" 
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-gray-50 p-6 rounded-lg border border-gray-200 mt-6 flex flex-col sm:flex-row justify-between items-center">
+              <div>
+                <p className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-1">Net Payable Amount</p>
+                {remainingBalance > 0 && remainingBalance !== nextPaymentAmount && (
+                  <div className="flex items-center space-x-2 mt-2">
+                    <input 
+                      type="checkbox" 
+                      id="payRemaining" 
+                      checked={payRemainingBalance}
+                      onChange={(e) => setPayRemainingBalance(e.target.checked)}
+                      className="w-4 h-4 text-[#162D50] focus:ring-[#162D50] border-gray-300 rounded cursor-pointer" 
+                    />
+                    <label htmlFor="payRemaining" className="text-xs font-semibold text-gray-700 cursor-pointer">
+                      Pay Full Remaining (¥{remainingBalance.toLocaleString()})
+                    </label>
+                  </div>
+                )}
+              </div>
+              <div className="text-3xl font-bold text-[#162D50] mt-4 sm:mt-0">
+                ¥{Math.max(0, nextPaymentAmount - deductions).toLocaleString()}
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-4 pt-4">
+              <button 
+                type="button" 
+                onClick={() => navigate(-1)}
+                className="px-6 py-2.5 rounded-lg border border-gray-300 text-gray-700 font-semibold hover:bg-gray-50 transition-colors"
+              >
+                Cancel
+              </button>
+              <div className="relative">
+                <button 
+                  type="submit" 
+                  disabled={isSubmitting || !paymentMethod || (isPayrollDeduction && !consentGiven) || hasSaved}
+                  className="px-8 py-2.5 rounded-lg bg-[#162D50] text-white font-semibold hover:bg-[#0F1E36] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isSubmitting ? 'Processing...' : 'Record Payment'}
+                </button>
+                {hasSaved && (
+                  <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                    <div className="bg-green-100 text-green-700 border border-green-300 px-6 py-2 rounded-md text-sm font-bold shadow-sm">
+                      SUCCESS
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  );
+}

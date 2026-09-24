@@ -15,6 +15,7 @@ router.get('/:caseId/ledger', ledgerController.getLedger);
 router.put('/:caseId/terms/:termNo/pay', ledgerController.payTerm);
 router.put('/:caseId/terms/:termNo/amount', ledgerController.updateTermAmount);
 router.get('/:caseId/payments', ledgerController.getPayments);
+router.put('/:caseId/pay-remaining', ledgerController.payRemainingBalance);
 
 const caseSchemaZod = z.object({
   case_type: z.string().min(1),

@@ -289,10 +289,7 @@ export default function PaymentStatus() {
       setCases(allCases);
       if (caseId) {
         const found = allCases.find(c => c._id === caseId || c.case_id === caseId);
-        if (found) {
-          setSelectedCase(found);
-          setViewingDetails(true);
-        }
+        if (found) setSelectedCase(found);
       }
       
       const types = optionsData.filter(opt => opt.type === 'ExpenseType');
@@ -355,13 +352,9 @@ export default function PaymentStatus() {
       return matchesStatus && matchesType && matchesDateStart && matchesDateEnd;
     });
 
-    let batchTotalNextPayment = selectedBatchCases.reduce((total, currentCase) => {
+    let batchTotalClaimAmount = selectedBatchCases.reduce((total, currentCase) => {
       const totalTerms = currentCase.installment_count || (currentCase.installmentPlan ? (currentCase.installmentPlan.match(/\d+/) ? parseInt(currentCase.installmentPlan.match(/\d+/)[0], 10) : 1) : 1);
       return total + (currentCase.nextPaymentAmount || Math.round((currentCase.finalTotal || currentCase.totalExpense || 0) / totalTerms));
-    }, 0);
-
-    let batchTotalBaseClaim = selectedBatchCases.reduce((total, currentCase) => {
-      return total + (currentCase.finalTotal || currentCase.totalExpense || 0);
     }, 0);
 
     let batchTotalRemainingBalance = selectedBatchCases.reduce((total, currentCase) => {
@@ -372,7 +365,7 @@ export default function PaymentStatus() {
 
     // Auto add remaining balance to Net Payable if less than 1000 yen
     if (batchTotalRemainingBalance > 0 && batchTotalRemainingBalance < 1000) {
-      batchTotalNextPayment += batchTotalRemainingBalance;
+      batchTotalClaimAmount += batchTotalRemainingBalance;
       batchTotalRemainingBalance = 0;
     }
 
@@ -489,7 +482,7 @@ export default function PaymentStatus() {
                     />
                   </td>
                   <td className="py-4 px-6 font-medium text-[#162D50]">#CAS-{c._id.slice(-6).toUpperCase()}</td>
-                  <td className="py-4 px-6 text-gray-600">{c.expensePeriodStart ? new Date(c.expensePeriodStart).toLocaleDateString() : 'N/A'} - {c.expensePeriodEnd ? new Date(c.expensePeriodEnd).toLocaleDateString() : 'N/A'}</td>
+                  <td className="py-4 px-6 text-gray-600">{c.expensePeriodStart ? new Date(c.expensePeriodStart).toISOString().split('T')[0].replace(/-/g, '/') : 'N/A'} - {c.expensePeriodEnd ? new Date(c.expensePeriodEnd).toISOString().split('T')[0].replace(/-/g, '/') : 'N/A'}</td>
                   <td className="py-4 px-6 text-gray-600">{c.expenseType}</td>
                   <td className="py-4 px-6 font-bold text-[#162D50]">{c.currency === 'JPY' ? '¥' : '$'}{Math.round(getRemainingBalance(c)).toLocaleString()}</td>
                   <td className="py-4 px-6">
@@ -521,13 +514,13 @@ export default function PaymentStatus() {
             backgroundSize: '16px 16px'
           }}></div>
           
-          <div className="bg-[#F5F1E6] p-8 md:p-12 text-[#162D50] rounded-b-md shadow-sm print:bg-white print:shadow-none print:p-4">
-            <div className="border-b-2 border-dashed border-[#162D50] pb-6 mb-8 print:pb-2 print:mb-4 relative text-center">
+          <div className="bg-[#F5F1E6] p-8 md:p-12 text-[#20301F] rounded-b-md shadow-sm print:bg-white print:shadow-none print:p-4">
+            <div className="border-b-2 border-dashed border-[#20301F] pb-6 mb-8 print:pb-2 print:mb-4 relative text-center">
               <div className="absolute right-0 top-0 print:hidden">
                 <button 
                   type="button"
                   onClick={() => window.print()}
-                  className="flex items-center px-4 py-2 border-2 border-[#162D50] hover:bg-[#162D50] hover:text-[#F5F1E6] text-xs font-bold uppercase tracking-widest transition-colors"
+                  className="flex items-center px-4 py-2 border-2 border-[#20301F] hover:bg-[#20301F] hover:text-[#F5F1E6] text-xs font-bold uppercase tracking-widest transition-colors"
                 >
                   <Printer className="w-4 h-4 mr-2" />
                   Print
@@ -541,16 +534,9 @@ export default function PaymentStatus() {
               </p>
             </div>
             
-            <form className="space-y-8 print:space-y-4" onSubmit={async (e) => {
-              e.preventDefault();
-              const confirm = await toastConfirm("Are you sure you want to record this payment?");
-              if (confirm) {
-                setIsConfirmed(true);
-                setTimeout(() => handleFormSubmit(e), 0);
-              }
-            }}>
+            <form className="space-y-8 print:space-y-4" onSubmit={handleFormSubmit}>
               {/* Header Details */}
-              <div className="grid grid-cols-2 gap-8 print:gap-4 border-b border-dashed border-[#162D50] pb-8 print:pb-4">
+              <div className="grid grid-cols-2 gap-8 print:gap-4 border-b border-dashed border-[#20301F] pb-8 print:pb-4">
                 <div>
                   <label className="block text-xs font-bold uppercase tracking-widest mb-1 text-gray-500">{selectedCase.advancerCategory === 'Staff' ? 'Employee' : 'Payee'}</label>
                   <div className="font-mono text-xl">{selectedCase.staffName || selectedCase.advancerName || 'N/A'}</div>
@@ -558,23 +544,16 @@ export default function PaymentStatus() {
                 </div>
                 <div className="text-right">
                   <label className="block text-xs font-bold uppercase tracking-widest mb-1 text-gray-500">Base Claim Amount</label>
-                  <div className="font-mono text-2xl">¥ {batchTotalBaseClaim.toLocaleString()}</div>
+                  <div className="font-mono text-2xl">¥ {batchTotalClaimAmount.toLocaleString()}</div>
                 </div>
               </div>
 
               {/* Itemized Case Details */}
-              <div className="border-b border-dashed border-[#162D50] pb-8 mb-8 print:pb-4 print:mb-4">
+              <div className="border-b border-dashed border-[#20301F] pb-8 mb-8 print:pb-4 print:mb-4">
                 <div className="text-xs font-bold uppercase tracking-widest text-gray-500 mb-6 print:mb-2">Itemized Claims</div>
-                <div className="grid grid-cols-12 gap-4 text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-4 border-b border-gray-200 pb-2">
-                  <div className="col-span-1">No.</div>
-                  <div className="col-span-3">Claim ID</div>
-                  <div className="col-span-4">Type</div>
-                  <div className="col-span-2">Date</div>
-                  <div className="col-span-2 text-right">Amount</div>
-                </div>
                 <div className="space-y-4 print:space-y-2">
                   {selectedBatchCases.map((c, idx) => {
-                    const totalTerms = c.installment_count || (c.installmentPlan ? (c.installmentPlan.match(/\d+/) ? parseInt(c.installmentPlan.match(/\d+/)[0], 10) : 1) : 1);
+                    const totalTerms = c.installmentPlan ? (c.installmentPlan.match(/\d+/) ? parseInt(c.installmentPlan.match(/\d+/)[0], 10) : 1) : 1;
                     const claimAmount = c.nextPaymentAmount || Math.round((c.finalTotal || c.totalExpense || 0) / totalTerms);
                     return (
                       <div key={c._id} className="grid grid-cols-12 gap-4 text-sm items-center">
@@ -582,7 +561,7 @@ export default function PaymentStatus() {
                         <div className="col-span-3 font-mono">#{c._id.slice(-6).toUpperCase()}</div>
                         <div className="col-span-4 truncate font-medium">{c.expenseType || 'General Expense'}</div>
                         <div className="col-span-2 font-mono text-gray-500 text-xs">
-                          {new Date(c.expensePeriodStart || c.createdAt).toLocaleDateString()}
+                          {new Date(c.expensePeriodStart || c.createdAt).toISOString().split('T')[0].replace(/-/g, '/')}
                         </div>
                         <div className="col-span-2 text-right font-mono font-bold">¥ {claimAmount.toLocaleString()}</div>
                       </div>
@@ -593,7 +572,7 @@ export default function PaymentStatus() {
 
               {/* Agreed Terms (Read-Only) */}
               {selectedCase.advancerCategory !== 'Staff' && (
-                <div className="border-b border-dashed border-[#162D50] pb-8 mb-8 print:pb-4 print:mb-4">
+                <div className="border-b border-dashed border-[#20301F] pb-8 mb-8 print:pb-4 print:mb-4">
                   <div className="text-xs font-bold uppercase tracking-widest text-gray-500 mb-6 print:mb-2">Agreed Terms</div>
                   <div className="grid grid-cols-4 gap-6">
                     <div>
@@ -618,165 +597,150 @@ export default function PaymentStatus() {
                 </div>
               )}
 
-              {/* Payment Method & Deductions Form (Interactive) */}
-              <div className="mt-8 print:hidden border-t border-dashed border-[#162D50] pt-8">
-                <div className="text-xs font-bold uppercase tracking-widest text-gray-500 mb-6">Record Payment</div>
-                <div className="space-y-6">
-                  <div className="flex flex-col sm:flex-row gap-6">
-                    <div className="flex-1">
-                      <label className="block text-sm font-semibold text-gray-700 mb-2">Payment Method <span className="text-red-500">*</span></label>
-                      <select 
-                        value={paymentMethod} 
-                        onChange={(e) => setPaymentMethod(e.target.value)}
-                        className="w-full border border-gray-400 bg-white/70 rounded-none px-4 py-2.5 text-gray-700 focus:ring-2 focus:ring-[#162D50] focus:border-[#162D50] outline-none font-mono text-sm"
-                        required
-                      >
-                        <option value="" disabled>Select Method</option>
-                        <option value="Bank Transfer">Bank Transfer</option>
-                        {selectedCase.advancerCategory === 'Staff' ? (
-                          <>
-                            <option value="Pay in Salary">Pay in Salary</option>
-                            <option value="Petty Cash">Petty Cash</option>
-                            <option value="Company Check">Company Check</option>
-                          </>
-                        ) : (
-                          <>
-                            <option value="Corporate Card">Corporate Card</option>
-                            <option value="Cash">Cash</option>
-                            <option value="Payroll Deduction">Payroll Deduction</option>
-                          </>
-                        )}
-                      </select>
-                    </div>
-                    
-                    <div className="flex-1">
-                      <label className="block text-sm font-semibold text-gray-700 mb-2">Payment Date <span className="text-red-500">*</span></label>
-                      <input 
-                        type="date" 
-                        required 
-                        value={paymentDate} 
-                        onChange={(e) => setPaymentDate(e.target.value)} 
-                        className="w-full border border-gray-400 bg-white/70 rounded-none px-4 py-2.5 text-gray-700 focus:ring-2 focus:ring-[#162D50] focus:border-[#162D50] outline-none font-mono text-sm" 
-                      />
-                    </div>
-                  </div>
+              {/* Payment Method & Deductions */}
+              <div className="space-y-8 print:space-y-4 border-b border-dashed border-[#20301F] pb-8 print:pb-4">
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-widest mb-2">Payment Method <span className="text-[#B5482F]">*</span></label>
+                  <select 
+                    value={paymentMethod} 
+                    onChange={(e) => setPaymentMethod(e.target.value)}
+                    className="w-full bg-transparent border-b border-dashed border-[#20301F] focus:outline-none focus:border-[#2F6F4E] py-2 text-lg font-mono rounded-none appearance-none cursor-pointer"
+                    required
+                  >
+                    <option value="" disabled>Select Method</option>
+                    <option value="Bank Transfer">Bank Transfer</option>
+                    {selectedCase.advancerCategory === 'Staff' ? (
+                      <>
+                        <option value="Pay in Salary">Pay in Salary</option>
+                        <option value="Petty Cash">Petty Cash</option>
+                        <option value="Company Check">Company Check</option>
+                      </>
+                    ) : (
+                      <>
+                        <option value="Corporate Card">Corporate Card</option>
+                        <option value="Cash">Cash</option>
+                        <option value="Payroll Deduction">Payroll Deduction</option>
+                      </>
+                    )}
+                  </select>
+                </div>
 
-                  {paymentMethod === 'Bank Transfer' && (
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 bg-white/50 p-5 rounded border-2 border-dashed border-gray-300">
-                      <div>
-                        <label className="block text-xs font-semibold text-gray-600 uppercase mb-2">Bank Name <span className="text-red-500">*</span></label>
-                        <input type="text" onChange={(e) => setDestinationDetails({...destinationDetails, bankName: e.target.value})} className="w-full border border-gray-400 bg-white/70 rounded-none px-3 py-2 text-sm focus:ring-[#162D50] focus:border-[#162D50] outline-none font-mono" required />
-                      </div>
-                      <div>
-                        <label className="block text-[10px] font-bold text-gray-600 uppercase tracking-widest mb-2">Branch Code <span className="text-red-500">*</span></label>
-                        <input type="text" onChange={(e) => setDestinationDetails({...destinationDetails, branchCode: e.target.value})} className="w-full border border-gray-400 bg-white/70 rounded-none px-3 py-2 text-sm focus:ring-[#162D50] focus:border-[#162D50] outline-none font-mono" required />
-                      </div>
-                      <div>
-                        <label className="block text-[10px] font-bold text-gray-600 uppercase tracking-widest mb-2">Account No <span className="text-red-500">*</span></label>
-                        <input type="text" onChange={(e) => setDestinationDetails({...destinationDetails, accountNumber: e.target.value})} className="w-full border border-gray-400 bg-white/70 rounded-none px-3 py-2 text-sm focus:ring-[#162D50] focus:border-[#162D50] outline-none font-mono" required />
-                      </div>
-                    </div>
-                  )}
-
-                  {(paymentMethod === 'Payroll Deduction' || paymentMethod === 'Pay in Salary') && (
-                    <div className="space-y-4 bg-white/50 p-5 rounded border-2 border-dashed border-gray-300">
-                      <div>
-                        <label className="block text-[10px] font-bold uppercase tracking-widest text-gray-700 mb-2">Target Payroll Period <span className="text-red-500">*</span></label>
-                        <input type="month" onChange={(e) => setDestinationDetails({...destinationDetails, payrollPeriod: e.target.value})} className="w-full border border-gray-400 bg-white/70 rounded-none px-3 py-2 text-sm focus:ring-[#162D50] focus:border-[#162D50] outline-none font-mono" required />
-                      </div>
-                    </div>
-                  )}
-
-                  {paymentMethod === 'Company Check' && (
-                    <div className="grid grid-cols-2 gap-6 bg-white/50 p-5 rounded border-2 border-dashed border-gray-300">
-                      <div>
-                        <label className="block text-[10px] font-bold uppercase tracking-widest text-gray-600 mb-2">Check Number <span className="text-red-500">*</span></label>
-                        <input type="text" onChange={(e) => setDestinationDetails({...destinationDetails, checkNumber: e.target.value})} className="w-full border border-gray-400 bg-white/70 rounded-none px-3 py-2 text-sm focus:ring-[#162D50] focus:border-[#162D50] outline-none font-mono" required />
-                      </div>
-                      <div>
-                        <label className="block text-[10px] font-bold uppercase tracking-widest text-gray-600 mb-2">Mailing Address / Delivery <span className="text-red-500">*</span></label>
-                        <input type="text" onChange={(e) => setDestinationDetails({...destinationDetails, checkDelivery: e.target.value})} className="w-full border border-gray-400 bg-white/70 rounded-none px-3 py-2 text-sm focus:ring-[#162D50] focus:border-[#162D50] outline-none font-mono" required />
-                      </div>
-                    </div>
-                  )}
-
-                  {paymentMethod === 'Corporate Card' && (
-                    <div className="grid grid-cols-2 gap-6 bg-white/50 p-5 rounded border-2 border-dashed border-gray-300">
-                      <div>
-                        <label className="block text-[10px] font-bold uppercase tracking-widest text-gray-600 mb-2">Card Used (Last 4) <span className="text-red-500">*</span></label>
-                        <input type="text" maxLength={4} pattern="\d{4}" onChange={(e) => setDestinationDetails({...destinationDetails, cardLast4: e.target.value})} className="w-full border border-gray-400 bg-white/70 rounded-none px-3 py-2 text-sm focus:ring-[#162D50] focus:border-[#162D50] outline-none font-mono" required />
-                      </div>
-                      <div>
-                        <label className="block text-[10px] font-bold uppercase tracking-widest text-gray-600 mb-2">Cardholder Name <span className="text-red-500">*</span></label>
-                        <input type="text" onChange={(e) => setDestinationDetails({...destinationDetails, cardholderName: e.target.value})} className="w-full border border-gray-400 bg-white/70 rounded-none px-3 py-2 text-sm focus:ring-[#162D50] focus:border-[#162D50] outline-none font-mono" required />
-                      </div>
-                    </div>
-                  )}
-
-                  {(paymentMethod === 'Cash' || paymentMethod === 'Petty Cash') && (
-                    <div className="bg-white/50 p-5 rounded border-2 border-dashed border-gray-300">
-                      <label className="block text-[10px] font-bold uppercase tracking-widest text-gray-600 mb-2">Collected By / Receiver Name <span className="text-red-500">*</span></label>
-                      <input type="text" onChange={(e) => setDestinationDetails({...destinationDetails, receiverName: e.target.value})} className="w-full border border-gray-400 bg-white/70 rounded-none px-3 py-2 text-sm focus:ring-[#162D50] focus:border-[#162D50] outline-none font-mono" required />
-                    </div>
-                  )}
-
-                  <div className="flex flex-col sm:flex-row gap-6">
-                    <div className="flex-1">
-                      <label className="block text-sm font-semibold text-gray-700 mb-2">Transaction Ref</label>
-                      <input 
-                        type="text" 
-                        value={transactionRefId} 
-                        onChange={(e) => setTransactionRefId(e.target.value)} 
-                        className="w-full border border-gray-400 bg-white/70 rounded-none px-4 py-2.5 text-gray-700 focus:ring-2 focus:ring-[#162D50] focus:border-[#162D50] outline-none font-mono text-sm" 
-                        placeholder="Optional"
-                      />
-                    </div>
-                    <div className="flex-1">
-                      <label className="block text-sm font-semibold text-gray-700 mb-2">Less Deductions</label>
-                      <div className="relative">
-                        <span className="absolute left-4 top-2.5 text-gray-500 font-medium font-mono text-sm">¥</span>
-                        <input 
-                          type="number" 
-                          value={deductions} 
-                          onChange={(e) => setDeductions(Number(e.target.value) || 0)} 
-                          className="w-full pl-9 border border-gray-400 bg-white/70 rounded-none px-4 py-2.5 text-red-600 font-medium focus:ring-2 focus:ring-[#162D50] focus:border-[#162D50] outline-none font-mono text-sm" 
-                        />
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="bg-white/50 p-6 rounded border-2 border-dashed border-[#162D50] mt-6 flex flex-col sm:flex-row justify-between items-center">
+                {paymentMethod === 'Bank Transfer' && (
+                  <div className="grid grid-cols-3 gap-6">
                     <div>
-                      <p className="text-xs font-bold uppercase tracking-widest text-gray-500 mb-1">Net Payable Amount</p>
-                      <div className="font-mono text-xs text-gray-500 mt-1">Remaining Balance: ¥ {batchTotalRemainingBalance.toLocaleString()}</div>
+                      <label className="block text-xs font-bold uppercase tracking-widest mb-2">Bank Name <span className="text-[#B5482F]">*</span></label>
+                      <input type="text" onChange={(e) => setDestinationDetails({...destinationDetails, bankName: e.target.value})} className="w-full bg-transparent border-b border-dashed border-[#20301F] focus:outline-none focus:border-[#2F6F4E] py-2 font-mono rounded-none" required />
                     </div>
-                    <div className="font-mono text-3xl font-bold text-[#162D50] mt-4 sm:mt-0">
-                      ¥{Math.max(0, batchTotalNextPayment - deductions).toLocaleString()}
+                    <div>
+                      <label className="block text-xs font-bold uppercase tracking-widest mb-2">Branch Code <span className="text-[#B5482F]">*</span></label>
+                      <input type="text" onChange={(e) => setDestinationDetails({...destinationDetails, branchCode: e.target.value})} className="w-full bg-transparent border-b border-dashed border-[#20301F] focus:outline-none focus:border-[#2F6F4E] py-2 font-mono rounded-none" required />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-bold uppercase tracking-widest mb-2">Account Number <span className="text-[#B5482F]">*</span></label>
+                      <input type="text" onChange={(e) => setDestinationDetails({...destinationDetails, accountNumber: e.target.value})} className="w-full bg-transparent border-b border-dashed border-[#20301F] focus:outline-none focus:border-[#2F6F4E] py-2 font-mono rounded-none" required />
                     </div>
                   </div>
+                )}
+                
+                {(paymentMethod === 'Payroll Deduction' || paymentMethod === 'Pay in Salary') && (
+                  <div>
+                    <label className="block text-xs font-bold uppercase tracking-widest mb-2">Target Payroll Period <span className="text-[#B5482F]">*</span></label>
+                    <input type="month" onChange={(e) => setDestinationDetails({...destinationDetails, payrollPeriod: e.target.value})} className="w-full bg-transparent border-b border-dashed border-[#20301F] focus:outline-none focus:border-[#2F6F4E] py-2 font-mono rounded-none" required />
+                  </div>
+                )}
 
-                  <div className="flex justify-end gap-3 pt-6 mt-6">
-                    <button 
-                      type="button" 
-                      onClick={() => {
-                        setPaymentMethod('');
-                        setDeductions(0);
-                        setDestinationDetails({});
-                      }}
-                      className="px-6 py-2 border-2 border-[#162D50] rounded-none text-xs font-bold uppercase tracking-widest text-[#162D50] hover:bg-gray-100 transition-colors"
-                    >
-                      Clear
-                    </button>
-                    <button 
-                      type="submit" 
-                      disabled={isSubmitting || !paymentMethod}
-                      className="px-8 py-2 bg-[#162D50] text-[#F5F1E6] rounded-none text-xs font-bold uppercase tracking-widest hover:bg-black transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
-                    >
-                      {isSubmitting ? 'Processing...' : 'Record Payment'}
-                      {!isSubmitting && <ArrowRight className="w-4 h-4 ml-2" />}
-                    </button>
+                {paymentMethod === 'Company Check' && (
+                  <div className="grid grid-cols-2 gap-6">
+                    <div>
+                      <label className="block text-xs font-bold uppercase tracking-widest mb-2">Check Number <span className="text-[#B5482F]">*</span></label>
+                      <input type="text" onChange={(e) => setDestinationDetails({...destinationDetails, checkNumber: e.target.value})} className="w-full bg-transparent border-b border-dashed border-[#20301F] focus:outline-none focus:border-[#2F6F4E] py-2 font-mono rounded-none" required />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-bold uppercase tracking-widest mb-2">Mailing Address / Delivery <span className="text-[#B5482F]">*</span></label>
+                      <input type="text" onChange={(e) => setDestinationDetails({...destinationDetails, checkDelivery: e.target.value})} className="w-full bg-transparent border-b border-dashed border-[#20301F] focus:outline-none focus:border-[#2F6F4E] py-2 font-mono rounded-none" required />
+                    </div>
+                  </div>
+                )}
+
+                {paymentMethod === 'Corporate Card' && (
+                  <div className="grid grid-cols-2 gap-6">
+                    <div>
+                      <label className="block text-xs font-bold uppercase tracking-widest mb-2">Card Used (Last 4) <span className="text-[#B5482F]">*</span></label>
+                      <input type="text" maxLength={4} pattern="\d{4}" onChange={(e) => setDestinationDetails({...destinationDetails, cardLast4: e.target.value})} className="w-full bg-transparent border-b border-dashed border-[#20301F] focus:outline-none focus:border-[#2F6F4E] py-2 font-mono rounded-none" required />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-bold uppercase tracking-widest mb-2">Cardholder Name <span className="text-[#B5482F]">*</span></label>
+                      <input type="text" onChange={(e) => setDestinationDetails({...destinationDetails, cardholderName: e.target.value})} className="w-full bg-transparent border-b border-dashed border-[#20301F] focus:outline-none focus:border-[#2F6F4E] py-2 font-mono rounded-none" required />
+                    </div>
+                  </div>
+                )}
+
+                {(paymentMethod === 'Cash' || paymentMethod === 'Petty Cash') && (
+                  <div>
+                    <label className="block text-xs font-bold uppercase tracking-widest mb-2">Collected By / Receiver Name <span className="text-[#B5482F]">*</span></label>
+                    <input type="text" onChange={(e) => setDestinationDetails({...destinationDetails, receiverName: e.target.value})} className="w-full bg-transparent border-b border-dashed border-[#20301F] focus:outline-none focus:border-[#2F6F4E] py-2 font-mono rounded-none" required />
+                  </div>
+                )}
+
+                <div className="grid grid-cols-3 gap-6">
+                  <div>
+                    <label className="block text-xs font-bold uppercase tracking-widest mb-2">Transaction Ref</label>
+                    <input type="text" value={transactionRefId} onChange={(e) => setTransactionRefId(e.target.value)} className="w-full bg-transparent border-b border-dashed border-[#20301F] focus:outline-none focus:border-[#2F6F4E] py-2 font-mono rounded-none" />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold uppercase tracking-widest mb-2">Payment Date <span className="text-[#B5482F]">*</span></label>
+                    <input type="date" required value={paymentDate} onChange={(e) => setPaymentDate(e.target.value)} className="w-full bg-transparent border-b border-dashed border-[#20301F] focus:outline-none focus:border-[#2F6F4E] py-2 font-mono rounded-none" />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold uppercase tracking-widest mb-2 text-[#B5482F]">Less Deductions</label>
+                    <div className="relative">
+                      <span className="absolute left-0 top-2 font-mono">¥</span>
+                      <input 
+                        type="number" 
+                        value={deductions} 
+                        onChange={(e) => setDeductions(Number(e.target.value) || 0)} 
+                        className="w-full pl-6 bg-transparent border-b border-dashed border-[#20301F] focus:outline-none focus:border-[#2F6F4E] py-2 font-mono rounded-none text-[#B5482F]" 
+                      />
+                    </div>
                   </div>
                 </div>
+              </div>
+
+              {/* Running Totals */}
+              <div className="pt-2 pb-8 print:pb-4 border-b-[3px] border-double border-[#20301F]">
+                <div className="flex justify-between items-end mb-4">
+                  <div className="text-sm font-bold uppercase tracking-widest">Net Payable</div>
+                  <div className="font-mono text-4xl font-bold tracking-tight">¥ {Math.max(0, batchTotalClaimAmount - deductions).toLocaleString()}</div>
+                </div>
+                <div className="flex justify-between items-end">
+                  <div className="text-xs font-bold uppercase tracking-widest text-gray-500">Remaining Balance (Post-Payment)</div>
+                  <div className="font-mono text-xl text-gray-500">¥ {batchTotalRemainingBalance.toLocaleString()}</div>
+                </div>
+              </div>
+
+              {/* Action / Stamp */}
+              <div className="flex flex-col md:flex-row justify-between items-center pt-8 print:pt-4">
+                <div className="flex items-start space-x-4 mb-8 md:mb-0 md:w-1/2 print:mb-0">
+                  <input 
+                    type="checkbox" 
+                    id="confirm" 
+                    checked={isConfirmed}
+                    onChange={(e) => setIsConfirmed(e.target.checked)}
+                    className="mt-1 w-6 h-6 rounded-none border-2 border-[#20301F] text-[#2F6F4E] focus:ring-[#2F6F4E] bg-transparent cursor-pointer" 
+                    required
+                  />
+                  <label htmlFor="confirm" className="text-sm font-bold uppercase tracking-wider leading-relaxed cursor-pointer">
+                    I confirm the above details are accurate and authorize this {selectedCase.advancerCategory === 'Staff' ? 'reimbursement' : 'settlement'} transaction.
+                  </label>
+                </div>
+
+                <button 
+                  type="submit" 
+                  disabled={isSubmitting || !isConfirmed || !paymentMethod}
+                  className="border-[3px] border-[#2F6F4E] text-[#2F6F4E] bg-transparent px-8 py-4 uppercase font-black tracking-[0.2em] transform -rotate-3 hover:bg-[#2F6F4E] hover:text-[#F5F1E6] transition-all disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-[#2F6F4E] disabled:cursor-not-allowed disabled:transform-none shadow-[4px_4px_0_0_rgba(47,111,78,0.2)] hover:shadow-none"
+                >
+                  {isSubmitting ? 'PROCESSING' : 'APPROVED'}
+                </button>
               </div>
             </form>
           </div>
