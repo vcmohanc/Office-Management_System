@@ -1,11 +1,18 @@
 import express from 'express';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
+import { rateLimit } from 'express-rate-limit';
 import User from '../models/User.js';
 import { verifyToken, requireRole } from '../middleware/auth.js';
 
 
 const router = express.Router();
+
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 10, // Limit each IP to 10 requests per windowMs
+  message: { error: 'Too many authentication attempts from this IP, please try again after 15 minutes.' }
+});
 
 // Register (admin-only — requires a valid admin JWT)
 router.post('/register', verifyToken, requireRole('admin'), async (req, res) => {
@@ -28,12 +35,13 @@ router.post('/register', verifyToken, requireRole('admin'), async (req, res) => 
 
     res.status(201).json({ message: 'User registered successfully' });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    console.error('Server Error:', error);
+    res.status(500).json({ error: 'Internal Server Error' });
   }
 });
 
 // Login
-router.post('/login', async (req, res) => {
+router.post('/login', authLimiter, async (req, res) => {
   try {
     const { username, password } = req.body;
     const user = await User.findOne({ username });
@@ -54,7 +62,8 @@ router.post('/login', async (req, res) => {
 
     res.json({ token, user: { username: user.username, role: user.role } });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    console.error('Server Error:', error);
+    res.status(500).json({ error: 'Internal Server Error' });
   }
 });
 
@@ -67,7 +76,8 @@ router.get('/me', verifyToken, async (req, res) => {
     }
     res.json({ user });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    console.error('Server Error:', error);
+    res.status(500).json({ error: 'Internal Server Error' });
   }
 });
 
@@ -94,7 +104,8 @@ router.put('/update-password', verifyToken, async (req, res) => {
 
     res.json({ message: 'Password updated successfully' });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    console.error('Server Error:', error);
+    res.status(500).json({ error: 'Internal Server Error' });
   }
 });
 
@@ -104,7 +115,8 @@ router.get('/users', verifyToken, requireRole('admin'), async (req, res) => {
     const users = await User.find({}, '-password').sort({ createdAt: -1 });
     res.json(users);
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    console.error('Server Error:', error);
+    res.status(500).json({ error: 'Internal Server Error' });
   }
 });
 
@@ -168,7 +180,8 @@ router.put('/users/:id', verifyToken, async (req, res) => {
 
     res.json(updatedUser);
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    console.error('Server Error:', error);
+    res.status(500).json({ error: 'Internal Server Error' });
   }
 });
 

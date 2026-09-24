@@ -238,7 +238,8 @@ export default function PaymentStatus() {
   };
 
   const handleDeleteCase = async (caseObj) => {
-    const confirmed = await toastConfirm('Are you sure you want to delete this case?');
+    const displayId = caseObj.displayId || `#CAS-${caseObj._id.substring(caseObj._id.length - 6).toUpperCase()}`;
+    const confirmed = await toastConfirm(`Are you sure you want to delete ${displayId}?`);
     if (!confirmed) return;
     try {
       const endpoint = caseObj.advancerCategory === 'Staff' ? `/api/claims/${caseObj._id}` : `/api/cases/${caseObj._id}`;

@@ -201,6 +201,44 @@ router.patch('/:id/messages/read', async (req, res) => {
   }
 });
 
+router.post('/:id/messages', async (req, res) => {
+  try {
+    const { text, author } = req.body;
+    if (!text) {
+      return res.status(400).json({ message: 'Message text is required' });
+    }
+
+    const updatedClaim = await Claim.findByIdAndUpdate(
+      req.params.id,
+      {
+        $push: {
+          messages: {
+            text,
+            author: author || 'system',
+            date: new Date()
+          }
+        },
+        $set: {
+          hasSupportNotification: author === 'account_user',
+          hasAccountNotification: author === 'support_user'
+        }
+      },
+      { new: true }
+    );
+
+    if (!updatedClaim) {
+      return res.status(404).json({ message: 'Claim not found' });
+    }
+
+    caseEvents.emit('CASE_UPDATED', updatedClaim);
+
+    res.status(201).json(updatedClaim.messages);
+  } catch (error) {
+    console.error('Error adding message:', error);
+    res.status(500).json({ message: 'Server error adding message' });
+  }
+});
+
 router.post('/:id/deduct-term', requireRole('admin', 'account'), async (req, res) => {
   try {
     const claimId = req.params.id;

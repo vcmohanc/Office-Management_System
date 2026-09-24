@@ -2,6 +2,7 @@ import './config/env.js';        // MUST be first — loads .env before any othe
 import express from 'express';
 import mongoose from 'mongoose';
 import cors from 'cors';
+import helmet from 'helmet';
 import authRoutes from './routes/auth.js';
 import dashboardRoutes from './routes/dashboard.js';
 import employeeRoutes from './routes/employees.js';
@@ -17,6 +18,7 @@ import staffRoutes from './routes/staff.js';
 import { verifyToken, verifyFileToken } from './middleware/auth.js';
 import { sseHandler } from './events.js';
 import fs from 'fs';
+import { compressionMiddleware } from './middleware/compression.js';
 
 
 import path from 'path';
@@ -30,11 +32,26 @@ const app = express();
 const PORT = process.env.PORT || 5001;
 
 // Middleware
+// Add Security Headers
+app.use(helmet());
+
+// Restrict CORS securely
+const allowedOrigins = process.env.CLIENT_URL 
+  ? process.env.CLIENT_URL.split(',') 
+  : ['http://localhost:5173', 'http://localhost:3000'];
+
 app.use(cors({
-  origin: process.env.CLIENT_URL || '*',
+  origin: function (origin, callback) {
+    if (!origin || allowedOrigins.includes(origin) || allowedOrigins.includes('*')) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
   credentials: true
 }));
 app.use(express.json());
+app.use(compressionMiddleware);
 
 // Authenticated file serving — replaces the public express.static for /uploads.
 // Supports token via Authorization header OR ?token= query param so that

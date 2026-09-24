@@ -4,6 +4,7 @@
 - **Authentication:** Fully functional (Login, Register new admin/user, Update Password).
 - **Frontend Dashboard:** Fully implemented and wired. State-based navigation works smoothly across 4 main departments (Admin, Account, HR, Support).
 - **Backend API:** Basic auth and some dashboard routes are active. Most department-specific forms are currently UI-only (submitting to `console.log`) and require backend API implementations in future phases.
+- **Infrastructure & Performance:** Nginx reverse proxy is configured. Advanced HTTP response compression (Zstd > Brotli > Gzip) is fully implemented for both static frontend assets (pre-compressed via Vite) and dynamic backend API payloads.
 
 ## Implemented Components
 - **Admin:** `DashboardHome.jsx`, `AdminNewRegistration.jsx`

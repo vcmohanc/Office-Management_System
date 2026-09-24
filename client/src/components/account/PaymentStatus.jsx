@@ -139,6 +139,53 @@ export default function PaymentStatus() {
     );
   };
 
+  const handleExport = (dataToExport) => {
+    if (!dataToExport || dataToExport.length === 0) {
+      toast.error('No data to export');
+      return;
+    }
+
+    const headers = ['Case ID', 'Period', 'Expense Type', 'Remaining Amount', 'Status', 'Advancer Category', 'Staff Name'];
+    const csvRows = [headers.join(',')];
+
+    for (const row of dataToExport) {
+      const caseId = `#CAS-${(row._id || '').slice(-6).toUpperCase()}`;
+      const period = `${row.expensePeriodStart ? new Date(row.expensePeriodStart).toLocaleDateString() : 'N/A'} - ${row.expensePeriodEnd ? new Date(row.expensePeriodEnd).toLocaleDateString() : 'N/A'}`;
+      const expenseType = row.expenseType || 'N/A';
+      
+      const totalTerms = row.installment_count || (row.installmentPlan ? (row.installmentPlan.match(/\d+/) ? parseInt(row.installmentPlan.match(/\d+/)[0], 10) : 1) : 1);
+      const paidTerms = row.paidTerms || 0;
+      const nextPaymentAmount = row.nextPaymentAmount || (row.finalTotal || row.totalExpense || 0) / totalTerms;
+      const remainingAmount = Math.max(0, (row.finalTotal || row.totalExpense || 0) - (paidTerms * nextPaymentAmount));
+      
+      const status = row.status || 'N/A';
+      const advancerCategory = row.advancerCategory || 'N/A';
+      const staffName = row.staffName || row.advancerName || 'N/A';
+
+      const csvRow = [
+        `"${caseId}"`,
+        `"${period}"`,
+        `"${expenseType}"`,
+        `"${Math.round(remainingAmount)}"`,
+        `"${status}"`,
+        `"${advancerCategory}"`,
+        `"${staffName}"`
+      ];
+      csvRows.push(csvRow.join(','));
+    }
+
+    const csvString = csvRows.join('\n');
+    const blob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.setAttribute('href', url);
+    link.setAttribute('download', `payment_export_${new Date().toISOString().slice(0, 10)}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   const handleSelectAllCases = (e, currentCases) => {
     if (e.target.checked) {
       const newCases = [...selectedBatchCases];
@@ -238,7 +285,8 @@ export default function PaymentStatus() {
   };
 
   const handleDeleteCase = async (caseObj) => {
-    const confirmed = await toastConfirm('Are you sure you want to delete this case?');
+    const displayId = caseObj.displayId || `#CAS-${caseObj._id.substring(caseObj._id.length - 6).toUpperCase()}`;
+    const confirmed = await toastConfirm(`Are you sure you want to delete ${displayId}?`);
     if (!confirmed) return;
     try {
       const endpoint = caseObj.advancerCategory === 'Staff' ? `/api/claims/${caseObj._id}` : `/api/cases/${caseObj._id}`;
@@ -442,9 +490,9 @@ export default function PaymentStatus() {
               <button className="bg-[#0A192F] text-white px-6 py-2 rounded-md text-sm font-bold hover:bg-[#162D50] transition-colors shadow-sm whitespace-nowrap h-[38px]">
                 Apply Filters
               </button>
-              <button className="flex items-center bg-[#162D50] text-white px-4 py-2 rounded-md text-sm font-bold hover:bg-[#0f1f38] transition-colors shadow-sm whitespace-nowrap h-[38px]">
+              <button onClick={() => handleExport(filteredPersonCases)} className="flex items-center bg-[#162D50] text-white px-4 py-2 rounded-md text-sm font-bold hover:bg-[#0f1f38] transition-colors shadow-sm whitespace-nowrap h-[38px]">
                 <Download className="w-4 h-4 mr-2" />
-                Generate Export
+                Export
               </button>
             </div>
           </div>
@@ -806,9 +854,9 @@ export default function PaymentStatus() {
               <Calendar className="w-4 h-4 mr-2 text-gray-500" />
               <span>Oct 1 - Oct 31, 2023</span>
             </div>
-            <button className="flex items-center bg-[#162D50] text-white px-4 py-2 rounded-md text-sm font-bold hover:bg-[#0f1f38] transition-colors shadow-sm">
+            <button onClick={() => handleExport(cases)} className="flex items-center bg-[#162D50] text-white px-4 py-2 rounded-md text-sm font-bold hover:bg-[#0f1f38] transition-colors shadow-sm">
               <Download className="w-4 h-4 mr-2" />
-              Generate Export
+              Export
             </button>
           </div>
         </div>
@@ -1128,9 +1176,9 @@ export default function PaymentStatus() {
           <button className="bg-[#0A192F] text-white px-6 py-2 rounded-md text-sm font-bold hover:bg-[#162D50] transition-colors shadow-sm whitespace-nowrap h-[38px]">
             Apply Filters
           </button>
-          <button className="flex items-center bg-[#162D50] text-white px-4 py-2 rounded-md text-sm font-bold hover:bg-[#0f1f38] transition-colors shadow-sm whitespace-nowrap h-[38px]">
+          <button onClick={() => handleExport(filteredCases)} className="flex items-center bg-[#162D50] text-white px-4 py-2 rounded-md text-sm font-bold hover:bg-[#0f1f38] transition-colors shadow-sm whitespace-nowrap h-[38px]">
             <Download className="w-4 h-4 mr-2" />
-            Generate Export
+            Export
           </button>
         </div>
       </div>

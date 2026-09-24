@@ -333,5 +333,42 @@ router.post('/:id/deduct-term', requireRole('admin', 'account'), async (req, res
   }
 });
 
-export default router;
+router.post('/:id/messages', async (req, res) => {
+  try {
+    const { text, author } = req.body;
+    if (!text) {
+      return res.status(400).json({ message: 'Message text is required' });
+    }
 
+    const updatedCase = await Case.findByIdAndUpdate(
+      req.params.id,
+      {
+        $push: {
+          messages: {
+            text,
+            author: author || 'system',
+            date: new Date()
+          }
+        },
+        $set: {
+          hasSupportNotification: author === 'account_user',
+          hasAccountNotification: author === 'support_user'
+        }
+      },
+      { new: true }
+    );
+
+    if (!updatedCase) {
+      return res.status(404).json({ message: 'Case not found' });
+    }
+
+    caseEvents.emit('CASE_UPDATED', updatedCase);
+
+    res.status(201).json(updatedCase.messages);
+  } catch (error) {
+    console.error('Error adding message:', error);
+    res.status(500).json({ message: 'Server error adding message' });
+  }
+});
+
+export default router;

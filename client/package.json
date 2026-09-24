@@ -5,13 +5,15 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
+    "build": "vite build && node compress-dist.js",
     "lint": "oxlint",
     "preview": "vite preview"
   },
   "dependencies": {
+    "@skhaz/zstd": "^1.0.21",
     "@tailwindcss/vite": "^4.3.3",
     "autoprefixer": "^10.5.4",
+    "fzstd": "^0.1.1",
     "jspdf": "^4.2.1",
     "jspdf-autotable": "^5.0.8",
     "lucide-react": "^1.33.0",
