@@ -29,14 +29,16 @@ This system provides role-based access to various departmental tools, ensuring t
 
 ## Tech Stack
 
-**Frontend:**
+**Frontend & Infrastructure:**
 - [React](https://reactjs.org/) (bootstrapped with [Vite](https://vitejs.dev/))
+- [Nginx](https://nginx.org/) acting as a reverse proxy and serving pre-compressed static assets (`.zst`, `.br`, `.gz`)
 - [Tailwind CSS v4](https://tailwindcss.com/) for rapid, utility-first styling
 - [Lucide React](https://lucide.dev/) for clean and consistent iconography
 - React Router DOM for client-side routing
 
 **Backend:**
 - [Node.js](https://nodejs.org/) & [Express](https://expressjs.com/)
+- Dynamic HTTP Compression (`accepts`, `@skhaz/zstd`) for fast on-the-fly zstd, brotli, and gzip API compression
 - [MongoDB](https://www.mongodb.com/) with Mongoose for database modeling
 - `jsonwebtoken` for secure API authentication
 - `bcryptjs` for password hashing

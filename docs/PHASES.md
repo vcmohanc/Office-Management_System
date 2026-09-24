@@ -18,11 +18,13 @@ The OMS project was built iteratively using a phased approach to ensure stabilit
 - **Account Department:** Implemented sub-routes for New Case, Case List, and Payment Status. Focus on financial data presentation.
 - **Support Department:** Implemented Staff Claim Request and Claim List. Added file upload UI and expense category selectors.
 
-## Phase 4: Polish & Settings
+## Phase 4: Polish, Settings & Infrastructure
 - Implemented `Settings.jsx` to allow users to view their profile and change their password.
 - Added role-based rendering to the sidebar (e.g., HR users only see HR tabs).
 - Replaced all dropdowns with flat navigation buttons based on user feedback.
 - Finalized English translations for all UI components.
+- Configured Docker Compose setup with an Nginx reverse proxy.
+- Implemented Advanced HTTP Response Compression (Zstd > Brotli > Gzip) across both static Vite builds and the dynamic Express API.
 
 ## Phase 5: Backend Integration (Upcoming)
 - Wire up frontend forms to backend REST APIs.

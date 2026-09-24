@@ -58,6 +58,40 @@ export default function CaseList() {
   const [isEditing, setIsEditing] = useState(false);
   const [editData, setEditData] = useState({});
   const [previewImage, setPreviewImage] = useState(null);
+  const [newMessageInput, setNewMessageInput] = useState('');
+  
+  const handleSendMessage = async () => {
+    if (!newMessageInput.trim()) return;
+    
+    const isClaim = selectedCase._isClaim;
+    const endpoint = isClaim ? `/api/claims/${selectedCase._id}/messages` : `/api/cases/${selectedCase._id}/messages`;
+    
+    try {
+      const response = await apiFetch(endpoint, {
+        method: 'POST',
+        body: JSON.stringify({
+          text: newMessageInput,
+          author: user.role === 'support' ? 'support_user' : 'account_user'
+        })
+      });
+      
+      if (response.ok) {
+        const updatedMessages = await response.json();
+        setSelectedCase(prev => ({
+          ...prev,
+          messages: updatedMessages
+        }));
+        setNewMessageInput('');
+        toast.success('Message sent');
+      } else {
+        const errorData = await response.json();
+        toast.error(errorData.message || 'Failed to send message');
+      }
+    } catch (error) {
+      console.error('Error sending message:', error);
+      toast.error('An error occurred while sending the message');
+    }
+  };
   
   const handleViewDetails = async (caseObj) => {
     setSelectedCase(caseObj);
@@ -283,28 +317,16 @@ export default function CaseList() {
     }
   };
 
-  const handleUpdateStatus = (newStatus) => {
+  const handleUpdateStatus = async (newStatus) => {
     if (!selectedCase) return;
     
-    let newMessage = null;
     if (newStatus === 'REJECTED' || newStatus === 'RETURNED_FOR_CORRECTION') {
-      const promptMessage = window.prompt(
-        newStatus === 'REJECTED' 
-          ? `Please enter mandatory reason for Rejecting:` 
-          : `Please enter feedback for Returning for Correction:`
-      );
-      if (promptMessage === null) return; // User cancelled
-      if (!promptMessage.trim()) {
-        toast.error("A reason/feedback is required for this action.");
-        return;
-      }
-
-      newMessage = { 
-        text: promptMessage, 
-        date: new Date().toISOString(), 
-        author: user.username === 'account_user' ? 'Account Department' : (user.username || 'Account Department') 
-      };
+      const actionName = newStatus === 'REJECTED' ? 'Reject' : 'Return for Correction';
+      const confirmed = await toastConfirm(`Are you sure you want to ${actionName} ${selectedCase.displayId}?`);
+      if (!confirmed) return;
     }
+    
+    let newMessage = null;
 
     const isClaim = selectedCase._isClaim;
     const endpoint = isClaim ? `/api/claims/${selectedCase._id}/status` : `/api/cases/${selectedCase._id}/status`;
@@ -812,7 +834,7 @@ export default function CaseList() {
                   ></textarea>
                 </div>
               )}
-              {selectedCase.messages && selectedCase.messages.length > 0 && (
+              {selectedCase && (
                 <div className="w-full">
                   <h4 className="text-xs font-bold text-gray-500 mb-4 tracking-wider">REASON / MESSAGE HISTORY</h4>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -820,7 +842,7 @@ export default function CaseList() {
                     <div>
                       <h5 className="text-sm font-bold text-orange-700 mb-3 border-b border-orange-200 pb-1">Account Department</h5>
                       <div className="space-y-3">
-                        {selectedCase.messages.filter(m => m.author === 'account_user' || m.author === 'Account Department' || !m.author).map((m, i) => (
+                        {(selectedCase.messages || []).filter(m => m.author === 'account_user' || m.author === 'Account Department' || !m.author).map((m, i) => (
                           <div key={i} className="bg-orange-50 border border-orange-200 rounded-md p-3 text-sm text-gray-700">
                             <div className="flex justify-between items-center mb-1 pb-1 border-b border-orange-200/50">
                               <span className="text-xs font-bold text-orange-700">Account Department</span>
@@ -836,7 +858,7 @@ export default function CaseList() {
                     <div>
                       <h5 className="text-sm font-bold text-blue-700 mb-3 border-b border-blue-200 pb-1">Support Department</h5>
                       <div className="space-y-3">
-                        {selectedCase.messages.filter(m => !(m.author === 'account_user' || m.author === 'Account Department' || !m.author)).map((m, i) => {
+                        {(selectedCase.messages || []).filter(m => !(m.author === 'account_user' || m.author === 'Account Department' || !m.author)).map((m, i) => {
                           const displayAuthor = m.author === 'support_user' ? 'Support Department' : m.author;
                           return (
                             <div key={i} className="bg-blue-50 border border-blue-200 rounded-md p-3 text-sm text-gray-700">
@@ -850,6 +872,26 @@ export default function CaseList() {
                         })}
                       </div>
                     </div>
+                  </div>
+                  
+                  {/* New Message Input */}
+                  <div className="mt-6 flex flex-col md:flex-row gap-4 items-end">
+                    <div className="flex-1 w-full">
+                      <label className="block text-xs font-bold text-gray-500 mb-2 uppercase tracking-wider">New Message</label>
+                      <textarea 
+                        value={newMessageInput}
+                        onChange={(e) => setNewMessageInput(e.target.value)}
+                        placeholder="Type a message to the other department..."
+                        className="w-full min-h-[60px] p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#162D50] text-sm resize-y"
+                      ></textarea>
+                    </div>
+                    <button 
+                      onClick={handleSendMessage}
+                      disabled={!newMessageInput.trim()}
+                      className="whitespace-nowrap bg-[#162D50] hover:bg-[#0f1f3d] text-white px-6 py-3 rounded-md text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      Send Message
+                    </button>
                   </div>
                 </div>
               )}
