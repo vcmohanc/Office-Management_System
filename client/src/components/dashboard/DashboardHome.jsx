@@ -10,7 +10,12 @@ import { apiFetch } from '../../utils/apiFetch.js';
 export default function DashboardHome({ setActiveTab }) {
   const [totalUsers, setTotalUsers] = useState(0);
   const [recentUsers, setRecentUsers] = useState([]);
+  const [dashboardStats, setDashboardStats] = useState(null);
   const [loading, setLoading] = useState(true);
+
+  const formatCurrency = (amount) => {
+    return new Intl.NumberFormat('ja-JP', { style: 'currency', currency: 'JPY' }).format(amount);
+  };
 
   useEffect(() => {
     const fetchUsers = async () => {
@@ -23,11 +28,24 @@ export default function DashboardHome({ setActiveTab }) {
         }
       } catch (err) {
         console.error("Failed to fetch users", err);
-      } finally {
-        setLoading(false);
       }
     };
-    fetchUsers();
+
+    const fetchDashboardStats = async () => {
+      try {
+        const response = await apiFetch('/api/dashboard');
+        if (response.ok) {
+          const data = await response.json();
+          setDashboardStats(data.stats);
+        }
+      } catch (err) {
+        console.error("Failed to fetch stats", err);
+      }
+    };
+
+    Promise.all([fetchUsers(), fetchDashboardStats()]).finally(() => {
+      setLoading(false);
+    });
   }, []);
 
   return (
@@ -105,7 +123,7 @@ export default function DashboardHome({ setActiveTab }) {
       </div>
 
       {/* Department Summaries */}
-      <h3 className="text-sm font-bold text-gray-500 uppercase tracking-wider mb-4">Department Overviews (Real-time Mock)</h3>
+      <h3 className="text-sm font-bold text-gray-500 uppercase tracking-wider mb-4">Department Overviews</h3>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
         {/* HR */}
         <div className="bg-white rounded-xl p-5 border border-gray-200 shadow-sm hover:border-blue-300 transition-colors cursor-default">
@@ -116,15 +134,15 @@ export default function DashboardHome({ setActiveTab }) {
           <div className="space-y-3">
             <div className="flex justify-between items-center text-sm">
               <span className="text-gray-500">Total Staff</span>
-              <span className="font-semibold">245</span>
+              <span className="font-semibold">{loading ? '...' : (dashboardStats?.hr?.totalStaff || 0)}</span>
             </div>
             <div className="flex justify-between items-center text-sm">
               <span className="text-gray-500">Pending Visas</span>
-              <span className="font-semibold text-orange-500">12</span>
+              <span className="font-semibold text-orange-500">{loading ? '...' : (dashboardStats?.hr?.pendingVisas || 0)}</span>
             </div>
             <div className="flex justify-between items-center text-sm">
               <span className="text-gray-500">Recent Resignations</span>
-              <span className="font-semibold text-red-500">2</span>
+              <span className="font-semibold text-red-500">{loading ? '...' : (dashboardStats?.hr?.recentResignations || 0)}</span>
             </div>
           </div>
         </div>
@@ -138,15 +156,15 @@ export default function DashboardHome({ setActiveTab }) {
           <div className="space-y-3">
             <div className="flex justify-between items-center text-sm">
               <span className="text-gray-500">Open Cases</span>
-              <span className="font-semibold">42</span>
+              <span className="font-semibold">{loading ? '...' : (dashboardStats?.account?.openCases || 0)}</span>
             </div>
             <div className="flex justify-between items-center text-sm">
               <span className="text-gray-500">Pending Settlements</span>
-              <span className="font-semibold text-orange-500">8</span>
+              <span className="font-semibold text-orange-500">{loading ? '...' : (dashboardStats?.account?.pendingSettlements || 0)}</span>
             </div>
             <div className="flex justify-between items-center text-sm">
               <span className="text-gray-500">Today's Revenue</span>
-              <span className="font-semibold text-green-600">¥ 124,500</span>
+              <span className="font-semibold text-green-600">{loading ? '...' : formatCurrency(dashboardStats?.account?.todaysRevenue || 0)}</span>
             </div>
           </div>
         </div>
@@ -160,15 +178,15 @@ export default function DashboardHome({ setActiveTab }) {
           <div className="space-y-3">
             <div className="flex justify-between items-center text-sm">
               <span className="text-gray-500">Open Claims</span>
-              <span className="font-semibold">15</span>
+              <span className="font-semibold">{loading ? '...' : (dashboardStats?.support?.openClaims || 0)}</span>
             </div>
             <div className="flex justify-between items-center text-sm">
               <span className="text-gray-500">Avg Resolution Time</span>
-              <span className="font-semibold text-blue-600">2.4 hrs</span>
+              <span className="font-semibold text-blue-600">{loading ? '...' : (dashboardStats?.support?.avgResolutionTime || '0 hrs')}</span>
             </div>
             <div className="flex justify-between items-center text-sm">
               <span className="text-gray-500">Critical Issues</span>
-              <span className="font-semibold text-green-500">0</span>
+              <span className="font-semibold text-green-500">{loading ? '...' : (dashboardStats?.support?.criticalIssues || 0)}</span>
             </div>
           </div>
         </div>

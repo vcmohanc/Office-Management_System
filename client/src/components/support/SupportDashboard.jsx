@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   FileText, 
   Calendar, 
@@ -8,15 +8,34 @@ import {
   Plus,
   AlertCircle
 } from 'lucide-react';
+import { apiFetch } from '../../utils/apiFetch.js';
 
 export default function SupportDashboard() {
-  const recentActivity = [
-    { id: 1, staff: 'Sarah Jenkins', type: 'Expense Claim #4092', status: 'Approved', statusColor: 'bg-green-100 text-green-700', date: 'Today, 10:45 AM' },
-    { id: 2, staff: 'Michael Chen', type: 'Annual Leave (Nov 2-5)', status: 'Pending Supervisor', statusColor: 'bg-yellow-100 text-yellow-700', date: 'Today, 09:15 AM' },
-    { id: 3, staff: 'Emily Rodriguez', type: 'Travel Advance #4105', status: 'In Finance Review', statusColor: 'bg-blue-100 text-blue-700', date: 'Yesterday, 04:30 PM' },
-    { id: 4, staff: 'David Kim', type: 'Sick Leave (Oct 24)', status: 'Approved', statusColor: 'bg-green-100 text-green-700', date: 'Yesterday, 08:10 AM' },
-    { id: 5, staff: 'Jessica Taylor', type: 'Mileage Claim #4088', status: 'Returned for Edits', statusColor: 'bg-red-100 text-red-700', date: 'Oct 22, 02:20 PM' }
-  ];
+  const [data, setData] = useState({
+    activeClaims: 0,
+    pendingLeaves: 7,
+    scheduledShifts: 18,
+    taskCompletionRate: '82%',
+    recentActivity: []
+  });
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchDashboardData = async () => {
+      try {
+        const response = await apiFetch('/api/dashboard/support');
+        if (response.ok) {
+          const result = await response.json();
+          setData(result);
+        }
+      } catch (error) {
+        console.error('Error fetching support dashboard data:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchDashboardData();
+  }, []);
 
   return (
     <div className="p-8 max-w-7xl mx-auto space-y-6">
@@ -43,10 +62,11 @@ export default function SupportDashboard() {
             </div>
           </div>
           <div className="flex items-end justify-between mt-4">
-            <span className="text-3xl font-bold text-[#162D50]">24</span>
+            <span className="text-3xl font-bold text-[#162D50]">
+              {loading ? '...' : data.activeClaims}
+            </span>
             <div className="flex items-center bg-blue-50 text-blue-600 px-2 py-1 rounded text-xs font-semibold">
-              <ArrowUp className="w-3 h-3 mr-1" />
-              5 new
+              Tracking Open
             </div>
           </div>
         </div>
@@ -60,7 +80,9 @@ export default function SupportDashboard() {
             </div>
           </div>
           <div className="flex items-end justify-between mt-4">
-            <span className="text-3xl font-bold text-[#162D50]">7</span>
+            <span className="text-3xl font-bold text-[#162D50]">
+              {loading ? '...' : data.pendingLeaves}
+            </span>
             <div className="flex items-center bg-orange-50 text-orange-600 px-2 py-1 rounded text-xs font-semibold">
               Requires Action
             </div>
@@ -76,7 +98,9 @@ export default function SupportDashboard() {
             </div>
           </div>
           <div className="flex items-end justify-between mt-4">
-            <span className="text-3xl font-bold text-[#162D50]">18</span>
+            <span className="text-3xl font-bold text-[#162D50]">
+              {loading ? '...' : data.scheduledShifts}
+            </span>
             <div className="flex items-center bg-green-50 text-green-600 px-2 py-1 rounded text-xs font-semibold">
               90% Coverage
             </div>
@@ -92,10 +116,12 @@ export default function SupportDashboard() {
             </div>
           </div>
           <div className="flex items-end justify-between mt-4">
-            <span className="text-3xl font-bold text-[#162D50]">82%</span>
+            <span className="text-3xl font-bold text-[#162D50]">
+              {loading ? '...' : data.taskCompletionRate}
+            </span>
             <div className="flex items-center bg-green-50 text-green-600 px-2 py-1 rounded text-xs font-semibold">
               <ArrowUp className="w-3 h-3 mr-1" />
-              4%
+              Steady
             </div>
           </div>
         </div>
@@ -122,18 +148,28 @@ export default function SupportDashboard() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
-                {recentActivity.map((activity) => (
-                  <tr key={activity.id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{activity.staff}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{activity.type}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm">
-                      <span className={`px-2 py-1 rounded text-xs font-medium border border-transparent ${activity.statusColor} border-current border-opacity-20`}>
-                        {activity.status}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{activity.date}</td>
+                {loading ? (
+                  <tr>
+                    <td colSpan="4" className="px-6 py-4 text-center text-sm text-gray-500">Loading...</td>
                   </tr>
-                ))}
+                ) : data.recentActivity.length === 0 ? (
+                  <tr>
+                    <td colSpan="4" className="px-6 py-4 text-center text-sm text-gray-500">No recent activity found.</td>
+                  </tr>
+                ) : (
+                  data.recentActivity.map((activity) => (
+                    <tr key={activity.id} className="hover:bg-gray-50">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{activity.staff}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{activity.type}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm">
+                        <span className={`px-2 py-1 rounded text-xs font-medium border border-transparent ${activity.statusColor} border-current border-opacity-20`}>
+                          {activity.status}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{activity.date}</td>
+                    </tr>
+                  ))
+                )}
               </tbody>
             </table>
           </div>
