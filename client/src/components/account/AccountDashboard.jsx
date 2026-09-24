@@ -1,6 +1,51 @@
+import React, { useState, useEffect } from 'react';
 import { Wallet, TrendingUp, Clipboard, CheckCircle, Landmark, User, Tractor, ArrowRight } from 'lucide-react';
+import { apiFetch } from '../../utils/apiFetch.js';
 
 export default function AccountDashboard() {
+  const [data, setData] = useState({
+    totalActiveAdvances: 0,
+    pendingSettlements: 0,
+    recoveredThisPeriod: 0,
+    fundFlowPatterns: {
+      ptn1: { activeCount: 0, totalAdvanced: 0, totalRecovered: 0, netExposure: 0 },
+      ptn2: { activeCount: 0, totalAdvanced: 0, totalRecovered: 0, netExposure: 0 },
+      ptn3: { activeCount: 0, totalAdvanced: 0, totalRecovered: 0, netExposure: 0 },
+      ptn4: { activeCount: 0, totalAdvanced: 0, totalRecovered: 0, netExposure: 0 }
+    }
+  });
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchDashboardData = async () => {
+      try {
+        const response = await apiFetch('/api/dashboard/account');
+        if (response.ok) {
+          const result = await response.json();
+          setData(result);
+        }
+      } catch (error) {
+        console.error('Error fetching account dashboard data:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchDashboardData();
+  }, []);
+
+  const formatCurrency = (amount) => {
+    return new Intl.NumberFormat('ja-JP', { style: 'currency', currency: 'JPY' }).format(amount);
+  };
+
+  const getWidths = (advanced, recovered) => {
+    const total = advanced + recovered;
+    if (total === 0) return { advancedWidth: '50%', recoveredWidth: '50%' };
+    return {
+      advancedWidth: `${(advanced / total) * 100}%`,
+      recoveredWidth: `${(recovered / total) * 100}%`
+    };
+  };
+
   return (
     <>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
@@ -10,7 +55,9 @@ export default function AccountDashboard() {
             <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider">TOTAL ACTIVE ADVANCES</h3>
             <Wallet className="text-[#162D50] w-5 h-5" />
           </div>
-          <p className="text-3xl font-bold text-[#162D50] mb-2">¥45,200,000</p>
+          <p className="text-3xl font-bold text-[#162D50] mb-2">
+            {loading ? '...' : formatCurrency(data.totalActiveAdvances)}
+          </p>
           <p className="text-xs font-medium text-blue-500 flex items-center">
             <TrendingUp className="w-3 h-3 mr-1" /> +12% from last month
           </p>
@@ -22,9 +69,11 @@ export default function AccountDashboard() {
             <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider">PENDING SETTLEMENTS</h3>
             <Clipboard className="text-yellow-500 w-5 h-5" />
           </div>
-          <p className="text-3xl font-bold text-[#162D50] mb-2">¥12,850,000</p>
+          <p className="text-3xl font-bold text-[#162D50] mb-2">
+            {loading ? '...' : data.pendingSettlements}
+          </p>
           <p className="text-xs font-medium text-gray-500">
-            42 Cases Awaiting Approval
+            Cases Awaiting Approval
           </p>
         </div>
 
@@ -34,7 +83,9 @@ export default function AccountDashboard() {
             <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider">RECOVERED THIS PERIOD</h3>
             <CheckCircle className="text-green-500 w-5 h-5" />
           </div>
-          <p className="text-3xl font-bold text-green-500 mb-2">¥32,350,000</p>
+          <p className="text-3xl font-bold text-green-500 mb-2">
+            {loading ? '...' : formatCurrency(data.recoveredThisPeriod)}
+          </p>
           <p className="text-xs font-medium text-gray-500">
             98% Recovery Rate
           </p>
@@ -51,7 +102,7 @@ export default function AccountDashboard() {
               <span className="bg-[#E2E8F0] text-[#4A5568] px-2 py-0.5 rounded text-xs font-bold">PTN-1</span>
               <span className="font-bold text-[#162D50] text-sm">VCfund → Staff Advance</span>
             </div>
-            <span className="text-xs text-blue-600 bg-blue-50 px-2 py-1 rounded-full font-medium">Active: 96</span>
+            <span className="text-xs text-blue-600 bg-blue-50 px-2 py-1 rounded-full font-medium">Active: {data.fundFlowPatterns.ptn1.activeCount}</span>
           </div>
           <div className="p-6 flex-1 flex flex-col">
             <div className="flex justify-between items-center mb-10 px-8 mt-4">
@@ -80,19 +131,19 @@ export default function AccountDashboard() {
               <div className="flex justify-between mb-2">
                 <div>
                   <p className="text-xs text-gray-500 font-medium">Total Advanced</p>
-                  <p className="text-lg font-bold text-red-500">¥18,600,000</p>
+                  <p className="text-lg font-bold text-red-500">{formatCurrency(data.fundFlowPatterns.ptn1.totalAdvanced)}</p>
                 </div>
                 <div className="text-right">
                   <p className="text-xs text-gray-500 font-medium">Total Recovered</p>
-                  <p className="text-lg font-bold text-green-500">¥14,200,000</p>
+                  <p className="text-lg font-bold text-green-500">{formatCurrency(data.fundFlowPatterns.ptn1.totalRecovered)}</p>
                 </div>
               </div>
               <div className="w-full h-2 flex rounded-full overflow-hidden mb-3">
-                <div className="bg-green-500" style={{ width: '43%' }}></div>
-                <div className="bg-red-500" style={{ width: '57%' }}></div>
+                <div className="bg-green-500" style={{ width: getWidths(data.fundFlowPatterns.ptn1.totalAdvanced, data.fundFlowPatterns.ptn1.totalRecovered).recoveredWidth }}></div>
+                <div className="bg-red-500" style={{ width: getWidths(data.fundFlowPatterns.ptn1.totalAdvanced, data.fundFlowPatterns.ptn1.totalRecovered).advancedWidth }}></div>
               </div>
               <div className="text-right border-t border-gray-200 pt-2">
-                <p className="text-xs font-bold text-gray-800">Net Exposure: ¥4,400,000</p>
+                <p className="text-xs font-bold text-gray-800">Net Exposure: {formatCurrency(data.fundFlowPatterns.ptn1.netExposure)}</p>
               </div>
             </div>
           </div>
@@ -105,7 +156,7 @@ export default function AccountDashboard() {
               <span className="bg-[#E2E8F0] text-[#4A5568] px-2 py-0.5 rounded text-xs font-bold">PTN-2</span>
               <span className="font-bold text-[#162D50] text-sm">VCfund → Farmer Advance</span>
             </div>
-            <span className="text-xs text-blue-600 bg-blue-50 px-2 py-1 rounded-full font-medium">Active: 72</span>
+            <span className="text-xs text-blue-600 bg-blue-50 px-2 py-1 rounded-full font-medium">Active: {data.fundFlowPatterns.ptn2.activeCount}</span>
           </div>
           <div className="p-6 flex-1 flex flex-col">
             <div className="flex justify-between items-center mb-10 px-8 mt-4">
@@ -134,19 +185,19 @@ export default function AccountDashboard() {
               <div className="flex justify-between mb-2">
                 <div>
                   <p className="text-xs text-gray-500 font-medium">Total Advanced</p>
-                  <p className="text-lg font-bold text-red-500">¥28,750,000</p>
+                  <p className="text-lg font-bold text-red-500">{formatCurrency(data.fundFlowPatterns.ptn2.totalAdvanced)}</p>
                 </div>
                 <div className="text-right">
                   <p className="text-xs text-gray-500 font-medium">Total Recovered</p>
-                  <p className="text-lg font-bold text-green-500">¥23,100,000</p>
+                  <p className="text-lg font-bold text-green-500">{formatCurrency(data.fundFlowPatterns.ptn2.totalRecovered)}</p>
                 </div>
               </div>
               <div className="w-full h-2 flex rounded-full overflow-hidden mb-3">
-                <div className="bg-green-500" style={{ width: '80%' }}></div>
-                <div className="bg-red-500" style={{ width: '20%' }}></div>
+                <div className="bg-green-500" style={{ width: getWidths(data.fundFlowPatterns.ptn2.totalAdvanced, data.fundFlowPatterns.ptn2.totalRecovered).recoveredWidth }}></div>
+                <div className="bg-red-500" style={{ width: getWidths(data.fundFlowPatterns.ptn2.totalAdvanced, data.fundFlowPatterns.ptn2.totalRecovered).advancedWidth }}></div>
               </div>
               <div className="text-right border-t border-gray-200 pt-2">
-                <p className="text-xs font-bold text-gray-800">Net Exposure: ¥5,650,000</p>
+                <p className="text-xs font-bold text-gray-800">Net Exposure: {formatCurrency(data.fundFlowPatterns.ptn2.netExposure)}</p>
               </div>
             </div>
           </div>
@@ -159,7 +210,7 @@ export default function AccountDashboard() {
               <span className="bg-[#E2E8F0] text-[#4A5568] px-2 py-0.5 rounded text-xs font-bold">PTN-3</span>
               <span className="font-bold text-[#162D50] text-sm">Farmer → VCfund Recovery</span>
             </div>
-            <span className="text-xs text-blue-600 bg-blue-50 px-2 py-1 rounded-full font-medium">Active: 58</span>
+            <span className="text-xs text-blue-600 bg-blue-50 px-2 py-1 rounded-full font-medium">Active: {data.fundFlowPatterns.ptn3.activeCount}</span>
           </div>
           <div className="p-6 flex-1 flex flex-col">
             <div className="flex justify-between items-center mb-10 px-8 mt-4">
@@ -188,19 +239,19 @@ export default function AccountDashboard() {
               <div className="flex justify-between mb-2">
                 <div>
                   <p className="text-xs text-gray-500 font-medium">Total Recovered</p>
-                  <p className="text-lg font-bold text-green-500">¥16,800,000</p>
+                  <p className="text-lg font-bold text-green-500">{formatCurrency(data.fundFlowPatterns.ptn3.totalRecovered)}</p>
                 </div>
                 <div className="text-right">
                   <p className="text-xs text-gray-500 font-medium">Total Advanced</p>
-                  <p className="text-lg font-bold text-red-500">¥18,300,000</p>
+                  <p className="text-lg font-bold text-red-500">{formatCurrency(data.fundFlowPatterns.ptn3.totalAdvanced)}</p>
                 </div>
               </div>
               <div className="w-full h-2 flex rounded-full overflow-hidden mb-3">
-                <div className="bg-green-500" style={{ width: '92%' }}></div>
-                <div className="bg-red-500" style={{ width: '8%' }}></div>
+                <div className="bg-green-500" style={{ width: getWidths(data.fundFlowPatterns.ptn3.totalAdvanced, data.fundFlowPatterns.ptn3.totalRecovered).recoveredWidth }}></div>
+                <div className="bg-red-500" style={{ width: getWidths(data.fundFlowPatterns.ptn3.totalAdvanced, data.fundFlowPatterns.ptn3.totalRecovered).advancedWidth }}></div>
               </div>
               <div className="text-right border-t border-gray-200 pt-2">
-                <p className="text-xs font-bold text-gray-800">Net Exposure: ¥1,500,000</p>
+                <p className="text-xs font-bold text-gray-800">Net Exposure: {formatCurrency(data.fundFlowPatterns.ptn3.netExposure)}</p>
               </div>
             </div>
           </div>
@@ -213,7 +264,7 @@ export default function AccountDashboard() {
               <span className="bg-[#E2E8F0] text-[#4A5568] px-2 py-0.5 rounded text-xs font-bold">PTN-4</span>
               <span className="font-bold text-[#162D50] text-sm">Staff → VCfund Recovery</span>
             </div>
-            <span className="text-xs text-blue-600 bg-blue-50 px-2 py-1 rounded-full font-medium">Active: 64</span>
+            <span className="text-xs text-blue-600 bg-blue-50 px-2 py-1 rounded-full font-medium">Active: {data.fundFlowPatterns.ptn4.activeCount}</span>
           </div>
           <div className="p-6 flex-1 flex flex-col">
             <div className="flex justify-between items-center mb-10 px-8 mt-4">
@@ -242,19 +293,19 @@ export default function AccountDashboard() {
               <div className="flex justify-between mb-2">
                 <div>
                   <p className="text-xs text-gray-500 font-medium">Total Recovered</p>
-                  <p className="text-lg font-bold text-green-500">¥12,900,000</p>
+                  <p className="text-lg font-bold text-green-500">{formatCurrency(data.fundFlowPatterns.ptn4.totalRecovered)}</p>
                 </div>
                 <div className="text-right">
                   <p className="text-xs text-gray-500 font-medium">Total Advanced</p>
-                  <p className="text-lg font-bold text-red-500">¥13,600,000</p>
+                  <p className="text-lg font-bold text-red-500">{formatCurrency(data.fundFlowPatterns.ptn4.totalAdvanced)}</p>
                 </div>
               </div>
               <div className="w-full h-2 flex rounded-full overflow-hidden mb-3">
-                <div className="bg-green-500" style={{ width: '95%' }}></div>
-                <div className="bg-red-500" style={{ width: '5%' }}></div>
+                <div className="bg-green-500" style={{ width: getWidths(data.fundFlowPatterns.ptn4.totalAdvanced, data.fundFlowPatterns.ptn4.totalRecovered).recoveredWidth }}></div>
+                <div className="bg-red-500" style={{ width: getWidths(data.fundFlowPatterns.ptn4.totalAdvanced, data.fundFlowPatterns.ptn4.totalRecovered).advancedWidth }}></div>
               </div>
               <div className="text-right border-t border-gray-200 pt-2">
-                <p className="text-xs font-bold text-gray-800">Net Exposure: ¥700,000</p>
+                <p className="text-xs font-bold text-gray-800">Net Exposure: {formatCurrency(data.fundFlowPatterns.ptn4.netExposure)}</p>
               </div>
             </div>
           </div>
