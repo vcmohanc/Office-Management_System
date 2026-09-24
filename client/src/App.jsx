@@ -3,6 +3,8 @@ import { useState, useEffect } from 'react';
 import Login from './components/Login';
 import Dashboard from './components/Dashboard';
 import LandingPage from './components/LandingPage';
+import PaymentStatus from './components/account/PaymentStatus';
+import PaymentEntry from './components/account/PaymentEntry';
 import { Toaster } from 'react-hot-toast';
 
 function App() {
@@ -37,6 +39,18 @@ function App() {
         <Route 
           path="/dashboard/*" 
           element={token ? <Dashboard setToken={setToken} /> : <Navigate to="/login" replace />} 
+        />
+        <Route 
+          path="/payments/status/:caseId" 
+          element={token ? <PaymentStatus /> : <Navigate to="/login" replace />} 
+        />
+        <Route 
+          path="/payments/entry/:caseId" 
+          element={token ? <PaymentEntry /> : <Navigate to="/login" replace />} 
+        />
+        <Route 
+          path="/payments/entry/:caseId/term/:termNumber" 
+          element={token ? <PaymentEntry /> : <Navigate to="/login" replace />} 
         />
       </Routes>
     </>

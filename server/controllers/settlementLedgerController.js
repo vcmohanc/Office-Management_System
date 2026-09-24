@@ -13,7 +13,8 @@ const payTermSchema = z.object({
   }).optional(),
   transactionRef: z.string().nullable().optional(),
   paymentDate: z.coerce.date(),
-  lessDeductions: z.number().min(0).default(0)
+  deductionAmount: z.number().min(0).default(0),
+  deductionReason: z.string().optional()
 }).refine(data => {
   if (data.paymentMethod === 'bank_transfer') {
     return data.bankDetails?.bankName && data.bankDetails?.branchCode && data.bankDetails?.accountNumber;
@@ -34,15 +35,15 @@ export const getLedger = async (req, res) => {
     }
 
     const claims = await SettlementClaimItem.find({ caseId }).sort({ lineNo: 1 });
-    const payments = await SettlementPayment.find({ caseId }).sort({ termNo: 1 });
+    const payments = await SettlementPayment.find({ caseId }).sort({ termNumber: 1 });
 
     const totalPaid = payments
-      .filter(p => p.status === 'paid')
-      .reduce((sum, p) => sum + p.netPayable, 0);
+      .filter(p => p.status === 'PAID')
+      .reduce((sum, p) => sum + (p.paidAmount + p.deductionAmount), 0);
       
     const remainingBalance = ledger.baseClaimAmount - totalPaid;
 
-    const paidTermsCount = payments.filter(p => p.status === 'paid').length;
+    const paidTermsCount = payments.filter(p => p.status === 'PAID').length;
     const currentTerm = Math.min(paidTermsCount + 1, ledger.agreedTerms.installmentTotalTerms);
 
     res.json({
@@ -64,6 +65,7 @@ export const getLedger = async (req, res) => {
 export const payTerm = async (req, res) => {
   try {
     const { caseId, termNo } = req.params;
+    const termNumber = parseInt(termNo, 10);
     const validation = payTermSchema.safeParse(req.body);
 
     if (!validation.success) {
@@ -77,42 +79,32 @@ export const payTerm = async (req, res) => {
       return res.status(404).json({ error: 'Ledger not found' });
     }
 
-    const term = await SettlementPayment.findOne({ caseId, termNo });
+    const term = await SettlementPayment.findOne({ caseId, termNumber });
     if (!term) {
       return res.status(404).json({ error: 'Term not found' });
     }
 
-    if (term.status === 'paid') {
+    if (term.status === 'PAID') {
       return res.status(400).json({ error: 'Term is already paid' });
     }
 
     // Update term
-    term.status = 'paid';
-    term.paymentMethod = data.paymentMethod;
+    term.status = 'PAID';
+    term.paymentDate = data.paymentDate;
     if (data.paymentMethod === 'bank_transfer') {
       term.bankDetails = data.bankDetails;
     }
     term.transactionRef = data.transactionRef;
-    term.paymentDate = data.paymentDate;
-    term.lessDeductions = data.lessDeductions;
-    term.enteredBy = req.user?.id;
-
-    // Calculate remaining balance after this payment
-    const allPayments = await SettlementPayment.find({ caseId }).sort({ termNo: 1 });
-    let totalPaidSoFar = 0;
-    for (const p of allPayments) {
-      if (p.status === 'paid' && p.termNo !== term.termNo) {
-        totalPaidSoFar += p.netPayable;
-      }
-    }
-    totalPaidSoFar += term.netPayable; // including this one
-    term.remainingBalanceAfter = ledger.baseClaimAmount - totalPaidSoFar;
-
-    await term.save();
+    term.deductionAmount = data.deductionAmount;
+    term.deductionReason = data.deductionReason || null;
+    term.paidAmount = term.scheduledAmount - term.deductionAmount;
+    term.approvedBy = req.user?.id;
+    term.approvedAt = new Date();
 
     // Check if all terms are paid
+    const allPayments = await SettlementPayment.find({ caseId }).sort({ termNumber: 1 });
     const allPaid = allPayments.every(p => 
-      p.termNo === term.termNo ? true : p.status === 'paid'
+      p.termNumber === term.termNumber ? true : p.status === 'PAID'
     );
     
     if (allPaid) {
@@ -121,6 +113,7 @@ export const payTerm = async (req, res) => {
       ledger.status = 'in_progress';
     }
     await ledger.save();
+    await term.save();
 
     res.json(term);
 
@@ -130,25 +123,81 @@ export const payTerm = async (req, res) => {
   }
 };
 
+export const payRemainingBalance = async (req, res) => {
+  try {
+    const { caseId } = req.params;
+    const validation = payTermSchema.safeParse(req.body);
+
+    if (!validation.success) {
+      return res.status(400).json({ error: validation.error.errors });
+    }
+
+    const data = validation.data;
+    
+    const ledger = await SettlementLedger.findOne({ caseId });
+    if (!ledger) {
+      return res.status(404).json({ error: 'Ledger not found' });
+    }
+
+    const pendingTerms = await SettlementPayment.find({ caseId, status: { $ne: 'PAID' } });
+    
+    if (pendingTerms.length === 0) {
+      return res.status(400).json({ error: 'No pending terms to pay' });
+    }
+
+    // Since deductionAmount can't easily be distributed, we just put it on the first pending term or split it.
+    // Easiest is just applying to the last term or first. Let's apply deduction 0 to all except first.
+    let remainingDeduction = data.deductionAmount || 0;
+
+    for (const term of pendingTerms) {
+      term.status = 'PAID';
+      term.paymentDate = data.paymentDate;
+      if (data.paymentMethod === 'bank_transfer') {
+        term.bankDetails = data.bankDetails;
+      }
+      term.transactionRef = data.transactionRef;
+      
+      const termDeduction = Math.min(term.scheduledAmount, remainingDeduction);
+      term.deductionAmount = termDeduction;
+      term.deductionReason = data.deductionReason || null;
+      term.paidAmount = term.scheduledAmount - termDeduction;
+      remainingDeduction -= termDeduction;
+
+      term.approvedBy = req.user?.id;
+      term.approvedAt = new Date();
+      await term.save();
+    }
+
+    ledger.status = 'completed';
+    await ledger.save();
+
+    res.json({ message: 'All remaining terms paid', terms: pendingTerms });
+  } catch (error) {
+    console.error('Error paying remaining balance:', error);
+    res.status(500).json({ error: 'Server error paying remaining balance' });
+  }
+};
+
 export const updateTermAmount = async (req, res) => {
   try {
     const { caseId, termNo } = req.params;
-    const { netPayable } = req.body;
+    const termNumber = parseInt(termNo, 10);
+    const { scheduledAmount } = req.body;
 
-    if (typeof netPayable !== 'number' || netPayable < 0) {
-      return res.status(400).json({ error: 'Invalid netPayable amount' });
+    if (typeof scheduledAmount !== 'number' || scheduledAmount < 0) {
+      return res.status(400).json({ error: 'Invalid scheduledAmount amount' });
     }
 
-    const term = await SettlementPayment.findOne({ caseId, termNo });
+    const term = await SettlementPayment.findOne({ caseId, termNumber });
     if (!term) {
       return res.status(404).json({ error: 'Term not found' });
     }
 
-    if (term.status === 'paid') {
+    if (term.status === 'PAID') {
       return res.status(400).json({ error: 'Cannot modify a paid term' });
     }
 
-    term.netPayable = netPayable;
+    term.scheduledAmount = scheduledAmount;
     await term.save();
 
     res.json(term);
@@ -162,7 +211,7 @@ export const updateTermAmount = async (req, res) => {
 export const getPayments = async (req, res) => {
   try {
     const { caseId } = req.params;
-    const payments = await SettlementPayment.find({ caseId }).sort({ termNo: 1 });
+    const payments = await SettlementPayment.find({ caseId }).sort({ termNumber: 1 });
     res.json(payments);
   } catch (error) {
     console.error('Error fetching payments:', error);

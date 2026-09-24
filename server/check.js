@@ -1,8 +1,6 @@
-import mongoose from 'mongoose';
-
-mongoose.connect('mongodb://localhost:27017/office_manage_system').then(async () => {
-  const db = mongoose.connection.db;
-  const cases = await db.collection('cases').find({ receipts: { $exists: true, $not: {$size: 0} } }).toArray();
-  console.log(JSON.stringify(cases.map(c => c.receipts), null, 2));
+const mongoose = require('mongoose');
+mongoose.connect('mongodb://127.0.0.1:27017/office_manage_system').then(async () => {
+  const docs = await mongoose.connection.collection('settlements').find({ caseId: { $regex: 'a2ebd4', $options: 'i' } }).toArray();
+  console.log(JSON.stringify(docs, null, 2));
   process.exit(0);
 });
