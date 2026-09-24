@@ -41,7 +41,7 @@ export default function Sidebar({ activeTab, setActiveTab, openMenus, toggleMenu
       subItems: [
         { name: 'New Case', icon: FilePlus },
         { name: 'Case List', icon: ListTodo },
-        { name: 'Payment Entry Status', icon: CreditCard },
+        { name: 'Payment Entry', icon: CreditCard },
         { name: 'Paid Status', icon: Banknote }
       ]
     },

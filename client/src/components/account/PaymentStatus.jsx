@@ -1,6 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { apiFetch } from '../../utils/apiFetch.js';
+import { jsPDF } from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
 import { Search, ChevronDown, Calendar, Download, Building, Landmark, AlertCircle, AlertTriangle, ArrowRight, ArrowLeft, Printer, Trash2 } from 'lucide-react';
 import toast from 'react-hot-toast';
@@ -201,9 +203,9 @@ export default function PaymentStatus() {
     }
   };
 
-  const handleFormSubmit = async (e) => {
-    e.preventDefault();
-    if (selectedBatchCases.length === 0 || !isConfirmed) return;
+  const handleFormSubmit = async (e, forceConfirmed = false) => {
+    if (e && e.preventDefault) e.preventDefault();
+    if (selectedBatchCases.length === 0 || (!isConfirmed && !forceConfirmed)) return;
 
     setIsSubmitting(true);
     let allSuccess = true;
@@ -237,7 +239,7 @@ export default function PaymentStatus() {
         },
         transactionRefId,
         paymentDate,
-        isConfirmed
+        isConfirmed: isConfirmed || forceConfirmed
       };
 
       try {
@@ -426,6 +428,241 @@ export default function PaymentStatus() {
 
     const selectedCaseTotalTerms = selectedCase.installment_count || (selectedCase.installmentPlan ? (selectedCase.installmentPlan.match(/\d+/) ? parseInt(selectedCase.installmentPlan.match(/\d+/)[0], 10) : 1) : 1);
     const selectedCaseCurrentTerm = Math.min((selectedCase.paidTerms || 0) + 1, selectedCaseTotalTerms);
+    const generateReceiptPDF = () => {
+      try {
+        const doc = new jsPDF({ unit: 'mm', format: 'a4', compress: true });
+        const pageWidth = doc.internal.pageSize.width;
+        const pageHeight = doc.internal.pageSize.height;
+        const primaryColor = [22, 45, 80];
+        const lightBg = [241, 245, 249];
+        const margin = { left: 10, right: 10 };
+        const fs = (base) => +(base * 1.0).toFixed(1);
+        const pad = (base) => +(base * 1.0).toFixed(1);
+        const gap = (base) => +(base * 1.0).toFixed(1);
+        const headerH = Math.round(26 * 1.0);
+
+        const drawFooter = () => {
+          doc.setFillColor(...primaryColor);
+          doc.rect(0, pageHeight - 8, pageWidth, 8, 'F');
+          doc.setFont('helvetica', 'italic');
+          doc.setFontSize(fs(6.5));
+          doc.setTextColor(180, 200, 230);
+          doc.text('Office Management System — Confidential', 10, pageHeight - 2.8);
+          const pg = `Page ${doc.getNumberOfPages()}`;
+          doc.text(pg, pageWidth - 10 - doc.getTextWidth(pg), pageHeight - 2.8);
+        };
+
+        doc.setFillColor(...primaryColor);
+        doc.rect(0, 0, pageWidth, headerH, 'F');
+        doc.setFillColor(59, 130, 246);
+        doc.rect(0, 0, 3.5, headerH, 'F');
+
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(fs(13));
+        doc.setTextColor(255, 255, 255);
+        doc.text('OFFICE MANAGEMENT SYSTEM', 11, headerH * 0.42);
+
+        const title = selectedCase.advancerCategory === 'Staff' ? 'Reimbursement Receipt' : 'Settlement Ledger';
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(fs(8));
+        doc.setTextColor(180, 200, 230);
+        doc.text(title, 11, headerH * 0.78);
+
+        doc.setFontSize(fs(7));
+        doc.setTextColor(200, 215, 240);
+        const dateStr = `Generated: ${new Date().toLocaleDateString('en-GB', { day:'2-digit', month:'short', year:'numeric' })}`;
+        doc.text(dateStr, pageWidth - 10 - doc.getTextWidth(dateStr), headerH * 0.42);
+        
+        const caseStr = selectedBatchCases.length === 1 ? `Case: #${selectedBatchCases[0]._id.slice(-6).toUpperCase()}` : `${selectedBatchCases.length} Cases Selected`;
+        doc.text(caseStr, pageWidth - 10 - doc.getTextWidth(caseStr), headerH * 0.78);
+
+        const statusTop = headerH;
+        const statusH = 14;
+        doc.setFillColor(...lightBg);
+        doc.rect(0, statusTop, pageWidth, statusH, 'F');
+        doc.setDrawColor(210, 220, 235);
+        doc.setLineWidth(0.25);
+        doc.line(0, statusTop + statusH, pageWidth, statusTop + statusH);
+
+        const statusMidY = statusTop + statusH * 0.62;
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(fs(9.5));
+        doc.setTextColor(22, 163, 74);
+        doc.text(`Status: Pending Settlement`, 11, statusMidY);
+
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(fs(8.5));
+        doc.setTextColor(...primaryColor);
+        const remStr = `Net Payable: JPY ${batchTotalNextPayment.toLocaleString()}`;
+        doc.text(remStr, pageWidth - 10 - doc.getTextWidth(remStr), statusMidY);
+
+        let curY = statusTop + statusH + gap(3);
+        const cp = pad(2.8);
+        const sharedStyles = {
+          font: 'helvetica',
+          fontSize: fs(8),
+          textColor: [30, 40, 55],
+          lineColor: [210, 220, 235],
+          lineWidth: 0.15,
+          cellPadding: { top: cp, bottom: cp, left: cp + 1, right: cp + 1 },
+          overflow: 'linebreak',
+          minCellHeight: 0,
+        };
+        const headS = {
+          fillColor: primaryColor,
+          textColor: [255, 255, 255],
+          fontStyle: 'bold',
+          fontSize: fs(8),
+          cellPadding: { top: cp, bottom: cp, left: cp + 1, right: cp + 1 },
+        };
+        
+        const secGap = gap(5);
+        const titleGap = gap(3);
+
+        // HEADER DETAILS
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(fs(8.5));
+        doc.setTextColor(...primaryColor);
+        doc.text('HEADER DETAILS', 10, curY);
+
+        autoTable(doc, {
+          startY: curY + titleGap,
+          margin,
+          head: [['Payee', 'Payee ID', 'Base Claim Amount']],
+          body: [[
+            selectedCase.staffName || selectedCase.advancerName || 'N/A',
+            selectedCase.staffId || 'N/A',
+            `JPY ${batchTotalBaseClaim.toLocaleString()}`
+          ]],
+          theme: 'grid',
+          styles: sharedStyles,
+          headStyles: headS,
+        });
+
+        // ITEMIZED CLAIMS
+        curY = doc.lastAutoTable.finalY + secGap;
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(fs(8.5));
+        doc.setTextColor(...primaryColor);
+        doc.text('ITEMIZED CLAIMS', 10, curY);
+
+        const itemsBody = selectedBatchCases.map((c, idx) => {
+          const totalTerms = c.installment_count || (c.installmentPlan ? (c.installmentPlan.match(/\d+/) ? parseInt(c.installmentPlan.match(/\d+/)[0], 10) : 1) : 1);
+          const claimAmt = c.nextPaymentAmount || Math.round((c.finalTotal || c.totalExpense || 0) / totalTerms);
+          return [
+            String(idx + 1).padStart(2, '0'),
+            `#${c._id.slice(-6).toUpperCase()}`,
+            c.expenseType || 'General Expense',
+            new Date(c.expensePeriodStart || c.createdAt).toLocaleDateString(),
+            `JPY ${claimAmt.toLocaleString()}`
+          ];
+        });
+
+        autoTable(doc, {
+          startY: curY + titleGap,
+          margin,
+          head: [['No.', 'Claim ID', 'Type', 'Date', 'Amount']],
+          body: itemsBody,
+          theme: 'grid',
+          styles: sharedStyles,
+          headStyles: headS,
+          alternateRowStyles: { fillColor: lightBg }
+        });
+
+        // AGREED TERMS (If Not Staff)
+        if (selectedCase.advancerCategory !== 'Staff') {
+          curY = doc.lastAutoTable.finalY + secGap;
+          doc.setFont('helvetica', 'bold');
+          doc.setFontSize(fs(8.5));
+          doc.setTextColor(...primaryColor);
+          doc.text('AGREED TERMS', 10, curY);
+
+          autoTable(doc, {
+            startY: curY + titleGap,
+            margin,
+            head: [['Collection Method', 'Installment Plan', 'Start Month', 'Current Term']],
+            body: [[
+              selectedCase.collection_method || selectedCase.collectionMethod || 'N/A',
+              selectedCase.installment_plan || selectedCase.installmentPlan || 'N/A',
+              selectedCase.collection_start_month || selectedCase.collectionStartMonth || 'N/A',
+              selectedCaseTotalTerms > 1 ? `Term ${selectedCaseCurrentTerm} of ${selectedCaseTotalTerms}` : 'N/A'
+            ]],
+            theme: 'grid',
+            styles: sharedStyles,
+            headStyles: headS,
+          });
+        }
+
+        if (paymentMethod) {
+          curY = doc.lastAutoTable.finalY + secGap;
+          doc.setFont('helvetica', 'bold');
+          doc.setFontSize(fs(8.5));
+          doc.setTextColor(...primaryColor);
+          doc.text('TRANSACTION DETAILS', 10, curY);
+
+          let txHead = [];
+          if (paymentMethod === 'Pay in Salary' || paymentMethod === 'Payroll Deduction') {
+            txHead = ['Date', 'Payment Method', 'Payroll Period', 'Ref No.', 'Net Payable'];
+          } else if (paymentMethod === 'Company Check') {
+            txHead = ['Date', 'Payment Method', 'Check No', 'Delivery Address', 'Ref No.', 'Net Payable'];
+          } else if (paymentMethod === 'Corporate Card') {
+            txHead = ['Date', 'Payment Method', 'Card Last 4', 'Cardholder Name', 'Ref No.', 'Net Payable'];
+          } else {
+            txHead = ['Date', 'Payment Method', 'Bank', 'Branch', 'Account', 'Ref No.', 'Net Payable'];
+          }
+
+          let txRow = [
+            paymentDate ? new Date(paymentDate).toLocaleDateString('en-GB') : '—',
+            paymentMethod
+          ];
+
+          const dest = destinationDetails || {};
+          const refNo = transactionRefId || '—';
+
+          if (paymentMethod === 'Pay in Salary' || paymentMethod === 'Payroll Deduction') {
+            txRow.push(dest.payrollPeriod || '—', refNo);
+          } else if (paymentMethod === 'Company Check') {
+            txRow.push(dest.checkNumber || '—', dest.checkDelivery || '—', refNo);
+          } else if (paymentMethod === 'Corporate Card') {
+            txRow.push(dest.cardLast4 || '—', dest.cardholderName || '—', refNo);
+          } else {
+            txRow.push(dest.bankName || '—', dest.branchCode || '—', dest.accountNumber || '—', refNo);
+          }
+
+          txRow.push(`JPY ${batchTotalNextPayment.toLocaleString()}`);
+
+          autoTable(doc, {
+            startY: curY + titleGap,
+            margin,
+            head: [txHead],
+            body: [txRow],
+            theme: 'grid',
+            styles: sharedStyles,
+            headStyles: headS,
+            alternateRowStyles: { fillColor: lightBg }
+          });
+        }
+
+        drawFooter();
+        doc.autoPrint();
+        const blobUrl = doc.output('bloburl');
+        const iframe = document.createElement('iframe');
+        iframe.style.display = 'none';
+        iframe.src = blobUrl;
+        document.body.appendChild(iframe);
+        iframe.onload = () => {
+          setTimeout(() => {
+            if (iframe.contentWindow) {
+              iframe.contentWindow.print();
+            }
+          }, 100);
+        };
+
+      } catch (err) {
+        console.error('Error generating PDF:', err);
+        toast.error('Failed to generate PDF: ' + (err.message || 'Unknown error'));
+      }
+    };
 
     return (
       <div className="w-full px-4 sm:px-6 lg:px-8 xl:px-12 space-y-6 pb-10">
@@ -574,7 +811,7 @@ export default function PaymentStatus() {
               <div className="absolute right-0 top-0 print:hidden">
                 <button 
                   type="button"
-                  onClick={() => window.print()}
+                  onClick={() => generateReceiptPDF()}
                   className="flex items-center px-4 py-2 border-2 border-[#162D50] hover:bg-[#162D50] hover:text-[#F5F1E6] text-xs font-bold uppercase tracking-widest transition-colors"
                 >
                   <Printer className="w-4 h-4 mr-2" />
@@ -594,7 +831,7 @@ export default function PaymentStatus() {
               const confirm = await toastConfirm("Are you sure you want to record this payment?");
               if (confirm) {
                 setIsConfirmed(true);
-                setTimeout(() => handleFormSubmit(e), 0);
+                setTimeout(() => handleFormSubmit(e, true), 0);
               }
             }}>
               {/* Header Details */}

@@ -350,7 +350,8 @@ export default function PaymentEntry() {
       doc.setFont('helvetica', 'normal');
       doc.setFontSize(fs(8));
       doc.setTextColor(180, 200, 230);
-      doc.text('Individual Payment Record', 11, headerH * 0.78);
+      const title = record.originalCase?.advancerCategory === 'Staff' ? 'Reimbursement Receipt' : 'Individual Payment Record';
+      doc.text(title, 11, headerH * 0.78);
 
       doc.setFontSize(fs(7));
       doc.setTextColor(200, 215, 240);
@@ -528,6 +529,24 @@ export default function PaymentEntry() {
         const txRows = [];
         const totalTermsCount = Math.max(record.totalTerms || 1, terms.length);
 
+        let pMethod = 'Bank Transfer';
+        if (settlements && settlements.length > 0 && settlements[0].paymentMethod) {
+          pMethod = settlements[0].paymentMethod;
+        } else if (record.paymentMethod) {
+          pMethod = record.paymentMethod;
+        }
+
+        let txHead = [];
+        if (pMethod === 'Pay in Salary' || pMethod === 'Payroll Deduction') {
+          txHead = ['Term', 'Date', 'Net Payable', 'Status', 'Payroll Period', 'Ref No.'];
+        } else if (pMethod === 'Company Check') {
+          txHead = ['Term', 'Date', 'Net Payable', 'Status', 'Check No', 'Delivery', 'Ref No.'];
+        } else if (pMethod === 'Corporate Card') {
+          txHead = ['Term', 'Date', 'Net Payable', 'Status', 'Card Last 4', 'Cardholder Name', 'Ref No.'];
+        } else {
+          txHead = ['Term', 'Date', 'Net Payable', 'Status', 'Bank', 'Branch', 'Account', 'Ref No.'];
+        }
+
         for (let i = 0; i < totalTermsCount; i++) {
           const s = terms[i];
           const actualSettlement = settlements[i];
@@ -559,25 +578,30 @@ export default function PaymentEntry() {
 
           const status = actualSettlement || s?.status === 'PAID' ? 'Paid' : 'Pending';
           const dest = actualSettlement?.destinationDetails || s?.bankDetails || {};
-          const bankName = dest.bankName || dest.bank_name || '—';
-          const branchCode = dest.branchCode || dest.branch_code || '—';
-          const accountNumber = dest.accountNumber || dest.account_number || '—';
           const refNo = actualSettlement?.transactionRefId || s?.transactionRef || '—';
 
-          txRows.push([
+          let txRow = [
             `Term ${i + 1}/${record.totalTerms || totalTermsCount}`,
             txDate,
             `JPY ${amt.toLocaleString()}`,
-            status,
-            bankName,
-            branchCode,
-            accountNumber,
-            refNo,
-          ]);
+            status
+          ];
+
+          if (pMethod === 'Pay in Salary' || pMethod === 'Payroll Deduction') {
+            txRow.push(dest.payrollPeriod || '—', refNo);
+          } else if (pMethod === 'Company Check') {
+            txRow.push(dest.checkNumber || '—', dest.checkDelivery || '—', refNo);
+          } else if (pMethod === 'Corporate Card') {
+            txRow.push(dest.cardLast4 || '—', dest.cardholderName || '—', refNo);
+          } else {
+            txRow.push(dest.bankName || dest.bank_name || '—', dest.branchCode || dest.branch_code || '—', dest.accountNumber || dest.account_number || '—', refNo);
+          }
+
+          txRows.push(txRow);
         }
 
       if (txRows.length === 0) {
-        txRows.push(['—', '—', '—', '—', '—', '—', '—', 'No transactions recorded']);
+        txRows.push(txHead.map((_, i) => i === txHead.length - 1 ? 'No transactions recorded' : '—'));
       }
 
       curY = doc.lastAutoTable.finalY + secGap;
@@ -589,7 +613,7 @@ export default function PaymentEntry() {
       autoTable(doc, {
         startY: curY + titleGap,
         margin,
-        head: [['Term', 'Date', 'Net Payable', 'Status', 'Bank', 'Branch', 'Account', 'Ref No.']],
+        head: [txHead],
         body: txRows,
         theme: 'grid',
         styles: { ...sharedStyles, fontSize: fs(7.5) },
