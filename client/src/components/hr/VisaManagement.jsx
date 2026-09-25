@@ -3,6 +3,7 @@ import { Search, Filter, Download, MoreVertical, Printer } from 'lucide-react';
 import { apiFetch } from '../../utils/apiFetch.js';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import { fontBase64 } from '../../fonts/Kosugi-Regular.js';
 
 export default function VisaManagement() {
   const [employees, setEmployees] = useState([]);
@@ -128,6 +129,23 @@ export default function VisaManagement() {
   const pendingRenewals = employees.filter(e => getVisaステータス(e) === 'Renewal In Progress').length;
 
   const handlePrint = () => {
+    const t = (str) => {
+      const dict = {
+        'Employment Visa': '就労ビザ',
+        'Permanent Resident': '永住者',
+        'Renewal In Progress': '更新対応',
+        'Student': '留学',
+        'Dependent': '家族滞在',
+        'Not Applied': '未申請',
+        'Applied': '申請済',
+        'Waiting for Visa': 'ビザ待ち',
+        'Expired': '期限切れ',
+        'Expiring Soon': '期限切れ間近',
+        'Active': '有効'
+      };
+      return dict[str] || str;
+    };
+
     const rows = filteredEmployees.map((emp, idx) => {
       const status = getVisaステータス(emp);
       const statusColor =
@@ -142,11 +160,11 @@ export default function VisaManagement() {
           <td style="text-align:center;color:#64748b;width:36px">${idx + 1}</td>
           <td>#${(emp._id?.slice(-6) || '').toUpperCase()}</td>
           <td>${emp.romajiName || 'N/A'}</td>
-          <td>${emp.nationality || 'N/A'}</td>
-          <td>${emp.visaStatus || 'Employment Visa'}</td>
+          <td>${t(emp.nationality) || 'N/A'}</td>
+          <td>${t(emp.visaStatus || 'Employment Visa')}</td>
           <td>${expiry}</td>
-          <td>${emp.visaAppステータス || 'Not Applied'}</td>
-          <td><span style="color:${statusColor};font-weight:700">${status}</span></td>
+          <td>${t(emp.visaAppステータス || 'Not Applied')}</td>
+          <td><span style="color:${statusColor};font-weight:700">${t(status)}</span></td>
         </tr>`;
     }).join('');
 
@@ -173,8 +191,8 @@ export default function VisaManagement() {
   <table>
     <thead>
       <tr>
-        <th style="text-align:center;width:36px">S.No</th><th>STAFF ID</th><th>STAFF NAME</th><th>NATIONALITY</th>
-        <th>VISA TYPE</th><th>EXPIRY DATE</th><th>APP STATUS</th><th>STATUS</th>
+        <th style="text-align:center;width:36px">番号</th><th>スタッフID</th><th>氏名</th><th>国籍</th>
+        <th>ビザ種別</th><th>有効期限</th><th>申請状況</th><th>ステータス</th>
       </tr>
     </thead>
     <tbody>${rows}</tbody>
@@ -199,6 +217,23 @@ export default function VisaManagement() {
     try {
       setIsSubmitting(true);
 
+      const t = (str) => {
+        const dict = {
+          'Employment Visa': '就労ビザ',
+          'Permanent Resident': '永住者',
+          'Renewal In Progress': '更新対応',
+          'Student': '留学',
+          'Dependent': '家族滞在',
+          'Not Applied': '未申請',
+          'Applied': '申請済',
+          'Waiting for Visa': 'ビザ待ち',
+          'Expired': '期限切れ',
+          'Expiring Soon': '期限切れ間近',
+          'Active': '有効'
+        };
+        return dict[str] || str;
+      };
+
       const pdf = new jsPDF('p', 'pt', 'a4');
       pdf.addFileToVFS('Kosugi-Regular.ttf', fontBase64);
       pdf.addFont('Kosugi-Regular.ttf', 'Kosugi', 'normal');
@@ -215,7 +250,7 @@ export default function VisaManagement() {
       pdf.text(`出力日 (Export Date): ${new Date().toLocaleDateString()}`, 40, 70);
 
       // Prepare Table Data
-      const tableColumn = ["S.No", "STAFF ID", "STAFF NAME", "NATIONALITY", "VISA TYPE", "EXPIRY DATE", "APP STATUS", "STATUS"];
+      const tableColumn = ["番号", "スタッフID", "氏名", "国籍", "ビザ種別", "有効期限", "申請状況", "ステータス"];
       const tableRows = [];
 
       filteredEmployees.forEach((employee, idx) => {
@@ -224,11 +259,11 @@ export default function VisaManagement() {
           idx + 1,
           "#" + (employee._id?.slice(-6).toUpperCase() || ''),
           employee.romajiName || 'N/A',
-          employee.nationality || 'N/A',
-          employee.visaStatus || 'Employment Visa',
+          t(employee.nationality) || 'N/A',
+          t(employee.visaStatus || 'Employment Visa'),
           employee.visaEndDate ? new Date(employee.visaEndDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'N/A',
-          employee.visaAppStatus || 'Not Applied',
-          status
+          t(employee.visaAppステータス || 'Not Applied'),
+          t(status)
         ];
         tableRows.push(rowData);
       });
