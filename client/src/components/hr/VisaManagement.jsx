@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Search, Filter, Download, MoreVertical, ChevronLeft, ChevronRight, Printer } from 'lucide-react';
+import { Search, Filter, Download, MoreVertical, Printer } from 'lucide-react';
 import { apiFetch } from '../../utils/apiFetch.js';
-
+import { jsPDF } from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
 export default function VisaManagement() {
   const [employees, setEmployees] = useState([]);
@@ -116,11 +117,8 @@ export default function VisaManagement() {
     const searchString = searchQuery.toLowerCase();
     const nameStr = `${emp.romajiName || ''} ${emp.katakanaName || ''}`.toLowerCase();
     const matchesSearch = nameStr.includes(searchString) || (emp._id && emp._id.toLowerCase().includes(searchString));
-    
     const status = getVisaステータス(emp);
-    const matchesステータス = status === 'Expired' || status === 'Renewal In Progress' || status === 'Expiring Soon';
-
-    return matchesSearch && matchesステータス;
+    return matchesSearch && status !== 'Active';
   });
 
   // Calculate Metrics
@@ -130,23 +128,87 @@ export default function VisaManagement() {
   const pendingRenewals = employees.filter(e => getVisaステータス(e) === 'Renewal In Progress').length;
 
   const handlePrint = () => {
-    window.print();
+    const rows = filteredEmployees.map((emp, idx) => {
+      const status = getVisaステータス(emp);
+      const statusColor =
+        status === 'Expired' ? '#dc2626' :
+        status === 'Expiring Soon' ? '#d97706' :
+        status === 'Renewal In Progress' ? '#2563eb' : '#16a34a';
+      const expiry = emp.visaEndDate
+        ? new Date(emp.visaEndDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+        : 'N/A';
+      return `
+        <tr>
+          <td style="text-align:center;color:#64748b;width:36px">${idx + 1}</td>
+          <td>#${(emp._id?.slice(-6) || '').toUpperCase()}</td>
+          <td>${emp.romajiName || 'N/A'}</td>
+          <td>${emp.nationality || 'N/A'}</td>
+          <td>${emp.visaStatus || 'Employment Visa'}</td>
+          <td>${expiry}</td>
+          <td>${emp.visaAppステータス || 'Not Applied'}</td>
+          <td><span style="color:${statusColor};font-weight:700">${status}</span></td>
+        </tr>`;
+    }).join('');
+
+    const html = `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <title>Visa Management Report</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 32px; color: #1e293b; }
+    h1 { font-size: 20px; margin: 0 0 4px; color: #162d50; }
+    p.sub { font-size: 12px; color: #64748b; margin: 0 0 20px; }
+    table { width: 100%; border-collapse: collapse; font-size: 12px; }
+    thead tr { background: #162d50; color: #fff; }
+    th { padding: 8px 10px; text-align: left; font-weight: 600; }
+    td { padding: 7px 10px; border-bottom: 1px solid #e2e8f0; }
+    tr:nth-child(even) td { background: #f8fafc; }
+    @media print { body { margin: 16px; } }
+  </style>
+</head>
+<body>
+  <h1>ビザ管理レポート (Visa Management Report)</h1>
+  <p class="sub">出力日 (Export Date): ${new Date().toLocaleDateString()}</p>
+  <table>
+    <thead>
+      <tr>
+        <th style="text-align:center;width:36px">S.No</th><th>STAFF ID</th><th>STAFF NAME</th><th>NATIONALITY</th>
+        <th>VISA TYPE</th><th>EXPIRY DATE</th><th>APP STATUS</th><th>STATUS</th>
+      </tr>
+    </thead>
+    <tbody>${rows}</tbody>
+  </table>
+</body>
+</html>`;
+
+    const iframe = document.createElement('iframe');
+    iframe.style.cssText = 'position:fixed;width:0;height:0;border:0;opacity:0;';
+    document.body.appendChild(iframe);
+    iframe.contentDocument.open();
+    iframe.contentDocument.write(html);
+    iframe.contentDocument.close();
+    setTimeout(() => {
+      iframe.contentWindow.focus();
+      iframe.contentWindow.print();
+      setTimeout(() => document.body.removeChild(iframe), 1000);
+    }, 400);
   };
 
   const handleExportPDF = async () => {
     try {
       setIsSubmitting(true);
-      const { jsPDF } = await import('jspdf');
-      const autoTable = (await import('jspdf-autotable')).default;
 
       const pdf = new jsPDF('p', 'pt', 'a4');
 
       // Fetch the local Japanese font
       const fontResponse = await fetch('/mplus.ttf');
       const fontBuffer = await fontResponse.arrayBuffer();
-      const fontBase64 = btoa(
-        new Uint8Array(fontBuffer).reduce((data, byte) => data + String.fromCharCode(byte), '')
-      );
+      const fontBase64 = await new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result.split(',')[1]);
+        reader.readAsDataURL(new Blob([fontBuffer]));
+      });
 
       pdf.addFileToVFS('mplus.ttf', fontBase64);
       pdf.addFont('mplus.ttf', 'mplus', 'normal');
@@ -162,12 +224,13 @@ export default function VisaManagement() {
       pdf.text(`出力日 (Export Date): ${new Date().toLocaleDateString()}`, 40, 70);
 
       // Prepare Table Data
-      const tableColumn = ["STAFF ID", "STAFF NAME", "NATIONALITY", "VISA TYPE", "EXPIRY DATE", "APP STATUS", "STATUS"];
+      const tableColumn = ["S.No", "STAFF ID", "STAFF NAME", "NATIONALITY", "VISA TYPE", "EXPIRY DATE", "APP STATUS", "STATUS"];
       const tableRows = [];
 
-      filteredEmployees.forEach((employee) => {
+      filteredEmployees.forEach((employee, idx) => {
         const status = getVisaステータス(employee);
         const rowData = [
+          idx + 1,
           "#" + (employee._id?.slice(-6).toUpperCase() || ''),
           employee.romajiName || 'N/A',
           employee.nationality || 'N/A',
@@ -202,7 +265,7 @@ export default function VisaManagement() {
       pdf.save('Visa_Management_Report.pdf');
     } catch (err) {
       console.error('Error generating PDF:', err);
-      alert('PDFのエクスポートに失敗しました。');
+      alert('PDFのエクスポートに失敗しました。\n' + err.message);
     } finally {
       setIsSubmitting(false);
     }
@@ -267,6 +330,7 @@ export default function VisaManagement() {
           <table className="w-full text-left border-collapse min-w-max">
             <thead>
               <tr className="bg-white border-b border-gray-200 text-xs font-bold text-gray-500 uppercase tracking-wider">
+                <th className="py-4 px-4 text-center w-10">S.No</th>
                 <th className="py-4 px-6">STAFF ID</th>
                 <th className="py-4 px-6">STAFF NAME</th>
                 <th className="py-4 px-6">NATIONALITY</th>
@@ -287,7 +351,7 @@ export default function VisaManagement() {
                   <td colSpan="7" className="py-8 px-6 text-center text-gray-500">No staff found matching your search.</td>
                 </tr>
               ) : (
-                filteredEmployees.map((employee) => {
+                filteredEmployees.map((employee, idx) => {
                   const status = getVisaステータス(employee);
                   let statusBadge = null;
                   let actionButton = null;
@@ -308,6 +372,7 @@ export default function VisaManagement() {
 
                   return (
                     <tr key={employee._id} className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
+                      <td className="py-4 px-4 text-center text-gray-400 text-sm">{idx + 1}</td>
                       <td className="py-4 px-6 text-gray-800 font-medium">#{employee._id?.slice(-6).toUpperCase()}</td>
                       <td className="py-4 px-6 font-bold text-[#162D50]">{employee.romajiName || 'N/A'}</td>
                       <td className="py-4 px-6 text-gray-600">{employee.nationality || 'N/A'}</td>
@@ -343,17 +408,9 @@ export default function VisaManagement() {
           </table>
         </div>
         
-        {/* Pagination */}
-        <div className="p-4 border-t border-gray-200 flex justify-between items-center bg-white text-sm text-gray-600">
-          <div>Showing {filteredEmployees.length > 0 ? 1 : 0}-{filteredEmployees.length} of {employees.length} staff</div>
-          <div className="flex space-x-2">
-            <button className="w-8 h-8 flex items-center justify-center border border-gray-300 rounded text-gray-400 hover:bg-gray-50 transition-colors">
-              <ChevronLeft className="w-4 h-4" />
-            </button>
-            <button className="w-8 h-8 flex items-center justify-center border border-gray-300 rounded text-gray-600 hover:bg-gray-50 transition-colors">
-              <ChevronRight className="w-4 h-4" />
-            </button>
-          </div>
+        {/* Record count */}
+        <div className="p-4 border-t border-gray-200 bg-white text-sm text-gray-500">
+          Showing {filteredEmployees.length} of {employees.length} staff
         </div>
       </div>
 
