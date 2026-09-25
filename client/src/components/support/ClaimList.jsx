@@ -1,6 +1,30 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import { Filter, Download, Eye, ChevronDown } from 'lucide-react';
 import { apiFetch } from '../../utils/apiFetch.js';
+
+// Japanese translation map for option labels from DB
+const optionLabelJP = {
+  'Postage': '郵便料金',
+  'Transportation Expenses / Flight Fare': '交通費 / 航空運賃',
+  'Visa application fee': 'ビザ申請料',
+  'Waiting Dormitory Fee': '待機寮費',
+  'Hospital Fee': '病院費',
+  'Equipment/Supplies': '備品・消耗品',
+  'WIFI': 'WIFI',
+  'others': 'その他',
+  'Service staff': 'サービススタッフ',
+  'VC': 'VC',
+  'Dispatch destination: Farm': '派遣先：農園',
+  'Select for each project': 'プロジェクト毎に選択',
+  'Office': 'オフィス',
+  'Staff': 'スタッフ',
+  'Host Company': 'ホスト企業',
+  'Transfer to the person concerned': '本人への振込',
+  'Salary deduction': '給与控除',
+  'Invoice from the client company': 'クライアント会社からの請求書',
+};
+const toJP = (label) => optionLabelJP[label] ?? label;
+
 
 
 export default function ClaimList() {
@@ -80,8 +104,8 @@ export default function ClaimList() {
                     <td className="px-6 py-5 whitespace-nowrap text-sm font-medium text-gray-800">
                       <div className="max-w-[80px] break-words whitespace-normal">{claim.claim_id || `#CLM-${claim._id.slice(-6).toUpperCase()}`}</div>
                     </td>
-                    <td className="px-6 py-5 whitespace-nowrap text-sm text-gray-700">{claim.payment_process_types || '-'}</td>
-                    <td className="px-6 py-5 whitespace-nowrap text-sm text-gray-700">{claim.expense_type}</td>
+                    <td className="px-6 py-5 whitespace-nowrap text-sm text-gray-700">{claim.payment_process_types ? toJP(claim.payment_process_types) : '-'}</td>
+                    <td className="px-6 py-5 whitespace-nowrap text-sm text-gray-700">{toJP(claim.expense_type)}</td>
                     <td className="px-6 py-5 whitespace-nowrap text-sm font-bold text-gray-900">¥{(claim.expense_amount || 0).toLocaleString()}</td>
                     <td className="px-6 py-5 whitespace-nowrap text-sm text-gray-700">
                       {claim.expense_period_start ? new Date(claim.expense_period_start).toLocaleDateString('en-US') : '-'}

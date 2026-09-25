@@ -80,20 +80,20 @@ export default function ExpenseSetup() {
       });
       
       if (res.ok) {
-        toast.success(`${activeTab === 'postal' ? 'Postal' : 'Travel'} charges saved successfully!`);
+        toast.success(`${activeTab === 'postal' ? 'Postal' : 'Travel'} 変更が保存されました！`);
       } else {
-        let errMsg = 'Failed to save changes.';
+        let errMsg = '変更の保存に失敗しました。';
         try {
           const errData = await res.json();
-          if (errData.message) errMsg = `Failed to save changes: ${errData.message}`;
+          if (errData.message) errMsg = `変更の保存に失敗しました: ${errData.message}`;
         } catch (e) {
-          errMsg = `Failed to save changes. ステータス: ${res.status}`;
+          errMsg = `変更の保存に失敗しました。ステータス: ${res.status}`;
         }
         toast.error(errMsg);
       }
     } catch (err) {
       console.error(err);
-      toast.error(`Error saving changes: ${err.message}`);
+      toast.error(`変更の保存中にエラーが発生しました: ${err.message}`);
     } finally {
       setIsLoading(false);
     }
@@ -126,7 +126,7 @@ export default function ExpenseSetup() {
 
   const handleAddRegion = async () => {
     if (!newName1.trim() || !newName2.trim()) {
-      toast.error('Please provide both Sender/Departure and Recipient/Arrival names.');
+      toast.error('送信者/出発地と受信者/到着地の両方を入力してください。');
       return;
     }
     setIsLoading(true);
@@ -140,11 +140,11 @@ export default function ExpenseSetup() {
         setNewName2('');
         fetchData();
       } else {
-        toast.error('Failed to add region');
+        toast.error('地域の追加に失敗しました');
       }
     } catch (err) {
       console.error(err);
-      toast.error('Error adding region');
+      toast.error('地域の追加中にエラーが発生しました');
     } finally {
       setIsLoading(false);
     }
@@ -152,7 +152,7 @@ export default function ExpenseSetup() {
 
   const handleUpdateRegion = async (id) => {
     if (!editName1.trim() || !editName2.trim()) {
-      toast.error('Please provide both Sender/Departure and Recipient/Arrival names.');
+      toast.error('送信者/出発地と受信者/到着地の両方を入力してください。');
       return;
     }
     setIsLoading(true);
@@ -165,18 +165,18 @@ export default function ExpenseSetup() {
         setEditingRegion(null);
         fetchData();
       } else {
-        toast.error('Failed to update region');
+        toast.error('地域の更新に失敗しました');
       }
     } catch (err) {
       console.error(err);
-      toast.error('Error updating region');
+      toast.error('地域の更新中にエラーが発生しました');
     } finally {
       setIsLoading(false);
     }
   };
 
   const handleDeleteRegion = async (id) => {
-    const confirmed = await toastConfirm('Are you sure you want to delete this region? This will also remove any saved prices for this region.');
+    const confirmed = await toastConfirm('この地域を削除してもよろしいですか？この地域に保存された価格もすべて削除されます。');
     if (!confirmed) {
       return;
     }
@@ -186,11 +186,11 @@ export default function ExpenseSetup() {
       if (res.ok) {
         fetchData();
       } else {
-        toast.error('Failed to delete region');
+        toast.error('地域の削除に失敗しました');
       }
     } catch (err) {
       console.error(err);
-      toast.error('Error deleting region');
+      toast.error('地域の削除中にエラーが発生しました');
     } finally {
       setIsLoading(false);
     }
@@ -211,7 +211,7 @@ export default function ExpenseSetup() {
               : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-200'
           }`}
         >
-          Postal Charges
+          郵便料金
         </button>
         <button
           onClick={() => setActiveTab('travel')}
@@ -221,7 +221,7 @@ export default function ExpenseSetup() {
               : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-200'
           }`}
         >
-          Travel Expenses
+          交通費
         </button>
         <button
           onClick={() => setActiveTab('regions')}
@@ -231,16 +231,16 @@ export default function ExpenseSetup() {
               : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-200'
           }`}
         >
-          Manage Regions
+          地域管理
         </button>
       </div>
 
       <div className="flex flex-col flex-1 bg-white rounded-lg shadow-sm border border-gray-200">
         <div className="p-6 border-b border-gray-200 flex justify-between items-center">
           <h2 className="text-xl font-bold text-[#162D50]">
-            {activeTab === 'postal' && 'Postal Charges Setup'}
-            {activeTab === 'travel' && 'Travel Expenses Setup'}
-            {activeTab === 'regions' && 'Manage Regions'}
+            {activeTab === 'postal' && '郵便料金設定'}
+            {activeTab === 'travel' && '交通費設定'}
+            {activeTab === 'regions' && '地域管理'}
           </h2>
           {activeTab !== 'regions' && (
             <button 
@@ -248,7 +248,7 @@ export default function ExpenseSetup() {
               disabled={isLoading}
               className="px-4 py-2 bg-[#162D50] text-white rounded-md hover:bg-[#203c6b] transition-colors font-medium disabled:opacity-50"
             >
-              {isLoading ? 'Saving...' : 'Save Changes'}
+              {isLoading ? '保存中...' : '変更を保存'}
             </button>
           )}
         </div>
@@ -260,23 +260,23 @@ export default function ExpenseSetup() {
                 <h3 className="font-semibold text-gray-700 mb-3">新しい地域を追加</h3>
                 <div className="flex gap-4 items-end">
                   <div className="flex-1">
-                    <label className="block text-sm text-gray-600 mb-1">Sender / Departure Name (name1)</label>
+                    <label className="block text-sm text-gray-600 mb-1">送信者 / 出発地名（名前1）</label>
                     <input 
                       type="text" 
                       value={newName1}
                       onChange={e => setNewName1(e.target.value)}
                       className="w-full p-2 border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
-                      placeholder="e.g. Hokkaido"
+                      placeholder="例：北海道"
                     />
                   </div>
                   <div className="flex-1">
-                    <label className="block text-sm text-gray-600 mb-1">Recipient / Arrival Name (name2)</label>
+                    <label className="block text-sm text-gray-600 mb-1">受信者 / 到着地名（名前2）</label>
                     <input 
                       type="text" 
                       value={newName2}
                       onChange={e => setNewName2(e.target.value)}
                       className="w-full p-2 border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
-                      placeholder="e.g. Hokkaido"
+                      placeholder="例：北海道"
                     />
                   </div>
                   <button 
@@ -284,7 +284,7 @@ export default function ExpenseSetup() {
                     disabled={isLoading}
                     className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50 transition-colors"
                   >
-                    Add
+                    追加
                   </button>
                 </div>
               </div>
@@ -336,7 +336,7 @@ export default function ExpenseSetup() {
                               }} 
                               className="text-blue-600 hover:text-blue-800 mr-3 text-sm font-medium"
                             >
-                              Edit
+                              編集
                             </button>
                             <button onClick={() => handleDeleteRegion(region._id)} className="text-red-600 hover:text-red-800 text-sm font-medium">削除</button>
                           </td>
@@ -352,7 +352,7 @@ export default function ExpenseSetup() {
               <thead>
                 <tr>
                   <th className="p-3 border border-gray-200 bg-gray-50 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider sticky left-0 z-10 w-32">
-                    {activeTab === 'postal' ? 'Sender / Receiver' : 'Departure / Arrival'}
+                    {activeTab === 'postal' ? '送信者 / 受信者' : '出発地 / 到着地'}
                   </th>
                   {regions.map(region => (
                     <th key={region._id} className="p-3 border border-gray-200 bg-gray-50 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider w-24">

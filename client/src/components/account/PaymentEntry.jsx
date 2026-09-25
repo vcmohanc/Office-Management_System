@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { apiFetch } from '../../utils/apiFetch.js';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import { fontBase64 } from '../../fonts/Kosugi-Regular.js';
 import toast from 'react-hot-toast';
 import { toastConfirm } from '../../utils/toastConfirm.jsx';
 
@@ -42,6 +43,8 @@ export default function PaymentEntry() {
         if (recordsToエクスポート.length === 0) return toast.error('エクスポートするレコードがありません。');
 
         const doc = new jsPDF({ orientation: 'portrait' });
+        doc.addFileToVFS('Kosugi-Regular.ttf', fontBase64);
+        doc.addFont('Kosugi-Regular.ttf', 'Kosugi', 'normal');
         const pageWidth = doc.internal.pageSize.width;
         const pageHeight = doc.internal.pageSize.height;
         const primaryColor = [22, 45, 80];   // #162D50 navy
@@ -52,21 +55,21 @@ export default function PaymentEntry() {
         doc.setFillColor(...primaryColor);
         doc.rect(0, 0, pageWidth, 28, 'F');
 
-        doc.setFont('helvetica', 'bold');
+        doc.setFont('Kosugi', 'normal');
         doc.setFontSize(17);
         doc.setTextColor(255, 255, 255);
         doc.text('OFFICE MANAGEMENT SYSTEM', 14, 12);
 
-        doc.setFont('helvetica', 'normal');
+        doc.setFont('Kosugi', 'normal');
         doc.setFontSize(9);
         doc.setTextColor(180, 200, 230);
-        doc.text('Payment Tracking Report', 14, 20);
+        doc.text('支払追跡レポート', 14, 20);
 
         // Right side: date + record count
-        doc.setFont('helvetica', 'normal');
+        doc.setFont('Kosugi', 'normal');
         doc.setFontSize(8.5);
         doc.setTextColor(200, 215, 240);
-        const dateStr   = `Generated: ${new Date().toLocaleDateString('en-GB', { day:'2-digit', month:'short', year:'numeric' })}`;
+        const dateStr   = `生成日: ${new Date().toLocaleDateString('ja-JP', { year:'numeric', month:'2-digit', day:'2-digit' })}`;
         const countStr  = `総レコード数: ${recordsToエクスポート.length}`;
         doc.text(dateStr,  pageWidth - 14 - doc.getTextWidth(dateStr),  11);
         doc.text(countStr, pageWidth - 14 - doc.getTextWidth(countStr), 20);
@@ -91,11 +94,11 @@ export default function PaymentEntry() {
         const colW = pageWidth / stats.length;
         stats.forEach((s, i) => {
           const cx = colW * i + colW / 2;
-          doc.setFont('helvetica', 'bold');
+          doc.setFont('Kosugi', 'normal');
           doc.setFontSize(10);
           doc.setTextColor(...primaryColor);
           doc.text(s.value, cx, 36, { align: 'center' });
-          doc.setFont('helvetica', 'normal');
+          doc.setFont('Kosugi', 'normal');
           doc.setFontSize(7);
           doc.setTextColor(100, 116, 139);
           doc.text(s.label, cx, 41, { align: 'center' });
@@ -121,7 +124,7 @@ export default function PaymentEntry() {
           body: tableData,
           theme: 'grid',
           styles: {
-            font: 'helvetica',
+            font: 'Kosugi',
             fontSize: 6.5,
             textColor: [30, 40, 55],
             lineColor: [210, 220, 235],
@@ -130,38 +133,39 @@ export default function PaymentEntry() {
             overflow: 'linebreak',
           },
           headStyles: {
+            font: 'Kosugi',
             fillColor: primaryColor,
             textColor: [255, 255, 255],
-            fontStyle: 'bold',
+            fontStyle: 'normal',
             fontSize: 7,
             halign: 'center',
             cellPadding: { top: 3, bottom: 3, left: 2, right: 2 },
           },
           alternateRowStyles: { fillColor: [248, 250, 253] },
           columnStyles: {
-            0: { fontStyle: 'bold', textColor: primaryColor, cellWidth: 'auto' },
+            0: { fontStyle: 'normal', textColor: primaryColor, cellWidth: 'auto' },
             6: { halign: 'center' },
-            7: { halign: 'right', fontStyle: 'bold' },
-            8: { halign: 'center', fontStyle: 'bold' }
+            7: { halign: 'right', fontStyle: 'normal' },
+            8: { halign: 'center', fontStyle: 'normal' }
           },
           didParseCell: (hookData) => {
             if (hookData.section === 'body' && hookData.column.index === 8) {
               const val = hookData.cell.raw;
-              if (val === '支払済' || val === '完了')      { hookData.cell.styles.textColor = [22, 163, 74];  hookData.cell.styles.fontStyle = 'bold'; }
-              else if (val === '期限切れ')                      { hookData.cell.styles.textColor = [220, 38, 38];  hookData.cell.styles.fontStyle = 'bold'; }
-              else if (val === 'Near Completion')              { hookData.cell.styles.textColor = [59, 130, 246]; hookData.cell.styles.fontStyle = 'bold'; }
+              if (val === '支払済' || val === '完了')      { hookData.cell.styles.textColor = [22, 163, 74];  hookData.cell.styles.fontStyle = 'normal'; }
+              else if (val === '期限切れ')                      { hookData.cell.styles.textColor = [220, 38, 38];  hookData.cell.styles.fontStyle = 'normal'; }
+              else if (val === 'Near Completion')              { hookData.cell.styles.textColor = [59, 130, 246]; hookData.cell.styles.fontStyle = 'normal'; }
             }
           },
           didDrawPage: () => {
             // Footer
             doc.setFillColor(...primaryColor);
             doc.rect(0, pageHeight - 10, pageWidth, 10, 'F');
-            doc.setFont('helvetica', 'italic');
+            doc.setFont('Kosugi', 'normal');
             doc.setFontSize(7);
             doc.setTextColor(180, 200, 230);
-            const pageStr = `Page ${doc.getNumberOfPages()}`;
+            const pageStr = `ページ ${doc.getNumberOfPages()}`;
             doc.text(pageStr, pageWidth / 2, pageHeight - 3.5, { align: 'center' });
-            doc.text('Office Management System — Confidential', 12, pageHeight - 3.5);
+            doc.text('オフィス管理システム — 社外秘', 12, pageHeight - 3.5);
           }
         });
 
@@ -319,6 +323,9 @@ export default function PaymentEntry() {
       const statusH   = Math.round(14 * scale);                // status bar height
 
       const doc = new jsPDF({ unit: 'mm', format: 'a4', compress: true });
+      doc.addFileToVFS('Kosugi-Regular.ttf', fontBase64);
+      doc.addFont('Kosugi-Regular.ttf', 'Kosugi', 'normal');
+      
       const pageWidth  = doc.internal.pageSize.width;
       const pageHeight = doc.internal.pageSize.height;
       const primaryColor = [22, 45, 80];
@@ -328,11 +335,11 @@ export default function PaymentEntry() {
       const drawFooter = () => {
         doc.setFillColor(...primaryColor);
         doc.rect(0, pageHeight - 8, pageWidth, 8, 'F');
-        doc.setFont('helvetica', 'italic');
+        doc.setFont('Kosugi', 'normal');
         doc.setFontSize(fs(6.5));
         doc.setTextColor(180, 200, 230);
-        doc.text('Office Management System — Confidential', 10, pageHeight - 2.8);
-        const pg = `Page ${doc.getNumberOfPages()}`;
+        doc.text('オフィス管理システム — 社外秘', 10, pageHeight - 2.8);
+        const pg = `ページ ${doc.getNumberOfPages()}`;
         doc.text(pg, pageWidth - 10 - doc.getTextWidth(pg), pageHeight - 2.8);
       };
 
@@ -342,22 +349,22 @@ export default function PaymentEntry() {
       doc.setFillColor(59, 130, 246);
       doc.rect(0, 0, 3.5, headerH, 'F');
 
-      doc.setFont('helvetica', 'bold');
+      doc.setFont('Kosugi', 'normal');
       doc.setFontSize(fs(13));
       doc.setTextColor(255, 255, 255);
       doc.text('OFFICE MANAGEMENT SYSTEM', 11, headerH * 0.42);
 
-      doc.setFont('helvetica', 'normal');
+      doc.setFont('Kosugi', 'normal');
       doc.setFontSize(fs(8));
       doc.setTextColor(180, 200, 230);
-      const title = record.originalCase?.advancerCategory === 'Staff' ? 'Reimbursement Receipt' : 'Individual Payment Record';
+      const title = record.originalCase?.advancerCategory === 'Staff' ? '精算領収書' : '個別支払記録';
       doc.text(title, 11, headerH * 0.78);
 
       doc.setFontSize(fs(7));
       doc.setTextColor(200, 215, 240);
-      const dateStr = `Generated: ${new Date().toLocaleDateString('en-GB', { day:'2-digit', month:'short', year:'numeric' })}`;
+      const dateStr = `生成日: ${new Date().toLocaleDateString('ja-JP', { year:'numeric', month:'2-digit', day:'2-digit' })}`;
       doc.text(dateStr, pageWidth - 10 - doc.getTextWidth(dateStr), headerH * 0.42);
-      const caseStr = `Case: ${record.id}`;
+      const caseStr = `案件: ${record.id}`;
       doc.text(caseStr, pageWidth - 10 - doc.getTextWidth(caseStr), headerH * 0.78);
 
       // ── STATUS BAR ────────────────────────────────────────────
@@ -373,21 +380,21 @@ export default function PaymentEntry() {
         ? [220, 38, 38] : [59, 130, 246];
 
       const statusMidY = statusTop + statusH * 0.62;
-      doc.setFont('helvetica', 'bold');
+      doc.setFont('Kosugi', 'normal');
       doc.setFontSize(fs(9.5));
       doc.setTextColor(...statusColor);
       doc.text(`ステータス: ${record.status}`, 11, statusMidY);
 
       const progressPct = record.totalTerms > 0
         ? Math.round((record.paidTerms / record.totalTerms) * 100) : 0;
-      doc.setFont('helvetica', 'normal');
+      doc.setFont('Kosugi', 'normal');
       doc.setFontSize(fs(7.5));
       doc.setTextColor(100, 116, 139);
       doc.text(
-        `進捗: ${record.paidTerms}/${record.totalTerms} payments (${progressPct}%)`,
+        `進捗: ${record.paidTerms}/${record.totalTerms} 回支払済 (${progressPct}%)`,  
         pageWidth / 2, statusMidY, { align: 'center' }
       );
-      doc.setFont('helvetica', 'bold');
+      doc.setFont('Kosugi', 'normal');
       doc.setFontSize(fs(8.5));
       doc.setTextColor(...primaryColor);
       const remStr = `残り: JPY ${record.remainingBalance.toLocaleString()}`;
@@ -396,7 +403,7 @@ export default function PaymentEntry() {
       // ── SHARED TABLE STYLES ───────────────────────────────────
       const cp = pad(2.8); // cell padding
       const sharedStyles = {
-        font: 'helvetica',
+        font: 'Kosugi',
         fontSize: fs(8),
         textColor: [30, 40, 55],
         lineColor: [210, 220, 235],
@@ -408,7 +415,7 @@ export default function PaymentEntry() {
       const headS = {
         fillColor: primaryColor,
         textColor: [255, 255, 255],
-        fontStyle: 'bold',
+        fontStyle: 'normal',
         fontSize: fs(8),
         cellPadding: { top: cp, bottom: cp, left: cp + 1, right: cp + 1 },
       };
@@ -421,30 +428,30 @@ export default function PaymentEntry() {
       autoTable(doc, {
         startY: curY,
         margin,
-        head: [['Field', 'Details']],
+        head: [['項目', '詳細']],
         body: [
           ['案件ID',          record.id],
           ['スタッフ名',       record.name],
           ['スタッフID',         record.staffId || '—'],
-          ['Work Place',       record.workPlace],
+          ['配属先',       record.workPlace],
           ['経費の種類',     record.expenseType],
-          ['Payment 期間',   `${record.startDate} → ${record.endDate}`],
-          ['Installment Plan', `${record.paidTerms} of ${record.totalTerms} payments completed`],
-          ['残り Balance',`JPY ${record.remainingBalance.toLocaleString()}`],
+          ['支払期間',   `${record.startDate} → ${record.endDate}`],
+          ['分割払いプラン', `${record.paidTerms} / ${record.totalTerms} 回支払完了`],
+          ['残り残高',`JPY ${record.remainingBalance.toLocaleString()}`],
           ['ステータス',           record.status],
-          ['エクスポート 日付',      new Date().toLocaleDateString('en-GB', { day:'2-digit', month:'short', year:'numeric' })],
+          ['出力日付',      new Date().toLocaleDateString('ja-JP', { year:'numeric', month:'2-digit', day:'2-digit' })],
         ],
         theme: 'grid',
         styles: sharedStyles,
         headStyles: headS,
         columnStyles: {
-          0: { fontStyle: 'bold', cellWidth: 46, fillColor: lightBg, textColor: [50, 70, 100] },
+          0: { fontStyle: 'normal', cellWidth: 46, fillColor: lightBg, textColor: [50, 70, 100] },
           1: { cellWidth: 'auto' },
         },
         didParseCell: (h) => {
           if (h.section === 'body' && h.row.index === 8) {
             h.cell.styles.textColor = statusColor;
-            h.cell.styles.fontStyle = 'bold';
+            h.cell.styles.fontStyle = 'normal';
           }
         },
         didDrawPage: drawFooter,
@@ -452,18 +459,18 @@ export default function PaymentEntry() {
 
       // ── FINANCIAL & PROGRESS SUMMARY ──────────────────────────
       const baseClaimAmt = record.originalCase.finalTotal || record.originalCase.totalExpense || 0;
-      const installPlanLabel = record.originalCase.installmentPlan || `${record.totalTerms} Month${record.totalTerms !== 1 ? 's' : ''}`;
+      const installPlanLabel = record.originalCase.installmentPlan || `${record.totalTerms} ヶ月`;
 
       curY = doc.lastAutoTable.finalY + secGap;
-      doc.setFont('helvetica', 'bold');
+      doc.setFont('Kosugi', 'normal');
       doc.setFontSize(fs(8.5));
       doc.setTextColor(...primaryColor);
-      doc.text('FINANCIAL & PROGRESS SUMMARY', 10, curY);
+      doc.text('財務・進捗サマリー', 10, curY);
 
       autoTable(doc, {
         startY: curY + titleGap,
         margin,
-        head: [['Base Claim 金額', 'ステータス', 'Installment Plan', 'Terms 支払済', '残り Balance']],
+        head: [['請求基本金額', 'ステータス', '分割払いプラン', '支払済回数', '残り残高']],
         body: [[
           `JPY ${baseClaimAmt.toLocaleString()}`,
           record.status,
@@ -478,10 +485,10 @@ export default function PaymentEntry() {
         didParseCell: (h) => {
           if (h.section === 'body' && h.column.index === 1) {
             h.cell.styles.textColor = statusColor;
-            h.cell.styles.fontStyle = 'bold';
+            h.cell.styles.fontStyle = 'normal';
           }
           if (h.section === 'body' && h.column.index === 4) {
-            h.cell.styles.fontStyle = 'bold';
+            h.cell.styles.fontStyle = 'normal';
             h.cell.styles.textColor = record.remainingBalance === 0 ? [22, 163, 74] : primaryColor;
           }
         },
@@ -498,23 +505,23 @@ export default function PaymentEntry() {
         : record.startDate || 'N/A';
 
       curY = doc.lastAutoTable.finalY + secGap;
-      doc.setFont('helvetica', 'bold');
+      doc.setFont('Kosugi', 'normal');
       doc.setFontSize(fs(8.5));
       doc.setTextColor(...primaryColor);
-      doc.text('SETTLEMENT DETAILS', 10, curY);
+      doc.text('精算詳細', 10, curY);
 
       autoTable(doc, {
         startY: curY + titleGap,
         margin,
         body: [
-          ['Settlement Method:', settlementMethod],
-          ['Start Month:', startMonth],
+          ['精算方法:', settlementMethod],
+          ['開始月:', startMonth],
         ],
         theme: 'plain',
         styles: { ...sharedStyles, cellPadding: { top: cp - 0.5, bottom: cp - 0.5, left: cp + 1, right: cp + 1 } },
         columnStyles: {
-          0: { fontStyle: 'bold', cellWidth: 46, textColor: [50, 70, 100] },
-          1: { fontStyle: 'bold', textColor: [30, 40, 55] },
+          0: { fontStyle: 'normal', cellWidth: 46, textColor: [50, 70, 100] },
+          1: { fontStyle: 'normal', textColor: [30, 40, 55] },
         },
         didDrawPage: drawFooter,
       });
@@ -529,7 +536,7 @@ export default function PaymentEntry() {
         const txRows = [];
         const totalTermsCount = Math.max(record.totalTerms || 1, terms.length);
 
-        let pMethod = 'Bank Transfer';
+        let pMethod = 'Bank Transfer'; // internal key, not translated
         if (settlements && settlements.length > 0 && settlements[0].paymentMethod) {
           pMethod = settlements[0].paymentMethod;
         } else if (record.paymentMethod) {
@@ -538,13 +545,13 @@ export default function PaymentEntry() {
 
         let txHead = [];
         if (pMethod === 'Pay in Salary' || pMethod === 'Payroll Deduction') {
-          txHead = ['Term', '日付', 'Net Payable', 'ステータス', 'Payroll 期間', 'Ref いいえ.'];
+          txHead = ['回次', '日付', '支払金額', 'ステータス', '給与期間', '参照番号'];
         } else if (pMethod === 'Company Check') {
-          txHead = ['Term', '日付', 'Net Payable', 'ステータス', 'Check いいえ', 'Delivery', 'Ref いいえ.'];
+          txHead = ['回次', '日付', '支払金額', 'ステータス', '小切手番号', '配送', '参照番号'];
         } else if (pMethod === 'Corporate Card') {
-          txHead = ['Term', '日付', 'Net Payable', 'ステータス', 'Card Last 4', 'Cardholder Name', 'Ref いいえ.'];
+          txHead = ['回次', '日付', '支払金額', 'ステータス', 'カード末4桁', 'カード名義人', '参照番号'];
         } else {
-          txHead = ['Term', '日付', 'Net Payable', 'ステータス', 'Bank', 'Branch', 'Account', 'Ref いいえ.'];
+          txHead = ['回次', '日付', '支払金額', 'ステータス', '銀行', '支店', '口座番号', '参照番号'];
         }
 
         for (let i = 0; i < totalTermsCount; i++) {
@@ -581,7 +588,7 @@ export default function PaymentEntry() {
           const refいいえ = actualSettlement?.transactionRefId || s?.transactionRef || '—';
 
           let txRow = [
-            `Term ${i + 1}/${record.totalTerms || totalTermsCount}`,
+            `第${i + 1}回 / ${record.totalTerms || totalTermsCount}回`,  
             txDate,
             `JPY ${amt.toLocaleString()}`,
             status
@@ -605,10 +612,10 @@ export default function PaymentEntry() {
       }
 
       curY = doc.lastAutoTable.finalY + secGap;
-      doc.setFont('helvetica', 'bold');
+      doc.setFont('Kosugi', 'normal');
       doc.setFontSize(fs(8.5));
       doc.setTextColor(...primaryColor);
-      doc.text('TRANSACTION DETAILS', 10, curY);
+      doc.text('取引詳細', 10, curY);
 
       autoTable(doc, {
         startY: curY + titleGap,
@@ -620,14 +627,14 @@ export default function PaymentEntry() {
         headStyles: { ...headS, fontSize: fs(7.5) },
         alternateRowStyles: { fillColor: lightBg },
         columnStyles: {
-          0: { fontStyle: 'bold', cellWidth: 20 },
-          2: { halign: 'right', fontStyle: 'bold' },
+          0: { fontStyle: 'normal', cellWidth: 20 },
+          2: { halign: 'right', fontStyle: 'normal' },
           3: { halign: 'center', cellWidth: 18 },
         },
         didParseCell: (h) => {
           if (h.section === 'body' && h.column.index === 3) {
             h.cell.styles.textColor = h.cell.raw === '支払済' ? [22, 163, 74] : [220, 38, 38];
-            h.cell.styles.fontStyle = 'bold';
+            h.cell.styles.fontStyle = 'normal';
           }
         },
         didDrawPage: drawFooter,
@@ -838,7 +845,7 @@ export default function PaymentEntry() {
           className="flex items-center text-[#162D50] hover:underline font-medium mb-6 transition-colors"
         >
           <ArrowLeft className="w-4 h-4 mr-1" />
-          Back to Selection
+          選択に戻る
         </button>
 
         {/* Modern Premium Header */}
@@ -857,7 +864,7 @@ export default function PaymentEntry() {
                   {selectedOption.title} Entry
                 </h2>
                 <span className="hidden sm:inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-100 uppercase tracking-wider">
-                  Module
+                  モジュール
                 </span>
               </div>
               <p className="text-base text-gray-500 leading-relaxed max-w-2xl">
@@ -873,8 +880,8 @@ export default function PaymentEntry() {
         {/* Modern Payment Tracking Data Table */}
         <div className="bg-white border border-gray-200 rounded-md shadow-sm overflow-hidden mb-8">
           <div className="px-6 py-4 border-b border-gray-200 bg-[#F8F9FA] flex justify-between items-center">
-            <h3 className="text-lg font-bold text-[#162D50]">Installment / Payment Tracking</h3>
-            <span className="text-sm text-gray-500">{filteredRecords.length} records found</span>
+            <h3 className="text-lg font-bold text-[#162D50]">分割払い・支払追跡</h3>
+            <span className="text-sm text-gray-500">{filteredRecords.length} 件見つかりました</span>
           </div>
           
           {/* アクション Toolbar */}
@@ -887,7 +894,7 @@ export default function PaymentEntry() {
                 </div>
                 <input
                   type="text"
-                  placeholder="Search by 案件ID, スタッフID, or Name..."
+                  placeholder="案件ID、スタッフID、名前で検索..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="pl-9 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:ring-blue-500 focus:border-blue-500 w-full md:w-80"
@@ -914,7 +921,7 @@ export default function PaymentEntry() {
                     onChange={(e) => setExpenseTypeFilter(e.target.value)}
                     className="appearance-none pl-3 pr-8 py-2 border border-gray-300 rounded-lg text-sm text-gray-700 bg-white focus:ring-blue-500 focus:border-blue-500 cursor-pointer"
                   >
-                    <option value="All">All 経費の種類s</option>
+                    <option value="All">全ての経費の種類</option>
                     <option value="Waiting Dormitory Fee">寮費待機</option>
                     <option value="WIFI">WIFI</option>
                     <option value="Travel">交通費</option>
@@ -928,7 +935,7 @@ export default function PaymentEntry() {
                     onChange={(e) => setステータスFilter(e.target.value)}
                     className="appearance-none pl-3 pr-8 py-2 border border-gray-300 rounded-lg text-sm text-gray-700 bg-white focus:ring-blue-500 focus:border-blue-500 cursor-pointer"
                   >
-                    <option value="All">All ステータス</option>
+                    <option value="All">全てのステータス</option>
                     <option value="支払済">支払済</option>
                     <option value="保留中">保留中</option>
                     <option value="期限切れ">期限切れ</option>
@@ -942,7 +949,7 @@ export default function PaymentEntry() {
             <div className="flex items-center gap-3">
               {selectedRows.length > 0 && (
                 <span className="text-sm font-medium text-blue-600 bg-blue-50 px-3 py-1.5 rounded-lg border border-blue-100">
-                  {selectedRows.length} items selected
+                  {selectedRows.length} 件選択中
                 </span>
               )}
               <button onClick={() => generateGlobalPDF('download', filteredRecords)} className="flex items-center gap-2 px-3 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 bg-white transition-colors">
@@ -951,7 +958,7 @@ export default function PaymentEntry() {
               </button>
               <button onClick={() => generateGlobalPDF('print', filteredRecords)} className="flex items-center gap-2 px-3 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 bg-white transition-colors">
                 <Printer className="w-4 h-4" />
-                Print
+                印刷
               </button>
             </div>
           </div>
@@ -972,14 +979,14 @@ export default function PaymentEntry() {
                     />
                   </th>
                   <th className="py-4 px-6">案件ID</th>
-                  <th className="py-4 px-6">スタッフID & Name</th>
+                  <th className="py-4 px-6">スタッフID & 名前</th>
                   <th className="py-4 px-6">配属先</th>
                   <th className="py-4 px-6">経費の種類</th>
-                  <th className="py-4 px-6">Payment 日付 (Start - End)</th>
+                  <th className="py-4 px-6">支払日付（開始〜終了）</th>
                   <th className="py-4 px-6">進捗</th>
-                  <th className="py-4 px-6">Next Payment / Total 支払済</th>
+                  <th className="py-4 px-6">次回支払 / 総支払済</th>
                   {hasBouncedPayments && <th className="py-4 px-6 text-center">不渡り</th>}
-                  <th className="py-4 px-6 text-right">残り Balance</th>
+                  <th className="py-4 px-6 text-right">残り残高</th>
                   <th className="py-4 px-6 text-center">ステータス</th>
                   <th className="py-4 px-6 text-right">アクション</th>
                 </tr>
@@ -988,7 +995,7 @@ export default function PaymentEntry() {
                 {filteredRecords.length === 0 ? (
                   <tr>
                     <td colSpan="12" className="py-8 text-center text-gray-500">
-                      いいえ records found matching your filters.
+                      フィルターに一致するレコードが見つかりませんでした。
                     </td>
                   </tr>
                 ) : (
@@ -1066,7 +1073,7 @@ export default function PaymentEntry() {
                               ¥{(record.originalCase.finalTotal || record.originalCase.totalExpense || 0).toLocaleString()}
                             </div>
                             <div className="text-xs mt-0.5 text-green-500 font-bold uppercase tracking-wider">
-                              Total 支払済
+                              合計支払済
                             </div>
                           </>
                         ) : (
@@ -1105,14 +1112,14 @@ export default function PaymentEntry() {
                           <div className="flex items-center justify-end space-x-2">
                             <button 
                               onClick={() => handleDownloadPDF(record)}
-                              title="Download PDF Receipt"
+                              title="PDFレシートをダウンロード"
                               className="p-1.5 text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-md transition-colors"
                             >
                               <Download className="w-4 h-4" />
                             </button>
                             <button 
                               onClick={() => handleDownloadPDF(record, 'print')}
-                              title="Print Record"
+                              title="レコードを印刷"
                               className="p-1.5 text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-md transition-colors"
                             >
                               <Printer className="w-4 h-4" />
@@ -1317,7 +1324,7 @@ function PaymentEntryForm({ caseId, termNumber, navigate }) {
           className="flex items-center text-[#162D50] hover:underline font-medium mb-6 transition-colors"
         >
           <ArrowLeft className="w-4 h-4 mr-1" />
-          Back to Selection
+          選択に戻る
         </button>
 
         <div className="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
