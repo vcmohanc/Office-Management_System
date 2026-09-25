@@ -70,7 +70,7 @@ export default function B2BDashboard() {
     return () => controller.abort();
   }, [search, statusFilter]);
 
-  const handleStatusChange = (e) => {
+  const handleステータスChange = (e) => {
     if (e.target.value) {
       searchParams.set('status', e.target.value);
     } else {
@@ -95,14 +95,14 @@ export default function B2BDashboard() {
     return new Date(dateString).toLocaleDateString('en-US', options);
   };
 
-  const renderStatusBadge = (status) => {
+  const renderステータスBadge = (status) => {
     let bg = 'bg-gray-100';
     let text = 'text-gray-700';
 
     if (status === 'Active') {
       bg = 'bg-green-100';
       text = 'text-green-700';
-    } else if (status === 'Pending') {
+    } else if (status === '保留中') {
       bg = 'bg-orange-100';
       text = 'text-orange-700';
     } else if (status === 'Expiring Soon') {
@@ -157,7 +157,7 @@ export default function B2BDashboard() {
           ) : (
             <p className="text-2xl font-bold mb-1">{metrics.pendingProposalsCount}</p>
           )}
-          <p className="text-[10px] font-bold tracking-wider text-gray-500 uppercase">Pending Proposals</p>
+          <p className="text-[10px] font-bold tracking-wider text-gray-500 uppercase">保留中 Proposals</p>
         </div>
 
         <div className="bg-white rounded-xl p-5 flex flex-col items-center justify-center text-[#162D50] shadow-sm border border-gray-200 transition-transform hover:scale-105">
@@ -182,12 +182,12 @@ export default function B2BDashboard() {
           <div className="relative">
             <select
               value={statusFilter}
-              onChange={handleStatusChange}
+              onChange={handleステータスChange}
               className="appearance-none bg-white border border-gray-300 rounded-md pl-3 pr-10 py-1.5 text-sm text-gray-700 shadow-sm cursor-pointer hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-[#162D50]"
             >
-              <option value="">Filter by Status</option>
+              <option value="">Filter by ステータス</option>
               <option value="Active">Active</option>
-              <option value="Pending">Pending</option>
+              <option value="保留中">保留中</option>
               <option value="Expiring Soon">Expiring Soon</option>
               <option value="Terminated">Terminated</option>
             </select>
@@ -202,8 +202,8 @@ export default function B2BDashboard() {
               <tr className="border-b border-gray-200 bg-gray-50">
                 <th className="py-4 px-6 text-xs font-bold text-gray-500 uppercase tracking-wider">Partner Name</th>
                 <th className="py-4 px-6 text-xs font-bold text-gray-500 uppercase tracking-wider">Industry</th>
-                <th className="py-4 px-6 text-xs font-bold text-gray-500 uppercase tracking-wider">Contract Start Date</th>
-                <th className="py-4 px-6 text-xs font-bold text-gray-500 uppercase tracking-wider">Status</th>
+                <th className="py-4 px-6 text-xs font-bold text-gray-500 uppercase tracking-wider">Contract Start 日付</th>
+                <th className="py-4 px-6 text-xs font-bold text-gray-500 uppercase tracking-wider">ステータス</th>
                 <th className="py-4 px-6 text-xs font-bold text-gray-500 uppercase tracking-wider text-center">Actions</th>
               </tr>
             </thead>
@@ -236,7 +236,7 @@ export default function B2BDashboard() {
                     <td className="py-5 px-6 text-gray-600">{engagement.industry}</td>
                     <td className="py-5 px-6 text-gray-600">{formatDate(engagement.contract_start_date)}</td>
                     <td className="py-5 px-6">
-                      {renderStatusBadge(engagement.status)}
+                      {renderステータスBadge(engagement.status)}
                     </td>
                     <td className="py-5 px-6 text-center">
                       <button className="text-gray-400 hover:text-blue-600 hover:bg-blue-50 p-2 rounded transition-colors" title="View Details">

@@ -129,7 +129,7 @@ export default function DashboardHome({ setActiveTab }) {
         <div className="bg-white rounded-xl p-5 border border-gray-200 shadow-sm hover:border-blue-300 transition-colors cursor-default">
           <div className="flex items-center mb-4">
             <Users className="text-blue-500 w-5 h-5 mr-2" />
-            <h4 className="font-bold text-gray-800">HR Department</h4>
+            <h4 className="font-bold text-gray-800">人事部門</h4>
           </div>
           <div className="space-y-3">
             <div className="flex justify-between items-center text-sm">
@@ -137,7 +137,7 @@ export default function DashboardHome({ setActiveTab }) {
               <span className="font-semibold">{loading ? '...' : (dashboardStats?.hr?.totalStaff || 0)}</span>
             </div>
             <div className="flex justify-between items-center text-sm">
-              <span className="text-gray-500">Pending Visas</span>
+              <span className="text-gray-500">保留中 Visas</span>
               <span className="font-semibold text-orange-500">{loading ? '...' : (dashboardStats?.hr?.pendingVisas || 0)}</span>
             </div>
             <div className="flex justify-between items-center text-sm">
@@ -151,7 +151,7 @@ export default function DashboardHome({ setActiveTab }) {
         <div className="bg-white rounded-xl p-5 border border-gray-200 shadow-sm hover:border-green-300 transition-colors cursor-default">
           <div className="flex items-center mb-4">
             <Briefcase className="text-green-500 w-5 h-5 mr-2" />
-            <h4 className="font-bold text-gray-800">Account Department</h4>
+            <h4 className="font-bold text-gray-800">経理部門</h4>
           </div>
           <div className="space-y-3">
             <div className="flex justify-between items-center text-sm">
@@ -159,7 +159,7 @@ export default function DashboardHome({ setActiveTab }) {
               <span className="font-semibold">{loading ? '...' : (dashboardStats?.account?.openCases || 0)}</span>
             </div>
             <div className="flex justify-between items-center text-sm">
-              <span className="text-gray-500">Pending Settlements</span>
+              <span className="text-gray-500">保留中 Settlements</span>
               <span className="font-semibold text-orange-500">{loading ? '...' : (dashboardStats?.account?.pendingSettlements || 0)}</span>
             </div>
             <div className="flex justify-between items-center text-sm">
@@ -173,7 +173,7 @@ export default function DashboardHome({ setActiveTab }) {
         <div className="bg-white rounded-xl p-5 border border-gray-200 shadow-sm hover:border-purple-300 transition-colors cursor-default">
           <div className="flex items-center mb-4">
             <HeartHandshake className="text-purple-500 w-5 h-5 mr-2" />
-            <h4 className="font-bold text-gray-800">Support Department</h4>
+            <h4 className="font-bold text-gray-800">サポート部門</h4>
           </div>
           <div className="space-y-3">
             <div className="flex justify-between items-center text-sm">
@@ -211,7 +211,7 @@ export default function DashboardHome({ setActiveTab }) {
                   <th className="py-3 px-5 text-xs font-medium text-gray-500">Username</th>
                   <th className="py-3 px-5 text-xs font-medium text-gray-500">Role</th>
                   <th className="py-3 px-5 text-xs font-medium text-gray-500">Joined</th>
-                  <th className="py-3 px-5 text-xs font-medium text-gray-500 text-right">Status</th>
+                  <th className="py-3 px-5 text-xs font-medium text-gray-500 text-right">ステータス</th>
                 </tr>
               </thead>
               <tbody className="text-sm">

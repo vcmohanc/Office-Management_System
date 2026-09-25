@@ -116,7 +116,7 @@ export default function AdminUserList({ setActiveTab }) {
                     <th className="py-4 px-6 text-xs font-bold text-gray-500 uppercase tracking-wider">Username</th>
                     <th className="py-4 px-6 text-xs font-bold text-gray-500 uppercase tracking-wider">Role</th>
                     <th className="py-4 px-6 text-xs font-bold text-gray-500 uppercase tracking-wider">Password</th>
-                    <th className="py-4 px-6 text-xs font-bold text-gray-500 uppercase tracking-wider">Created Date</th>
+                    <th className="py-4 px-6 text-xs font-bold text-gray-500 uppercase tracking-wider">Created 日付</th>
                     <th className="py-4 px-6 text-xs font-bold text-gray-500 uppercase tracking-wider text-right">Actions</th>
                   </tr>
                 </thead>
@@ -149,9 +149,9 @@ export default function AdminUserList({ setActiveTab }) {
                               onChange={handleEditChange}
                               className="border border-gray-300 rounded px-2 py-1 focus:outline-none focus:border-blue-500 w-full"
                             >
-                              <option value="account">Account Department</option>
-                              <option value="hr">HR Department</option>
-                              <option value="support">Support Department</option>
+                              <option value="account">経理部門</option>
+                              <option value="hr">人事部門</option>
+                              <option value="support">サポート部門</option>
                               <option value="admin">System Admin</option>
                             </select>
                           ) : (

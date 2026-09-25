@@ -74,7 +74,7 @@ export default function SupportDashboard() {
         {/* Card 2 */}
         <div className="bg-white rounded-lg p-5 shadow-sm border border-gray-200">
           <div className="flex justify-between items-start mb-2">
-            <h3 className="text-sm font-medium text-gray-700">Leave Requests (Pending)</h3>
+            <h3 className="text-sm font-medium text-gray-700">Leave Requests (保留中)</h3>
             <div className="p-2 bg-gray-100 rounded-md text-gray-400 opacity-80">
               <Calendar className="w-5 h-5" />
             </div>
@@ -84,7 +84,7 @@ export default function SupportDashboard() {
               {loading ? '...' : data.pendingLeaves}
             </span>
             <div className="flex items-center bg-orange-50 text-orange-600 px-2 py-1 rounded text-xs font-semibold">
-              Requires Action
+              Requires アクション
             </div>
           </div>
         </div>
@@ -143,14 +143,14 @@ export default function SupportDashboard() {
                 <tr className="border-b border-gray-200 bg-white">
                   <th className="px-6 py-3 text-xs font-bold text-gray-500 uppercase tracking-wider">Staff Member</th>
                   <th className="px-6 py-3 text-xs font-bold text-gray-500 uppercase tracking-wider">Request Type</th>
-                  <th className="px-6 py-3 text-xs font-bold text-gray-500 uppercase tracking-wider">Status</th>
-                  <th className="px-6 py-3 text-xs font-bold text-gray-500 uppercase tracking-wider">Date/Time</th>
+                  <th className="px-6 py-3 text-xs font-bold text-gray-500 uppercase tracking-wider">ステータス</th>
+                  <th className="px-6 py-3 text-xs font-bold text-gray-500 uppercase tracking-wider">日付/Time</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
                 {loading ? (
                   <tr>
-                    <td colSpan="4" className="px-6 py-4 text-center text-sm text-gray-500">Loading...</td>
+                    <td colSpan="4" className="px-6 py-4 text-center text-sm text-gray-500">読み込み中...</td>
                   </tr>
                 ) : data.recentActivity.length === 0 ? (
                   <tr>
@@ -214,7 +214,7 @@ export default function SupportDashboard() {
                 </div>
                 <div>
                   <h4 className="text-sm font-bold text-[#162D50]">Verify Overtime Logs</h4>
-                  <p className="text-xs text-red-500 mt-1">Assigned to: Michael C. &bull; Overdue</p>
+                  <p className="text-xs text-red-500 mt-1">Assigned to: Michael C. &bull; 期限切れ</p>
                 </div>
               </div>
 

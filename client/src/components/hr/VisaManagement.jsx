@@ -11,8 +11,8 @@ export default function VisaManagement() {
   const [selectedStaff, setSelectedStaff] = useState(null);
   const [newExpiryDate, setNewExpiryDate] = useState('');
   const [newStartDate, setNewStartDate] = useState('');
-  const [newVisaStatus, setNewVisaStatus] = useState('Renewal In Progress');
-  const [newVisaAppStatus, setNewVisaAppStatus] = useState('Not Applied');
+  const [newVisaステータス, setNewVisaステータス] = useState('Renewal In Progress');
+  const [newVisaAppステータス, setNewVisaAppステータス] = useState('Not Applied');
   const [isSubmitting, setIsSubmitting] = useState(false);
   useEffect(() => {
     fetchStaff();
@@ -32,8 +32,8 @@ export default function VisaManagement() {
       });
   };
 
-  const getVisaStatus = (emp) => {
-    if (emp.visaStatus === 'Renewal In Progress') return 'Renewal In Progress';
+  const getVisaステータス = (emp) => {
+    if (emp.visaステータス === 'Renewal In Progress') return 'Renewal In Progress';
     if (!emp.visaEndDate) return 'Active'; // Default if no date provided
     
     const endDate = new Date(emp.visaEndDate);
@@ -46,25 +46,25 @@ export default function VisaManagement() {
     return 'Active';
   };
 
-  const handleActionClick = (emp, actionType) => {
-    if (actionType === 'Action Required' || actionType === 'Renew' || actionType === 'Details') {
+  const handleアクションClick = (emp, actionType) => {
+    if (actionType === 'アクション Required' || actionType === 'Renew' || actionType === 'Details') {
       setSelectedStaff(emp);
       setNewExpiryDate(emp.visaEndDate ? new Date(emp.visaEndDate).toISOString().split('T')[0] : '');
       setNewStartDate(emp.visaStartDate ? new Date(emp.visaStartDate).toISOString().split('T')[0] : '');
-      setNewVisaStatus('Renewal In Progress');
-      setNewVisaAppStatus(emp.visaAppStatus || 'Not Applied');
+      setNewVisaステータス('Renewal In Progress');
+      setNewVisaAppステータス(emp.visaAppステータス || 'Not Applied');
       setIsModalOpen(true);
     }
   };
 
-  const handleAppStatusChange = (e) => {
+  const handleAppステータスChange = (e) => {
     const status = e.target.value;
-    setNewVisaAppStatus(status);
+    setNewVisaAppステータス(status);
     
-    if (status === 'Approved') {
-      setNewVisaStatus('Employment Visa');
+    if (status === '承認済') {
+      setNewVisaステータス('Employment Visa');
     } else if (status === 'Waiting for Visa' || status === 'Applied') {
-      setNewVisaStatus('Renewal In Progress');
+      setNewVisaステータス('Renewal In Progress');
     }
   };
 
@@ -85,8 +85,8 @@ export default function VisaManagement() {
           ...selectedStaff, 
           visaEndDate: newExpiryDate, 
           visaStartDate: newStartDate,
-          visaStatus: newVisaStatus, 
-          visaAppStatus: newVisaAppStatus,
+          visaステータス: newVisaステータス, 
+          visaAppステータス: newVisaAppステータス,
           visaExpiryHistory: history
         }),
       });
@@ -97,8 +97,8 @@ export default function VisaManagement() {
             ...emp, 
             visaEndDate: newExpiryDate, 
             visaStartDate: newStartDate,
-            visaStatus: newVisaStatus, 
-            visaAppStatus: newVisaAppStatus,
+            visaステータス: newVisaステータス, 
+            visaAppステータス: newVisaAppステータス,
             visaExpiryHistory: history
           } : emp
         ));
@@ -117,17 +117,17 @@ export default function VisaManagement() {
     const nameStr = `${emp.romajiName || ''} ${emp.katakanaName || ''}`.toLowerCase();
     const matchesSearch = nameStr.includes(searchString) || (emp._id && emp._id.toLowerCase().includes(searchString));
     
-    const status = getVisaStatus(emp);
-    const matchesStatus = status === 'Expired' || status === 'Renewal In Progress' || status === 'Expiring Soon';
+    const status = getVisaステータス(emp);
+    const matchesステータス = status === 'Expired' || status === 'Renewal In Progress' || status === 'Expiring Soon';
 
-    return matchesSearch && matchesStatus;
+    return matchesSearch && matchesステータス;
   });
 
   // Calculate Metrics
-  const activeVisas = employees.filter(e => getVisaStatus(e) === 'Active').length;
-  const expiringSoon = employees.filter(e => getVisaStatus(e) === 'Expiring Soon').length;
-  const expired = employees.filter(e => getVisaStatus(e) === 'Expired').length;
-  const pendingRenewals = employees.filter(e => getVisaStatus(e) === 'Renewal In Progress').length;
+  const activeVisas = employees.filter(e => getVisaステータス(e) === 'Active').length;
+  const expiringSoon = employees.filter(e => getVisaステータス(e) === 'Expiring Soon').length;
+  const expired = employees.filter(e => getVisaステータス(e) === 'Expired').length;
+  const pendingRenewals = employees.filter(e => getVisaステータス(e) === 'Renewal In Progress').length;
 
   return (
     <div className="w-full pb-10">
@@ -157,7 +157,7 @@ export default function VisaManagement() {
           <Search className="w-5 h-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
           <input 
             type="text" 
-            placeholder="Search by Staff Name or ID..." 
+            placeholder="Search by スタッフ名 or ID..." 
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-[#162D50] bg-white"
@@ -202,22 +202,22 @@ export default function VisaManagement() {
                 </tr>
               ) : (
                 filteredEmployees.map((employee) => {
-                  const status = getVisaStatus(employee);
+                  const status = getVisaステータス(employee);
                   let statusBadge = null;
                   let actionButton = null;
 
                   if (status === 'Active') {
                     statusBadge = <span className="bg-green-50 text-green-600 border border-green-200 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider">Active</span>;
-                    actionButton = <button onClick={() => handleActionClick(employee, 'View')} className="text-[#162D50] font-bold hover:underline text-sm">View</button>;
+                    actionButton = <button onClick={() => handleアクションClick(employee, 'View')} className="text-[#162D50] font-bold hover:underline text-sm">表示</button>;
                   } else if (status === 'Expiring Soon') {
                     statusBadge = <span className="bg-blue-50 text-blue-600 border border-blue-200 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider">Expiring Soon</span>;
-                    actionButton = <button onClick={() => handleActionClick(employee, 'Renew')} className="bg-[#162D50] text-white px-4 py-1.5 rounded text-xs font-bold hover:bg-[#0f1f38] transition-colors shadow-sm">Renew</button>;
+                    actionButton = <button onClick={() => handleアクションClick(employee, 'Renew')} className="bg-[#162D50] text-white px-4 py-1.5 rounded text-xs font-bold hover:bg-[#0f1f38] transition-colors shadow-sm">Renew</button>;
                   } else if (status === 'Expired') {
                     statusBadge = <span className="bg-red-50 text-red-600 border border-red-200 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider">Expired</span>;
-                    actionButton = <button onClick={() => handleActionClick(employee, 'Action Required')} className="bg-red-600 text-white px-3 py-1.5 rounded text-xs font-bold hover:bg-red-700 transition-colors shadow-sm whitespace-nowrap">Action Required</button>;
+                    actionButton = <button onClick={() => handleアクションClick(employee, 'アクション Required')} className="bg-red-600 text-white px-3 py-1.5 rounded text-xs font-bold hover:bg-red-700 transition-colors shadow-sm whitespace-nowrap">アクション Required</button>;
                   } else {
                     statusBadge = <span className="bg-yellow-50 text-yellow-600 border border-yellow-200 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider">Renewal In Progress</span>;
-                    actionButton = <button onClick={() => handleActionClick(employee, 'Details')} className="text-[#162D50] font-bold hover:underline text-sm">Details</button>;
+                    actionButton = <button onClick={() => handleアクションClick(employee, 'Details')} className="text-[#162D50] font-bold hover:underline text-sm">Details</button>;
                   }
 
                   return (
@@ -225,19 +225,19 @@ export default function VisaManagement() {
                       <td className="py-4 px-6 text-gray-800 font-medium">#{employee._id?.slice(-6).toUpperCase()}</td>
                       <td className="py-4 px-6 font-bold text-[#162D50]">{employee.romajiName || 'N/A'}</td>
                       <td className="py-4 px-6 text-gray-600">{employee.nationality || 'N/A'}</td>
-                      <td className="py-4 px-6 text-gray-600">{employee.visaStatus || 'Employment Visa'}</td>
+                      <td className="py-4 px-6 text-gray-600">{employee.visaステータス || 'Employment Visa'}</td>
                       <td className="py-4 px-6 text-gray-600">
                         {employee.visaEndDate ? new Date(employee.visaEndDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'N/A'}
                       </td>
                       <td className="py-4 px-6">
                         <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${
-                          employee.visaAppStatus === 'Applied' ? 'bg-indigo-50 text-indigo-600 border border-indigo-200' :
-                          employee.visaAppStatus === 'Waiting for Visa' ? 'bg-yellow-50 text-yellow-600 border border-yellow-200' :
-                          employee.visaAppStatus === 'Approved' ? 'bg-green-50 text-green-600 border border-green-200' :
-                          employee.visaAppStatus === 'Rejected' ? 'bg-red-50 text-red-600 border border-red-200' :
+                          employee.visaAppステータス === 'Applied' ? 'bg-indigo-50 text-indigo-600 border border-indigo-200' :
+                          employee.visaAppステータス === 'Waiting for Visa' ? 'bg-yellow-50 text-yellow-600 border border-yellow-200' :
+                          employee.visaAppステータス === '承認済' ? 'bg-green-50 text-green-600 border border-green-200' :
+                          employee.visaAppステータス === '拒否' ? 'bg-red-50 text-red-600 border border-red-200' :
                           'bg-gray-50 text-gray-500 border border-gray-200'
                         }`}>
-                          {employee.visaAppStatus || 'Not Applied'}
+                          {employee.visaAppステータス || 'Not Applied'}
                         </span>
                       </td>
                       <td className="py-4 px-6">
@@ -277,14 +277,14 @@ export default function VisaManagement() {
           <div className="bg-white rounded-xl shadow-2xl max-w-lg w-full overflow-hidden flex flex-col">
             <div className="p-6 border-b border-gray-100 bg-[#F8F9FA] flex justify-between items-center">
               <div>
-                <h3 className="text-xl font-bold text-[#162D50]">Update Visa Status</h3>
+                <h3 className="text-xl font-bold text-[#162D50]">Update Visa ステータス</h3>
                 <p className="text-sm text-gray-500 mt-1">For {selectedStaff.romajiName}</p>
               </div>
             </div>
             <div className="p-6 flex-1 overflow-y-auto">
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-1">Current Expiry Date</label>
+                  <label className="block text-sm font-semibold text-gray-700 mb-1">Current Expiry 日付</label>
                   <div className="w-full p-3 border border-gray-200 rounded-lg bg-gray-50 text-gray-600 font-medium cursor-not-allowed">
                     {selectedStaff.visaEndDate ? new Date(selectedStaff.visaEndDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'N/A'}
                   </div>
@@ -292,7 +292,7 @@ export default function VisaManagement() {
                 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-1">New Start Date</label>
+                    <label className="block text-sm font-semibold text-gray-700 mb-1">New Start 日付</label>
                     <input 
                       type="date" 
                       value={newStartDate}
@@ -301,7 +301,7 @@ export default function VisaManagement() {
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-1">New Expiry Date <span className="text-red-500">*</span></label>
+                    <label className="block text-sm font-semibold text-gray-700 mb-1">New Expiry 日付 <span className="text-red-500">*</span></label>
                     <input 
                       type="date" 
                       value={newExpiryDate}
@@ -312,10 +312,10 @@ export default function VisaManagement() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-1">New Status</label>
+                  <label className="block text-sm font-semibold text-gray-700 mb-1">New ステータス</label>
                   <select
-                    value={newVisaStatus}
-                    onChange={(e) => setNewVisaStatus(e.target.value)}
+                    value={newVisaステータス}
+                    onChange={(e) => setNewVisaステータス(e.target.value)}
                     className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#162D50] focus:border-[#162D50] outline-none transition-all"
                   >
                     <option value="Renewal In Progress">Renewal In Progress</option>
@@ -325,17 +325,17 @@ export default function VisaManagement() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-1">Application Status</label>
+                  <label className="block text-sm font-semibold text-gray-700 mb-1">Application ステータス</label>
                   <select
-                    value={newVisaAppStatus}
-                    onChange={handleAppStatusChange}
+                    value={newVisaAppステータス}
+                    onChange={handleAppステータスChange}
                     className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#162D50] focus:border-[#162D50] outline-none transition-all"
                   >
                     <option value="Not Applied">Not Applied</option>
                     <option value="Applied">Applied</option>
                     <option value="Waiting for Visa">Waiting for Visa</option>
-                    <option value="Approved">Approved</option>
-                    <option value="Rejected">Rejected</option>
+                    <option value="承認済">承認済</option>
+                    <option value="拒否">拒否</option>
                   </select>
                 </div>
               </div>

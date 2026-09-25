@@ -7,24 +7,24 @@ export default function Settings({ user }) {
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [status, setStatus] = useState({ type: '', message: '' });
+  const [status, setステータス] = useState({ type: '', message: '' });
   const [isLoading, setIsLoading] = useState(false);
 
   const handlePasswordSubmit = async (e) => {
     e.preventDefault();
     
     if (newPassword !== confirmPassword) {
-      setStatus({ type: 'error', message: 'New passwords do not match.' });
+      setステータス({ type: 'error', message: 'New passwords do not match.' });
       return;
     }
 
     if (newPassword.length < 6) {
-      setStatus({ type: 'error', message: 'Password must be at least 6 characters long.' });
+      setステータス({ type: 'error', message: 'Password must be at least 6 characters long.' });
       return;
     }
 
     setIsLoading(true);
-    setStatus({ type: '', message: '' });
+    setステータス({ type: '', message: '' });
 
     try {
       const response = await apiFetch('/api/auth/update-password', {
@@ -35,15 +35,15 @@ export default function Settings({ user }) {
       const data = await response.json();
 
       if (response.ok) {
-        setStatus({ type: 'success', message: 'Password updated successfully!' });
+        setステータス({ type: 'success', message: 'Password updated successfully!' });
         setCurrentPassword('');
         setNewPassword('');
         setConfirmPassword('');
       } else {
-        setStatus({ type: 'error', message: data.error || 'Failed to update password.' });
+        setステータス({ type: 'error', message: data.error || 'Failed to update password.' });
       }
     } catch (err) {
-      setStatus({ type: 'error', message: 'Network error occurred. Please try again.' });
+      setステータス({ type: 'error', message: 'Network error occurred. Please try again.' });
     } finally {
       setIsLoading(false);
     }
@@ -68,7 +68,7 @@ export default function Settings({ user }) {
               </div>
               <div>
                 <h3 className="text-xl font-bold text-gray-800 capitalize">{user?.username || 'User'}</h3>
-                <p className="text-gray-500 capitalize">{user?.role === 'admin' ? 'System Administrator' : `${user?.role} Department`}</p>
+                <p className="text-gray-500 capitalize">{user?.role === 'admin' ? 'システム管理者' : `${user?.role} Department`}</p>
               </div>
             </div>
 

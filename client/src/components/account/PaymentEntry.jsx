@@ -21,25 +21,25 @@ export default function PaymentEntry() {
   const [selectedCaseToProcess, setSelectedCaseToProcess] = useState(null);
   const [paymentMethod, setPaymentMethod] = useState('');
   const [deductions, setDeductions] = useState(0);
-  const [destinationDetails, setDestinationDetails] = useState({});
+  const [destinationDetails, set目的地Details] = useState({});
   const [transactionRefId, setTransactionRefId] = useState('');
   const [isConfirmed, setIsConfirmed] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [is送信ting, setIs送信ting] = useState(false);
 
   // Filter State
   const [searchTerm, setSearchTerm] = useState('');
   const [expenseTypeFilter, setExpenseTypeFilter] = useState('All');
-  const [statusFilter, setStatusFilter] = useState('All');
+  const [statusFilter, setステータスFilter] = useState('All');
   const [dateFilter, setDateFilter] = useState('');
 
   const generateGlobalPDF = (action = 'download', currentFilteredRecords = []) => {
     setTimeout(() => {
       try {
-        const recordsToExport = selectedRows.length > 0
+        const recordsToエクスポート = selectedRows.length > 0
           ? currentFilteredRecords.filter(r => selectedRows.includes(r.rawId))
           : currentFilteredRecords;
 
-        if (recordsToExport.length === 0) return toast.error('No records to export.');
+        if (recordsToエクスポート.length === 0) return toast.error('いいえ records to export.');
 
         const doc = new jsPDF({ orientation: 'portrait' });
         const pageWidth = doc.internal.pageSize.width;
@@ -67,14 +67,14 @@ export default function PaymentEntry() {
         doc.setFontSize(8.5);
         doc.setTextColor(200, 215, 240);
         const dateStr   = `Generated: ${new Date().toLocaleDateString('en-GB', { day:'2-digit', month:'short', year:'numeric' })}`;
-        const countStr  = `Total Records: ${recordsToExport.length}`;
+        const countStr  = `総レコード数: ${recordsToエクスポート.length}`;
         doc.text(dateStr,  pageWidth - 14 - doc.getTextWidth(dateStr),  11);
         doc.text(countStr, pageWidth - 14 - doc.getTextWidth(countStr), 20);
 
         // ── SUMMARY STATS BAR ────────────────────────────────────
-        const totalPaid    = recordsToExport.filter(r => r.status === 'Paid' || r.status === 'Completed').length;
-        const totalOverdue = recordsToExport.filter(r => r.status === 'Overdue').length;
-        const totalAmt     = recordsToExport.reduce((s, r) => s + (r.originalCase.finalTotal || r.originalCase.totalExpense || 0), 0);
+        const total支払済    = recordsToエクスポート.filter(r => r.status === '支払済' || r.status === '完了').length;
+        const total期限切れ = recordsToエクスポート.filter(r => r.status === '期限切れ').length;
+        const totalAmt     = recordsToエクスポート.reduce((s, r) => s + (r.originalCase.finalTotal || r.originalCase.totalExpense || 0), 0);
 
         doc.setFillColor(...lightBg);
         doc.rect(0, 28, pageWidth, 14, 'F');
@@ -83,10 +83,10 @@ export default function PaymentEntry() {
         doc.line(0, 42, pageWidth, 42);
 
         const stats = [
-          { label: 'Total Cases', value: String(recordsToExport.length) },
-          { label: 'Paid',        value: String(totalPaid) },
-          { label: 'Overdue',     value: String(totalOverdue) },
-          { label: 'Total Amount',value: `JPY ${totalAmt.toLocaleString()}` },
+          { label: '総案件数', value: String(recordsToエクスポート.length) },
+          { label: '支払済',        value: String(total支払済) },
+          { label: '期限切れ',     value: String(total期限切れ) },
+          { label: '合計金額',value: `JPY ${totalAmt.toLocaleString()}` },
         ];
         const colW = pageWidth / stats.length;
         stats.forEach((s, i) => {
@@ -102,7 +102,7 @@ export default function PaymentEntry() {
         });
 
         // ── DATA TABLE ───────────────────────────────────────────
-        const tableData = recordsToExport.map(r => [
+        const tableData = recordsToエクスポート.map(r => [
           r.id,
           r.name,
           r.staffId,
@@ -117,7 +117,7 @@ export default function PaymentEntry() {
         autoTable(doc, {
           startY: 46,
           margin: { left: 10, right: 10 },
-          head: [['Case ID', 'Name', 'Staff ID', 'Work Place', 'Expense Type', 'Period', 'Progress', 'Remaining', 'Status']],
+          head: [['案件ID', 'Name', 'スタッフID', 'Work Place', '経費の種類', '期間', '進捗', '残り', 'ステータス']],
           body: tableData,
           theme: 'grid',
           styles: {
@@ -147,8 +147,8 @@ export default function PaymentEntry() {
           didParseCell: (hookData) => {
             if (hookData.section === 'body' && hookData.column.index === 8) {
               const val = hookData.cell.raw;
-              if (val === 'Paid' || val === 'Completed')      { hookData.cell.styles.textColor = [22, 163, 74];  hookData.cell.styles.fontStyle = 'bold'; }
-              else if (val === 'Overdue')                      { hookData.cell.styles.textColor = [220, 38, 38];  hookData.cell.styles.fontStyle = 'bold'; }
+              if (val === '支払済' || val === '完了')      { hookData.cell.styles.textColor = [22, 163, 74];  hookData.cell.styles.fontStyle = 'bold'; }
+              else if (val === '期限切れ')                      { hookData.cell.styles.textColor = [220, 38, 38];  hookData.cell.styles.fontStyle = 'bold'; }
               else if (val === 'Near Completion')              { hookData.cell.styles.textColor = [59, 130, 246]; hookData.cell.styles.fontStyle = 'bold'; }
             }
           },
@@ -200,12 +200,12 @@ export default function PaymentEntry() {
   useEffect(() => {
     if (selectedCaseToProcess) {
       const totalTerms = selectedCaseToProcess.installmentPlan ? (selectedCaseToProcess.installmentPlan.match(/\d+/) ? parseInt(selectedCaseToProcess.installmentPlan.match(/\d+/)[0], 10) : 1) : 1;
-      const claimAmount = selectedCaseToProcess.nextPaymentAmount || Math.round((selectedCaseToProcess.finalTotal || selectedCaseToProcess.totalExpense || 0) / totalTerms);
+      const claim金額 = selectedCaseToProcess.nextPayment金額 || Math.round((selectedCaseToProcess.finalTotal || selectedCaseToProcess.totalExpense || 0) / totalTerms);
       const advanceToRecover = selectedCaseToProcess.previousBalance || 0;
       
       if (paymentMethod === 'Payroll Deduction') {
         // If it's a payroll deduction, the entire claim amount is a deduction
-        setDeductions(claimAmount);
+        setDeductions(claim金額);
       } else if (advanceToRecover > 0) {
         setDeductions(Math.round(advanceToRecover / totalTerms));
       } else {
@@ -214,13 +214,13 @@ export default function PaymentEntry() {
     }
   }, [selectedCaseToProcess, paymentMethod]);
 
-  const handleFormSubmit = async (e) => {
+  const handleForm送信 = async (e) => {
     e.preventDefault();
     if (!selectedCaseToProcess || !isConfirmed) return;
 
-    setIsSubmitting(true);
+    setIs送信ting(true);
     const totalTerms = selectedCaseToProcess.installmentPlan ? (selectedCaseToProcess.installmentPlan.match(/\d+/) ? parseInt(selectedCaseToProcess.installmentPlan.match(/\d+/)[0], 10) : 1) : 1;
-    const claimAmount = selectedCaseToProcess.nextPaymentAmount || 
+    const claim金額 = selectedCaseToProcess.nextPayment金額 || 
                         Math.round((selectedCaseToProcess.finalTotal || selectedCaseToProcess.totalExpense || 0) / totalTerms);
     
     const payload = {
@@ -229,9 +229,9 @@ export default function PaymentEntry() {
       paymentMethod,
       destinationDetails,
       financials: {
-        claimAmount,
+        claim金額,
         deductions,
-        netPayable: claimAmount - deductions
+        netPayable: claim金額 - deductions
       },
       transactionRefId,
       paymentDate: e.target[e.target.length - 3].value, // Getting date from form
@@ -251,10 +251,10 @@ export default function PaymentEntry() {
         // Update local cases list to reflect settled status and increment paid terms
         setCases(cases.map(c => {
           if (c._id === selectedCaseToProcess._id) {
-            const newPaidTerms = (c.paidTerms || 0) + 1;
+            const new支払済Terms = (c.paidTerms || 0) + 1;
             const totalTerms = c.installmentPlan ? (c.installmentPlan.match(/\d+/) ? parseInt(c.installmentPlan.match(/\d+/)[0], 10) : 1) : 1;
-            const newStatus = newPaidTerms >= totalTerms ? 'Completed' : 'Processing';
-            return { ...c, paidTerms: newPaidTerms, status: newStatus };
+            const newステータス = new支払済Terms >= totalTerms ? '完了' : '処理中';
+            return { ...c, paidTerms: new支払済Terms, status: newステータス };
           }
           return c;
         }));
@@ -263,7 +263,7 @@ export default function PaymentEntry() {
         setSelectedCaseToProcess(null);
         setPaymentMethod('');
         setDeductions(0);
-        setDestinationDetails({});
+        set目的地Details({});
         setTransactionRefId('');
         setIsConfirmed(false);
       } else {
@@ -274,11 +274,11 @@ export default function PaymentEntry() {
       console.error('Error processing settlement:', error);
       toast.error('Network error while processing settlement');
     } finally {
-      setIsSubmitting(false);
+      setIs送信ting(false);
     }
   };
 
-  const handleDeleteRecord = async (record) => {
+  const handle削除Record = async (record) => {
     const confirmed = await toastConfirm(`Are you sure you want to delete ${record.id}?`);
     if (!confirmed) return;
     try {
@@ -368,15 +368,15 @@ export default function PaymentEntry() {
       doc.setLineWidth(0.25);
       doc.line(0, statusTop + statusH, pageWidth, statusTop + statusH);
 
-      const statusColor = record.status === 'Paid' || record.status === 'Completed'
-        ? [22, 163, 74] : record.status === 'Overdue'
+      const statusColor = record.status === '支払済' || record.status === '完了'
+        ? [22, 163, 74] : record.status === '期限切れ'
         ? [220, 38, 38] : [59, 130, 246];
 
       const statusMidY = statusTop + statusH * 0.62;
       doc.setFont('helvetica', 'bold');
       doc.setFontSize(fs(9.5));
       doc.setTextColor(...statusColor);
-      doc.text(`Status: ${record.status}`, 11, statusMidY);
+      doc.text(`ステータス: ${record.status}`, 11, statusMidY);
 
       const progressPct = record.totalTerms > 0
         ? Math.round((record.paidTerms / record.totalTerms) * 100) : 0;
@@ -384,13 +384,13 @@ export default function PaymentEntry() {
       doc.setFontSize(fs(7.5));
       doc.setTextColor(100, 116, 139);
       doc.text(
-        `Progress: ${record.paidTerms}/${record.totalTerms} payments (${progressPct}%)`,
+        `進捗: ${record.paidTerms}/${record.totalTerms} payments (${progressPct}%)`,
         pageWidth / 2, statusMidY, { align: 'center' }
       );
       doc.setFont('helvetica', 'bold');
       doc.setFontSize(fs(8.5));
       doc.setTextColor(...primaryColor);
-      const remStr = `Remaining: JPY ${record.remainingBalance.toLocaleString()}`;
+      const remStr = `残り: JPY ${record.remainingBalance.toLocaleString()}`;
       doc.text(remStr, pageWidth - 10 - doc.getTextWidth(remStr), statusMidY);
 
       // ── SHARED TABLE STYLES ───────────────────────────────────
@@ -423,16 +423,16 @@ export default function PaymentEntry() {
         margin,
         head: [['Field', 'Details']],
         body: [
-          ['Case ID',          record.id],
-          ['Staff Name',       record.name],
-          ['Staff ID',         record.staffId || '—'],
+          ['案件ID',          record.id],
+          ['スタッフ名',       record.name],
+          ['スタッフID',         record.staffId || '—'],
           ['Work Place',       record.workPlace],
-          ['Expense Type',     record.expenseType],
-          ['Payment Period',   `${record.startDate} → ${record.endDate}`],
+          ['経費の種類',     record.expenseType],
+          ['Payment 期間',   `${record.startDate} → ${record.endDate}`],
           ['Installment Plan', `${record.paidTerms} of ${record.totalTerms} payments completed`],
-          ['Remaining Balance',`JPY ${record.remainingBalance.toLocaleString()}`],
-          ['Status',           record.status],
-          ['Export Date',      new Date().toLocaleDateString('en-GB', { day:'2-digit', month:'short', year:'numeric' })],
+          ['残り Balance',`JPY ${record.remainingBalance.toLocaleString()}`],
+          ['ステータス',           record.status],
+          ['エクスポート 日付',      new Date().toLocaleDateString('en-GB', { day:'2-digit', month:'short', year:'numeric' })],
         ],
         theme: 'grid',
         styles: sharedStyles,
@@ -463,7 +463,7 @@ export default function PaymentEntry() {
       autoTable(doc, {
         startY: curY + titleGap,
         margin,
-        head: [['Base Claim Amount', 'Status', 'Installment Plan', 'Terms Paid', 'Remaining Balance']],
+        head: [['Base Claim 金額', 'ステータス', 'Installment Plan', 'Terms 支払済', '残り Balance']],
         body: [[
           `JPY ${baseClaimAmt.toLocaleString()}`,
           record.status,
@@ -493,8 +493,8 @@ export default function PaymentEntry() {
         || record.originalCase.settlement_method
         || record.originalCase.settlementMethod
         || 'N/A';
-      const startMonth = record.originalCase.expensePeriodStart
-        ? new Date(record.originalCase.expensePeriodStart).toLocaleDateString('en-GB', { year: 'numeric', month: '2-digit' })
+      const startMonth = record.originalCase.expense期間Start
+        ? new Date(record.originalCase.expense期間Start).toLocaleDateString('en-GB', { year: 'numeric', month: '2-digit' })
         : record.startDate || 'N/A';
 
       curY = doc.lastAutoTable.finalY + secGap;
@@ -538,13 +538,13 @@ export default function PaymentEntry() {
 
         let txHead = [];
         if (pMethod === 'Pay in Salary' || pMethod === 'Payroll Deduction') {
-          txHead = ['Term', 'Date', 'Net Payable', 'Status', 'Payroll Period', 'Ref No.'];
+          txHead = ['Term', '日付', 'Net Payable', 'ステータス', 'Payroll 期間', 'Ref いいえ.'];
         } else if (pMethod === 'Company Check') {
-          txHead = ['Term', 'Date', 'Net Payable', 'Status', 'Check No', 'Delivery', 'Ref No.'];
+          txHead = ['Term', '日付', 'Net Payable', 'ステータス', 'Check いいえ', 'Delivery', 'Ref いいえ.'];
         } else if (pMethod === 'Corporate Card') {
-          txHead = ['Term', 'Date', 'Net Payable', 'Status', 'Card Last 4', 'Cardholder Name', 'Ref No.'];
+          txHead = ['Term', '日付', 'Net Payable', 'ステータス', 'Card Last 4', 'Cardholder Name', 'Ref いいえ.'];
         } else {
-          txHead = ['Term', 'Date', 'Net Payable', 'Status', 'Bank', 'Branch', 'Account', 'Ref No.'];
+          txHead = ['Term', '日付', 'Net Payable', 'ステータス', 'Bank', 'Branch', 'Account', 'Ref いいえ.'];
         }
 
         for (let i = 0; i < totalTermsCount; i++) {
@@ -559,12 +559,12 @@ export default function PaymentEntry() {
           if (actualSettlement?.financials?.netPayable) {
             // If the saved settlement accidentally saved the full amount for a multi-term plan (due to a previous bug), ignore it.
             if (totalTerms > 1 && actualSettlement.financials.netPayable >= totalAmt) {
-              amt = s?.scheduledAmount ?? fallbackAmt;
+              amt = s?.scheduled金額 ?? fallbackAmt;
             } else {
               amt = actualSettlement.financials.netPayable;
             }
-          } else if (s?.scheduledAmount) {
-            amt = s.scheduledAmount;
+          } else if (s?.scheduled金額) {
+            amt = s.scheduled金額;
           }
           
           let txDate = '—';
@@ -576,9 +576,9 @@ export default function PaymentEntry() {
             }
           }
 
-          const status = actualSettlement || s?.status === 'PAID' ? 'Paid' : 'Pending';
+          const status = actualSettlement || s?.status === 'PAID' ? '支払済' : '保留中';
           const dest = actualSettlement?.destinationDetails || s?.bankDetails || {};
-          const refNo = actualSettlement?.transactionRefId || s?.transactionRef || '—';
+          const refいいえ = actualSettlement?.transactionRefId || s?.transactionRef || '—';
 
           let txRow = [
             `Term ${i + 1}/${record.totalTerms || totalTermsCount}`,
@@ -588,20 +588,20 @@ export default function PaymentEntry() {
           ];
 
           if (pMethod === 'Pay in Salary' || pMethod === 'Payroll Deduction') {
-            txRow.push(dest.payrollPeriod || '—', refNo);
+            txRow.push(dest.payroll期間 || '—', refいいえ);
           } else if (pMethod === 'Company Check') {
-            txRow.push(dest.checkNumber || '—', dest.checkDelivery || '—', refNo);
+            txRow.push(dest.checkNumber || '—', dest.checkDelivery || '—', refいいえ);
           } else if (pMethod === 'Corporate Card') {
-            txRow.push(dest.cardLast4 || '—', dest.cardholderName || '—', refNo);
+            txRow.push(dest.cardLast4 || '—', dest.cardholderName || '—', refいいえ);
           } else {
-            txRow.push(dest.bankName || dest.bank_name || '—', dest.branchCode || dest.branch_code || '—', dest.accountNumber || dest.account_number || '—', refNo);
+            txRow.push(dest.bankName || dest.bank_name || '—', dest.branchCode || dest.branch_code || '—', dest.accountNumber || dest.account_number || '—', refいいえ);
           }
 
           txRows.push(txRow);
         }
 
       if (txRows.length === 0) {
-        txRows.push(txHead.map((_, i) => i === txHead.length - 1 ? 'No transactions recorded' : '—'));
+        txRows.push(txHead.map((_, i) => i === txHead.length - 1 ? 'いいえ transactions recorded' : '—'));
       }
 
       curY = doc.lastAutoTable.finalY + secGap;
@@ -626,7 +626,7 @@ export default function PaymentEntry() {
         },
         didParseCell: (h) => {
           if (h.section === 'body' && h.column.index === 3) {
-            h.cell.styles.textColor = h.cell.raw === 'Paid' ? [22, 163, 74] : [220, 38, 38];
+            h.cell.styles.textColor = h.cell.raw === '支払済' ? [22, 163, 74] : [220, 38, 38];
             h.cell.styles.fontStyle = 'bold';
           }
         },
@@ -696,12 +696,12 @@ export default function PaymentEntry() {
       const mappedClaims = claimsData.map(c => ({
         ...c,
         advancerCategory: 'Staff',
-        finalTotal: c.totalExpenseAmount || c.total_expense_amount || 0,
+        finalTotal: c.totalExpense金額 || c.total_expense_amount || 0,
         staffId: c.staffId || c.staff_id || 'N/A',
         staffName: c.fullName || c.full_name || 'N/A',
         expenseType: c.expenseType || c.expense_type || 'Claim',
-        expensePeriodStart: c.expensePeriodStart || c.expense_period_start || c.createdAt,
-        expensePeriodEnd: c.expensePeriodEnd || c.expense_period_end || c.createdAt,
+        expense期間Start: c.expense期間Start || c.expense_period_start || c.createdAt,
+        expense期間End: c.expense期間End || c.expense_period_end || c.createdAt,
         workPlace: getWorkPlace(c.staffId || c.staff_id, c.fullName || c.full_name)
       }));
 
@@ -716,8 +716,8 @@ export default function PaymentEntry() {
   const paymentOptions = [
     {
       id: 'client',
-      title: 'Client Payment',
-      description: 'Record incoming payments from clients for services rendered.',
+      title: 'クライアント支払',
+      description: '提供したサービスに対するクライアントからの入金を記録します。',
       icon: Users,
       color: 'bg-blue-100 text-blue-700',
       borderColor: 'border-blue-200 hover:border-blue-500',
@@ -725,8 +725,8 @@ export default function PaymentEntry() {
     },
     {
       id: 'staff',
-      title: 'Staff Payment / Advance',
-      description: 'Process salary, advances, or expense reimbursements for staff.',
+      title: 'スタッフ支払 / 仮払い',
+      description: 'スタッフの給与、仮払い、または経費精算を処理します。',
       icon: Briefcase,
       color: 'bg-green-100 text-green-700',
       borderColor: 'border-green-200 hover:border-green-500',
@@ -734,8 +734,8 @@ export default function PaymentEntry() {
     },
     {
       id: 'vc_fund',
-      title: 'VC Fund Transfer',
-      description: 'Log fund transfers and recoveries related to VC fund management.',
+      title: 'VC資金振替',
+      description: 'VC資金管理に関連する資金の振替と回収を記録します。',
       icon: Landmark,
       color: 'bg-purple-100 text-purple-700',
       borderColor: 'border-purple-200 hover:border-purple-500',
@@ -743,8 +743,8 @@ export default function PaymentEntry() {
     },
     {
       id: 'vendor',
-      title: 'Vendor / Host Company',
-      description: 'Process payments to external vendors or host companies.',
+      title: 'ベンダー / ホスト企業',
+      description: '外部ベンダーまたはホスト企業への支払いを処理します。',
       icon: Building,
       color: 'bg-orange-100 text-orange-700',
       borderColor: 'border-orange-200 hover:border-orange-500',
@@ -771,16 +771,16 @@ export default function PaymentEntry() {
     const mappedRecords = relatedCases.map(c => {
       const totalTerms = c.installment_count || (c.installmentPlan ? (c.installmentPlan.match(/\d+/) ? parseInt(c.installmentPlan.match(/\d+/)[0], 10) : 1) : 1);
       const paidTerms = c.paidTerms || 0;
-      const nextPaymentAmount = c.nextPaymentAmount || (c.finalTotal || c.totalExpense || 0) / totalTerms;
-      const remainingBalance = (c.finalTotal || c.totalExpense || 0) - (paidTerms * nextPaymentAmount);
+      const nextPayment金額 = c.nextPayment金額 || (c.finalTotal || c.totalExpense || 0) / totalTerms;
+      const remainingBalance = (c.finalTotal || c.totalExpense || 0) - (paidTerms * nextPayment金額);
 
-      // Status mapping based on overdue logic
+      // ステータス mapping based on overdue logic
       let status = 'On Track';
-      if (c.bouncedCount > 0) status = 'Overdue';
-      else if (paidTerms === totalTerms) status = 'Paid';
+      if (c.bouncedCount > 0) status = '期限切れ';
+      else if (paidTerms === totalTerms) status = '支払済';
       else if (paidTerms >= totalTerms - 1 && totalTerms > 1) status = 'Near Completion';
       
-      const startDate = c.expensePeriodStart ? new Date(c.expensePeriodStart).toLocaleDateString() : (c.createdAt ? new Date(c.createdAt).toLocaleDateString() : 'N/A');
+      const startDate = c.expense期間Start ? new Date(c.expense期間Start).toLocaleDateString() : (c.createdAt ? new Date(c.createdAt).toLocaleDateString() : 'N/A');
       
       let lastInstallmentDate = 'N/A';
       if (c.installment_records && c.installment_records.length > 0) {
@@ -788,7 +788,7 @@ export default function PaymentEntry() {
       } else if (c.expected_settlement_date) {
         lastInstallmentDate = new Date(c.expected_settlement_date).toLocaleDateString();
       } else {
-        lastInstallmentDate = c.expensePeriodEnd ? new Date(c.expensePeriodEnd).toLocaleDateString() : (c.nextPaymentDate ? new Date(c.nextPaymentDate).toLocaleDateString() : 'N/A');
+        lastInstallmentDate = c.expense期間End ? new Date(c.expense期間End).toLocaleDateString() : (c.nextPaymentDate ? new Date(c.nextPaymentDate).toLocaleDateString() : 'N/A');
       }
       const endDate = lastInstallmentDate;
 
@@ -803,7 +803,7 @@ export default function PaymentEntry() {
         paidTerms,
         totalTerms,
         nextPaymentDate: c.nextPaymentDate ? new Date(c.nextPaymentDate).toLocaleDateString() : 'TBD',
-        nextPaymentAmount,
+        nextPayment金額,
         bouncedCount: c.bouncedCount || 0,
         remainingBalance: Math.max(0, remainingBalance),
         status,
@@ -820,10 +820,10 @@ export default function PaymentEntry() {
         r.name.toLowerCase().includes(searchLower);
       
       const matchesExpense = expenseTypeFilter === 'All' || r.expenseType === expenseTypeFilter;
-      const matchesStatus = statusFilter === 'All' || r.status === statusFilter;
+      const matchesステータス = statusFilter === 'All' || r.status === statusFilter;
       const matchesDate = !dateFilter || r.nextPaymentDate === new Date(dateFilter).toLocaleDateString() || new Date(r.originalCase.nextPaymentDate).toISOString().split('T')[0] === dateFilter;
 
-      return matchesSearch && matchesExpense && matchesStatus && matchesDate;
+      return matchesSearch && matchesExpense && matchesステータス && matchesDate;
     });
     
     const hasBouncedPayments = filteredRecords.some(r => r.bouncedCount > 0);
@@ -877,7 +877,7 @@ export default function PaymentEntry() {
             <span className="text-sm text-gray-500">{filteredRecords.length} records found</span>
           </div>
           
-          {/* Action Toolbar */}
+          {/* アクション Toolbar */}
           <div className="px-6 py-3 border-b border-gray-200 bg-white flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div className="flex flex-col md:flex-row gap-3 flex-1">
               {/* Search */}
@@ -887,7 +887,7 @@ export default function PaymentEntry() {
                 </div>
                 <input
                   type="text"
-                  placeholder="Search by Case ID, Staff ID, or Name..."
+                  placeholder="Search by 案件ID, スタッフID, or Name..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="pl-9 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:ring-blue-500 focus:border-blue-500 w-full md:w-80"
@@ -914,7 +914,7 @@ export default function PaymentEntry() {
                     onChange={(e) => setExpenseTypeFilter(e.target.value)}
                     className="appearance-none pl-3 pr-8 py-2 border border-gray-300 rounded-lg text-sm text-gray-700 bg-white focus:ring-blue-500 focus:border-blue-500 cursor-pointer"
                   >
-                    <option value="All">All Expense Types</option>
+                    <option value="All">All 経費の種類s</option>
                     <option value="Waiting Dormitory Fee">Waiting Dormitory Fee</option>
                     <option value="WIFI">WIFI</option>
                     <option value="Travel">Travel</option>
@@ -925,13 +925,13 @@ export default function PaymentEntry() {
                 <div className="relative">
                   <select 
                     value={statusFilter}
-                    onChange={(e) => setStatusFilter(e.target.value)}
+                    onChange={(e) => setステータスFilter(e.target.value)}
                     className="appearance-none pl-3 pr-8 py-2 border border-gray-300 rounded-lg text-sm text-gray-700 bg-white focus:ring-blue-500 focus:border-blue-500 cursor-pointer"
                   >
-                    <option value="All">All Status</option>
-                    <option value="Paid">Paid</option>
-                    <option value="Pending">Pending</option>
-                    <option value="Overdue">Overdue</option>
+                    <option value="All">All ステータス</option>
+                    <option value="支払済">支払済</option>
+                    <option value="保留中">保留中</option>
+                    <option value="期限切れ">期限切れ</option>
                     <option value="On Track">On Track</option>
                   </select>
                   <ChevronDown className="w-4 h-4 text-gray-500 absolute right-2.5 top-1/2 transform -translate-y-1/2 pointer-events-none" />
@@ -947,7 +947,7 @@ export default function PaymentEntry() {
               )}
               <button onClick={() => generateGlobalPDF('download', filteredRecords)} className="flex items-center gap-2 px-3 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 bg-white transition-colors">
                 <Download className="w-4 h-4" />
-                Export
+                エクスポート
               </button>
               <button onClick={() => generateGlobalPDF('print', filteredRecords)} className="flex items-center gap-2 px-3 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 bg-white transition-colors">
                 <Printer className="w-4 h-4" />
@@ -971,52 +971,52 @@ export default function PaymentEntry() {
                       }}
                     />
                   </th>
-                  <th className="py-4 px-6">Case ID</th>
-                  <th className="py-4 px-6">Staff ID & Name</th>
+                  <th className="py-4 px-6">案件ID</th>
+                  <th className="py-4 px-6">スタッフID & Name</th>
                   <th className="py-4 px-6">Work Place</th>
-                  <th className="py-4 px-6">Expense Type</th>
-                  <th className="py-4 px-6">Payment Date (Start - End)</th>
-                  <th className="py-4 px-6">Progress</th>
-                  <th className="py-4 px-6">Next Payment / Total Paid</th>
+                  <th className="py-4 px-6">経費の種類</th>
+                  <th className="py-4 px-6">Payment 日付 (Start - End)</th>
+                  <th className="py-4 px-6">進捗</th>
+                  <th className="py-4 px-6">Next Payment / Total 支払済</th>
                   {hasBouncedPayments && <th className="py-4 px-6 text-center">Bounced</th>}
-                  <th className="py-4 px-6 text-right">Remaining Balance</th>
-                  <th className="py-4 px-6 text-center">Status</th>
-                  <th className="py-4 px-6 text-right">Action</th>
+                  <th className="py-4 px-6 text-right">残り Balance</th>
+                  <th className="py-4 px-6 text-center">ステータス</th>
+                  <th className="py-4 px-6 text-right">アクション</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100 text-sm">
                 {filteredRecords.length === 0 ? (
                   <tr>
                     <td colSpan="12" className="py-8 text-center text-gray-500">
-                      No records found matching your filters.
+                      いいえ records found matching your filters.
                     </td>
                   </tr>
                 ) : (
                   filteredRecords.map((record, index) => {
                     const isSelected = selectedRows.includes(record.rawId);
-                    const isOverdue = record.status === 'Overdue';
-                    const isActionRequired = record.status === 'Action Required';
+                    const is期限切れ = record.status === '期限切れ';
+                    const isアクションRequired = record.status === 'アクション Required';
                     const isNearCompletion = record.status === 'Near Completion';
                     const isOnTrack = record.status === 'On Track';
                     
                     let rowBg = 'bg-white hover:bg-gray-50';
                     if (isSelected) rowBg = 'bg-blue-50/50 border-l-4 border-[#162D50]';
-                    else if (isOverdue) rowBg = 'bg-amber-50/50 hover:bg-amber-50';
-                    else if (isActionRequired) rowBg = 'bg-rose-50/50 hover:bg-rose-50';
+                    else if (is期限切れ) rowBg = 'bg-amber-50/50 hover:bg-amber-50';
+                    else if (isアクションRequired) rowBg = 'bg-rose-50/50 hover:bg-rose-50';
                     else if (index % 2 !== 0) rowBg = 'bg-[#FAFAFA] hover:bg-gray-50';
 
                     const progressPct = record.totalTerms > 0 ? Math.round((record.paidTerms / record.totalTerms) * 100) : 0;
                     let progressColor = 'bg-green-500';
-                    if (isOverdue) progressColor = 'bg-amber-500';
-                    if (isActionRequired) progressColor = 'bg-rose-500';
+                    if (is期限切れ) progressColor = 'bg-amber-500';
+                    if (isアクションRequired) progressColor = 'bg-rose-500';
                     if (isNearCompletion) progressColor = 'bg-blue-500';
 
                     let statusBadge = '';
                     if (isOnTrack) statusBadge = 'bg-green-100 text-green-700';
-                    else if (isOverdue) statusBadge = 'bg-amber-100 text-amber-700';
+                    else if (is期限切れ) statusBadge = 'bg-amber-100 text-amber-700';
                     else if (isNearCompletion) statusBadge = 'bg-blue-100 text-blue-700';
-                    else if (isActionRequired) statusBadge = 'bg-rose-100 text-rose-700';
-                    else if (record.status === 'Paid' || record.status === 'Completed') statusBadge = 'bg-gray-100 text-gray-700';
+                    else if (isアクションRequired) statusBadge = 'bg-rose-100 text-rose-700';
+                    else if (record.status === '支払済' || record.status === '完了') statusBadge = 'bg-gray-100 text-gray-700';
 
                     return (
                       <tr key={record.rawId} className={`${rowBg} transition-colors ${isSelected ? 'border-l-4 border-l-[#162D50]' : 'border-l-4 border-l-transparent'}`}>
@@ -1060,21 +1060,21 @@ export default function PaymentEntry() {
                         </div>
                       </td>
                       <td className="py-4 px-6">
-                        {record.status === 'Paid' ? (
+                        {record.status === '支払済' ? (
                           <>
                             <div className="font-medium text-green-600 font-bold">
                               ¥{(record.originalCase.finalTotal || record.originalCase.totalExpense || 0).toLocaleString()}
                             </div>
                             <div className="text-xs mt-0.5 text-green-500 font-bold uppercase tracking-wider">
-                              Total Paid
+                              Total 支払済
                             </div>
                           </>
                         ) : (
                           <>
-                            <div className={`font-medium ${isOverdue || isActionRequired ? 'text-rose-600 font-bold' : 'text-gray-700'}`}>
-                              ¥{Math.round(record.nextPaymentAmount).toLocaleString()}
+                            <div className={`font-medium ${is期限切れ || isアクションRequired ? 'text-rose-600 font-bold' : 'text-gray-700'}`}>
+                              ¥{Math.round(record.nextPayment金額).toLocaleString()}
                             </div>
-                            <div className={`text-xs mt-0.5 ${isOverdue || isActionRequired ? 'text-rose-500' : 'text-gray-500'}`}>
+                            <div className={`text-xs mt-0.5 ${is期限切れ || isアクションRequired ? 'text-rose-500' : 'text-gray-500'}`}>
                               {record.nextPaymentDate}
                             </div>
                           </>
@@ -1101,7 +1101,7 @@ export default function PaymentEntry() {
                         </span>
                       </td>
                       <td className="py-4 px-6 text-right">
-                        {record.status === 'Paid' ? (
+                        {record.status === '支払済' ? (
                           <div className="flex items-center justify-end space-x-2">
                             <button 
                               onClick={() => handleDownloadPDF(record)}
@@ -1118,8 +1118,8 @@ export default function PaymentEntry() {
                               <Printer className="w-4 h-4" />
                             </button>
                             <button 
-                              onClick={() => handleDeleteRecord(record)}
-                              title="Delete Record"
+                              onClick={() => handle削除Record(record)}
+                              title="削除 Record"
                               className="p-1.5 text-red-600 bg-red-50 hover:bg-red-100 rounded-md transition-colors"
                             >
                               <Trash2 className="w-4 h-4" />
@@ -1144,7 +1144,7 @@ export default function PaymentEntry() {
     <div className="w-full px-4 sm:px-6 lg:px-8 xl:px-12 space-y-6 pb-10">
       <div className="flex justify-between items-end mb-8">
         <div>
-          <h2 className="text-2xl font-bold text-[#162D50] mb-2">Paid Status Selection</h2>
+          <h2 className="text-2xl font-bold text-[#162D50] mb-2">支払済 ステータス Selection</h2>
           <p className="text-gray-500 text-sm">Please select the type of paid status you want to process.</p>
         </div>
       </div>
@@ -1194,13 +1194,13 @@ function PaymentEntryForm({ caseId, termNumber, navigate }) {
   
   const [paymentMethod, setPaymentMethod] = useState('');
   const [deductions, setDeductions] = useState(0);
-  const [destinationDetails, setDestinationDetails] = useState({});
+  const [destinationDetails, set目的地Details] = useState({});
   const [transactionRefId, setTransactionRefId] = useState('');
   const [paymentDate, setPaymentDate] = useState(new Date().toISOString().split('T')[0]);
   const [isConfirmed, setIsConfirmed] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [hasSaved, setHasSaved] = useState(false);
-  const [payRemainingBalance, setPayRemainingBalance] = useState(false);
+  const [is送信ting, setIs送信ting] = useState(false);
+  const [has保存d, setHas保存d] = useState(false);
+  const [pay残りBalance, setPay残りBalance] = useState(false);
   
   // Consent
   const [consentGiven, setConsentGiven] = useState(false);
@@ -1231,7 +1231,7 @@ function PaymentEntryForm({ caseId, termNumber, navigate }) {
   const paidTerms = caseData.paidTerms || 0;
   
   // Calculate next payment amount
-  let nextPaymentAmount = caseData.nextPaymentAmount || Math.round((caseData.finalTotal || caseData.totalExpenseAmount || caseData.totalExpense || 0) / totalTerms);
+  let nextPayment金額 = caseData.nextPayment金額 || Math.round((caseData.finalTotal || caseData.totalExpense金額 || caseData.totalExpense || 0) / totalTerms);
   let termLabel = `Term ${Math.min(paidTerms + 1, totalTerms)} of ${totalTerms}`;
   
   if (ledgerData && ledgerData.payments) {
@@ -1242,23 +1242,23 @@ function PaymentEntryForm({ caseId, termNumber, navigate }) {
         const t = pendingTerms.find(p => p.termNumber === parseInt(termNumber));
         if (t) termToPay = t;
       }
-      nextPaymentAmount = termToPay.expectedAmount || termToPay.netPayable || nextPaymentAmount;
+      nextPayment金額 = termToPay.expected金額 || termToPay.netPayable || nextPayment金額;
       termLabel = `Term ${termToPay.termNumber} of ${totalTerms}`;
     }
   }
 
-  let remainingBalance = caseData.finalTotal || caseData.totalExpenseAmount || caseData.totalExpense || 0;
+  let remainingBalance = caseData.finalTotal || caseData.totalExpense金額 || caseData.totalExpense || 0;
   if (ledgerData && ledgerData.payments) {
-    const paidAmount = ledgerData.payments.filter(p => p.status === 'paid').reduce((sum, p) => sum + (p.expectedAmount || 0), 0);
-    remainingBalance -= paidAmount;
+    const paid金額 = ledgerData.payments.filter(p => p.status === 'paid').reduce((sum, p) => sum + (p.expected金額 || 0), 0);
+    remainingBalance -= paid金額;
   }
 
-  if (payRemainingBalance) {
-    nextPaymentAmount = remainingBalance;
-    termLabel = 'Full Remaining Balance';
+  if (pay残りBalance) {
+    nextPayment金額 = remainingBalance;
+    termLabel = 'Full 残り Balance';
   }
 
-  const handleFormSubmit = async (e) => {
+  const handleForm送信 = async (e) => {
     e.preventDefault();
     if (!isConfirmed) return;
     if (paymentMethod === 'Payroll Deduction' && !consentGiven) {
@@ -1266,7 +1266,7 @@ function PaymentEntryForm({ caseId, termNumber, navigate }) {
       return;
     }
 
-    setIsSubmitting(true);
+    setIs送信ting(true);
     
     const payload = {
       processedBy: 'AdminUser',
@@ -1274,9 +1274,9 @@ function PaymentEntryForm({ caseId, termNumber, navigate }) {
       paymentMethod,
       destinationDetails,
       financials: {
-        claimAmount: nextPaymentAmount,
+        claim金額: nextPayment金額,
         deductions,
-        netPayable: nextPaymentAmount - deductions
+        netPayable: nextPayment金額 - deductions
       },
       transactionRefId,
       paymentDate,
@@ -1293,7 +1293,7 @@ function PaymentEntryForm({ caseId, termNumber, navigate }) {
 
       if (response.ok) {
         toast.success('Settlement processed successfully!');
-        setHasSaved(true);
+        setHas保存d(true);
         setTimeout(() => navigate('/payments/status'), 2000);
       } else {
         const errorData = await response.json();
@@ -1303,7 +1303,7 @@ function PaymentEntryForm({ caseId, termNumber, navigate }) {
       console.error('Error processing settlement:', error);
       toast.error('Network error while processing settlement');
     } finally {
-      setIsSubmitting(false);
+      setIs送信ting(false);
     }
   };
 
@@ -1332,11 +1332,11 @@ function PaymentEntryForm({ caseId, termNumber, navigate }) {
             </div>
           </div>
 
-          <form className="p-8 space-y-6" onSubmit={(e) => { setIsConfirmed(true); handleFormSubmit(e); }}>
+          <form className="p-8 space-y-6" on送信={(e) => { setIsConfirmed(true); handleForm送信(e); }}>
             
             <div className="flex flex-col sm:flex-row gap-6">
               <div className="flex-1">
-                <label className="block text-sm font-semibold text-gray-700 mb-2">Payment Method <span className="text-red-500">*</span></label>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">支払方法 <span className="text-red-500">*</span></label>
                 <select 
                   value={paymentMethod} 
                   onChange={(e) => setPaymentMethod(e.target.value)}
@@ -1355,7 +1355,7 @@ function PaymentEntryForm({ caseId, termNumber, navigate }) {
               </div>
               
               <div className="flex-1">
-                <label className="block text-sm font-semibold text-gray-700 mb-2">Payment Date <span className="text-red-500">*</span></label>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">Payment 日付 <span className="text-red-500">*</span></label>
                 <input 
                   type="date" 
                   required 
@@ -1370,15 +1370,15 @@ function PaymentEntryForm({ caseId, termNumber, navigate }) {
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 bg-gray-50 p-5 rounded-lg border border-gray-100">
                 <div>
                   <label className="block text-xs font-semibold text-gray-600 uppercase mb-2">Bank Name <span className="text-red-500">*</span></label>
-                  <input type="text" onChange={(e) => setDestinationDetails({...destinationDetails, bankName: e.target.value})} className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-[#162D50] focus:border-[#162D50] outline-none" required />
+                  <input type="text" onChange={(e) => set目的地Details({...destinationDetails, bankName: e.target.value})} className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-[#162D50] focus:border-[#162D50] outline-none" required />
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-gray-600 uppercase mb-2">Branch Code <span className="text-red-500">*</span></label>
-                  <input type="text" onChange={(e) => setDestinationDetails({...destinationDetails, branchCode: e.target.value})} className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-[#162D50] focus:border-[#162D50] outline-none" required />
+                  <input type="text" onChange={(e) => set目的地Details({...destinationDetails, branchCode: e.target.value})} className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-[#162D50] focus:border-[#162D50] outline-none" required />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-gray-600 uppercase mb-2">Account No <span className="text-red-500">*</span></label>
-                  <input type="text" onChange={(e) => setDestinationDetails({...destinationDetails, accountNumber: e.target.value})} className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-[#162D50] focus:border-[#162D50] outline-none" required />
+                  <label className="block text-xs font-semibold text-gray-600 uppercase mb-2">Account いいえ <span className="text-red-500">*</span></label>
+                  <input type="text" onChange={(e) => set目的地Details({...destinationDetails, accountNumber: e.target.value})} className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-[#162D50] focus:border-[#162D50] outline-none" required />
                 </div>
               </div>
             )}
@@ -1386,8 +1386,8 @@ function PaymentEntryForm({ caseId, termNumber, navigate }) {
             {isPayrollDeduction && (
               <div className="space-y-4 bg-red-50 p-5 rounded-lg border border-red-100">
                 <div>
-                  <label className="block text-xs font-semibold text-gray-700 mb-2">Target Payroll Period <span className="text-red-500">*</span></label>
-                  <input type="month" onChange={(e) => setDestinationDetails({...destinationDetails, payrollPeriod: e.target.value})} className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-red-600 focus:border-red-600 outline-none" required />
+                  <label className="block text-xs font-semibold text-gray-700 mb-2">Target Payroll 期間 <span className="text-red-500">*</span></label>
+                  <input type="month" onChange={(e) => set目的地Details({...destinationDetails, payroll期間: e.target.value})} className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-red-600 focus:border-red-600 outline-none" required />
                 </div>
                 <div className="flex items-start space-x-3 mt-2">
                   <input 
@@ -1432,24 +1432,24 @@ function PaymentEntryForm({ caseId, termNumber, navigate }) {
 
             <div className="bg-gray-50 p-6 rounded-lg border border-gray-200 mt-6 flex flex-col sm:flex-row justify-between items-center">
               <div>
-                <p className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-1">Net Payable Amount</p>
-                {remainingBalance > 0 && remainingBalance !== nextPaymentAmount && (
+                <p className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-1">Net Payable 金額</p>
+                {remainingBalance > 0 && remainingBalance !== nextPayment金額 && (
                   <div className="flex items-center space-x-2 mt-2">
                     <input 
                       type="checkbox" 
-                      id="payRemaining" 
-                      checked={payRemainingBalance}
-                      onChange={(e) => setPayRemainingBalance(e.target.checked)}
+                      id="pay残り" 
+                      checked={pay残りBalance}
+                      onChange={(e) => setPay残りBalance(e.target.checked)}
                       className="w-4 h-4 text-[#162D50] focus:ring-[#162D50] border-gray-300 rounded cursor-pointer" 
                     />
-                    <label htmlFor="payRemaining" className="text-xs font-semibold text-gray-700 cursor-pointer">
-                      Pay Full Remaining (¥{remainingBalance.toLocaleString()})
+                    <label htmlFor="pay残り" className="text-xs font-semibold text-gray-700 cursor-pointer">
+                      Pay Full 残り (¥{remainingBalance.toLocaleString()})
                     </label>
                   </div>
                 )}
               </div>
               <div className="text-3xl font-bold text-[#162D50] mt-4 sm:mt-0">
-                ¥{Math.max(0, nextPaymentAmount - deductions).toLocaleString()}
+                ¥{Math.max(0, nextPayment金額 - deductions).toLocaleString()}
               </div>
             </div>
 
@@ -1459,17 +1459,17 @@ function PaymentEntryForm({ caseId, termNumber, navigate }) {
                 onClick={() => navigate(-1)}
                 className="px-6 py-2.5 rounded-lg border border-gray-300 text-gray-700 font-semibold hover:bg-gray-50 transition-colors"
               >
-                Cancel
+                キャンセル
               </button>
               <div className="relative">
                 <button 
                   type="submit" 
-                  disabled={isSubmitting || !paymentMethod || (isPayrollDeduction && !consentGiven) || hasSaved}
+                  disabled={is送信ting || !paymentMethod || (isPayrollDeduction && !consentGiven) || has保存d}
                   className="px-8 py-2.5 rounded-lg bg-[#162D50] text-white font-semibold hover:bg-[#0F1E36] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  {isSubmitting ? 'Processing...' : 'Record Payment'}
+                  {is送信ting ? '処理中...' : 'Record Payment'}
                 </button>
-                {hasSaved && (
+                {has保存d && (
                   <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
                     <div className="bg-green-100 text-green-700 border border-green-300 px-6 py-2 rounded-md text-sm font-bold shadow-sm">
                       SUCCESS

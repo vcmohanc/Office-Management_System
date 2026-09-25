@@ -8,7 +8,7 @@ import toast from 'react-hot-toast';
 
 export default function StaffClaimRequest() {
   const [options, setOptions] = useState({
-    Location: [],
+    拠点: [],
     ExpenseType: [],
     AdvancerCategory: [],
     BearingParty: []
@@ -19,7 +19,7 @@ export default function StaffClaimRequest() {
     id: '',
     location: '',
     branchAndFarmName: '',
-    visaStatus: '',
+    visaステータス: '',
     visaAvailableTime: ''
   });
   const [employees, setEmployees] = useState([]);
@@ -32,8 +32,8 @@ export default function StaffClaimRequest() {
     advancerCategory: '',
     advancerName: '',
     bearingParty: '',
-    expenseAmount: '',
-    suggestedAmount: 0,
+    expense金額: '',
+    suggested金額: 0,
     expensePeriodStart: '',
     expensePeriodEnd: '',
     remark: '',
@@ -67,7 +67,7 @@ export default function StaffClaimRequest() {
           if (!acc[opt.type]) acc[opt.type] = [];
           acc[opt.type].push(opt);
           return acc;
-        }, { Location: [], ExpenseType: [], AdvancerCategory: [], BearingParty: [] });
+        }, { 拠点: [], ExpenseType: [], AdvancerCategory: [], BearingParty: [] });
 
         setOptions(groupedOptions);
 
@@ -141,12 +141,12 @@ export default function StaffClaimRequest() {
         if (senderId && recipientId && postalMatrix[senderId] && postalMatrix[senderId][recipientId]) {
           const rawCost = postalMatrix[senderId][recipientId];
           const numericCost = typeof rawCost === 'string' ? Number(rawCost.replace(/,/g, '')) : rawCost;
-          updatedClaims[index].suggestedAmount = numericCost || 0;
+          updatedClaims[index].suggested金額 = numericCost || 0;
         } else {
-          updatedClaims[index].suggestedAmount = 0;
+          updatedClaims[index].suggested金額 = 0;
         }
       } else {
-        updatedClaims[index].suggestedAmount = 0;
+        updatedClaims[index].suggested金額 = 0;
       }
     }
 
@@ -169,12 +169,12 @@ export default function StaffClaimRequest() {
             else if (method === 'Flight') numericCost = flightCost;
             else numericCost = Math.max(busCost, flightCost);
           }
-          updatedClaims[index].suggestedAmount = numericCost || 0;
+          updatedClaims[index].suggested金額 = numericCost || 0;
         } else {
-          updatedClaims[index].suggestedAmount = 0;
+          updatedClaims[index].suggested金額 = 0;
         }
       } else {
-        updatedClaims[index].suggestedAmount = 0;
+        updatedClaims[index].suggested金額 = 0;
       }
     }
 
@@ -272,7 +272,7 @@ export default function StaffClaimRequest() {
         return (
           <div className="grid grid-cols-2 gap-6 mb-8 bg-blue-50 p-6 rounded-md">
             <div>
-              <label className="block text-sm font-bold text-gray-700 mb-2">Departure Location</label>
+              <label className="block text-sm font-bold text-gray-700 mb-2">Departure 拠点</label>
               <input type="text" list={`departure-list-${index}`} value={claimItem.departure || ''} onChange={(e) => updateClaim(index, 'departure', e.target.value)} placeholder="Enter departure" className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50]" />
               <datalist id={`departure-list-${index}`}>
                 {regions.map(r => (
@@ -307,13 +307,13 @@ export default function StaffClaimRequest() {
         return (
           <div className="grid grid-cols-2 gap-6 mb-8 bg-blue-50 p-6 rounded-md">
             <div>
-              <label className="block text-sm font-bold text-gray-700 mb-2">Usage Start Date</label>
+              <label className="block text-sm font-bold text-gray-700 mb-2">Usage Start 日付</label>
               <div className="relative">
                 <input type="date" value={claimItem.dormitoryStartDate || ''} onChange={(e) => updateClaim(index, 'dormitoryStartDate', e.target.value)} className="w-full pl-4 pr-10 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50] text-gray-600" />
               </div>
             </div>
             <div>
-              <label className="block text-sm font-bold text-gray-700 mb-2">Usage End Date</label>
+              <label className="block text-sm font-bold text-gray-700 mb-2">Usage End 日付</label>
               <div className="relative">
                 <input type="date" value={claimItem.dormitoryEndDate || ''} onChange={(e) => updateClaim(index, 'dormitoryEndDate', e.target.value)} className="w-full pl-4 pr-10 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50] text-gray-600" />
               </div>
@@ -324,7 +324,7 @@ export default function StaffClaimRequest() {
         return (
           <div className="grid grid-cols-3 gap-6 mb-8 bg-blue-50 p-6 rounded-md">
             <div>
-              <label className="block text-sm font-bold text-gray-700 mb-2">Consultation Date</label>
+              <label className="block text-sm font-bold text-gray-700 mb-2">Consultation 日付</label>
               <div className="relative">
                 <input type="date" value={claimItem.consultationDate || ''} onChange={(e) => updateClaim(index, 'consultationDate', e.target.value)} className="w-full pl-4 pr-10 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50] text-gray-600" />
               </div>
@@ -351,7 +351,7 @@ export default function StaffClaimRequest() {
               <input type="number" value={claimItem.quantity || 1} onChange={(e) => updateClaim(index, 'quantity', e.target.value)} className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50] text-gray-600" />
             </div>
             <div>
-              <label className="block text-sm font-bold text-gray-700 mb-2">Purchase Date</label>
+              <label className="block text-sm font-bold text-gray-700 mb-2">Purchase 日付</label>
               <div className="relative">
                 <input type="date" value={claimItem.purchaseDate || ''} onChange={(e) => updateClaim(index, 'purchaseDate', e.target.value)} className="w-full pl-4 pr-10 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50] text-gray-600" />
               </div>
@@ -370,7 +370,7 @@ export default function StaffClaimRequest() {
               <input type="text" value={claimItem.hostCompany || ''} onChange={(e) => updateClaim(index, 'hostCompany', e.target.value)} placeholder="Enter company/farm" className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50]" />
             </div>
             <div>
-              <label className="block text-sm font-bold text-gray-700 mb-2">Usage Start Date</label>
+              <label className="block text-sm font-bold text-gray-700 mb-2">Usage Start 日付</label>
               <div className="relative">
                 <input type="date" value={claimItem.wifiStartDate || ''} onChange={(e) => updateClaim(index, 'wifiStartDate', e.target.value)} className="w-full pl-4 pr-10 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50] text-gray-600" />
               </div>
@@ -382,8 +382,8 @@ export default function StaffClaimRequest() {
     }
   };
 
-  const totalExpenseAmount = claims.reduce((sum, claim) => {
-    const amt = parseFloat(claim.expenseAmount);
+  const totalExpense金額 = claims.reduce((sum, claim) => {
+    const amt = parseFloat(claim.expense金額);
     return sum + (isNaN(amt) ? 0 : amt);
   }, 0);
 
@@ -400,12 +400,12 @@ export default function StaffClaimRequest() {
 
       for (let i = 0; i < claims.length; i++) {
         const c = claims[i];
-        if (!c.expenseType || !c.advancerCategory || !c.bearingParty || !c.expenseAmount) {
+        if (!c.expenseType || !c.advancerCategory || !c.bearingParty || !c.expense金額) {
           toast.error(`Please fill out all required fields for Case Category #${i + 1}.`);
           setIsSubmitting(false);
           return;
         }
-        const validation = validateExpenseAmount(c.expenseAmount, c.suggestedAmount);
+        const validation = validateExpenseAmount(c.expense金額, c.suggested金額);
         if (!validation.isValid) {
           toast.error(`Row ${i + 1}: ${validation.message}`);
           setIsSubmitting(false);
@@ -420,14 +420,14 @@ export default function StaffClaimRequest() {
           staff_id: staffInfo.id,
           location: staffInfo.location,
           branch_farm_name: staffInfo.branchAndFarmName || null,
-          visa_status: staffInfo.visaStatus || null,
+          visa_status: staffInfo.visaステータス || null,
           visa_available_time: staffInfo.visaAvailableTime || null,
           
           expense_type: claim.expenseType,
           advancer_category: claim.advancerCategory,
           payment_process_types: claim.advancerName || null,
           bearing_party: claim.bearingParty,
-          expense_amount: parseFloat(claim.expenseAmount) || 0,
+          expense_amount: parseFloat(claim.expense金額) || 0,
           sender: claim.postageFrom || claim.sender || "",
           recipient: claim.postageTo || claim.recipient || "",
           departure: claim.departure || "",
@@ -438,10 +438,10 @@ export default function StaffClaimRequest() {
           bill_receipt_url: claim.receipts || [],
           remarks: claim.remark || null,
 
-          total_expense_amount: parseFloat(claim.expenseAmount) || 0,
+          total_expense_amount: parseFloat(claim.expense金額) || 0,
           installment_count: 1,
           collection_start_month: new Date().toISOString().slice(0, 7),
-          monthly_deduction: parseFloat(claim.expenseAmount) || 0
+          monthly_deduction: parseFloat(claim.expense金額) || 0
         };
         const response = await apiFetch('/api/claims', {
           method: 'POST',
@@ -498,7 +498,7 @@ export default function StaffClaimRequest() {
           </div>
           <div className="grid grid-cols-3 gap-6">
             <div className="relative">
-              <label className="block text-sm font-bold text-gray-700 mb-2">Full Name <span className="text-red-500">*</span></label>
+              <label className="block text-sm font-bold text-gray-700 mb-2">氏名 <span className="text-red-500">*</span></label>
               <input type="text" placeholder="Enter full name" list="claimEmployeeNames" value={staffInfo.fullName} onChange={e => {
                 const val = e.target.value;
                 setStaffInfo({...staffInfo, fullName: val});
@@ -509,7 +509,7 @@ export default function StaffClaimRequest() {
                     id: 'ID-' + match._id.slice(-6).toUpperCase(), 
                     location: match.location || staffInfo.location,
                     branchAndFarmName: match.branchAndFarmName || match.location || '',
-                    visaStatus: match.visaStatus || '',
+                    visaステータス: match.visaステータス || '',
                     visaAvailableTime: match.visaEndDate ? new Date(match.visaEndDate).toISOString().split('T')[0] : ''
                   });
                 }
@@ -517,7 +517,7 @@ export default function StaffClaimRequest() {
                 if (staffInfo.fullName) {
                   const match = employees.find(emp => (emp.romajiName && emp.romajiName.toLowerCase() === staffInfo.fullName.toLowerCase()) || (emp.katakanaName && emp.katakanaName === staffInfo.fullName));
                   if (!match) {
-                    setStaffInfo({...staffInfo, fullName: '', id: '', location: '', branchAndFarmName: '', visaStatus: '', visaAvailableTime: ''});
+                    setStaffInfo({...staffInfo, fullName: '', id: '', location: '', branchAndFarmName: '', visaステータス: '', visaAvailableTime: ''});
                     toast.error('Please select a valid staff member from the list.');
                   }
                 }
@@ -529,7 +529,7 @@ export default function StaffClaimRequest() {
               </datalist>
             </div>
             <div className="relative">
-              <label className="block text-sm font-bold text-gray-700 mb-2">Staff ID <span className="text-red-500">*</span></label>
+              <label className="block text-sm font-bold text-gray-700 mb-2">スタッフID <span className="text-red-500">*</span></label>
               <input type="text" placeholder="ID-00000" list="claimEmployeeIds" value={staffInfo.id} onChange={e => {
                 const val = e.target.value;
                 setStaffInfo({...staffInfo, id: val});
@@ -541,7 +541,7 @@ export default function StaffClaimRequest() {
                     fullName: match.romajiName || match.katakanaName || staffInfo.fullName, 
                     location: match.location || staffInfo.location,
                     branchAndFarmName: match.branchAndFarmName || match.location || '',
-                    visaStatus: match.visaStatus || '',
+                    visaステータス: match.visaステータス || '',
                     visaAvailableTime: match.visaEndDate ? new Date(match.visaEndDate).toISOString().split('T')[0] : ''
                   });
                 }
@@ -550,7 +550,7 @@ export default function StaffClaimRequest() {
                   const searchId = staffInfo.id.replace('ID-', '').toLowerCase();
                   const match = employees.find(emp => emp._id.slice(-6) === searchId);
                   if (!match) {
-                    setStaffInfo({...staffInfo, fullName: '', id: '', location: '', branchAndFarmName: '', visaStatus: '', visaAvailableTime: ''});
+                    setStaffInfo({...staffInfo, fullName: '', id: '', location: '', branchAndFarmName: '', visaステータス: '', visaAvailableTime: ''});
                     toast.error('Please select a valid staff ID from the list.');
                   }
                 }
@@ -562,11 +562,11 @@ export default function StaffClaimRequest() {
               </datalist>
             </div>
             <div>
-              <label className="block text-sm font-bold text-gray-700 mb-2">Location <span className="text-red-500">*</span></label>
+              <label className="block text-sm font-bold text-gray-700 mb-2">拠点 <span className="text-red-500">*</span></label>
               <div className="relative">
                 <select value={staffInfo.location} onChange={e => setStaffInfo({...staffInfo, location: e.target.value})} className="w-full px-4 py-2 border border-gray-300 rounded-md appearance-none focus:outline-none focus:ring-1 focus:ring-[#162D50] text-gray-600">
-                  <option value="">Select Location</option>
-                  {options.Location.map((opt) => (
+                  <option value="">Select 拠点</option>
+                  {options.拠点.map((opt) => (
                     <option key={opt._id} value={opt.value}>{opt.label}</option>
                   ))}
                 </select>
@@ -578,8 +578,8 @@ export default function StaffClaimRequest() {
               <input type="text" placeholder="Branch/Farm" value={staffInfo.branchAndFarmName} onChange={e => setStaffInfo({...staffInfo, branchAndFarmName: e.target.value})} className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50]" />
             </div>
             <div>
-              <label className="block text-sm font-bold text-gray-700 mb-2">Visa Status</label>
-              <input type="text" placeholder="Visa Status" value={staffInfo.visaStatus} onChange={e => setStaffInfo({...staffInfo, visaStatus: e.target.value})} className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50]" />
+              <label className="block text-sm font-bold text-gray-700 mb-2">Visa ステータス</label>
+              <input type="text" placeholder="Visa ステータス" value={staffInfo.visaステータス} onChange={e => setStaffInfo({...staffInfo, visaステータス: e.target.value})} className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50]" />
             </div>
             <div>
               <label className="block text-sm font-bold text-gray-700 mb-2">Visa Available Time</label>
@@ -609,7 +609,7 @@ export default function StaffClaimRequest() {
           
           <div className="grid grid-cols-3 gap-6 mb-6">
             <div>
-              <label className="block text-sm font-bold text-gray-700 mb-2">Expense Type <span className="text-red-500">*</span></label>
+              <label className="block text-sm font-bold text-gray-700 mb-2">経費の種類 <span className="text-red-500">*</span></label>
               <div className="relative">
                 <select 
                   value={claimItem.expenseType}
@@ -667,20 +667,20 @@ export default function StaffClaimRequest() {
               </div>
             </div>
             <div>
-              <label className="block text-sm font-bold text-gray-700 mb-2">Expense Amount (¥) <span className="text-red-500">*</span></label>
+              <label className="block text-sm font-bold text-gray-700 mb-2">Expense 金額 (¥) <span className="text-red-500">*</span></label>
               <input 
                 type="number" 
-                value={claimItem.expenseAmount} 
-                onChange={(e) => updateClaim(index, 'expenseAmount', e.target.value)} 
+                value={claimItem.expense金額} 
+                onChange={(e) => updateClaim(index, 'expense金額', e.target.value)} 
                 placeholder="Enter amount"
                 className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50] text-gray-900 font-medium" 
               />
               {(() => {
-                const validation = validateExpenseAmount(claimItem.expenseAmount, claimItem.suggestedAmount);
+                const validation = validateExpenseAmount(claimItem.expense金額, claimItem.suggested金額);
                 if (!validation.isValid) {
                   return (
                     <div 
-                      onClick={() => updateClaim(index, 'expenseAmount', claimItem.suggestedAmount)}
+                      onClick={() => updateClaim(index, 'expense金額', claimItem.suggested金額)}
                       className="mt-2 text-xs text-red-600 font-medium flex items-center bg-red-50 px-3 py-1.5 rounded border border-red-200 cursor-pointer hover:bg-red-100 transition-colors">
                       {validation.message} (Click to apply)
                     </div>
@@ -731,7 +731,7 @@ export default function StaffClaimRequest() {
                 )}
               </div>
               <div>
-                <label className="block text-sm font-bold text-gray-700 mb-2">Remarks</label>
+                <label className="block text-sm font-bold text-gray-700 mb-2">備考</label>
                 <textarea 
                   value={claimItem.remark || ''} 
                   onChange={(e) => updateClaim(index, 'remark', e.target.value)}
@@ -754,8 +754,8 @@ export default function StaffClaimRequest() {
               <div className="text-xs text-gray-500">Total calculation of all items above</div>
             </div>
             <div className="text-right">
-              <div className="font-bold text-xs text-gray-800 mb-1">Total Expense Amount</div>
-              <div className="text-2xl font-bold text-[#162D50]">¥ {totalExpenseAmount.toLocaleString()}</div>
+              <div className="font-bold text-xs text-gray-800 mb-1">経費合計金額</div>
+              <div className="text-2xl font-bold text-[#162D50]">¥ {totalExpense金額.toLocaleString()}</div>
             </div>
           </div>
 

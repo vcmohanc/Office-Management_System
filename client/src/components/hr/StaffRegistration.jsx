@@ -11,7 +11,7 @@ export default function StaffRegistration({ setActiveTab }) {
   const [pledgeFileName, setPledgeFileName] = useState(null);
   const [qualifications, setQualifications] = useState([{ passingYear: '', qualification: '', university: '' }]);
   
-  // Generate random Staff ID on component mount
+  // Generate random スタッフID on component mount
   useEffect(() => {
     const randomHex = Math.floor(Math.random() * 16777215).toString(16).padStart(6, '0').toUpperCase();
     setStaffId(`STF${randomHex}`);
@@ -102,7 +102,7 @@ export default function StaffRegistration({ setActiveTab }) {
 
     console.log("Submitting Data:", data);
     data.dob = data.dateOfBirth;
-    data.visaStatus = data.currentVisaStatus;
+    data.visaステータス = data.currentVisaステータス;
     
     // Map nested objects
     data.languageFluency = {
@@ -152,7 +152,7 @@ export default function StaffRegistration({ setActiveTab }) {
         <div className="p-6 border-b border-gray-200 flex justify-between items-center bg-[#F8F9FA]">
           <h2 className="text-xl font-bold text-[#162D50]">New Staff Registration & Onboarding</h2>
           <div className="bg-gray-100 border border-gray-200 text-gray-700 px-3 py-1.5 rounded-md text-sm font-medium">
-            Staff ID: <span className="font-bold text-[#162D50]">{staffId}</span>
+            スタッフID: <span className="font-bold text-[#162D50]">{staffId}</span>
           </div>
         </div>
 
@@ -163,7 +163,7 @@ export default function StaffRegistration({ setActiveTab }) {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
 
             <div>
-              <label className="block text-xs font-bold text-gray-600 mb-1 uppercase tracking-wider">Join Date <span className="text-red-500">*</span></label>
+              <label className="block text-xs font-bold text-gray-600 mb-1 uppercase tracking-wider">Join 日付 <span className="text-red-500">*</span></label>
               <div className="relative">
                 <input required name="joinDate" type="date" className="w-full px-4 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-[#162D50]" />
               </div>
@@ -174,7 +174,7 @@ export default function StaffRegistration({ setActiveTab }) {
               <input required name="katakanaName" type="text" placeholder="e.g. YAMADA TARO" className="w-full px-4 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-[#162D50]" />
             </div>
             <div>
-              <label className="block text-xs font-bold text-gray-600 mb-1 uppercase tracking-wider">Romaji Full Name <span className="text-red-500">*</span></label>
+              <label className="block text-xs font-bold text-gray-600 mb-1 uppercase tracking-wider">Romaji 氏名 <span className="text-red-500">*</span></label>
               <input required name="romajiName" type="text" placeholder="ROMAJI NAME" className="w-full px-4 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-[#162D50]" />
             </div>
 
@@ -195,7 +195,7 @@ export default function StaffRegistration({ setActiveTab }) {
 
             <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-3 gap-6">
               <div>
-                <label className="block text-xs font-bold text-gray-600 mb-1 uppercase tracking-wider">Date of Birth <span className="text-red-500">*</span></label>
+                <label className="block text-xs font-bold text-gray-600 mb-1 uppercase tracking-wider">日付 of Birth <span className="text-red-500">*</span></label>
                 <div className="relative">
                   <input required name="dateOfBirth" type="date" className="w-full px-4 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-[#162D50]" value={dob} onChange={handleDobChange} />
                 </div>
@@ -239,13 +239,13 @@ export default function StaffRegistration({ setActiveTab }) {
 
           <hr className="border-gray-200" />
 
-          {/* Visa and Employment Status */}
-          <h3 className="text-sm font-bold text-[#162D50] uppercase tracking-wider mb-4">Visa & Employment Status</h3>
+          {/* Visa and Employment ステータス */}
+          <h3 className="text-sm font-bold text-[#162D50] uppercase tracking-wider mb-4">Visa & Employment ステータス</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
-              <label className="block text-xs font-bold text-gray-600 mb-1 uppercase tracking-wider">Current Visa Status</label>
-              <select name="currentVisaStatus" className="w-full px-4 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-[#162D50] text-gray-700 bg-white">
-                <option value="">Select Visa Status</option>
+              <label className="block text-xs font-bold text-gray-600 mb-1 uppercase tracking-wider">Current Visa ステータス</label>
+              <select name="currentVisaステータス" className="w-full px-4 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-[#162D50] text-gray-700 bg-white">
+                <option value="">Select Visa ステータス</option>
                 <option value="Working Visa">Working Visa</option>
                 <option value="Student Visa">Student Visa</option>
                 <option value="Permanent Resident">Permanent Resident</option>
@@ -263,19 +263,19 @@ export default function StaffRegistration({ setActiveTab }) {
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-4">
             <div>
-              <label className="block text-xs font-bold text-gray-600 mb-1 uppercase tracking-wider">Visa Start Date</label>
+              <label className="block text-xs font-bold text-gray-600 mb-1 uppercase tracking-wider">Visa Start 日付</label>
               <div className="relative">
                 <input name="visaStartDate" type="date" className="w-full px-4 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-[#162D50]" />
               </div>
             </div>
             <div>
-              <label className="block text-xs font-bold text-gray-600 mb-1 uppercase tracking-wider">Visa End Date</label>
+              <label className="block text-xs font-bold text-gray-600 mb-1 uppercase tracking-wider">Visa End 日付</label>
               <div className="relative">
                 <input name="visaEndDate" type="date" className="w-full px-4 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-[#162D50]" />
               </div>
             </div>
             <div>
-              <label className="block text-xs font-bold text-gray-600 mb-1 uppercase tracking-wider">Visa Renewal Date</label>
+              <label className="block text-xs font-bold text-gray-600 mb-1 uppercase tracking-wider">Visa Renewal 日付</label>
               <div className="relative">
                 <input name="visaRenewalDate" type="date" className="w-full px-4 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-[#162D50]" />
               </div>
@@ -438,9 +438,9 @@ export default function StaffRegistration({ setActiveTab }) {
           {/* Uploads */}
           <div className="space-y-6">
             <div>
-              <label className="block text-xs font-bold text-gray-600 mb-2 uppercase tracking-wider">Onboarding Status</label>
-              <select name="onboardingStatus" className="w-full px-4 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-[#162D50] text-gray-700 bg-white">
-                <option value="Verification Pending">Verification Pending</option>
+              <label className="block text-xs font-bold text-gray-600 mb-2 uppercase tracking-wider">Onboarding ステータス</label>
+              <select name="onboardingステータス" className="w-full px-4 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-[#162D50] text-gray-700 bg-white">
+                <option value="Verification 保留中">Verification 保留中</option>
                 <option value="Active">Active</option>
                 <option value="Missing Documents">Missing Documents</option>
               </select>
@@ -463,7 +463,7 @@ export default function StaffRegistration({ setActiveTab }) {
             </div>
           </div>
 
-          {/* Action Buttons */}
+          {/* アクション Buttons */}
           <div className="flex items-center space-x-4 pt-6 border-t border-gray-200">
             <button type="submit" disabled={loading} className="bg-[#162D50] text-white px-6 py-2.5 rounded-md text-sm font-bold hover:bg-[#0f1f38] transition-colors shadow-sm uppercase tracking-wider disabled:opacity-50">
               {loading ? 'Submitting...' : 'Submit Registration'}

@@ -15,7 +15,7 @@ export default function Resignation() {
           <p className="text-3xl font-bold text-[#162D50]">8</p>
         </div>
         <div className="bg-[#F8F9FA] border border-gray-200 rounded-lg p-5 shadow-sm">
-          <p className="text-sm text-gray-600 mb-2 font-medium">Pending Clearance</p>
+          <p className="text-sm text-gray-600 mb-2 font-medium">保留中 Clearance</p>
           <p className="text-3xl font-bold text-[#162D50]">5</p>
         </div>
         <div className="bg-[#F8F9FA] border border-gray-200 rounded-lg p-5 shadow-sm">
@@ -52,11 +52,11 @@ export default function Resignation() {
           <table className="w-full text-left border-collapse min-w-max">
             <thead>
               <tr className="bg-[#F8F9FA] border-b border-gray-200 text-sm font-bold text-[#162D50]">
-                <th className="py-4 px-6">Staff ID</th>
+                <th className="py-4 px-6">スタッフID</th>
                 <th className="py-4 px-6">Name</th>
-                <th className="py-4 px-6">Resignation Date</th>
+                <th className="py-4 px-6">Resignation 日付</th>
                 <th className="py-4 px-6">Last Working Day</th>
-                <th className="py-4 px-6">Clearance Status</th>
+                <th className="py-4 px-6">Clearance ステータス</th>
                 <th className="py-4 px-6">Actions</th>
               </tr>
             </thead>
@@ -106,7 +106,7 @@ export default function Resignation() {
                 <td className="py-4 px-6 text-gray-600">Sep 15, 2023</td>
                 <td className="py-4 px-6 text-gray-600">Oct 15, 2023</td>
                 <td className="py-4 px-6">
-                  <span className="bg-green-100 text-green-700 px-3 py-1 rounded-full text-xs font-medium">Completed</span>
+                  <span className="bg-green-100 text-green-700 px-3 py-1 rounded-full text-xs font-medium">完了</span>
                 </td>
                 <td className="py-4 px-6">
                   <button className="text-[#162D50] font-bold hover:underline text-sm">View Details</button>

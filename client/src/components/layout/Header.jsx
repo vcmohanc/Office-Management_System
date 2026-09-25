@@ -26,7 +26,7 @@ export default function Header({ activeTab, user, setActiveTab }) {
           <Search className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
           <input 
             type="text" 
-            placeholder="Search..." 
+            placeholder="検索..." 
             value={search}
             onChange={handleSearch}
             className="pl-9 pr-4 py-2 bg-[#F3F4F6] border-none rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-[#162D50] w-64"

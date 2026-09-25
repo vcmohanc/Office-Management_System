@@ -10,12 +10,12 @@ export default function HRDashboard() {
   // Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedStaff, setSelectedStaff] = useState(null);
-  const [newOnboardingStatus, setNewOnboardingStatus] = useState('Verification Pending');
+  const [newOnboardingステータス, setNewOnboardingステータス] = useState('Verification 保留中');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // List Controls State
   const [searchQuery, setSearchQuery] = useState('');
-  const [statusFilter, setStatusFilter] = useState('All');
+  const [statusFilter, setステータスFilter] = useState('All');
   const [activeTab, setActiveTab] = useState('All Staff');
 
   useEffect(() => {
@@ -54,20 +54,20 @@ export default function HRDashboard() {
     const matchesSearch = (emp.romajiName || '').toLowerCase().includes(searchQuery.toLowerCase()) || 
                           (emp.katakanaName || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
                           (emp.staffId || '').toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesStatus = statusFilter === 'All' || emp.onboardingStatus === statusFilter || (!emp.onboardingStatus && statusFilter === 'Active');
+    const matchesステータス = statusFilter === 'All' || emp.onboardingステータス === statusFilter || (!emp.onboardingステータス && statusFilter === 'Active');
     const matchesTab = activeTab === 'All Staff' || (activeTab === 'Office Staff' && isEmpOffice(emp)) || (activeTab === 'Haken Staff' && !isEmpOffice(emp));
-    return matchesSearch && matchesStatus && matchesTab;
+    return matchesSearch && matchesステータス && matchesTab;
   });
 
   const handleExportCSV = () => {
-    const headers = ['S.N.', 'Staff ID', 'Full Name', 'Department', 'Join Date', 'Status'];
+    const headers = ['S.N.', 'スタッフID', '氏名', 'Department', 'Join 日付', 'ステータス'];
     const rows = filteredEmployees.map((emp, index) => [
       index + 1,
       emp.staffId ? emp.staffId.replace(/[#-]/g, '') : `STF${emp._id?.slice(-6).toUpperCase()}`,
       `"${emp.romajiName || emp.katakanaName || ''}"`,
       `"${Array.isArray(emp.department) ? emp.department.join(', ') : (emp.department || '')}"`,
       emp.joinDate ? new Date(emp.joinDate).toLocaleDateString() : '',
-      emp.onboardingStatus || 'Active'
+      emp.onboardingステータス || 'Active'
     ]);
     
     const csvContent = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
@@ -98,17 +98,17 @@ export default function HRDashboard() {
           <h1>Staff Directory Report</h1>
           <div class="meta">
             <span>Category: <strong>${activeTab}</strong></span>
-            <span>Generated Date: <strong>${new Date().toLocaleDateString()}</strong></span>
+            <span>Generated 日付: <strong>${new Date().toLocaleDateString()}</strong></span>
           </div>
           <table>
             <thead>
               <tr>
                 <th>S.N.</th>
-                <th>Staff ID</th>
-                <th>Full Name</th>
+                <th>スタッフID</th>
+                <th>氏名</th>
                 <th>Department</th>
-                <th>Join Date</th>
-                <th>Status</th>
+                <th>Join 日付</th>
+                <th>ステータス</th>
               </tr>
             </thead>
             <tbody>
@@ -119,7 +119,7 @@ export default function HRDashboard() {
                   <td>${emp.romajiName || emp.katakanaName || 'N/A'}</td>
                   <td>${Array.isArray(emp.department) ? emp.department.join(', ') : (emp.department || 'N/A')}</td>
                   <td>${emp.joinDate ? new Date(emp.joinDate).toLocaleDateString() : 'N/A'}</td>
-                  <td>${emp.onboardingStatus || 'Active'}</td>
+                  <td>${emp.onboardingステータス || 'Active'}</td>
                 </tr>
               `).join('')}
             </tbody>
@@ -141,22 +141,22 @@ export default function HRDashboard() {
 
   const handleEditClick = (emp) => {
     setSelectedStaff(emp);
-    setNewOnboardingStatus(emp.onboardingStatus || 'Verification Pending');
+    setNewOnboardingステータス(emp.onboardingステータス || 'Verification 保留中');
     setIsModalOpen(true);
   };
 
-  const handleUpdateStatus = async () => {
+  const handleUpdateステータス = async () => {
     if (!selectedStaff) return;
     setIsSubmitting(true);
     try {
       const res = await apiFetch(`/api/employees/${selectedStaff._id}`, {
         method: 'PUT',
-        body: JSON.stringify({ ...selectedStaff, onboardingStatus: newOnboardingStatus }),
+        body: JSON.stringify({ ...selectedStaff, onboardingステータス: newOnboardingステータス }),
       });
       
       if (res.ok) {
         setEmployees(prev => prev.map(emp => 
-          emp._id === selectedStaff._id ? { ...emp, onboardingStatus: newOnboardingStatus } : emp
+          emp._id === selectedStaff._id ? { ...emp, onboardingステータス: newOnboardingステータス } : emp
         ));
         setIsModalOpen(false);
         setSelectedStaff(null);
@@ -168,15 +168,15 @@ export default function HRDashboard() {
     }
   };
 
-  const getStatusBadge = (status) => {
+  const getステータスBadge = (status) => {
     if (status === 'Active') {
       return <span className="px-3 py-1 bg-[#4CAF50] text-white rounded-full text-xs font-bold inline-block w-[140px] text-center shadow-sm">Active</span>;
     } else if (status === 'Missing Pledges') {
       return <span className="px-3 py-1 bg-[#D32F2F] text-white rounded-full text-xs font-bold inline-block w-[140px] text-center shadow-sm">Missing Pledges</span>;
-    } else if (status === 'Verification Pending') {
-      return <span className="px-3 py-1 bg-[#F5D056] text-[#6b5207] rounded-full text-xs font-bold inline-block w-[140px] text-center shadow-sm">Verification Pending</span>;
-    } else if (status === 'Rejected') {
-      return <span className="px-3 py-1 bg-red-100 text-red-800 rounded-full text-xs font-bold inline-block w-[140px] text-center shadow-sm">Rejected</span>;
+    } else if (status === 'Verification 保留中') {
+      return <span className="px-3 py-1 bg-[#F5D056] text-[#6b5207] rounded-full text-xs font-bold inline-block w-[140px] text-center shadow-sm">Verification 保留中</span>;
+    } else if (status === '拒否') {
+      return <span className="px-3 py-1 bg-red-100 text-red-800 rounded-full text-xs font-bold inline-block w-[140px] text-center shadow-sm">拒否</span>;
     } else {
       return <span className="px-3 py-1 bg-gray-200 text-gray-700 rounded-full text-xs font-bold inline-block w-[140px] text-center shadow-sm">{status || 'Unknown'}</span>;
     }
@@ -235,12 +235,12 @@ export default function HRDashboard() {
               <Filter className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
               <select
                 value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value)}
+                onChange={(e) => setステータスFilter(e.target.value)}
                 className="pl-9 pr-8 py-2 border border-gray-300 rounded-lg text-sm appearance-none focus:outline-none focus:ring-2 focus:ring-[#162D50] bg-white"
               >
-                <option value="All">All Status</option>
+                <option value="All">All ステータス</option>
                 <option value="Active">Active</option>
-                <option value="Verification Pending">Verification Pending</option>
+                <option value="Verification 保留中">Verification 保留中</option>
                 <option value="Missing Pledges">Missing Pledges</option>
               </select>
               <ChevronDown className="w-4 h-4 absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none" />
@@ -249,11 +249,11 @@ export default function HRDashboard() {
             {/* Export & Print */}
             <button onClick={handleExportCSV} className="flex items-center space-x-2 px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium hover:bg-gray-50 text-gray-700">
               <Download className="w-4 h-4" />
-              <span>Export</span>
+              <span>エクスポート</span>
             </button>
             <button onClick={handlePrint} className="flex items-center space-x-2 px-4 py-2 bg-[#162D50] text-white rounded-lg text-sm font-medium hover:bg-[#0f1f38] transition-colors">
               <Printer className="w-4 h-4" />
-              <span>Print</span>
+              <span>印刷</span>
             </button>
           </div>
         </div>
@@ -280,11 +280,11 @@ export default function HRDashboard() {
             <thead>
               <tr className="border-b border-gray-200 bg-white">
                 <th className="py-4 px-6 text-xs font-bold text-[#162D50] uppercase tracking-wider">S.N.</th>
-                <th className="py-4 px-6 text-xs font-bold text-[#162D50] uppercase tracking-wider">Staff ID</th>
-                <th className="py-4 px-6 text-xs font-bold text-[#162D50] uppercase tracking-wider">Full Name</th>
+                <th className="py-4 px-6 text-xs font-bold text-[#162D50] uppercase tracking-wider">スタッフID</th>
+                <th className="py-4 px-6 text-xs font-bold text-[#162D50] uppercase tracking-wider">氏名</th>
                 <th className="py-4 px-6 text-xs font-bold text-[#162D50] uppercase tracking-wider">Department</th>
-                <th className="py-4 px-6 text-xs font-bold text-[#162D50] uppercase tracking-wider">Join Date</th>
-                <th className="py-4 px-6 text-xs font-bold text-[#162D50] uppercase tracking-wider">Onboarding Status</th>
+                <th className="py-4 px-6 text-xs font-bold text-[#162D50] uppercase tracking-wider">Join 日付</th>
+                <th className="py-4 px-6 text-xs font-bold text-[#162D50] uppercase tracking-wider">Onboarding ステータス</th>
                 <th className="py-4 px-6 text-xs font-bold text-[#162D50] uppercase tracking-wider text-center no-print">Actions</th>
               </tr>
             </thead>
@@ -308,7 +308,7 @@ export default function HRDashboard() {
                       {employee.joinDate ? new Date(employee.joinDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'N/A'}
                     </td>
                     <td className="py-5 px-6">
-                      {getStatusBadge(employee.onboardingStatus)}
+                      {getステータスBadge(employee.onboardingステータス)}
                     </td>
                     <td className="py-5 px-6 text-center no-print">
                       <div className="flex justify-center space-x-3">
@@ -318,7 +318,7 @@ export default function HRDashboard() {
                         <button 
                           onClick={() => handleEditClick(employee)}
                           className="text-gray-400 hover:text-green-600 transition-colors" 
-                          title="Update Status"
+                          title="Update ステータス"
                         >
                           <Edit className="w-5 h-5" />
                         </button>
@@ -332,13 +332,13 @@ export default function HRDashboard() {
         </div>
       </div>
 
-      {/* Onboarding Status Update Modal */}
+      {/* Onboarding ステータス Update Modal */}
       {isModalOpen && selectedStaff && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-xl shadow-2xl max-w-lg w-full overflow-hidden flex flex-col">
             <div className="p-6 border-b border-gray-100 bg-[#F8F9FA] flex justify-between items-center">
               <div>
-                <h3 className="text-xl font-bold text-[#162D50]">Update Onboarding Status</h3>
+                <h3 className="text-xl font-bold text-[#162D50]">Update Onboarding ステータス</h3>
                 <p className="text-sm text-gray-500 mt-1">For {selectedStaff.romajiName}</p>
               </div>
             </div>
@@ -346,16 +346,16 @@ export default function HRDashboard() {
             <div className="p-6 flex-1">
               <div className="space-y-5">
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">Select New Status</label>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">Select New ステータス</label>
                   <select
-                    value={newOnboardingStatus}
-                    onChange={(e) => setNewOnboardingStatus(e.target.value)}
+                    value={newOnboardingステータス}
+                    onChange={(e) => setNewOnboardingステータス(e.target.value)}
                     className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#162D50] focus:border-[#162D50] outline-none transition-all bg-white"
                   >
-                    <option value="Verification Pending">Verification Pending</option>
+                    <option value="Verification 保留中">Verification 保留中</option>
                     <option value="Missing Pledges">Missing Pledges</option>
                     <option value="Active">Active</option>
-                    <option value="Rejected">Rejected</option>
+                    <option value="拒否">拒否</option>
                   </select>
                 </div>
                 
@@ -376,7 +376,7 @@ export default function HRDashboard() {
                 Cancel
               </button>
               <button 
-                onClick={handleUpdateStatus}
+                onClick={handleUpdateステータス}
                 disabled={isSubmitting}
                 className={`px-6 py-2.5 rounded-lg font-bold text-white transition-all shadow-sm ${
                   isSubmitting ? 'bg-gray-400 cursor-not-allowed' : 'bg-[#162D50] hover:bg-[#0f1f38]'

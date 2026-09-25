@@ -59,16 +59,16 @@ export default function ClaimList() {
                 <th className="px-6 py-4 text-sm font-bold text-gray-600">Claim ID</th>
                 <th className="px-6 py-4 text-sm font-bold text-gray-600">Payment Type</th>
                 <th className="px-6 py-4 text-sm font-bold text-gray-600">Details</th>
-                <th className="px-6 py-4 text-sm font-bold text-gray-600">Amount</th>
-                <th className="px-6 py-4 text-sm font-bold text-gray-600">Date</th>
-                <th className="px-6 py-4 text-sm font-bold text-gray-600">Status</th>
-                <th className="px-6 py-4 text-sm font-bold text-gray-600 text-center">Action</th>
+                <th className="px-6 py-4 text-sm font-bold text-gray-600">金額</th>
+                <th className="px-6 py-4 text-sm font-bold text-gray-600">日付</th>
+                <th className="px-6 py-4 text-sm font-bold text-gray-600">ステータス</th>
+                <th className="px-6 py-4 text-sm font-bold text-gray-600 text-center">アクション</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
               {loading ? (
                 <tr>
-                  <td colSpan="7" className="px-6 py-5 text-center text-gray-500">Loading...</td>
+                  <td colSpan="7" className="px-6 py-5 text-center text-gray-500">読み込み中...</td>
                 </tr>
               ) : claims.length === 0 ? (
                 <tr>
@@ -88,9 +88,9 @@ export default function ClaimList() {
                     </td>
                     <td className="px-6 py-5 whitespace-nowrap">
                       <span className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-md ${
-                        claim.status === 'Pending' ? 'bg-blue-100 text-blue-700' :
-                        claim.status === 'Approved' ? 'bg-green-100 text-green-700' :
-                        claim.status === 'Rejected' ? 'bg-red-100 text-red-700' :
+                        claim.status === '保留中' ? 'bg-blue-100 text-blue-700' :
+                        claim.status === '承認済' ? 'bg-green-100 text-green-700' :
+                        claim.status === '拒否' ? 'bg-red-100 text-red-700' :
                         'bg-yellow-100 text-yellow-700'
                       }`}>
                         {claim.status}
