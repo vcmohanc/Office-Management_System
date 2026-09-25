@@ -276,19 +276,19 @@ export default function VisaManagement() {
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
         <div className="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
-          <p className="text-xs font-bold text-gray-500 mb-2 uppercase tracking-wider">TOTAL ACTIVE VISAS</p>
+          <p className="text-xs font-bold text-gray-500 mb-2 uppercase tracking-wider">有効ビザ数</p>
           <p className="text-3xl font-bold text-[#162D50]">{loading ? '...' : activeVisas}</p>
         </div>
         <div className="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
-          <p className="text-xs font-bold text-gray-500 mb-2 uppercase tracking-wider">EXPIRING SOON (90 DAYS)</p>
+          <p className="text-xs font-bold text-gray-500 mb-2 uppercase tracking-wider">期限切れ間近（90日以内）</p>
           <p className="text-3xl font-bold text-blue-500">{loading ? '...' : expiringSoon}</p>
         </div>
         <div className="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
-          <p className="text-xs font-bold text-gray-500 mb-2 uppercase tracking-wider">EXPIRED/ACTION REQUIRED</p>
+          <p className="text-xs font-bold text-gray-500 mb-2 uppercase tracking-wider">期限切れ／要対応</p>
           <p className="text-3xl font-bold text-red-500">{loading ? '...' : expired}</p>
         </div>
         <div className="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
-          <p className="text-xs font-bold text-gray-500 mb-2 uppercase tracking-wider">PENDING RENEWALS</p>
+          <p className="text-xs font-bold text-gray-500 mb-2 uppercase tracking-wider">更新申請中</p>
           <p className="text-3xl font-bold text-yellow-500">{loading ? '...' : pendingRenewals}</p>
         </div>
       </div>
@@ -299,7 +299,7 @@ export default function VisaManagement() {
           <Search className="w-5 h-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
           <input 
             type="text" 
-            placeholder="Search by スタッフ名 or ID..." 
+            placeholder="スタッフ名またはIDで検索..." 
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-[#162D50] bg-white"
@@ -330,25 +330,25 @@ export default function VisaManagement() {
           <table className="w-full text-left border-collapse min-w-max">
             <thead>
               <tr className="bg-white border-b border-gray-200 text-xs font-bold text-gray-500 uppercase tracking-wider">
-                <th className="py-4 px-4 text-center w-10">S.No</th>
-                <th className="py-4 px-6">STAFF ID</th>
-                <th className="py-4 px-6">STAFF NAME</th>
-                <th className="py-4 px-6">NATIONALITY</th>
-                <th className="py-4 px-6">VISA TYPE</th>
-                <th className="py-4 px-6">EXPIRY DATE</th>
-                <th className="py-4 px-6">APP STATUS</th>
-                <th className="py-4 px-6">STATUS</th>
-                <th className="py-4 px-6 text-right">ACTIONS</th>
+                <th className="py-4 px-4 text-center w-10">番号</th>
+                <th className="py-4 px-6">スタッフID</th>
+                <th className="py-4 px-6">氏名</th>
+                <th className="py-4 px-6">国籍</th>
+                <th className="py-4 px-6">ビザ種別</th>
+                <th className="py-4 px-6">有効期限</th>
+                <th className="py-4 px-6">申請状況</th>
+                <th className="py-4 px-6">ステータス</th>
+                <th className="py-4 px-6 text-right">操作</th>
               </tr>
             </thead>
             <tbody className="text-sm">
               {loading ? (
                 <tr>
-                  <td colSpan="7" className="py-8 px-6 text-center text-gray-500">Loading visa data...</td>
+                  <td colSpan="9" className="py-8 px-6 text-center text-gray-500">ビザデータを読み込み中...</td>
                 </tr>
               ) : filteredEmployees.length === 0 ? (
                 <tr>
-                  <td colSpan="7" className="py-8 px-6 text-center text-gray-500">No staff found matching your search.</td>
+                  <td colSpan="9" className="py-8 px-6 text-center text-gray-500">検索条件に一致するスタッフが見つかりません。</td>
                 </tr>
               ) : (
                 filteredEmployees.map((employee, idx) => {
@@ -357,17 +357,17 @@ export default function VisaManagement() {
                   let actionButton = null;
 
                   if (status === 'Active') {
-                    statusBadge = <span className="bg-green-50 text-green-600 border border-green-200 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider">Active</span>;
+                    statusBadge = <span className="bg-green-50 text-green-600 border border-green-200 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider">有効</span>;
                     actionButton = <button onClick={() => handleアクションClick(employee, 'View')} className="text-[#162D50] font-bold hover:underline text-sm">表示</button>;
                   } else if (status === 'Expiring Soon') {
-                    statusBadge = <span className="bg-blue-50 text-blue-600 border border-blue-200 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider">Expiring Soon</span>;
-                    actionButton = <button onClick={() => handleアクションClick(employee, 'Renew')} className="bg-[#162D50] text-white px-4 py-1.5 rounded text-xs font-bold hover:bg-[#0f1f38] transition-colors shadow-sm">Renew</button>;
+                    statusBadge = <span className="bg-blue-50 text-blue-600 border border-blue-200 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider">期限切れ間近</span>;
+                    actionButton = <button onClick={() => handleアクションClick(employee, 'Renew')} className="bg-[#162D50] text-white px-4 py-1.5 rounded text-xs font-bold hover:bg-[#0f1f38] transition-colors shadow-sm">更新する</button>;
                   } else if (status === 'Expired') {
-                    statusBadge = <span className="bg-red-50 text-red-600 border border-red-200 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider">Expired</span>;
-                    actionButton = <button onClick={() => handleアクションClick(employee, 'アクション Required')} className="bg-red-600 text-white px-3 py-1.5 rounded text-xs font-bold hover:bg-red-700 transition-colors shadow-sm whitespace-nowrap">アクション Required</button>;
+                    statusBadge = <span className="bg-red-50 text-red-600 border border-red-200 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider">期限切れ</span>;
+                    actionButton = <button onClick={() => handleアクションClick(employee, 'アクション Required')} className="bg-red-600 text-white px-3 py-1.5 rounded text-xs font-bold hover:bg-red-700 transition-colors shadow-sm whitespace-nowrap">要対応</button>;
                   } else {
-                    statusBadge = <span className="bg-yellow-50 text-yellow-600 border border-yellow-200 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider">Renewal In Progress</span>;
-                    actionButton = <button onClick={() => handleアクションClick(employee, 'Details')} className="text-[#162D50] font-bold hover:underline text-sm">Details</button>;
+                    statusBadge = <span className="bg-yellow-50 text-yellow-600 border border-yellow-200 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider">更新申請中</span>;
+                    actionButton = <button onClick={() => handleアクションClick(employee, 'Details')} className="text-[#162D50] font-bold hover:underline text-sm">詳細</button>;
                   }
 
                   return (
@@ -410,7 +410,7 @@ export default function VisaManagement() {
         
         {/* Record count */}
         <div className="p-4 border-t border-gray-200 bg-white text-sm text-gray-500">
-          Showing {filteredEmployees.length} of {employees.length} staff
+          {filteredEmployees.length}件表示中（全{employees.length}件）
         </div>
       </div>
 
@@ -420,22 +420,22 @@ export default function VisaManagement() {
           <div className="bg-white rounded-xl shadow-2xl max-w-lg w-full overflow-hidden flex flex-col">
             <div className="p-6 border-b border-gray-100 bg-[#F8F9FA] flex justify-between items-center">
               <div>
-                <h3 className="text-xl font-bold text-[#162D50]">Update Visa ステータス</h3>
-                <p className="text-sm text-gray-500 mt-1">For {selectedStaff.romajiName}</p>
+                <h3 className="text-xl font-bold text-[#162D50]">ビザステータス更新</h3>
+                <p className="text-sm text-gray-500 mt-1">{selectedStaff.romajiName} さんの情報</p>
               </div>
             </div>
             <div className="p-6 flex-1 overflow-y-auto">
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-1">Current Expiry 日付</label>
+                  <label className="block text-sm font-semibold text-gray-700 mb-1">現在の有効期限</label>
                   <div className="w-full p-3 border border-gray-200 rounded-lg bg-gray-50 text-gray-600 font-medium cursor-not-allowed">
-                    {selectedStaff.visaEndDate ? new Date(selectedStaff.visaEndDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'N/A'}
+                    {selectedStaff.visaEndDate ? new Date(selectedStaff.visaEndDate).toLocaleDateString('ja-JP', { year: 'numeric', month: 'long', day: 'numeric' }) : '未設定'}
                   </div>
                 </div>
                 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-1">New Start 日付</label>
+                    <label className="block text-sm font-semibold text-gray-700 mb-1">新しい開始日</label>
                     <input 
                       type="date" 
                       value={newStartDate}
@@ -444,7 +444,7 @@ export default function VisaManagement() {
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-1">New Expiry 日付 <span className="text-red-500">*</span></label>
+                    <label className="block text-sm font-semibold text-gray-700 mb-1">新しい有効期限 <span className="text-red-500">*</span></label>
                     <input 
                       type="date" 
                       value={newExpiryDate}
@@ -455,7 +455,7 @@ export default function VisaManagement() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-1">New ステータス</label>
+                  <label className="block text-sm font-semibold text-gray-700 mb-1">新しいステータス</label>
                   <select
                     value={newVisaステータス}
                     onChange={(e) => setNewVisaステータス(e.target.value)}
@@ -468,7 +468,7 @@ export default function VisaManagement() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-1">Application ステータス</label>
+                  <label className="block text-sm font-semibold text-gray-700 mb-1">申請ステータス</label>
                   <select
                     value={newVisaAppステータス}
                     onChange={handleAppステータスChange}
@@ -489,7 +489,7 @@ export default function VisaManagement() {
                 className="px-6 py-2.5 rounded-lg font-bold text-gray-700 hover:bg-gray-200 transition-colors"
                 disabled={isSubmitting}
               >
-                Cancel
+                キャンセル
               </button>
               <button 
                 onClick={handleUpdateVisa}
@@ -498,7 +498,7 @@ export default function VisaManagement() {
                   isSubmitting || !newExpiryDate ? 'bg-gray-400 cursor-not-allowed' : 'bg-[#162D50] hover:bg-[#0f1f38]'
                 }`}
               >
-                {isSubmitting ? 'Saving...' : 'Save Changes'}
+                {isSubmitting ? '保存中...' : '変更を保存'}
               </button>
             </div>
           </div>
