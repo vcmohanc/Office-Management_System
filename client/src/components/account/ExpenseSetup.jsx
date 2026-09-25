@@ -257,7 +257,7 @@ export default function ExpenseSetup() {
           {activeTab === 'regions' ? (
             <div className="max-w-4xl">
               <div className="mb-6 p-4 bg-gray-50 border border-gray-200 rounded-lg">
-                <h3 className="font-semibold text-gray-700 mb-3">Add New Region</h3>
+                <h3 className="font-semibold text-gray-700 mb-3">新しい地域を追加</h3>
                 <div className="flex gap-4 items-end">
                   <div className="flex-1">
                     <label className="block text-sm text-gray-600 mb-1">Sender / Departure Name (name1)</label>
@@ -292,9 +292,9 @@ export default function ExpenseSetup() {
               <table className="w-full border-collapse">
                 <thead>
                   <tr>
-                    <th className="p-3 border border-gray-200 bg-gray-50 text-left text-xs font-semibold text-gray-600 uppercase">Sender / Departure (name1)</th>
-                    <th className="p-3 border border-gray-200 bg-gray-50 text-left text-xs font-semibold text-gray-600 uppercase">Recipient / Arrival (name2)</th>
-                    <th className="p-3 border border-gray-200 bg-gray-50 text-center text-xs font-semibold text-gray-600 uppercase w-32">Actions</th>
+                    <th className="p-3 border border-gray-200 bg-gray-50 text-left text-xs font-semibold text-gray-600 uppercase">送信者 / 出発地 (名前1)</th>
+                    <th className="p-3 border border-gray-200 bg-gray-50 text-left text-xs font-semibold text-gray-600 uppercase">受信者 / 到着地 (名前2)</th>
+                    <th className="p-3 border border-gray-200 bg-gray-50 text-center text-xs font-semibold text-gray-600 uppercase w-32">アクション</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -382,7 +382,7 @@ export default function ExpenseSetup() {
                           ) : activeTab === 'travel' ? (
                             <div className="flex flex-col space-y-1">
                               <div className="flex items-center">
-                                <span className="text-gray-500 text-xs w-8 text-left">Bus</span>
+                                <span className="text-gray-500 text-xs w-8 text-left">バス</span>
                                 <span className="text-gray-500 mx-1">¥</span>
                                 <input
                                   type="text"
@@ -393,7 +393,7 @@ export default function ExpenseSetup() {
                               </div>
                               {!isDiagonal && (
                                 <div className={`flex items-center ${!isFlightEligible(departure, destination) ? 'opacity-50' : ''}`}>
-                                  <span className="text-gray-500 text-xs w-8 text-left">Flight</span>
+                                  <span className="text-gray-500 text-xs w-8 text-left">フライト</span>
                                   <span className="text-gray-500 mx-1">¥</span>
                                   <input
                                     type="text"

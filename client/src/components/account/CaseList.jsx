@@ -490,7 +490,7 @@ export default function CaseList() {
 
   return (
     <div className="w-full px-4 sm:px-6 lg:px-8 xl:px-12 space-y-6 pb-10">
-      <h2 className="text-2xl font-bold text-[#162D50] mb-4">Case List</h2>
+      <h2 className="text-2xl font-bold text-[#162D50] mb-4">案件一覧</h2>
       
       {/* Top Tabs */}
       <div className="bg-[#F2F4F7] p-1 rounded-md flex space-x-1 mb-4 border border-gray-200">
@@ -585,7 +585,7 @@ export default function CaseList() {
               <th className="py-3 px-6">経費の種類</th>
               <th className="py-3 px-6">合計金額</th>
               <th className="py-3 px-6">ステータス</th>
-              <th className="py-3 px-6">Actions</th>
+              <th className="py-3 px-6">アクション</th>
             </tr>
           </thead>
           <tbody className="text-sm">
@@ -663,10 +663,10 @@ export default function CaseList() {
       {selectedCase && (
         <div className="bg-[#F8F9FA] border border-gray-200 rounded-md mt-8">
           <div className="p-6 border-b border-gray-200 flex justify-between items-center bg-white rounded-t-md">
-            <h3 className="text-[#162D50] text-lg font-bold">Case Detail Preview</h3>
+            <h3 className="text-[#162D50] text-lg font-bold">案件詳細プレビュー</h3>
             <div className="flex items-center space-x-3">
               {selectedCase.missingReceipt && (
-                <span className="bg-red-100 text-red-600 px-4 py-1.5 rounded-full text-sm font-medium border border-red-200">Missing Receipt</span>
+                <span className="bg-red-100 text-red-600 px-4 py-1.5 rounded-full text-sm font-medium border border-red-200">領収書不足</span>
               )}
               {isEditing ? (
                 <>
@@ -689,7 +689,7 @@ export default function CaseList() {
           <div className="p-6 grid grid-cols-1 md:grid-cols-3 gap-8 bg-white">
             {/* CASE INFORMATION */}
             <div>
-              <h4 className="text-xs font-bold text-gray-500 mb-4 tracking-wider">CASE INFORMATION</h4>
+              <h4 className="text-xs font-bold text-gray-500 mb-4 tracking-wider">案件情報</h4>
               <div className="space-y-3 text-sm">
                 <div className="flex justify-between">
                   <span className="text-gray-500">案件ID</span>
@@ -740,14 +740,14 @@ export default function CaseList() {
 
             {/* SETTLEMENT BREAKDOWN */}
             <div>
-              <h4 className="text-xs font-bold text-gray-500 mb-4 tracking-wider">SETTLEMENT BREAKDOWN</h4>
+              <h4 className="text-xs font-bold text-gray-500 mb-4 tracking-wider">決済の内訳</h4>
               <div className="bg-[#E9ECEF] rounded-md p-4 text-sm">
                 <div className="flex justify-between mb-2">
-                  <span className="text-gray-600">Settlement to Advancer</span>
+                  <span className="text-gray-600">前払者への決済</span>
                   <span className="font-bold text-gray-800">{selectedCase.currencySymbol}{selectedCase.displayTotal.toLocaleString()}</span>
                 </div>
                 <div className="flex justify-between mb-4 pb-4 border-b border-gray-300 items-center">
-                  <span className="text-gray-500">Method</span>
+                  <span className="text-gray-500">方法</span>
                   {isEditing ? (
                     <input 
                       type="text"
@@ -781,14 +781,14 @@ export default function CaseList() {
 
             {/* ATTACHMENTS */}
             <div>
-              <h4 className="text-xs font-bold text-gray-500 mb-4 tracking-wider">ATTACHMENTS</h4>
+              <h4 className="text-xs font-bold text-gray-500 mb-4 tracking-wider">添付ファイル</h4>
               <div className="space-y-3">
                 {isEditing ? (
                   <>
                     <div className="border-2 border-dashed border-gray-300 rounded-md p-4 text-center hover:bg-gray-50 transition-colors cursor-pointer relative flex flex-col items-center justify-center">
                       <input type="file" multiple accept=".jpg,.jpeg,.png,.pdf,image/jpeg,image/png,application/pdf" className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" onChange={handleFileUpload} />
                       <FileText className="w-6 h-6 text-gray-400 mb-2" />
-                      <p className="text-sm text-gray-600">Drag and drop files or click to upload</p>
+                      <p className="text-sm text-gray-600">ファイルをドラッグ＆ドロップするか、クリックしてアップロード</p>
                     </div>
                     {editData.receipts && editData.receipts.length > 0 && (
                       <div className="mt-3 flex flex-col gap-2">
@@ -825,7 +825,7 @@ export default function CaseList() {
             <div className="md:col-span-3 mt-4 border-t border-gray-200 pt-6">
               {isEditing && (
                 <div className="mb-6 w-full md:w-2/3">
-                  <h4 className="text-xs font-bold text-gray-500 mb-2 tracking-wider">ADD SHORT NOTE</h4>
+                  <h4 className="text-xs font-bold text-gray-500 mb-2 tracking-wider">短いメモを追加</h4>
                   <textarea 
                     value={editData.short_note || ''} 
                     onChange={(e) => setEditData({...editData, short_note: e.target.value})}
@@ -836,7 +836,7 @@ export default function CaseList() {
               )}
               {selectedCase && (
                 <div className="w-full">
-                  <h4 className="text-xs font-bold text-gray-500 mb-4 tracking-wider">REASON / MESSAGE HISTORY</h4>
+                  <h4 className="text-xs font-bold text-gray-500 mb-4 tracking-wider">理由 / メッセージ履歴</h4>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     {/* 経理部門 Messages */}
                     <div>
@@ -877,7 +877,7 @@ export default function CaseList() {
                   {/* New Message Input */}
                   <div className="mt-6 flex flex-col md:flex-row gap-4 items-end">
                     <div className="flex-1 w-full">
-                      <label className="block text-xs font-bold text-gray-500 mb-2 uppercase tracking-wider">New Message</label>
+                      <label className="block text-xs font-bold text-gray-500 mb-2 uppercase tracking-wider">新規メッセージ</label>
                       <textarea 
                         value={newMessageInput}
                         onChange={(e) => setNewMessageInput(e.target.value)}

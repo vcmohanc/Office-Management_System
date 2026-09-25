@@ -16,10 +16,33 @@ export default function Header({ activeTab, user, setActiveTab }) {
     setSearchParams(searchParams);
   };
 
+  const tabLabels = {
+    'Dashboard': 'ダッシュボード',
+    'New Case': '新規案件',
+    'Case List': '案件一覧',
+    'Payment Entry': '支払入力',
+    'Paid Status': '支払状況',
+    'Staff Registration': 'スタッフ登録',
+    'Staff List': 'スタッフ一覧',
+    'Assign Work Place': '配属先',
+    'Visa Management': 'ビザ管理',
+    'Resignation': '退職',
+    'Staff Claim Request': 'スタッフ経費精算',
+    'Expense SetUp': '経費設定',
+    'Settings': '設定',
+    'B2B部門': 'B2B部門',
+    '経理部門': '経理部門',
+    '人事部門': '人事部門',
+    '事業部門': '事業部門',
+    'サポート部門': 'サポート部門'
+  };
+
+  const displayTab = tabLabels[activeTab] || activeTab;
+
   return (
     <header className="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-8 min-h-[64px]">
       <h1 className="text-2xl font-bold text-[#162D50]">
-        {activeTab === 'Dashboard' ? 'OMS' : activeTab}
+        {activeTab === 'Dashboard' ? 'OMS' : displayTab}
       </h1>
       <div className="flex items-center space-x-6">
         <div className="relative">

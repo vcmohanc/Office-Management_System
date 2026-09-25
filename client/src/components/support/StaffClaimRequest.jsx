@@ -249,7 +249,7 @@ export default function StaffClaimRequest() {
         return (
           <div className="grid grid-cols-2 gap-6 mb-8 bg-blue-50 p-6 rounded-md">
             <div>
-              <label className="block text-sm font-bold text-gray-700 mb-2">From</label>
+              <label className="block text-sm font-bold text-gray-700 mb-2">出発地</label>
               <input type="text" list={`from-list-${index}`} value={claimItem.postageFrom || ''} onChange={(e) => updateClaim(index, 'postageFrom', e.target.value)} placeholder="Enter sender details" className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50]" />
               <datalist id={`from-list-${index}`}>
                 {regions.map(r => (
@@ -258,7 +258,7 @@ export default function StaffClaimRequest() {
               </datalist>
             </div>
             <div>
-              <label className="block text-sm font-bold text-gray-700 mb-2">To</label>
+              <label className="block text-sm font-bold text-gray-700 mb-2">到着地</label>
               <input type="text" list={`to-list-${index}`} value={claimItem.postageTo || ''} onChange={(e) => updateClaim(index, 'postageTo', e.target.value)} placeholder="Enter recipient details" className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50]" />
               <datalist id={`to-list-${index}`}>
                 {regions.map(r => (
@@ -272,7 +272,7 @@ export default function StaffClaimRequest() {
         return (
           <div className="grid grid-cols-2 gap-6 mb-8 bg-blue-50 p-6 rounded-md">
             <div>
-              <label className="block text-sm font-bold text-gray-700 mb-2">Departure 拠点</label>
+              <label className="block text-sm font-bold text-gray-700 mb-2">出発拠点</label>
               <input type="text" list={`departure-list-${index}`} value={claimItem.departure || ''} onChange={(e) => updateClaim(index, 'departure', e.target.value)} placeholder="Enter departure" className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50]" />
               <datalist id={`departure-list-${index}`}>
                 {regions.map(r => (
@@ -281,7 +281,7 @@ export default function StaffClaimRequest() {
               </datalist>
             </div>
             <div>
-              <label className="block text-sm font-bold text-gray-700 mb-2">Destination</label>
+              <label className="block text-sm font-bold text-gray-700 mb-2">目的地</label>
               <input type="text" list={`destination-list-${index}`} value={claimItem.destination || ''} onChange={(e) => updateClaim(index, 'destination', e.target.value)} placeholder="Enter destination" className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50]" />
               <datalist id={`destination-list-${index}`}>
                 {regions.map(r => (
@@ -290,7 +290,7 @@ export default function StaffClaimRequest() {
               </datalist>
             </div>
             <div className="col-span-2">
-              <label className="block text-sm font-bold text-gray-700 mb-2">Transport Method</label>
+              <label className="block text-sm font-bold text-gray-700 mb-2">交通手段</label>
               <select value={claimItem.transportMethod || ''} onChange={(e) => updateClaim(index, 'transportMethod', e.target.value)} className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50]">
                 <option value="">Select method...</option>
                 <option value="Bus">Bus</option>
@@ -298,7 +298,7 @@ export default function StaffClaimRequest() {
               </select>
             </div>
             <div className="col-span-2">
-              <label className="block text-sm font-bold text-gray-700 mb-2">Reason</label>
+              <label className="block text-sm font-bold text-gray-700 mb-2">理由</label>
               <textarea value={claimItem.transportReason || ''} onChange={(e) => updateClaim(index, 'transportReason', e.target.value)} placeholder="Enter reason for travel" rows="3" className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50]"></textarea>
             </div>
           </div>
@@ -307,13 +307,13 @@ export default function StaffClaimRequest() {
         return (
           <div className="grid grid-cols-2 gap-6 mb-8 bg-blue-50 p-6 rounded-md">
             <div>
-              <label className="block text-sm font-bold text-gray-700 mb-2">Usage Start 日付</label>
+              <label className="block text-sm font-bold text-gray-700 mb-2">利用開始日</label>
               <div className="relative">
                 <input type="date" value={claimItem.dormitoryStartDate || ''} onChange={(e) => updateClaim(index, 'dormitoryStartDate', e.target.value)} className="w-full pl-4 pr-10 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50] text-gray-600" />
               </div>
             </div>
             <div>
-              <label className="block text-sm font-bold text-gray-700 mb-2">Usage End 日付</label>
+              <label className="block text-sm font-bold text-gray-700 mb-2">利用終了日</label>
               <div className="relative">
                 <input type="date" value={claimItem.dormitoryEndDate || ''} onChange={(e) => updateClaim(index, 'dormitoryEndDate', e.target.value)} className="w-full pl-4 pr-10 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50] text-gray-600" />
               </div>
@@ -324,17 +324,17 @@ export default function StaffClaimRequest() {
         return (
           <div className="grid grid-cols-3 gap-6 mb-8 bg-blue-50 p-6 rounded-md">
             <div>
-              <label className="block text-sm font-bold text-gray-700 mb-2">Consultation 日付</label>
+              <label className="block text-sm font-bold text-gray-700 mb-2">診察日</label>
               <div className="relative">
                 <input type="date" value={claimItem.consultationDate || ''} onChange={(e) => updateClaim(index, 'consultationDate', e.target.value)} className="w-full pl-4 pr-10 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50] text-gray-600" />
               </div>
             </div>
             <div>
-              <label className="block text-sm font-bold text-gray-700 mb-2">Consultation Fee</label>
+              <label className="block text-sm font-bold text-gray-700 mb-2">診察代</label>
               <input type="number" value={claimItem.consultationFee || 0} onChange={(e) => updateClaim(index, 'consultationFee', e.target.value)} className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50] text-gray-600" />
             </div>
             <div>
-              <label className="block text-sm font-bold text-gray-700 mb-2">Medicine Cost</label>
+              <label className="block text-sm font-bold text-gray-700 mb-2">薬代</label>
               <input type="number" value={claimItem.medicineCost || 0} onChange={(e) => updateClaim(index, 'medicineCost', e.target.value)} className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50] text-gray-600" />
             </div>
           </div>
@@ -343,21 +343,21 @@ export default function StaffClaimRequest() {
         return (
           <div className="grid grid-cols-2 gap-6 mb-8 bg-blue-50 p-6 rounded-md">
             <div>
-              <label className="block text-sm font-bold text-gray-700 mb-2">Item Name</label>
+              <label className="block text-sm font-bold text-gray-700 mb-2">品名</label>
               <input type="text" value={claimItem.itemName || ''} onChange={(e) => updateClaim(index, 'itemName', e.target.value)} placeholder="Enter item" className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50]" />
             </div>
             <div>
-              <label className="block text-sm font-bold text-gray-700 mb-2">Quantity</label>
+              <label className="block text-sm font-bold text-gray-700 mb-2">数量</label>
               <input type="number" value={claimItem.quantity || 1} onChange={(e) => updateClaim(index, 'quantity', e.target.value)} className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50] text-gray-600" />
             </div>
             <div>
-              <label className="block text-sm font-bold text-gray-700 mb-2">Purchase 日付</label>
+              <label className="block text-sm font-bold text-gray-700 mb-2">購入日</label>
               <div className="relative">
                 <input type="date" value={claimItem.purchaseDate || ''} onChange={(e) => updateClaim(index, 'purchaseDate', e.target.value)} className="w-full pl-4 pr-10 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50] text-gray-600" />
               </div>
             </div>
             <div className="col-span-2">
-              <label className="block text-sm font-bold text-gray-700 mb-2">Reason for damage, malfunction, shortage, etc.</label>
+              <label className="block text-sm font-bold text-gray-700 mb-2">破損、故障、不足などの理由</label>
               <textarea value={claimItem.damageReason || ''} onChange={(e) => updateClaim(index, 'damageReason', e.target.value)} placeholder="Enter reason" rows="3" className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50]"></textarea>
             </div>
           </div>
@@ -366,11 +366,11 @@ export default function StaffClaimRequest() {
         return (
           <div className="grid grid-cols-2 gap-6 mb-8 bg-blue-50 p-6 rounded-md">
             <div>
-              <label className="block text-sm font-bold text-gray-700 mb-2">Target Host Company / Farm</label>
+              <label className="block text-sm font-bold text-gray-700 mb-2">対象の受入企業/農園</label>
               <input type="text" value={claimItem.hostCompany || ''} onChange={(e) => updateClaim(index, 'hostCompany', e.target.value)} placeholder="Enter company/farm" className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50]" />
             </div>
             <div>
-              <label className="block text-sm font-bold text-gray-700 mb-2">Usage Start 日付</label>
+              <label className="block text-sm font-bold text-gray-700 mb-2">利用開始日</label>
               <div className="relative">
                 <input type="date" value={claimItem.wifiStartDate || ''} onChange={(e) => updateClaim(index, 'wifiStartDate', e.target.value)} className="w-full pl-4 pr-10 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50] text-gray-600" />
               </div>
@@ -393,7 +393,7 @@ export default function StaffClaimRequest() {
     try {
       // Validate
       if (!staffInfo.fullName || !staffInfo.id || !staffInfo.location) {
-        toast.error('Please fill out all required Staff Information fields.');
+        toast.error('必要なスタッフ情報をすべて入力してください。');
         setIsSubmitting(false);
         return;
       }
@@ -401,7 +401,7 @@ export default function StaffClaimRequest() {
       for (let i = 0; i < claims.length; i++) {
         const c = claims[i];
         if (!c.expenseType || !c.advancerCategory || !c.bearingParty || !c.expense金額) {
-          toast.error(`Please fill out all required fields for Case Category #${i + 1}.`);
+          toast.error(`案件カテゴリ #${i + 1} の必要なフィールドをすべて入力してください。`);
           setIsSubmitting(false);
           return;
         }
@@ -474,7 +474,7 @@ export default function StaffClaimRequest() {
         <div className="bg-green-100 p-4 rounded-full mb-4">
           <CheckCircle className="w-16 h-16 text-green-500" />
         </div>
-        <h2 className="text-2xl font-bold text-[#162D50] mb-2">Submitted Successfully!</h2>
+        <h2 className="text-2xl font-bold text-[#162D50] mb-2">送信が完了しました！</h2>
         <p className="text-gray-500 mb-6">Your expense claims have been submitted.</p>
         <button 
           onClick={() => setShowSuccess(false)}
@@ -499,7 +499,7 @@ export default function StaffClaimRequest() {
           <div className="grid grid-cols-3 gap-6">
             <div className="relative">
               <label className="block text-sm font-bold text-gray-700 mb-2">氏名 <span className="text-red-500">*</span></label>
-              <input type="text" placeholder="Enter full name" list="claimEmployeeNames" value={staffInfo.fullName} onChange={e => {
+              <input type="text" placeholder="フルネームを入力" list="claimEmployeeNames" value={staffInfo.fullName} onChange={e => {
                 const val = e.target.value;
                 setStaffInfo({...staffInfo, fullName: val});
                 const match = employees.find(emp => (emp.romajiName && emp.romajiName.toLowerCase() === val.toLowerCase()) || (emp.katakanaName && emp.katakanaName === val));
@@ -518,7 +518,7 @@ export default function StaffClaimRequest() {
                   const match = employees.find(emp => (emp.romajiName && emp.romajiName.toLowerCase() === staffInfo.fullName.toLowerCase()) || (emp.katakanaName && emp.katakanaName === staffInfo.fullName));
                   if (!match) {
                     setStaffInfo({...staffInfo, fullName: '', id: '', location: '', branchAndFarmName: '', visaステータス: '', visaAvailableTime: ''});
-                    toast.error('Please select a valid staff member from the list.');
+                    toast.error('リストから有効なスタッフを選択してください。');
                   }
                 }
               }} className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50]" />
@@ -551,7 +551,7 @@ export default function StaffClaimRequest() {
                   const match = employees.find(emp => emp._id.slice(-6) === searchId);
                   if (!match) {
                     setStaffInfo({...staffInfo, fullName: '', id: '', location: '', branchAndFarmName: '', visaステータス: '', visaAvailableTime: ''});
-                    toast.error('Please select a valid staff ID from the list.');
+                    toast.error('リストから有効なスタッフIDを選択してください。');
                   }
                 }
               }} className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50]" />
@@ -565,7 +565,7 @@ export default function StaffClaimRequest() {
               <label className="block text-sm font-bold text-gray-700 mb-2">拠点 <span className="text-red-500">*</span></label>
               <div className="relative">
                 <select value={staffInfo.location} onChange={e => setStaffInfo({...staffInfo, location: e.target.value})} className="w-full px-4 py-2 border border-gray-300 rounded-md appearance-none focus:outline-none focus:ring-1 focus:ring-[#162D50] text-gray-600">
-                  <option value="">Select 拠点</option>
+                  <option value="">拠点を選択</option>
                   {options.拠点.map((opt) => (
                     <option key={opt._id} value={opt.value}>{opt.label}</option>
                   ))}
@@ -574,15 +574,15 @@ export default function StaffClaimRequest() {
               </div>
             </div>
             <div>
-              <label className="block text-sm font-bold text-gray-700 mb-2">Branch and farm name</label>
-              <input type="text" placeholder="Branch/Farm" value={staffInfo.branchAndFarmName} onChange={e => setStaffInfo({...staffInfo, branchAndFarmName: e.target.value})} className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50]" />
+              <label className="block text-sm font-bold text-gray-700 mb-2">支店および農園名</label>
+              <input type="text" placeholder="支店/農園" value={staffInfo.branchAndFarmName} onChange={e => setStaffInfo({...staffInfo, branchAndFarmName: e.target.value})} className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50]" />
             </div>
             <div>
-              <label className="block text-sm font-bold text-gray-700 mb-2">Visa ステータス</label>
-              <input type="text" placeholder="Visa ステータス" value={staffInfo.visaステータス} onChange={e => setStaffInfo({...staffInfo, visaステータス: e.target.value})} className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50]" />
+              <label className="block text-sm font-bold text-gray-700 mb-2">ビザステータス</label>
+              <input type="text" placeholder="ビザステータス" value={staffInfo.visaステータス} onChange={e => setStaffInfo({...staffInfo, visaステータス: e.target.value})} className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50]" />
             </div>
             <div>
-              <label className="block text-sm font-bold text-gray-700 mb-2">Visa Available Time</label>
+              <label className="block text-sm font-bold text-gray-700 mb-2">ビザ有効期限</label>
               <input type="date" value={staffInfo.visaAvailableTime} onChange={e => setStaffInfo({...staffInfo, visaAvailableTime: e.target.value})} className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50] text-gray-600" />
             </div>
           </div>
@@ -596,13 +596,13 @@ export default function StaffClaimRequest() {
           <div className="flex justify-between items-center mb-4">
             <div className="flex items-center text-[#162D50] font-bold">
               <Box className="w-4 h-4 mr-2" />
-              Case Category {claims.length > 1 && `#${index + 1}`}
+              案件カテゴリ {claims.length > 1 && `#${index + 1}`}
             </div>
             {claims.length > 1 && (
               <button 
                 onClick={() => removeClaim(index)}
                 className="text-red-500 hover:text-red-700 text-sm font-medium flex items-center transition-colors">
-                <Trash2 className="w-4 h-4 mr-1" /> Delete Category
+                <Trash2 className="w-4 h-4 mr-1" /> カテゴリを削除
               </button>
             )}
           </div>
@@ -615,7 +615,7 @@ export default function StaffClaimRequest() {
                   value={claimItem.expenseType}
                   onChange={(e) => updateClaim(index, 'expenseType', e.target.value)}
                   className="w-full px-4 py-2 border border-gray-300 rounded-md appearance-none focus:outline-none focus:ring-1 focus:ring-[#162D50] text-gray-600">
-                  <option value="">Select Type</option>
+                  <option value="">種類を選択</option>
                   {options.ExpenseType.map((opt) => (
                     <option key={opt._id} value={opt.value}>{opt.label}</option>
                   ))}
@@ -682,7 +682,7 @@ export default function StaffClaimRequest() {
                     <div 
                       onClick={() => updateClaim(index, 'expense金額', claimItem.suggested金額)}
                       className="mt-2 text-xs text-red-600 font-medium flex items-center bg-red-50 px-3 py-1.5 rounded border border-red-200 cursor-pointer hover:bg-red-100 transition-colors">
-                      {validation.message} (Click to apply)
+                      {validation.message} (クリックして適用)
                     </div>
                   );
                 }
@@ -690,7 +690,7 @@ export default function StaffClaimRequest() {
               })()}
             </div>
             <div>
-              <label className="block text-sm font-bold text-gray-700 mb-2">Expense Period</label>
+              <label className="block text-sm font-bold text-gray-700 mb-2">経費期間</label>
               <div className="flex items-center space-x-2">
                 <div className="relative flex-1">
                   <input type="date" value={claimItem.expensePeriodStart || ''} onChange={(e) => updateClaim(index, 'expensePeriodStart', e.target.value)} className="w-full pl-4 pr-10 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50] text-gray-600 text-sm" />
@@ -700,7 +700,7 @@ export default function StaffClaimRequest() {
                   <input type="date" value={claimItem.expensePeriodEnd || ''} onChange={(e) => updateClaim(index, 'expensePeriodEnd', e.target.value)} className="w-full pl-4 pr-10 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50] text-gray-600 text-sm" />
                 </div>
               </div>
-              <p className="text-xs text-gray-400 mt-2 leading-tight">Note: Claims are typically processed for expenses between the 11th and 27th of the month.</p>
+              <p className="text-xs text-gray-400 mt-2 leading-tight">注：請求は通常、月の11日から27日までの経費に対して処理されます。</p>
             </div>
           </div>
 
@@ -735,7 +735,7 @@ export default function StaffClaimRequest() {
                 <textarea 
                   value={claimItem.remark || ''} 
                   onChange={(e) => updateClaim(index, 'remark', e.target.value)}
-                  placeholder="Enter any additional details or remarks for this case..." 
+                  placeholder="この案件に関する追加の詳細や備考を入力してください..." 
                   className="w-full h-[120px] px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50] resize-none text-gray-600"
                 ></textarea>
               </div>
@@ -763,13 +763,13 @@ export default function StaffClaimRequest() {
             <button 
               onClick={handleAddAnotherClaim}
               className="flex items-center px-5 py-2 border border-[#162D50] text-[#162D50] rounded-md font-bold text-sm hover:bg-gray-50 transition-colors">
-              + Add Another Case
+              + 別の案件を追加
             </button>
             <button 
               onClick={handleSubmit}
               disabled={isSubmitting}
               className="bg-[#0A192F] text-white px-8 py-3 rounded-md font-bold text-sm hover:bg-[#162D50] transition-colors shadow-sm disabled:opacity-70">
-              {isSubmitting ? 'Submitting...' : 'Submit Request'}
+              {isSubmitting ? '送信中...' : 'リクエストを送信'}
             </button>
           </div>
         </div>
@@ -783,7 +783,7 @@ export default function StaffClaimRequest() {
             <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 bg-gray-50/80">
               <h3 className="text-base font-semibold text-gray-800 flex items-center">
                 <Image className="w-4 h-4 mr-2 text-blue-600" />
-                Image Preview
+                画像プレビュー
               </h3>
               <button 
                 onClick={() => setPreviewImage(null)}
@@ -814,7 +814,7 @@ export default function StaffClaimRequest() {
                 onClick={() => setPreviewImage(null)}
                 className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
               >
-                Close
+                閉じる
               </button>
               <a 
                 href={previewImage} 
@@ -824,7 +824,7 @@ export default function StaffClaimRequest() {
                 className="ml-3 px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors flex items-center focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
               >
                 <Download className="w-4 h-4 mr-2" />
-                Download Image
+                画像をダウンロード
               </a>
             </div>
           </div>

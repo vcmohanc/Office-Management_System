@@ -26,15 +26,15 @@ export default function ClaimList() {
         
         {/* Header Options */}
         <div className="px-6 py-4 flex flex-col sm:flex-row sm:items-center justify-between space-y-4 sm:space-y-0">
-          <h1 className="text-xl font-bold text-[#162D50]">Claim Details</h1>
+          <h1 className="text-xl font-bold text-[#162D50]">請求詳細</h1>
           
           <div className="flex flex-col sm:flex-row items-center space-y-4 sm:space-y-0 sm:space-x-6">
             
             <div className="flex items-center space-x-2">
-              <span className="text-sm font-bold text-gray-600 uppercase tracking-wide">Month:</span>
+              <span className="text-sm font-bold text-gray-600 uppercase tracking-wide">月:</span>
               <div className="relative inline-block text-left">
                 <button className="flex items-center justify-between bg-white border border-gray-300 rounded-md px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none w-48">
-                  November 2023
+                  2023年11月
                   <ChevronDown className="w-4 h-4 ml-2 -mr-1" />
                 </button>
               </div>
@@ -56,9 +56,9 @@ export default function ClaimList() {
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="bg-[#F8F9FA] border-y border-gray-200">
-                <th className="px-6 py-4 text-sm font-bold text-gray-600">Claim ID</th>
-                <th className="px-6 py-4 text-sm font-bold text-gray-600">Payment Type</th>
-                <th className="px-6 py-4 text-sm font-bold text-gray-600">Details</th>
+                <th className="px-6 py-4 text-sm font-bold text-gray-600">請求ID</th>
+                <th className="px-6 py-4 text-sm font-bold text-gray-600">支払いタイプ</th>
+                <th className="px-6 py-4 text-sm font-bold text-gray-600">詳細</th>
                 <th className="px-6 py-4 text-sm font-bold text-gray-600">金額</th>
                 <th className="px-6 py-4 text-sm font-bold text-gray-600">日付</th>
                 <th className="px-6 py-4 text-sm font-bold text-gray-600">ステータス</th>
@@ -72,7 +72,7 @@ export default function ClaimList() {
                 </tr>
               ) : claims.length === 0 ? (
                 <tr>
-                  <td colSpan="7" className="px-6 py-5 text-center text-gray-500">No claims found.</td>
+                  <td colSpan="7" className="px-6 py-5 text-center text-gray-500">請求は見つかりませんでした。</td>
                 </tr>
               ) : (
                 claims.map((claim) => (

@@ -98,24 +98,29 @@ export default function B2BDashboard() {
   const renderステータスBadge = (status) => {
     let bg = 'bg-gray-100';
     let text = 'text-gray-700';
+    let displayStatus = status;
 
     if (status === 'Active') {
       bg = 'bg-green-100';
       text = 'text-green-700';
-    } else if (status === '保留中') {
+      displayStatus = 'アクティブ';
+    } else if (status === '保留中' || status === 'Pending') {
       bg = 'bg-orange-100';
       text = 'text-orange-700';
+      displayStatus = '保留中';
     } else if (status === 'Expiring Soon') {
       bg = 'bg-red-100';
       text = 'text-red-700';
+      displayStatus = '期限切れ間近';
     } else if (status === 'Terminated') {
       bg = 'bg-gray-200';
       text = 'text-gray-600';
+      displayStatus = '終了済み';
     }
 
     return (
       <span className={`px-3 py-1 ${bg} ${text} rounded-full text-xs font-bold inline-block w-[110px] text-center`}>
-        {status}
+        {displayStatus}
       </span>
     );
   };
@@ -125,7 +130,7 @@ export default function B2BDashboard() {
       {/* Banner */}
       <div className="bg-[#1e3a5f] rounded-xl p-8 flex flex-col items-center justify-center text-white shadow-md">
         <Handshake className="w-8 h-8 mb-3 text-blue-200" />
-        <h2 className="text-sm font-bold tracking-widest text-blue-100">BUSINESS PARTNERSHIPS & CONTRACTS</h2>
+        <h2 className="text-sm font-bold tracking-widest text-blue-100">ビジネスパートナーシップ＆契約</h2>
       </div>
 
       {/* Metric Cards */}
@@ -137,7 +142,7 @@ export default function B2BDashboard() {
           ) : (
             <p className="text-2xl font-bold mb-1">{metrics.activePartnersCount}</p>
           )}
-          <p className="text-[10px] font-bold tracking-wider text-blue-100 uppercase">Active Partners</p>
+          <p className="text-[10px] font-bold tracking-wider text-blue-100 uppercase">アクティブなパートナー</p>
         </div>
 
         <div className="bg-white rounded-xl p-5 flex flex-col items-center justify-center text-[#162D50] shadow-sm border border-gray-200 transition-transform hover:scale-105">
@@ -147,7 +152,7 @@ export default function B2BDashboard() {
           ) : (
             <p className="text-2xl font-bold mb-1">{metrics.ongoingContractsCount}</p>
           )}
-          <p className="text-[10px] font-bold tracking-wider text-gray-500 uppercase">Ongoing Contracts</p>
+          <p className="text-[10px] font-bold tracking-wider text-gray-500 uppercase">進行中の契約</p>
         </div>
 
         <div className="bg-white rounded-xl p-5 flex flex-col items-center justify-center text-[#162D50] shadow-sm border border-gray-200 transition-transform hover:scale-105">
@@ -157,7 +162,7 @@ export default function B2BDashboard() {
           ) : (
             <p className="text-2xl font-bold mb-1">{metrics.pendingProposalsCount}</p>
           )}
-          <p className="text-[10px] font-bold tracking-wider text-gray-500 uppercase">保留中 Proposals</p>
+          <p className="text-[10px] font-bold tracking-wider text-gray-500 uppercase">保留中の提案</p>
         </div>
 
         <div className="bg-white rounded-xl p-5 flex flex-col items-center justify-center text-[#162D50] shadow-sm border border-gray-200 transition-transform hover:scale-105">
@@ -167,7 +172,7 @@ export default function B2BDashboard() {
           ) : (
             <p className="text-2xl font-bold mb-1">{formatCurrency(metrics.totalMonthlyRevenue)}</p>
           )}
-          <p className="text-[10px] font-bold tracking-wider text-gray-500 uppercase">Monthly Revenue</p>
+          <p className="text-[10px] font-bold tracking-wider text-gray-500 uppercase">月間収益</p>
         </div>
       </div>
 
@@ -177,7 +182,7 @@ export default function B2BDashboard() {
         <div className="bg-[#F8F9FA] p-5 flex justify-between items-center border-b border-gray-200">
           <div className="flex items-center space-x-3">
             <Briefcase className="w-5 h-5 text-[#162D50]" />
-            <h2 className="text-[#162D50] text-lg font-bold">Active B2B Engagements</h2>
+            <h2 className="text-[#162D50] text-lg font-bold">進行中のB2B案件</h2>
           </div>
           <div className="relative">
             <select
@@ -185,11 +190,11 @@ export default function B2BDashboard() {
               onChange={handleステータスChange}
               className="appearance-none bg-white border border-gray-300 rounded-md pl-3 pr-10 py-1.5 text-sm text-gray-700 shadow-sm cursor-pointer hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-[#162D50]"
             >
-              <option value="">Filter by ステータス</option>
-              <option value="Active">Active</option>
+              <option value="">ステータスで絞り込み</option>
+              <option value="Active">アクティブ</option>
               <option value="保留中">保留中</option>
-              <option value="Expiring Soon">Expiring Soon</option>
-              <option value="Terminated">Terminated</option>
+              <option value="Expiring Soon">期限切れ間近</option>
+              <option value="Terminated">終了済み</option>
             </select>
             <ChevronDown className="w-4 h-4 text-gray-500 absolute right-3 top-1/2 transform -translate-y-1/2 pointer-events-none" />
           </div>
@@ -200,11 +205,11 @@ export default function B2BDashboard() {
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="border-b border-gray-200 bg-gray-50">
-                <th className="py-4 px-6 text-xs font-bold text-gray-500 uppercase tracking-wider">Partner Name</th>
-                <th className="py-4 px-6 text-xs font-bold text-gray-500 uppercase tracking-wider">Industry</th>
-                <th className="py-4 px-6 text-xs font-bold text-gray-500 uppercase tracking-wider">Contract Start 日付</th>
+                <th className="py-4 px-6 text-xs font-bold text-gray-500 uppercase tracking-wider">パートナー名</th>
+                <th className="py-4 px-6 text-xs font-bold text-gray-500 uppercase tracking-wider">業種</th>
+                <th className="py-4 px-6 text-xs font-bold text-gray-500 uppercase tracking-wider">契約開始日</th>
                 <th className="py-4 px-6 text-xs font-bold text-gray-500 uppercase tracking-wider">ステータス</th>
-                <th className="py-4 px-6 text-xs font-bold text-gray-500 uppercase tracking-wider text-center">Actions</th>
+                <th className="py-4 px-6 text-xs font-bold text-gray-500 uppercase tracking-wider text-center">アクション</th>
               </tr>
             </thead>
             <tbody className="text-sm divide-y divide-gray-100">
@@ -225,8 +230,8 @@ export default function B2BDashboard() {
                 <tr className="bg-white">
                   <td colSpan="5" className="py-12 text-center text-gray-500">
                     <Briefcase className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-                    <p className="text-lg font-medium text-gray-600">No engagements found.</p>
-                    <p className="text-sm">Try adjusting your search or filter criteria.</p>
+                    <p className="text-lg font-medium text-gray-600">案件が見つかりません。</p>
+                    <p className="text-sm">検索条件またはフィルターを変更してください。</p>
                   </td>
                 </tr>
               ) : (
@@ -239,7 +244,7 @@ export default function B2BDashboard() {
                       {renderステータスBadge(engagement.status)}
                     </td>
                     <td className="py-5 px-6 text-center">
-                      <button className="text-gray-400 hover:text-blue-600 hover:bg-blue-50 p-2 rounded transition-colors" title="View Details">
+                      <button className="text-gray-400 hover:text-blue-600 hover:bg-blue-50 p-2 rounded transition-colors" title="詳細を表示">
                         <Eye className="w-5 h-5 mx-auto" />
                       </button>
                     </td>

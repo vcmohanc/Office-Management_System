@@ -168,16 +168,16 @@ export default function AssignWorkPlace() {
       matchesFilter = isUnassigned;
     } else {
       if (mainCategory === 'Haken') {
-        matchesFilter = includesValue(emp.assignedWorkPlace, filterWorkPlace) && emp.onboardingステータス === 'Active';
+        matchesFilter = includesValue(emp.assignedWorkPlace, filterWorkPlace) && emp.onboardingStatus === 'Active';
       } else if (mainCategory === 'Office') {
         const isDepartmentFilter = OFFICE_DEPARTMENTS.includes(filterWorkPlace);
         if (isDepartmentFilter) {
-          matchesFilter = includesValue(emp.department, filterWorkPlace) && emp.onboardingステータス === 'Active';
+          matchesFilter = includesValue(emp.department, filterWorkPlace) && emp.onboardingStatus === 'Active';
         } else {
-          matchesFilter = includesValue(emp.office, filterWorkPlace) && emp.onboardingステータス === 'Active';
+          matchesFilter = includesValue(emp.office, filterWorkPlace) && emp.onboardingStatus === 'Active';
         }
       } else {
-        matchesFilter = (includesValue(emp.assignedWorkPlace, filterWorkPlace) || includesValue(emp.department, filterWorkPlace) || includesValue(emp.office, filterWorkPlace)) && emp.onboardingステータス === 'Active';
+        matchesFilter = (includesValue(emp.assignedWorkPlace, filterWorkPlace) || includesValue(emp.department, filterWorkPlace) || includesValue(emp.office, filterWorkPlace)) && emp.onboardingStatus === 'Active';
       }
     }
                           
@@ -191,19 +191,19 @@ export default function AssignWorkPlace() {
     if (mainCategory === 'Office') baseEmps = employees.filter(e => isEmpOffice(e));
     
     if (filterVal === 'All') return baseEmps.length;
-    if (filterVal === 'Unassigned') return baseEmps.filter(e => (!e.assignedWorkPlace || e.assignedWorkPlace.length === 0) && (!e.department || e.department.length === 0) || e.onboardingステータス !== 'Active').length;
+    if (filterVal === 'Unassigned') return baseEmps.filter(e => (!e.assignedWorkPlace || e.assignedWorkPlace.length === 0) && (!e.department || e.department.length === 0) || e.onboardingStatus !== 'Active').length;
     
     if (mainCategory === 'Haken') {
-      return baseEmps.filter(e => includesValue(e.assignedWorkPlace, filterVal) && e.onboardingステータス === 'Active').length;
+      return baseEmps.filter(e => includesValue(e.assignedWorkPlace, filterVal) && e.onboardingStatus === 'Active').length;
     } else if (mainCategory === 'Office') {
       const isDepartmentFilter = OFFICE_DEPARTMENTS.includes(filterVal);
       if (isDepartmentFilter) {
-        return baseEmps.filter(e => includesValue(e.department, filterVal) && e.onboardingステータス === 'Active').length;
+        return baseEmps.filter(e => includesValue(e.department, filterVal) && e.onboardingStatus === 'Active').length;
       } else {
-        return baseEmps.filter(e => includesValue(e.office, filterVal) && e.onboardingステータス === 'Active').length;
+        return baseEmps.filter(e => includesValue(e.office, filterVal) && e.onboardingStatus === 'Active').length;
       }
     } else {
-      return baseEmps.filter(e => (includesValue(e.assignedWorkPlace, filterVal) || includesValue(e.department, filterVal) || includesValue(e.office, filterVal)) && e.onboardingステータス === 'Active').length;
+      return baseEmps.filter(e => (includesValue(e.assignedWorkPlace, filterVal) || includesValue(e.department, filterVal) || includesValue(e.office, filterVal)) && e.onboardingStatus === 'Active').length;
     }
   };
 
@@ -220,14 +220,74 @@ export default function AssignWorkPlace() {
   };
 
   const baseCards = [
-    { name: 'Unassigned', id: 'Unassigned', icon: MapPin, color: 'text-amber-500', bgColor: 'bg-white', borderColor: 'border-gray-200' },
-    { name: 'Total Staff', id: 'All', icon: Users, color: 'text-blue-600', bgColor: 'bg-white', borderColor: 'border-gray-200' },
+    { name: '未配属', id: 'Unassigned', icon: MapPin, color: 'text-amber-500', bgColor: 'bg-white', borderColor: 'border-gray-200' },
+    { name: '全スタッフ', id: 'All', icon: Users, color: 'text-blue-600', bgColor: 'bg-white', borderColor: 'border-gray-200' },
   ];
+
+  const translateWorkPlace = (wp) => {
+    switch(wp) {
+      case 'Global Bittory': return 'グローバルビクトリー';
+      case 'Hotels': return 'ホテル';
+      case 'Food and Beverage': return '飲食';
+      case 'Food and Beverage Manufacturing': return '飲食製造';
+      case 'Cleaning': return '清掃';
+      case 'Warehousing/Packaging': return '倉庫/梱包';
+      case 'Telecommunications/Retail': return '通信/小売';
+      case 'Registration Support': return '登録サポート';
+      case 'Agriculture and Forestry': return '農林業';
+      case 'Logistics': return '物流';
+      case 'Transfer to Headquarters': return '本社へ異動';
+      default: return wp.replace('and', '&').replace('Manufacturing', 'Mfg');
+    }
+  };
+
+  const translateDepartment = (dept) => {
+    switch(dept) {
+      case 'Management': return '経営';
+      case 'Administration': return '総務';
+      case 'Accounting & Finance': return '経理・財務';
+      case 'HR / Recruitment': return '人事・採用';
+      case 'Sales': return '営業';
+      case 'Marketing': return 'マーケティング';
+      case 'IT / Technical': return 'IT・技術';
+      case 'Customer Support': return 'カスタマーサポート';
+      case 'Purchasing / Procurement': return '購買・調達';
+      case 'Operations': return 'オペレーション';
+      case 'Service': return 'サービス';
+      case 'Farm Operations': return '農場運営';
+      case 'Audit & Compliance': return '監査・コンプライアンス';
+      case 'Taxation': return '税務';
+      case 'Payroll': return '給与計算';
+      case 'HR': return '人事';
+      default: return dept;
+    }
+  };
+
+  const translateOfficeLocation = (loc) => {
+    switch(loc) {
+      case 'Head Office Tsukiji Office': return '本社（築地）';
+      case 'Harajuku Office': return '原宿オフィス';
+      case 'Osaka Office': return '大阪オフィス';
+      case 'Nagoya Office': return '名古屋オフィス';
+      case 'Chitose Office': return '千歳オフィス';
+      case 'Sapporo Office': return '札幌オフィス';
+      case 'Fukuoka Office': return '福岡オフィス';
+      case 'Kumamoto Office': return '熊本オフィス';
+      case 'Kagoshima Office': return '鹿児島オフィス';
+      case 'Utsunomiya Office': return '宇都宮オフィス';
+      case 'Odawara Office': return '小田原オフィス';
+      case 'Narita Office': return '成田オフィス';
+      case 'Kasai Office': return '葛西オフィス';
+      case 'Gunma Office': return '群馬オフィス';
+      case 'Others': return 'その他';
+      default: return loc;
+    }
+  };
 
   const hakenCardsConfig = [
     ...baseCards,
     ...WORK_PLACES.map(wp => ({
-      name: wp.replace('and', '&').replace('Manufacturing', 'Mfg'),
+      name: translateWorkPlace(wp),
       id: wp,
       icon: getIconForWorkPlace(wp),
       color: getColorForWorkPlace(wp),
@@ -239,7 +299,7 @@ export default function AssignWorkPlace() {
   const officeCardsConfig = [
     ...baseCards,
     ...OFFICE_DEPARTMENTS.map(dept => ({
-      name: dept,
+      name: translateDepartment(dept),
       id: dept,
       icon: dept.includes('HR') ? Users : Building2,
       color: 'text-indigo-600', // unified color or can be dynamic
@@ -265,7 +325,7 @@ export default function AssignWorkPlace() {
         >
           <Briefcase className="w-8 h-8 mb-3" />
           <p className="text-3xl font-bold mb-1">{getSummaryStat('Haken')}</p>
-          <p className="text-xs font-bold uppercase tracking-wider">Haken Staff</p>
+          <p className="text-xs font-bold uppercase tracking-wider">派遣スタッフ</p>
         </button>
         <button 
           onClick={() => { setMainCategory(mainCategory === 'Office' ? 'All' : 'Office'); setFilterWorkPlace('Unassigned'); }}
@@ -275,7 +335,7 @@ export default function AssignWorkPlace() {
         >
           <Building2 className="w-8 h-8 mb-3" />
           <p className="text-3xl font-bold mb-1">{getSummaryStat('Office')}</p>
-          <p className={`text-xs font-bold uppercase tracking-wider ${mainCategory === 'Office' ? 'text-gray-200' : 'text-gray-500'}`}>Office Staff</p>
+          <p className={`text-xs font-bold uppercase tracking-wider ${mainCategory === 'Office' ? 'text-gray-200' : 'text-gray-500'}`}>内勤スタッフ</p>
         </button>
       </div>
 
@@ -316,16 +376,16 @@ export default function AssignWorkPlace() {
       {/* Toolbar */}
       <div className="bg-gray-50 p-4 rounded-t-xl border border-gray-200 border-b-0 flex flex-col sm:flex-row justify-between items-center gap-4">
         <h3 className="text-lg font-bold text-[#162D50] flex-1">
-          {filterWorkPlace === 'All' ? 'Staff Work 拠点 Registry' : 
-           filterWorkPlace === 'Unassigned' ? 'Unassigned Staff Registry' : 
-           `${filterWorkPlace} Staff Registry`}
+          {filterWorkPlace === 'All' ? '配属先一覧' : 
+           filterWorkPlace === 'Unassigned' ? '未配属スタッフ一覧' : 
+           `${filterWorkPlace} スタッフ一覧`}
         </h3>
         <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
           <div className="relative w-full sm:w-64">
             <Search className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
             <input 
               type="text" 
-              placeholder="Search staff..." 
+              placeholder="スタッフを検索..." 
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full pl-9 pr-4 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-[#162D50] bg-white"
@@ -337,11 +397,11 @@ export default function AssignWorkPlace() {
               onChange={(e) => setFilterWorkPlace(e.target.value)}
               className="w-full pl-4 pr-8 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#162D50] bg-white appearance-none cursor-pointer"
             >
-              <option value="All">{mainCategory === 'Office' ? 'Select Office' : 'All 拠点s'}</option>
-              <option value="Unassigned">Unassigned</option>
+              <option value="All">{mainCategory === 'Office' ? 'すべてのオフィス' : 'すべての拠点'}</option>
+              <option value="Unassigned">未配属</option>
               {mainCategory === 'Office' 
-                ? OFFICE_LOCATIONS.map(loc => <option key={loc} value={loc}>{loc}</option>)
-                : WORK_PLACES.map(place => <option key={place} value={place}>{place}</option>)
+                ? OFFICE_LOCATIONS.map(loc => <option key={loc} value={loc}>{translateOfficeLocation(loc)}</option>)
+                : WORK_PLACES.map(place => <option key={place} value={place}>{translateWorkPlace(place)}</option>)
               }
             </select>
             <ChevronDown className="w-4 h-4 absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 pointer-events-none" />
@@ -355,23 +415,23 @@ export default function AssignWorkPlace() {
           <table className="w-full text-left border-collapse min-w-max">
             <thead>
               <tr className="bg-[#F8F9FA] border-b border-gray-200 text-xs font-bold text-gray-500 uppercase tracking-wider">
-                <th className="py-4 px-6">S.No.</th>
+                <th className="py-4 px-6">No.</th>
                 <th className="py-4 px-6">スタッフID</th>
                 <th className="py-4 px-6">氏名</th>
-                <th className="py-4 px-6">Department</th>
-                <th className="py-4 px-6">{mainCategory === 'Office' ? 'Select Office' : 'Work Place'}</th>
-                <th className="py-4 px-6">Join 日付</th>
-                <th className="py-4 px-6 text-center">Actions</th>
+                <th className="py-4 px-6">部署</th>
+                <th className="py-4 px-6">{mainCategory === 'Office' ? 'オフィス' : '配属先'}</th>
+                <th className="py-4 px-6">入社日</th>
+                <th className="py-4 px-6 text-center">アクション</th>
               </tr>
             </thead>
             <tbody className="text-sm">
               {loading ? (
                 <tr>
-                  <td colSpan="7" className="py-8 px-6 text-center text-gray-500">Loading staff data...</td>
+                  <td colSpan="7" className="py-8 px-6 text-center text-gray-500">スタッフデータを読み込み中...</td>
                 </tr>
               ) : filteredEmployees.length === 0 ? (
                 <tr>
-                  <td colSpan="7" className="py-8 px-6 text-center text-gray-500">No staff records found.</td>
+                  <td colSpan="7" className="py-8 px-6 text-center text-gray-500">スタッフ記録が見つかりません。</td>
                 </tr>
               ) : (
                 filteredEmployees.map((employee, index) => (
@@ -379,29 +439,29 @@ export default function AssignWorkPlace() {
                     <td className="py-4 px-6 font-medium text-gray-500">{index + 1}</td>
                     <td className="py-4 px-6 font-medium text-[#162D50]">#{employee._id?.slice(-6).toUpperCase() || 'NEW'}</td>
                     <td className="py-4 px-6 font-bold text-gray-900">{employee.romajiName || 'N/A'}</td>
-                    <td className="py-4 px-6 text-gray-600">{Array.isArray(employee.department) ? employee.department.join(', ') : employee.department || 'N/A'}</td>
+                    <td className="py-4 px-6 text-gray-600">{Array.isArray(employee.department) ? employee.department.map(translateDepartment).join(', ') : translateDepartment(employee.department) || 'N/A'}</td>
                     <td className="py-4 px-6">
-                      {employee.onboardingステータス !== 'Active' ? (
+                      {employee.onboardingStatus !== 'Active' ? (
                         <span className="px-3 py-1 bg-red-100 text-red-800 rounded-full text-xs font-semibold whitespace-nowrap">
-                          {employee.onboardingステータス || 'Inactive'}
+                          {employee.onboardingStatus || '非アクティブ'}
                         </span>
                       ) : mainCategory === 'Office' ? (
                         employee.office && employee.office.length > 0 ? (
                           <span className="px-3 py-1 bg-indigo-100 text-indigo-800 rounded-full text-xs font-semibold whitespace-nowrap">
-                            {Array.isArray(employee.office) ? employee.office.join(', ') : employee.office}
+                            {Array.isArray(employee.office) ? employee.office.map(translateOfficeLocation).join(', ') : translateOfficeLocation(employee.office)}
                           </span>
                         ) : (
                           <span className="px-3 py-1 bg-amber-100 text-amber-800 rounded-full text-xs font-semibold whitespace-nowrap">
-                            保留中 Assignment
+                            配属待ち
                           </span>
                         )
                       ) : employee.assignedWorkPlace && employee.assignedWorkPlace.length > 0 ? (
                         <span className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-xs font-semibold whitespace-nowrap">
-                          {Array.isArray(employee.assignedWorkPlace) ? employee.assignedWorkPlace.join(', ') : employee.assignedWorkPlace}
+                          {Array.isArray(employee.assignedWorkPlace) ? employee.assignedWorkPlace.map(translateWorkPlace).join(', ') : translateWorkPlace(employee.assignedWorkPlace)}
                         </span>
                       ) : (
                         <span className="px-3 py-1 bg-amber-100 text-amber-800 rounded-full text-xs font-semibold whitespace-nowrap">
-                          保留中 Assignment
+                          配属待ち
                         </span>
                       )}
                     </td>
@@ -432,7 +492,7 @@ export default function AssignWorkPlace() {
                           handleOpenModal(employee);
                         }}
                         className="inline-flex items-center justify-center p-2 text-gray-500 hover:text-[#162D50] hover:bg-gray-200 rounded-full transition-colors"
-                        title="View & Assign"
+                        title="表示して配属"
                       >
                         <Eye className="w-5 h-5" />
                       </button>
@@ -454,7 +514,7 @@ export default function AssignWorkPlace() {
             <div className="px-8 py-5 border-b border-gray-100 flex justify-between items-center bg-white">
               <h3 className="text-xl font-bold text-[#162D50] flex items-center">
                 <MapPin className="w-6 h-6 mr-3 text-blue-600" />
-                Assign Work 拠点
+                配属先詳細
               </h3>
               <button 
                 onClick={() => setIsModalOpen(false)}
@@ -496,19 +556,19 @@ export default function AssignWorkPlace() {
                         <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center mr-3 text-gray-500">
                           <Calendar className="w-4 h-4" />
                         </div>
-                        <span className="font-medium">Joined: {selectedStaff.joinDate ? new Date(selectedStaff.joinDate).toLocaleDateString() : 'N/A'}</span>
+                        <span className="font-medium">入社日: {selectedStaff.joinDate ? new Date(selectedStaff.joinDate).toLocaleDateString() : 'N/A'}</span>
                       </div>
                       <div className="flex items-center text-sm text-gray-700">
                         <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center mr-3 text-gray-500">
                           <Building2 className="w-4 h-4" />
                         </div>
-                        <span className="font-medium">{Array.isArray(selectedStaff.department) ? selectedStaff.department.join(', ') : (selectedStaff.department || 'No Dept')}</span>
+                        <span className="font-medium">{Array.isArray(selectedStaff.department) ? selectedStaff.department.map(translateDepartment).join(', ') : (translateDepartment(selectedStaff.department) || '部署なし')}</span>
                       </div>
                     </div>
                     
                     {selectedStaff.assignedWorkPlace && (
                       <div className="mt-8 pt-6 border-t border-gray-100">
-                        <p className="text-xs text-gray-500 font-bold uppercase tracking-wider mb-2 text-center">Current Assignment</p>
+                        <p className="text-xs text-gray-500 font-bold uppercase tracking-wider mb-2 text-center">現在の配属</p>
                         <div className="bg-blue-50 border border-blue-200 rounded-xl p-3 flex items-center justify-center text-blue-800 font-bold text-center">
                           <CheckCircle2 className="w-5 h-5 mr-2" />
                           {Array.isArray(selectedStaff.assignedWorkPlace) ? selectedStaff.assignedWorkPlace.join(', ') : selectedStaff.assignedWorkPlace}
@@ -524,7 +584,7 @@ export default function AssignWorkPlace() {
                     
                     {/* Staff Type */}
                     <div>
-                      <h4 className="font-bold text-gray-900 mb-4 text-md border-b border-gray-100 pb-2">Select Staff Type</h4>
+                      <h4 className="font-bold text-gray-900 mb-4 text-md border-b border-gray-100 pb-2">スタッフタイプを選択</h4>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         {['Haken Staff', 'Office Staff'].map((type, idx) => {
                           const isSelected = draftStaffType === type;
@@ -549,7 +609,7 @@ export default function AssignWorkPlace() {
                                 <div className="flex items-center">
                                   {type === 'Haken Staff' ? <Briefcase className="w-4 h-4 mr-2 opacity-80" /> : <Building2 className="w-4 h-4 mr-2 opacity-80" />}
                                   <span className={`font-semibold leading-tight pr-4 ${isSelected ? 'text-white' : 'text-gray-800'}`}>
-                                    {type}
+                                    {type === 'Haken Staff' ? '派遣スタッフ' : '内勤スタッフ'}
                                   </span>
                                 </div>
                                 {isSelected ? (
@@ -567,7 +627,7 @@ export default function AssignWorkPlace() {
                     {/* Select Office (Only for Office Staff) */}
                     {draftStaffType === 'Office Staff' && (
                       <div>
-                        <h4 className="font-bold text-gray-900 mb-4 text-md border-b border-gray-100 pb-2">Select Office</h4>
+                        <h4 className="font-bold text-gray-900 mb-4 text-md border-b border-gray-100 pb-2">オフィスを選択</h4>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                           {OFFICE_LOCATIONS.map((loc, idx) => {
                             const isSelected = draftOffices.includes(loc);
@@ -587,7 +647,7 @@ export default function AssignWorkPlace() {
                               >
                                 <div className="flex items-center justify-between relative z-10 text-sm">
                                   <span className={`font-semibold leading-tight pr-4 ${isSelected ? 'text-white' : 'text-gray-800'}`}>
-                                    {loc}
+                                    {translateOfficeLocation(loc)}
                                   </span>
                                   {isSelected ? (
                                     <CheckCircle2 className="w-5 h-5 text-white flex-shrink-0" />
@@ -604,7 +664,7 @@ export default function AssignWorkPlace() {
 
                     {/* Department */}
                     <div>
-                      <h4 className="font-bold text-gray-900 mb-4 text-md border-b border-gray-100 pb-2">Select Department</h4>
+                      <h4 className="font-bold text-gray-900 mb-4 text-md border-b border-gray-100 pb-2">部署を選択</h4>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         {ALL_DEPARTMENTS.filter(dept => 
                           draftStaffType === 'Office Staff' 
@@ -634,7 +694,7 @@ export default function AssignWorkPlace() {
                             >
                               <div className="flex items-center justify-between relative z-10 text-sm">
                                 <span className={`font-semibold leading-tight pr-4 ${isSelected ? 'text-white' : 'text-gray-800'}`}>
-                                  {dept}
+                                  {translateDepartment(dept)}
                                 </span>
                                 {isSelected ? (
                                   <CheckCircle2 className="w-5 h-5 text-white flex-shrink-0" />
@@ -650,7 +710,7 @@ export default function AssignWorkPlace() {
 
                     {/* Workplace Category */}
                     <div>
-                      <h4 className="font-bold text-gray-900 mb-4 text-md border-b border-gray-100 pb-2">Select Workplace Category</h4>
+                      <h4 className="font-bold text-gray-900 mb-4 text-md border-b border-gray-100 pb-2">配属先カテゴリーを選択</h4>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         {WORK_PLACES.map((place, idx) => {
                           const isSelected = draftWorkPlaces.includes(place);
@@ -670,7 +730,7 @@ export default function AssignWorkPlace() {
                             >
                               <div className="flex items-center justify-between relative z-10 text-sm">
                                 <span className={`font-semibold leading-tight pr-4 ${isSelected ? 'text-white' : 'text-gray-800'}`}>
-                                  {place}
+                                  {translateWorkPlace(place)}
                                 </span>
                                 {isSelected ? (
                                   <CheckCircle2 className="w-5 h-5 text-white flex-shrink-0" />
@@ -696,14 +756,14 @@ export default function AssignWorkPlace() {
                 onClick={() => setIsModalOpen(false)}
                 className="px-6 py-2.5 bg-gray-100 border border-gray-200 text-gray-700 font-bold rounded-xl hover:bg-gray-200 transition-colors focus:ring-4 focus:ring-gray-100"
               >
-                Close
+                閉じる
               </button>
               <button 
                 onClick={handleAssignWorkPlace}
                 disabled={assigning}
                 className="px-6 py-2.5 bg-[#162D50] text-white font-bold rounded-xl hover:bg-[#0f1f3a] transition-colors focus:ring-4 focus:ring-[#162D50]/30 disabled:opacity-50 flex items-center"
               >
-                {assigning ? 'Assigning...' : 'Assign Workplace'}
+                {assigning ? '配属中...' : '配属を確定'}
               </button>
             </div>
             

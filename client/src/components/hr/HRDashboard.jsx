@@ -170,15 +170,15 @@ export default function HRDashboard() {
 
   const getステータスBadge = (status) => {
     if (status === 'Active') {
-      return <span className="px-3 py-1 bg-[#4CAF50] text-white rounded-full text-xs font-bold inline-block w-[140px] text-center shadow-sm">Active</span>;
+      return <span className="px-3 py-1 bg-[#4CAF50] text-white rounded-full text-xs font-bold inline-block w-[140px] text-center shadow-sm">アクティブ</span>;
     } else if (status === 'Missing Pledges') {
-      return <span className="px-3 py-1 bg-[#D32F2F] text-white rounded-full text-xs font-bold inline-block w-[140px] text-center shadow-sm">Missing Pledges</span>;
+      return <span className="px-3 py-1 bg-[#D32F2F] text-white rounded-full text-xs font-bold inline-block w-[140px] text-center shadow-sm">誓約書未提出</span>;
     } else if (status === 'Verification 保留中') {
-      return <span className="px-3 py-1 bg-[#F5D056] text-[#6b5207] rounded-full text-xs font-bold inline-block w-[140px] text-center shadow-sm">Verification 保留中</span>;
+      return <span className="px-3 py-1 bg-[#F5D056] text-[#6b5207] rounded-full text-xs font-bold inline-block w-[140px] text-center shadow-sm">確認保留中</span>;
     } else if (status === '拒否') {
       return <span className="px-3 py-1 bg-red-100 text-red-800 rounded-full text-xs font-bold inline-block w-[140px] text-center shadow-sm">拒否</span>;
     } else {
-      return <span className="px-3 py-1 bg-gray-200 text-gray-700 rounded-full text-xs font-bold inline-block w-[140px] text-center shadow-sm">{status || 'Unknown'}</span>;
+      return <span className="px-3 py-1 bg-gray-200 text-gray-700 rounded-full text-xs font-bold inline-block w-[140px] text-center shadow-sm">{status === 'Unknown' ? '不明' : (status || '不明')}</span>;
     }
   };
 
@@ -194,28 +194,28 @@ export default function HRDashboard() {
           </div>
           <UserPlus className="w-6 h-6 mb-3 text-blue-200" />
           <h3 className="text-3xl font-bold mb-1">{totalStaff}</h3>
-          <p className="text-[10px] font-bold tracking-widest text-blue-100">ALL STAFF</p>
+          <p className="text-[10px] font-bold tracking-widest text-blue-100">全スタッフ</p>
         </div>
 
         {/* Haken Staff */}
         <div className="bg-white p-6 rounded-xl shadow-sm flex flex-col items-center justify-center border border-gray-100 hover:border-blue-200 transition-colors">
           <Building className="w-6 h-6 mb-3 text-[#162D50]" />
           <h3 className="text-3xl font-bold text-[#162D50] mb-1">{hakenStaff}</h3>
-          <p className="text-[10px] font-bold tracking-widest text-gray-500">HAKEN STAFF</p>
+          <p className="text-[10px] font-bold tracking-widest text-gray-500">派遣スタッフ</p>
         </div>
 
         {/* Office Staff */}
         <div className="bg-white p-6 rounded-xl shadow-sm flex flex-col items-center justify-center border border-gray-100 hover:border-blue-200 transition-colors">
           <Building className="w-6 h-6 mb-3 text-[#162D50]" />
           <h3 className="text-3xl font-bold text-[#162D50] mb-1">{officeStaff}</h3>
-          <p className="text-[10px] font-bold tracking-widest text-gray-500">OFFICE STAFF</p>
+          <p className="text-[10px] font-bold tracking-widest text-gray-500">内勤スタッフ</p>
         </div>
       </div>
 
       {/* List Section */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden print-area">
         <div className="p-6 border-b border-gray-100 bg-[#F8F9FA] flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <h3 className="text-lg font-bold text-[#162D50]">Staff Directory</h3>
+          <h3 className="text-lg font-bold text-[#162D50]">スタッフ名簿</h3>
           
           <div className="flex flex-wrap items-center gap-3 no-print">
             {/* Search */}
@@ -223,7 +223,7 @@ export default function HRDashboard() {
               <Search className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
               <input
                 type="text"
-                placeholder="Search staff..."
+                placeholder="スタッフを検索..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="pl-9 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#162D50]"
@@ -238,10 +238,10 @@ export default function HRDashboard() {
                 onChange={(e) => setステータスFilter(e.target.value)}
                 className="pl-9 pr-8 py-2 border border-gray-300 rounded-lg text-sm appearance-none focus:outline-none focus:ring-2 focus:ring-[#162D50] bg-white"
               >
-                <option value="All">All ステータス</option>
-                <option value="Active">Active</option>
-                <option value="Verification 保留中">Verification 保留中</option>
-                <option value="Missing Pledges">Missing Pledges</option>
+                <option value="All">すべてのステータス</option>
+                <option value="Active">アクティブ</option>
+                <option value="Verification 保留中">確認保留中</option>
+                <option value="Missing Pledges">誓約書未提出</option>
               </select>
               <ChevronDown className="w-4 h-4 absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none" />
             </div>
@@ -270,7 +270,7 @@ export default function HRDashboard() {
                   : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
               }`}
             >
-              {tab}
+              {tab === 'All Staff' ? '全スタッフ' : tab === 'Haken Staff' ? '派遣スタッフ' : '内勤スタッフ'}
             </button>
           ))}
         </div>
@@ -282,20 +282,20 @@ export default function HRDashboard() {
                 <th className="py-4 px-6 text-xs font-bold text-[#162D50] uppercase tracking-wider">S.N.</th>
                 <th className="py-4 px-6 text-xs font-bold text-[#162D50] uppercase tracking-wider">スタッフID</th>
                 <th className="py-4 px-6 text-xs font-bold text-[#162D50] uppercase tracking-wider">氏名</th>
-                <th className="py-4 px-6 text-xs font-bold text-[#162D50] uppercase tracking-wider">Department</th>
-                <th className="py-4 px-6 text-xs font-bold text-[#162D50] uppercase tracking-wider">Join 日付</th>
-                <th className="py-4 px-6 text-xs font-bold text-[#162D50] uppercase tracking-wider">Onboarding ステータス</th>
-                <th className="py-4 px-6 text-xs font-bold text-[#162D50] uppercase tracking-wider text-center no-print">Actions</th>
+                <th className="py-4 px-6 text-xs font-bold text-[#162D50] uppercase tracking-wider">部署</th>
+                <th className="py-4 px-6 text-xs font-bold text-[#162D50] uppercase tracking-wider">入社日</th>
+                <th className="py-4 px-6 text-xs font-bold text-[#162D50] uppercase tracking-wider">オンボーディング状況</th>
+                <th className="py-4 px-6 text-xs font-bold text-[#162D50] uppercase tracking-wider text-center no-print">アクション</th>
               </tr>
             </thead>
             <tbody className="text-sm">
               {loading ? (
                 <tr>
-                  <td colSpan="7" className="py-8 px-6 text-center text-gray-500">Loading staff data...</td>
+                  <td colSpan="7" className="py-8 px-6 text-center text-gray-500">スタッフデータを読み込み中...</td>
                 </tr>
               ) : filteredEmployees.length === 0 ? (
                 <tr>
-                  <td colSpan="7" className="py-8 px-6 text-center text-gray-500">No staff records found.</td>
+                  <td colSpan="7" className="py-8 px-6 text-center text-gray-500">スタッフの記録が見つかりません。</td>
                 </tr>
               ) : (
                 filteredEmployees.map((employee, index) => (
@@ -305,7 +305,7 @@ export default function HRDashboard() {
                     <td className="py-5 px-6 text-[#162D50] font-bold">{employee.romajiName || employee.katakanaName || 'N/A'}</td>
                     <td className="py-5 px-6 text-gray-600">{Array.isArray(employee.department) ? employee.department.join(', ') : employee.department}</td>
                     <td className="py-5 px-6 text-gray-600">
-                      {employee.joinDate ? new Date(employee.joinDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'N/A'}
+                      {employee.joinDate ? new Date(employee.joinDate).toLocaleDateString('ja-JP', { year: 'numeric', month: 'short', day: 'numeric' }) : 'N/A'}
                     </td>
                     <td className="py-5 px-6">
                       {getステータスBadge(employee.onboardingステータス)}
@@ -338,30 +338,30 @@ export default function HRDashboard() {
           <div className="bg-white rounded-xl shadow-2xl max-w-lg w-full overflow-hidden flex flex-col">
             <div className="p-6 border-b border-gray-100 bg-[#F8F9FA] flex justify-between items-center">
               <div>
-                <h3 className="text-xl font-bold text-[#162D50]">Update Onboarding ステータス</h3>
-                <p className="text-sm text-gray-500 mt-1">For {selectedStaff.romajiName}</p>
+                <h3 className="text-xl font-bold text-[#162D50]">オンボーディング状況の更新</h3>
+                <p className="text-sm text-gray-500 mt-1">対象: {selectedStaff.romajiName || selectedStaff.katakanaName}</p>
               </div>
             </div>
             
             <div className="p-6 flex-1">
               <div className="space-y-5">
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">Select New ステータス</label>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">新しいステータスを選択</label>
                   <select
                     value={newOnboardingステータス}
                     onChange={(e) => setNewOnboardingステータス(e.target.value)}
                     className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#162D50] focus:border-[#162D50] outline-none transition-all bg-white"
                   >
-                    <option value="Verification 保留中">Verification 保留中</option>
-                    <option value="Missing Pledges">Missing Pledges</option>
-                    <option value="Active">Active</option>
+                    <option value="Verification 保留中">確認保留中</option>
+                    <option value="Missing Pledges">誓約書未提出</option>
+                    <option value="Active">アクティブ</option>
                     <option value="拒否">拒否</option>
                   </select>
                 </div>
                 
                 <div className="bg-blue-50 p-4 rounded-lg border border-blue-100">
                   <p className="text-sm text-blue-800">
-                    <strong>Note:</strong> Updating a staff member to "Active" signifies they have completed all necessary verification steps and submitted all required pledges.
+                    <strong>注:</strong> スタッフを「アクティブ」に更新すると、必要なすべての確認手順を完了し、必要なすべての誓約書を提出したことを意味します。
                   </p>
                 </div>
               </div>
@@ -373,7 +373,7 @@ export default function HRDashboard() {
                 className="px-6 py-2.5 rounded-lg font-bold text-gray-700 hover:bg-gray-200 transition-colors"
                 disabled={isSubmitting}
               >
-                Cancel
+                キャンセル
               </button>
               <button 
                 onClick={handleUpdateステータス}
@@ -382,7 +382,7 @@ export default function HRDashboard() {
                   isSubmitting ? 'bg-gray-400 cursor-not-allowed' : 'bg-[#162D50] hover:bg-[#0f1f38]'
                 }`}
               >
-                {isSubmitting ? 'Saving...' : 'Save Changes'}
+                {isSubmitting ? '保存中...' : '変更を保存'}
               </button>
             </div>
           </div>

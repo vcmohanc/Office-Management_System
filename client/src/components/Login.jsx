@@ -51,15 +51,15 @@ export default function Login({ setToken }) {
             OMS
           </h2>
           <p className="mt-2 text-center text-sm text-gray-600">
-            Sign in to access the dashboard
+            ダッシュボードにアクセスするにはサインインしてください
           </p>
         </div>
         
         {showForgotMessage && (
           <div className="bg-blue-50 border-l-4 border-blue-500 p-4 mb-4">
             <p className="text-sm text-blue-700">
-              <strong>Password Recovery:</strong><br />
-              Please contact your システム管理者 to reset your password. Admins can assign a new password directly from the Admin Dashboard.
+              <strong>パスワードの復旧:</strong><br />
+              パスワードのリセットについては、システム管理者にお問い合わせください。管理者は、管理者ダッシュボードから直接新しいパスワードを割り当てることができます。
             </p>
           </div>
         )}
@@ -72,23 +72,23 @@ export default function Login({ setToken }) {
           )}
           <div className="rounded-md shadow-sm space-y-4">
             <div>
-              <label className="sr-only">Username</label>
+              <label className="sr-only">ユーザー名</label>
               <input
                 type="text"
                 required
                 className="appearance-none relative block w-full px-3 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
-                placeholder="Username"
+                placeholder="ユーザー名"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
               />
             </div>
             <div>
-              <label className="sr-only">Password</label>
+              <label className="sr-only">パスワード</label>
               <input
                 type="password"
                 required
                 className="appearance-none relative block w-full px-3 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
-                placeholder="Password"
+                placeholder="パスワード"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
               />
@@ -102,7 +102,7 @@ export default function Login({ setToken }) {
                 onClick={() => setShowForgotMessage(!showForgotMessage)}
                 className="font-medium text-indigo-600 hover:text-indigo-500"
               >
-                Forgot your password?
+                パスワードをお忘れですか？
               </button>
             </div>
           </div>
@@ -112,7 +112,7 @@ export default function Login({ setToken }) {
               type="submit"
               className="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors"
             >
-              Sign In
+              サインイン
             </button>
           </div>
         </form>

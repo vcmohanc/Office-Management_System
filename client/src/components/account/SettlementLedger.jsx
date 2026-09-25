@@ -97,8 +97,8 @@ const TermRow = ({ term, caseId, defaultMethod }) => {
               onChange={(e) => setEdit金額(e.target.value)}
               className="w-24 p-1 border border-gray-300 rounded outline-none"
             />
-            <button onClick={() => editMutation.mutate(edit金額)} className="text-green-600 text-xs font-bold hover:underline">SAVE</button>
-            <button onClick={() => setIsEditing(false)} className="text-gray-500 text-xs hover:underline">CANCEL</button>
+            <button onClick={() => editMutation.mutate(edit金額)} className="text-green-600 text-xs font-bold hover:underline">保存</button>
+            <button onClick={() => setIsEditing(false)} className="text-gray-500 text-xs hover:underline">キャンセル</button>
           </div>
         ) : (
           <div className="col-span-3 font-bold">
@@ -136,14 +136,14 @@ const TermRow = ({ term, caseId, defaultMethod }) => {
         <div className="bg-gray-50 p-4 border-b border-gray-200 col-span-12">
           <div className="grid grid-cols-4 gap-4 mb-4">
             <div>
-              <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Method</label>
+              <label className="block text-xs font-bold text-gray-500 uppercase mb-1">方法</label>
               <select 
                 value={paymentData.paymentMethod} 
                 onChange={e => setPaymentData({...paymentData, paymentMethod: e.target.value})}
                 className="w-full p-2 border border-gray-300 bg-white rounded text-sm"
               >
-                <option value="bank_transfer">Bank Transfer</option>
-                <option value="cash">Cash</option>
+                <option value="bank_transfer">銀行振込</option>
+                <option value="cash">現金</option>
               </select>
             </div>
             <div>
@@ -156,7 +156,7 @@ const TermRow = ({ term, caseId, defaultMethod }) => {
               />
             </div>
             <div>
-              <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Transaction Ref</label>
+              <label className="block text-xs font-bold text-gray-500 uppercase mb-1">取引参照番号</label>
               <input 
                 type="text" 
                 value={paymentData.transactionRef} 
@@ -178,7 +178,7 @@ const TermRow = ({ term, caseId, defaultMethod }) => {
           {paymentData.paymentMethod === 'bank_transfer' && (
             <div className="grid grid-cols-3 gap-4 mb-4">
               <div>
-                <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Bank Name</label>
+                <label className="block text-xs font-bold text-gray-500 uppercase mb-1">銀行名</label>
                 <input 
                   type="text" 
                   value={paymentData.bankName} 
@@ -187,7 +187,7 @@ const TermRow = ({ term, caseId, defaultMethod }) => {
                 />
               </div>
               <div>
-                <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Branch Code</label>
+                <label className="block text-xs font-bold text-gray-500 uppercase mb-1">支店コード</label>
                 <input 
                   type="text" 
                   value={paymentData.branchCode} 
@@ -196,7 +196,7 @@ const TermRow = ({ term, caseId, defaultMethod }) => {
                 />
               </div>
               <div>
-                <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Account Number</label>
+                <label className="block text-xs font-bold text-gray-500 uppercase mb-1">口座番号</label>
                 <input 
                   type="text" 
                   value={paymentData.accountNumber} 
@@ -255,7 +255,7 @@ const SettlementLedger = ({ caseId }) => {
     <div className="max-w-5xl mx-auto bg-[#f8f5f0] p-8 min-h-screen font-mono text-sm shadow-xl">
       <div className="flex justify-between items-start mb-8">
         <div>
-          <h1 className="text-2xl font-bold tracking-widest text-[#1a3622]">SETTLEMENT LEDGER</h1>
+          <h1 className="text-2xl font-bold tracking-widest text-[#1a3622]">決済元帳</h1>
           <p className="text-xs tracking-widest text-gray-500 uppercase mt-1">1 CASE SELECTED</p>
         </div>
         <button className="border-2 border-[#1a3622] px-6 py-2 font-bold tracking-widest text-[#1a3622] flex items-center gap-2 hover:bg-[#1a3622] hover:text-white transition-colors">
@@ -265,7 +265,7 @@ const SettlementLedger = ({ caseId }) => {
 
       <div className="border-t-2 border-dashed border-gray-300 pt-6 mb-8 flex justify-between">
         <div>
-          <p className="text-xs font-bold text-gray-500 uppercase">Payee</p>
+          <p className="text-xs font-bold text-gray-500 uppercase">受取人</p>
           <p className="text-lg font-bold text-gray-900">{ledger.payeeName}</p>
           <p className="text-xs text-gray-500">ID: {ledger.staffId}</p>
         </div>
@@ -276,7 +276,7 @@ const SettlementLedger = ({ caseId }) => {
       </div>
 
       <div className="mb-8">
-        <h3 className="text-xs font-bold text-gray-500 uppercase mb-4 border-b border-gray-200 pb-2">Itemized Claims</h3>
+        <h3 className="text-xs font-bold text-gray-500 uppercase mb-4 border-b border-gray-200 pb-2">内訳</h3>
         {claims.length > 0 ? (
           <div className="space-y-3">
             {claims.map((claim) => (
@@ -295,18 +295,18 @@ const SettlementLedger = ({ caseId }) => {
       </div>
 
       <div className="border-t border-b border-gray-200 py-6 mb-8">
-        <h3 className="text-xs font-bold text-gray-500 uppercase mb-4">Agreed Terms</h3>
+        <h3 className="text-xs font-bold text-gray-500 uppercase mb-4">合意条件</h3>
         <div className="grid grid-cols-4 gap-4">
           <div>
             <p className="text-xs text-gray-500 uppercase mb-1">Collection / Settlement Method</p>
             <p className="font-bold capitalize">{ledger.agreedTerms.settlementMethod.replace('_', ' ')}</p>
           </div>
           <div>
-            <p className="text-xs text-gray-500 uppercase mb-1">Installment Plan</p>
+            <p className="text-xs text-gray-500 uppercase mb-1">分割払いプラン</p>
             <p className="font-bold capitalize">{ledger.agreedTerms.installmentPlan.replace('_', ' ')} ({ledger.agreedTerms.installmentTotalTerms} Months)</p>
           </div>
           <div>
-            <p className="text-xs text-gray-500 uppercase mb-1">Start Month</p>
+            <p className="text-xs text-gray-500 uppercase mb-1">開始月</p>
             <p className="font-bold">{new Date(ledger.agreedTerms.startMonth).toISOString().slice(0, 7)}</p>
           </div>
           <div>
@@ -317,13 +317,13 @@ const SettlementLedger = ({ caseId }) => {
       </div>
 
       <div className="mb-8">
-        <h3 className="text-sm font-bold text-[#1a3622] mb-4 border-b border-[#1a3622] pb-2">INSTALLMENT SCHEDULE</h3>
+        <h3 className="text-sm font-bold text-[#1a3622] mb-4 border-b border-[#1a3622] pb-2">分割払いスケジュール</h3>
         <div className="grid grid-cols-12 gap-4 text-xs font-bold text-gray-500 uppercase border-b pb-2">
-          <div className="col-span-1">Term</div>
-          <div className="col-span-2">Due Month</div>
-          <div className="col-span-3">Net Payable</div>
+          <div className="col-span-1">期間</div>
+          <div className="col-span-2">支払月</div>
+          <div className="col-span-3">支払額</div>
           <div className="col-span-2">ステータス</div>
-          <div className="col-span-2">Details</div>
+          <div className="col-span-2">詳細</div>
           <div className="col-span-2 text-right">アクション</div>
         </div>
         
