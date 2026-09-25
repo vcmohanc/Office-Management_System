@@ -10,10 +10,13 @@ services:
     image: mohanc35/oms-client
     ports:
       - "80:80"
+      - "443:443"
+    volumes:
+      - /etc/letsencrypt:/etc/letsencrypt:ro
     depends_on:
       - server
     environment:
-      - VITE_API_URL=http://13.196.191.114:5000
+      - VITE_API_URL=https://oms.vegecoop.net/api
 
   server:
     image: mohanc35/oms-server
