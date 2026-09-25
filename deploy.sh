@@ -1,9 +1,7 @@
 #!/bin/bash
 set -e
 
-echo "Installing docker-compose..."
-sudo apt-get update -y
-sudo apt-get install -y docker-compose docker-compose-plugin
+echo "Skipping docker-compose install as it is already installed."
 
 echo "Creating docker-compose.yml..."
 cat << 'EOF' > docker-compose.yml
@@ -40,9 +38,9 @@ volumes:
 EOF
 
 echo "Pulling images..."
-sudo docker-compose pull
+sudo docker compose pull
 
 echo "Starting application..."
-sudo docker-compose up -d
+sudo docker compose up -d
 
 echo "Deployment successful!"
