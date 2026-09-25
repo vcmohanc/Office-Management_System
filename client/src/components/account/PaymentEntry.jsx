@@ -39,7 +39,7 @@ export default function PaymentEntry() {
           ? currentFilteredRecords.filter(r => selectedRows.includes(r.rawId))
           : currentFilteredRecords;
 
-        if (recordsToエクスポート.length === 0) return toast.error('いいえ records to export.');
+        if (recordsToエクスポート.length === 0) return toast.error('エクスポートするレコードがありません。');
 
         const doc = new jsPDF({ orientation: 'portrait' });
         const pageWidth = doc.internal.pageSize.width;
@@ -117,7 +117,7 @@ export default function PaymentEntry() {
         autoTable(doc, {
           startY: 46,
           margin: { left: 10, right: 10 },
-          head: [['案件ID', 'Name', 'スタッフID', 'Work Place', '経費の種類', '期間', '進捗', '残り', 'ステータス']],
+          head: [['案件ID', '名前', 'スタッフID', '配属先', '経費の種類', '期間', '進捗', '残り', 'ステータス']],
           body: tableData,
           theme: 'grid',
           styles: {
@@ -601,7 +601,7 @@ export default function PaymentEntry() {
         }
 
       if (txRows.length === 0) {
-        txRows.push(txHead.map((_, i) => i === txHead.length - 1 ? 'いいえ transactions recorded' : '—'));
+        txRows.push(txHead.map((_, i) => i === txHead.length - 1 ? '記録された取引はありません' : '—'));
       }
 
       curY = doc.lastAutoTable.finalY + secGap;
@@ -796,7 +796,7 @@ export default function PaymentEntry() {
         id: `${c.advancerCategory === 'Staff' ? '#CLM-' : '#CAS-'}${c._id.slice(-6).toUpperCase()}`,
         rawId: c._id,
         staffId: c.staffId || 'N/A',
-        name: c.staffName || c.advancerName || 'Unknown',
+        name: c.staffName || c.advancerName || '不明',
         startDate,
         endDate,
         workPlace: c.workPlace || 'N/A',
@@ -915,9 +915,9 @@ export default function PaymentEntry() {
                     className="appearance-none pl-3 pr-8 py-2 border border-gray-300 rounded-lg text-sm text-gray-700 bg-white focus:ring-blue-500 focus:border-blue-500 cursor-pointer"
                   >
                     <option value="All">All 経費の種類s</option>
-                    <option value="Waiting Dormitory Fee">Waiting Dormitory Fee</option>
+                    <option value="Waiting Dormitory Fee">寮費待機</option>
                     <option value="WIFI">WIFI</option>
-                    <option value="Travel">Travel</option>
+                    <option value="Travel">交通費</option>
                   </select>
                   <ChevronDown className="w-4 h-4 text-gray-500 absolute right-2.5 top-1/2 transform -translate-y-1/2 pointer-events-none" />
                 </div>
@@ -932,7 +932,7 @@ export default function PaymentEntry() {
                     <option value="支払済">支払済</option>
                     <option value="保留中">保留中</option>
                     <option value="期限切れ">期限切れ</option>
-                    <option value="On Track">On Track</option>
+                    <option value="On Track">順調</option>
                   </select>
                   <ChevronDown className="w-4 h-4 text-gray-500 absolute right-2.5 top-1/2 transform -translate-y-1/2 pointer-events-none" />
                 </div>
@@ -973,12 +973,12 @@ export default function PaymentEntry() {
                   </th>
                   <th className="py-4 px-6">案件ID</th>
                   <th className="py-4 px-6">スタッフID & Name</th>
-                  <th className="py-4 px-6">Work Place</th>
+                  <th className="py-4 px-6">配属先</th>
                   <th className="py-4 px-6">経費の種類</th>
                   <th className="py-4 px-6">Payment 日付 (Start - End)</th>
                   <th className="py-4 px-6">進捗</th>
                   <th className="py-4 px-6">Next Payment / Total 支払済</th>
-                  {hasBouncedPayments && <th className="py-4 px-6 text-center">Bounced</th>}
+                  {hasBouncedPayments && <th className="py-4 px-6 text-center">不渡り</th>}
                   <th className="py-4 px-6 text-right">残り Balance</th>
                   <th className="py-4 px-6 text-center">ステータス</th>
                   <th className="py-4 px-6 text-right">アクション</th>
@@ -1144,8 +1144,8 @@ export default function PaymentEntry() {
     <div className="w-full px-4 sm:px-6 lg:px-8 xl:px-12 space-y-6 pb-10">
       <div className="flex justify-between items-end mb-8">
         <div>
-          <h2 className="text-2xl font-bold text-[#162D50] mb-2">支払済 ステータス Selection</h2>
-          <p className="text-gray-500 text-sm">Please select the type of paid status you want to process.</p>
+          <h2 className="text-2xl font-bold text-[#162D50] mb-2">支払済 ステータス選択</h2>
+          <p className="text-gray-500 text-sm">処理する支払済ステータスの種類を選択してください。</p>
         </div>
       </div>
 
@@ -1323,11 +1323,11 @@ function PaymentEntryForm({ caseId, termNumber, navigate }) {
         <div className="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
           <div className="bg-[#162D50] text-white px-8 py-6 flex justify-between items-center">
             <div>
-              <h3 className="text-xl font-bold tracking-wide">Record Payment</h3>
+              <h3 className="text-xl font-bold tracking-wide">支払いを記録</h3>
               <p className="text-blue-100 text-sm mt-1">Case #{caseId.slice(-6).toUpperCase()} • {caseData.staffName || caseData.advancerName || caseData.fullName || 'Unknown Payee'}</p>
             </div>
             <div className="text-right">
-              <span className="text-sm text-blue-200 uppercase font-semibold tracking-wider block mb-1">Term</span>
+              <span className="text-sm text-blue-200 uppercase font-semibold tracking-wider block mb-1">期間</span>
               <span className="font-bold">{termLabel}</span>
             </div>
           </div>
@@ -1343,14 +1343,14 @@ function PaymentEntryForm({ caseId, termNumber, navigate }) {
                   className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-gray-700 focus:ring-2 focus:ring-[#162D50] focus:border-[#162D50] outline-none"
                   required
                 >
-                  <option value="" disabled>Select Method</option>
-                  <option value="Bank Transfer">Bank Transfer</option>
-                  <option value="Pay in Salary">Pay in Salary</option>
-                  <option value="Petty Cash">Petty Cash</option>
-                  <option value="Company Check">Company Check</option>
-                  <option value="Corporate Card">Corporate Card</option>
-                  <option value="Cash">Cash</option>
-                  <option value="Payroll Deduction">Payroll Deduction</option>
+                  <option value="" disabled>支払い方法を選択</option>
+                  <option value="Bank Transfer">銀行振込</option>
+                  <option value="Pay in Salary">給与振込</option>
+                  <option value="Petty Cash">小口現金</option>
+                  <option value="Company Check">小切手</option>
+                  <option value="Corporate Card">法人カード</option>
+                  <option value="Cash">現金</option>
+                  <option value="Payroll Deduction">給与控除</option>
                 </select>
               </div>
               
@@ -1369,11 +1369,11 @@ function PaymentEntryForm({ caseId, termNumber, navigate }) {
             {paymentMethod === 'Bank Transfer' && (
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 bg-gray-50 p-5 rounded-lg border border-gray-100">
                 <div>
-                  <label className="block text-xs font-semibold text-gray-600 uppercase mb-2">Bank Name <span className="text-red-500">*</span></label>
+                  <label className="block text-xs font-semibold text-gray-600 uppercase mb-2">銀行名 <span className="text-red-500">*</span></label>
                   <input type="text" onChange={(e) => set目的地Details({...destinationDetails, bankName: e.target.value})} className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-[#162D50] focus:border-[#162D50] outline-none" required />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-gray-600 uppercase mb-2">Branch Code <span className="text-red-500">*</span></label>
+                  <label className="block text-xs font-semibold text-gray-600 uppercase mb-2">支店コード <span className="text-red-500">*</span></label>
                   <input type="text" onChange={(e) => set目的地Details({...destinationDetails, branchCode: e.target.value})} className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-[#162D50] focus:border-[#162D50] outline-none" required />
                 </div>
                 <div>
@@ -1407,7 +1407,7 @@ function PaymentEntryForm({ caseId, termNumber, navigate }) {
 
             <div className="flex flex-col sm:flex-row gap-6">
               <div className="flex-1">
-                <label className="block text-sm font-semibold text-gray-700 mb-2">Transaction Ref</label>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">取引参照番号</label>
                 <input 
                   type="text" 
                   value={transactionRefId} 
@@ -1417,7 +1417,7 @@ function PaymentEntryForm({ caseId, termNumber, navigate }) {
                 />
               </div>
               <div className="flex-1">
-                <label className="block text-sm font-semibold text-gray-700 mb-2">Less Deductions</label>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">控除額</label>
                 <div className="relative">
                   <span className="absolute left-4 top-2.5 text-gray-500 font-medium">¥</span>
                   <input 

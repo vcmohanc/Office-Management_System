@@ -52,47 +52,47 @@ export default function AccountDashboard() {
         {/* Card 1 */}
         <div className="bg-white rounded-xl p-5 border border-gray-200 shadow-sm">
           <div className="flex justify-between items-start mb-4">
-            <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider">TOTAL ACTIVE ADVANCES</h3>
+            <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider">アクティブな前払金合計</h3>
             <Wallet className="text-[#162D50] w-5 h-5" />
           </div>
           <p className="text-3xl font-bold text-[#162D50] mb-2">
             {loading ? '...' : formatCurrency(data.totalActiveAdvances)}
           </p>
           <p className="text-xs font-medium text-blue-500 flex items-center">
-            <TrendingUp className="w-3 h-3 mr-1" /> +12% from last month
+            <TrendingUp className="w-3 h-3 mr-1" /> 先月比 +12%
           </p>
         </div>
         
         {/* Card 2 */}
         <div className="bg-white rounded-xl p-5 border border-gray-200 shadow-sm">
           <div className="flex justify-between items-start mb-4">
-            <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider">PENDING SETTLEMENTS</h3>
+            <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider">保留中の決済</h3>
             <Clipboard className="text-yellow-500 w-5 h-5" />
           </div>
           <p className="text-3xl font-bold text-[#162D50] mb-2">
             {loading ? '...' : data.pendingSettlements}
           </p>
           <p className="text-xs font-medium text-gray-500">
-            Cases Awaiting Approval
+            承認待ちの案件
           </p>
         </div>
 
         {/* Card 3 */}
         <div className="bg-white rounded-xl p-5 border border-gray-200 shadow-sm">
           <div className="flex justify-between items-start mb-4">
-            <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider">RECOVERED THIS PERIOD</h3>
+            <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider">今期の回収額</h3>
             <CheckCircle className="text-green-500 w-5 h-5" />
           </div>
           <p className="text-3xl font-bold text-green-500 mb-2">
             {loading ? '...' : formatCurrency(data.recoveredThisPeriod)}
           </p>
           <p className="text-xs font-medium text-gray-500">
-            98% Recovery Rate
+            回収率 98%
           </p>
         </div>
       </div>
 
-      <h2 className="text-xl font-bold text-[#162D50] mb-6">Fund Flow Patterns</h2>
+      <h2 className="text-xl font-bold text-[#162D50] mb-6">資金の流れ</h2>
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         
         {/* Pattern 1 */}
@@ -110,31 +110,31 @@ export default function AccountDashboard() {
                 <div className="w-14 h-14 bg-[#F2F4F7] rounded-xl flex items-center justify-center mb-2 shadow-sm">
                   <Landmark className="w-7 h-7 text-[#162D50]" />
                 </div>
-                <span className="font-bold text-sm text-[#162D50]">VC Fund</span>
+                <span className="font-bold text-sm text-[#162D50]">VCファンド</span>
               </div>
               <div className="flex-1 px-4 flex flex-col items-center relative">
                 <div className="w-full h-px bg-blue-400 absolute top-1/2"></div>
                 <ArrowRight className="text-blue-400 absolute top-1/2 right-4 transform -translate-y-1/2 w-4 h-4" />
                 <div className="bg-white px-2 z-10 flex flex-col items-center">
-                  <span className="text-xs font-bold text-blue-500">Advance</span>
-                  <span className="text-xs text-red-500">(Outflow)</span>
+                  <span className="text-xs font-bold text-blue-500">前払い</span>
+                  <span className="text-xs text-red-500">(流出)</span>
                 </div>
               </div>
               <div className="flex flex-col items-center">
                 <div className="w-14 h-14 bg-[#F2F4F7] rounded-xl flex items-center justify-center mb-2 shadow-sm">
                   <User className="w-7 h-7 text-[#162D50]" />
                 </div>
-                <span className="font-bold text-sm text-[#162D50]">Staff</span>
+                <span className="font-bold text-sm text-[#162D50]">スタッフ</span>
               </div>
             </div>
             <div className="mt-auto bg-[#F8F9FA] rounded-lg p-4 border border-gray-100">
               <div className="flex justify-between mb-2">
                 <div>
-                  <p className="text-xs text-gray-500 font-medium">Total Advanced</p>
+                  <p className="text-xs text-gray-500 font-medium">前払金合計</p>
                   <p className="text-lg font-bold text-red-500">{formatCurrency(data.fundFlowPatterns.ptn1.totalAdvanced)}</p>
                 </div>
                 <div className="text-right">
-                  <p className="text-xs text-gray-500 font-medium">Total Recovered</p>
+                  <p className="text-xs text-gray-500 font-medium">回収金合計</p>
                   <p className="text-lg font-bold text-green-500">{formatCurrency(data.fundFlowPatterns.ptn1.totalRecovered)}</p>
                 </div>
               </div>
@@ -143,7 +143,7 @@ export default function AccountDashboard() {
                 <div className="bg-red-500" style={{ width: getWidths(data.fundFlowPatterns.ptn1.totalAdvanced, data.fundFlowPatterns.ptn1.totalRecovered).advancedWidth }}></div>
               </div>
               <div className="text-right border-t border-gray-200 pt-2">
-                <p className="text-xs font-bold text-gray-800">Net Exposure: {formatCurrency(data.fundFlowPatterns.ptn1.netExposure)}</p>
+                <p className="text-xs font-bold text-gray-800">正味エクスポージャー: {formatCurrency(data.fundFlowPatterns.ptn1.netExposure)}</p>
               </div>
             </div>
           </div>
@@ -154,7 +154,7 @@ export default function AccountDashboard() {
           <div className="bg-[#F8F9FA] border-b border-gray-100 p-3 flex justify-between items-center rounded-t-xl">
             <div className="flex items-center space-x-3">
               <span className="bg-[#E2E8F0] text-[#4A5568] px-2 py-0.5 rounded text-xs font-bold">PTN-2</span>
-              <span className="font-bold text-[#162D50] text-sm">VCfund → Farmer Advance</span>
+              <span className="font-bold text-[#162D50] text-sm">VCfund → 農家 前払い</span>
             </div>
             <span className="text-xs text-blue-600 bg-blue-50 px-2 py-1 rounded-full font-medium">Active: {data.fundFlowPatterns.ptn2.activeCount}</span>
           </div>
@@ -164,31 +164,31 @@ export default function AccountDashboard() {
                 <div className="w-14 h-14 bg-[#F2F4F7] rounded-xl flex items-center justify-center mb-2 shadow-sm">
                   <Landmark className="w-7 h-7 text-[#162D50]" />
                 </div>
-                <span className="font-bold text-sm text-[#162D50]">VC Fund</span>
+                <span className="font-bold text-sm text-[#162D50]">VCファンド</span>
               </div>
               <div className="flex-1 px-4 flex flex-col items-center relative">
                 <div className="w-full h-px bg-blue-400 absolute top-1/2"></div>
                 <ArrowRight className="text-blue-400 absolute top-1/2 right-4 transform -translate-y-1/2 w-4 h-4" />
                 <div className="bg-white px-2 z-10 flex flex-col items-center">
-                  <span className="text-xs font-bold text-blue-500">Advance</span>
-                  <span className="text-xs text-red-500">(Outflow)</span>
+                  <span className="text-xs font-bold text-blue-500">前払い</span>
+                  <span className="text-xs text-red-500">(流出)</span>
                 </div>
               </div>
               <div className="flex flex-col items-center">
                 <div className="w-14 h-14 bg-[#F2F4F7] rounded-xl flex items-center justify-center mb-2 shadow-sm">
                   <Tractor className="w-7 h-7 text-[#162D50]" />
                 </div>
-                <span className="font-bold text-sm text-[#162D50]">Farmer</span>
+                <span className="font-bold text-sm text-[#162D50]">農家</span>
               </div>
             </div>
             <div className="mt-auto bg-[#F8F9FA] rounded-lg p-4 border border-gray-100">
               <div className="flex justify-between mb-2">
                 <div>
-                  <p className="text-xs text-gray-500 font-medium">Total Advanced</p>
+                  <p className="text-xs text-gray-500 font-medium">前払金合計</p>
                   <p className="text-lg font-bold text-red-500">{formatCurrency(data.fundFlowPatterns.ptn2.totalAdvanced)}</p>
                 </div>
                 <div className="text-right">
-                  <p className="text-xs text-gray-500 font-medium">Total Recovered</p>
+                  <p className="text-xs text-gray-500 font-medium">回収金合計</p>
                   <p className="text-lg font-bold text-green-500">{formatCurrency(data.fundFlowPatterns.ptn2.totalRecovered)}</p>
                 </div>
               </div>
@@ -197,7 +197,7 @@ export default function AccountDashboard() {
                 <div className="bg-red-500" style={{ width: getWidths(data.fundFlowPatterns.ptn2.totalAdvanced, data.fundFlowPatterns.ptn2.totalRecovered).advancedWidth }}></div>
               </div>
               <div className="text-right border-t border-gray-200 pt-2">
-                <p className="text-xs font-bold text-gray-800">Net Exposure: {formatCurrency(data.fundFlowPatterns.ptn2.netExposure)}</p>
+                <p className="text-xs font-bold text-gray-800">正味エクスポージャー: {formatCurrency(data.fundFlowPatterns.ptn2.netExposure)}</p>
               </div>
             </div>
           </div>
@@ -208,7 +208,7 @@ export default function AccountDashboard() {
           <div className="bg-[#F8F9FA] border-b border-gray-100 p-3 flex justify-between items-center rounded-t-xl">
             <div className="flex items-center space-x-3">
               <span className="bg-[#E2E8F0] text-[#4A5568] px-2 py-0.5 rounded text-xs font-bold">PTN-3</span>
-              <span className="font-bold text-[#162D50] text-sm">Farmer → VCfund Recovery</span>
+              <span className="font-bold text-[#162D50] text-sm">農家 → VCfund 回収</span>
             </div>
             <span className="text-xs text-blue-600 bg-blue-50 px-2 py-1 rounded-full font-medium">Active: {data.fundFlowPatterns.ptn3.activeCount}</span>
           </div>
@@ -218,31 +218,31 @@ export default function AccountDashboard() {
                 <div className="w-14 h-14 bg-[#F2F4F7] rounded-xl flex items-center justify-center mb-2 shadow-sm">
                   <Tractor className="w-7 h-7 text-[#162D50]" />
                 </div>
-                <span className="font-bold text-sm text-[#162D50]">Farmer</span>
+                <span className="font-bold text-sm text-[#162D50]">農家</span>
               </div>
               <div className="flex-1 px-4 flex flex-col items-center relative">
                 <div className="w-full h-px bg-green-400 absolute top-1/2"></div>
                 <ArrowRight className="text-green-400 absolute top-1/2 right-4 transform -translate-y-1/2 w-4 h-4" />
                 <div className="bg-white px-2 z-10 flex flex-col items-center">
-                  <span className="text-xs font-bold text-green-500">Recovery</span>
-                  <span className="text-xs text-green-500">(Inflow)</span>
+                  <span className="text-xs font-bold text-green-500">回収</span>
+                  <span className="text-xs text-green-500">(流入)</span>
                 </div>
               </div>
               <div className="flex flex-col items-center">
                 <div className="w-14 h-14 bg-[#F2F4F7] rounded-xl flex items-center justify-center mb-2 shadow-sm">
                   <Landmark className="w-7 h-7 text-[#162D50]" />
                 </div>
-                <span className="font-bold text-sm text-[#162D50]">VC Fund</span>
+                <span className="font-bold text-sm text-[#162D50]">VCファンド</span>
               </div>
             </div>
             <div className="mt-auto bg-[#F8F9FA] rounded-lg p-4 border border-gray-100">
               <div className="flex justify-between mb-2">
                 <div>
-                  <p className="text-xs text-gray-500 font-medium">Total Recovered</p>
+                  <p className="text-xs text-gray-500 font-medium">回収金合計</p>
                   <p className="text-lg font-bold text-green-500">{formatCurrency(data.fundFlowPatterns.ptn3.totalRecovered)}</p>
                 </div>
                 <div className="text-right">
-                  <p className="text-xs text-gray-500 font-medium">Total Advanced</p>
+                  <p className="text-xs text-gray-500 font-medium">前払金合計</p>
                   <p className="text-lg font-bold text-red-500">{formatCurrency(data.fundFlowPatterns.ptn3.totalAdvanced)}</p>
                 </div>
               </div>
@@ -251,7 +251,7 @@ export default function AccountDashboard() {
                 <div className="bg-red-500" style={{ width: getWidths(data.fundFlowPatterns.ptn3.totalAdvanced, data.fundFlowPatterns.ptn3.totalRecovered).advancedWidth }}></div>
               </div>
               <div className="text-right border-t border-gray-200 pt-2">
-                <p className="text-xs font-bold text-gray-800">Net Exposure: {formatCurrency(data.fundFlowPatterns.ptn3.netExposure)}</p>
+                <p className="text-xs font-bold text-gray-800">正味エクスポージャー: {formatCurrency(data.fundFlowPatterns.ptn3.netExposure)}</p>
               </div>
             </div>
           </div>
@@ -262,7 +262,7 @@ export default function AccountDashboard() {
           <div className="bg-[#F8F9FA] border-b border-gray-100 p-3 flex justify-between items-center rounded-t-xl">
             <div className="flex items-center space-x-3">
               <span className="bg-[#E2E8F0] text-[#4A5568] px-2 py-0.5 rounded text-xs font-bold">PTN-4</span>
-              <span className="font-bold text-[#162D50] text-sm">Staff → VCfund Recovery</span>
+              <span className="font-bold text-[#162D50] text-sm">スタッフ → VCfund 回収</span>
             </div>
             <span className="text-xs text-blue-600 bg-blue-50 px-2 py-1 rounded-full font-medium">Active: {data.fundFlowPatterns.ptn4.activeCount}</span>
           </div>
@@ -272,31 +272,31 @@ export default function AccountDashboard() {
                 <div className="w-14 h-14 bg-[#F2F4F7] rounded-xl flex items-center justify-center mb-2 shadow-sm">
                   <User className="w-7 h-7 text-[#162D50]" />
                 </div>
-                <span className="font-bold text-sm text-[#162D50]">Staff</span>
+                <span className="font-bold text-sm text-[#162D50]">スタッフ</span>
               </div>
               <div className="flex-1 px-4 flex flex-col items-center relative">
                 <div className="w-full h-px bg-green-400 absolute top-1/2"></div>
                 <ArrowRight className="text-green-400 absolute top-1/2 right-4 transform -translate-y-1/2 w-4 h-4" />
                 <div className="bg-white px-2 z-10 flex flex-col items-center">
-                  <span className="text-xs font-bold text-green-500">Recovery</span>
-                  <span className="text-xs text-green-500">(Inflow)</span>
+                  <span className="text-xs font-bold text-green-500">回収</span>
+                  <span className="text-xs text-green-500">(流入)</span>
                 </div>
               </div>
               <div className="flex flex-col items-center">
                 <div className="w-14 h-14 bg-[#F2F4F7] rounded-xl flex items-center justify-center mb-2 shadow-sm">
                   <Landmark className="w-7 h-7 text-[#162D50]" />
                 </div>
-                <span className="font-bold text-sm text-[#162D50]">VC Fund</span>
+                <span className="font-bold text-sm text-[#162D50]">VCファンド</span>
               </div>
             </div>
             <div className="mt-auto bg-[#F8F9FA] rounded-lg p-4 border border-gray-100">
               <div className="flex justify-between mb-2">
                 <div>
-                  <p className="text-xs text-gray-500 font-medium">Total Recovered</p>
+                  <p className="text-xs text-gray-500 font-medium">回収金合計</p>
                   <p className="text-lg font-bold text-green-500">{formatCurrency(data.fundFlowPatterns.ptn4.totalRecovered)}</p>
                 </div>
                 <div className="text-right">
-                  <p className="text-xs text-gray-500 font-medium">Total Advanced</p>
+                  <p className="text-xs text-gray-500 font-medium">前払金合計</p>
                   <p className="text-lg font-bold text-red-500">{formatCurrency(data.fundFlowPatterns.ptn4.totalAdvanced)}</p>
                 </div>
               </div>
@@ -305,7 +305,7 @@ export default function AccountDashboard() {
                 <div className="bg-red-500" style={{ width: getWidths(data.fundFlowPatterns.ptn4.totalAdvanced, data.fundFlowPatterns.ptn4.totalRecovered).advancedWidth }}></div>
               </div>
               <div className="text-right border-t border-gray-200 pt-2">
-                <p className="text-xs font-bold text-gray-800">Net Exposure: {formatCurrency(data.fundFlowPatterns.ptn4.netExposure)}</p>
+                <p className="text-xs font-bold text-gray-800">正味エクスポージャー: {formatCurrency(data.fundFlowPatterns.ptn4.netExposure)}</p>
               </div>
             </div>
           </div>

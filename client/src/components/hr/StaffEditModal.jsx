@@ -5,7 +5,7 @@ import { X, Save, User, Globe, Briefcase, Heart, AlertCircle, Plus, Trash2 } fro
 import { ALL_DEPARTMENTS } from '../../constants';
 import MultiDatePicker from '../common/MultiDatePicker';
 
-export default function StaffEditModal({ employee, onClose, onEditComplete, initialTab = 'Basic' }) {
+export default function StaffEditModal({ employee, onClose, onEditComplete, initialTab = '基本情報' }) {
   const [activeTab, setActiveTab] = useState(initialTab);
   
   // Format date correctly for inputs
@@ -146,7 +146,7 @@ export default function StaffEditModal({ employee, onClose, onEditComplete, init
         {/* Header */}
         <div className="flex items-center justify-between px-8 py-4 bg-white border-b border-gray-100 flex-shrink-0">
           <div>
-            <h2 className="text-xl font-bold text-[#162D50]">Edit Staff Profile</h2>
+            <h2 className="text-xl font-bold text-[#162D50]">スタッフプロフィールの編集</h2>
             <p className="text-sm text-gray-500">{formData.romajiName} (ID: #{employee._id?.slice(-6).toUpperCase()})</p>
           </div>
           <button onClick={onClose} className="p-2 text-gray-400 hover:text-gray-600 rounded-full transition-colors">
@@ -156,7 +156,7 @@ export default function StaffEditModal({ employee, onClose, onEditComplete, init
 
         {/* Tabs */}
         <div className="flex px-8 border-b border-gray-200 bg-gray-50">
-          {['Basic', 'Visa', 'Education & Experience', 'Physical & More'].map((tab) => (
+          {['基本情報', 'ビザ', '学歴・職歴', '身体情報・その他'].map((tab) => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
@@ -183,43 +183,43 @@ export default function StaffEditModal({ employee, onClose, onEditComplete, init
           <form id="editStaffForm" onSubmit={handleSubmit} className="space-y-6">
             
             {/* TAB: Basic Info */}
-            <div className={activeTab === 'Basic' ? 'block' : 'hidden'}>
+            <div className={activeTab === '基本情報' ? 'block' : 'hidden'}>
               <div className="mb-6 flex items-center space-x-6">
                 <div className="w-24 h-24 border-2 border-gray-300 bg-gray-50 flex items-center justify-center overflow-hidden flex-shrink-0">
                   {photoPreview ? (
                     <img src={photoPreview} alt="Preview" className="w-full h-full object-cover" />
                   ) : (
-                    <div className="text-gray-400 text-xs text-center px-2">No Photo</div>
+                    <div className="text-gray-400 text-xs text-center px-2">写真なし</div>
                   )}
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-gray-600 mb-1 uppercase">Profile Photo</label>
+                  <label className="block text-xs font-bold text-gray-600 mb-1 uppercase">プロフィール写真</label>
                   <label className="cursor-pointer bg-white border border-gray-300 text-gray-700 px-4 py-2 rounded-md text-sm font-medium hover:bg-gray-50 transition-colors inline-block">
-                    <span>Upload Photo</span>
+                    <span>写真をアップロード</span>
                     <input type="file" accept="image/*" className="hidden" onChange={handlePhotoChange} />
                   </label>
-                  <p className="text-xs text-gray-400 mt-2">JPEG or PNG, max 2MB</p>
+                  <p className="text-xs text-gray-400 mt-2">JPEG または PNG、最大2MB</p>
                 </div>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-bold text-gray-600 mb-1 uppercase">Romaji Name</label>
+                  <label className="block text-xs font-bold text-gray-600 mb-1 uppercase">ローマ字氏名</label>
                   <input type="text" name="romajiName" value={formData.romajiName} onChange={handleChange} className="w-full px-4 py-2 border rounded-md text-sm focus:ring-1 focus:ring-[#162D50]" required />
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-gray-600 mb-1 uppercase">Katakana Name</label>
+                  <label className="block text-xs font-bold text-gray-600 mb-1 uppercase">カタカナ氏名</label>
                   <input type="text" name="katakanaName" value={formData.katakanaName} onChange={handleChange} className="w-full px-4 py-2 border rounded-md text-sm focus:ring-1 focus:ring-[#162D50]" required />
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-gray-600 mb-1 uppercase">Phone Number</label>
+                  <label className="block text-xs font-bold text-gray-600 mb-1 uppercase">電話番号</label>
                   <input type="tel" name="phone" value={formData.phone} onChange={handleChange} className="w-full px-4 py-2 border rounded-md text-sm focus:ring-1 focus:ring-[#162D50]" />
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-gray-600 mb-1 uppercase">Email Address</label>
+                  <label className="block text-xs font-bold text-gray-600 mb-1 uppercase">メールアドレス</label>
                   <input type="email" name="email" value={formData.email} onChange={handleChange} className="w-full px-4 py-2 border rounded-md text-sm focus:ring-1 focus:ring-[#162D50]" />
                 </div>
                 <div className="col-span-1 md:col-span-2">
-                  <label className="block text-xs font-bold text-gray-600 mb-2 uppercase">Departments</label>
+                  <label className="block text-xs font-bold text-gray-600 mb-2 uppercase">部署</label>
                   <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                     {ALL_DEPARTMENTS.map((dept, idx) => {
                       const isSelected = formData.department.includes(dept);
@@ -250,161 +250,149 @@ export default function StaffEditModal({ employee, onClose, onEditComplete, init
                   </div>
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-gray-600 mb-1 uppercase">Join 日付</label>
+                  <label className="block text-xs font-bold text-gray-600 mb-1 uppercase">入社日</label>
                   <input type="date" name="joinDate" value={formData.joinDate} onChange={handleChange} className="w-full px-4 py-2 border rounded-md text-sm focus:ring-1 focus:ring-[#162D50]" required />
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-gray-600 mb-1 uppercase">Nationality</label>
+                  <label className="block text-xs font-bold text-gray-600 mb-1 uppercase">国籍</label>
                   <input type="text" name="nationality" value={formData.nationality || ''} onChange={handleChange} className="w-full px-4 py-2 border rounded-md text-sm focus:ring-1 focus:ring-[#162D50]" />
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-gray-600 mb-1 uppercase">日付 of Birth</label>
+                  <label className="block text-xs font-bold text-gray-600 mb-1 uppercase">生年月日</label>
                   <input type="date" name="dob" value={formData.dob} onChange={handleChange} className="w-full px-4 py-2 border rounded-md text-sm focus:ring-1 focus:ring-[#162D50]" />
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-gray-600 mb-1 uppercase">Gender</label>
+                  <label className="block text-xs font-bold text-gray-600 mb-1 uppercase">性別</label>
                   <select name="gender" value={formData.gender || ''} onChange={handleChange} className="w-full px-4 py-2 border rounded-md text-sm focus:ring-1 focus:ring-[#162D50]">
-                    <option value="">Select Gender</option>
-                    <option value="Male">Male</option>
-                    <option value="Female">Female</option>
-                    <option value="Other">Other</option>
+                    <option value="">性別を選択</option>
+                    <option value="Male">男性</option>
+                    <option value="Female">女性</option>
+                    <option value="Other">その他</option>
                   </select>
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-gray-600 mb-1 uppercase">Onboarding ステータス</label>
+                  <label className="block text-xs font-bold text-gray-600 mb-1 uppercase">オンボーディング状況</label>
                   <select name="onboardingステータス" value={formData.onboardingステータス} onChange={handleChange} className="w-full px-4 py-2 border rounded-md text-sm focus:ring-1 focus:ring-[#162D50]" required>
-                    <option value="Active">Active</option>
-                    <option value="Verification 保留中">Verification 保留中</option>
-                    <option value="Missing Documents">Missing Documents</option>
+                    <option value="Active">アクティブ</option>
+                    <option value="Verification 保留中">確認保留中</option>
+                    <option value="Missing Documents">書類未提出</option>
                   </select>
                 </div>
               </div>
             </div>
 
             {/* TAB: Visa & ステータス */}
-            <div className={activeTab === 'Visa' ? 'block' : 'hidden'}>
+            <div className={activeTab === 'ビザ' ? 'block' : 'hidden'}>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-bold text-gray-600 mb-1 uppercase">Joining Type</label>
+                  <label className="block text-xs font-bold text-gray-600 mb-1 uppercase">雇用形態</label>
                   <select name="joiningType" value={formData.joiningType || ''} onChange={handleChange} className="w-full px-4 py-2 border rounded-md text-sm focus:ring-1 focus:ring-[#162D50]">
-                    <option value="">Select Joining Type</option>
-                    <option value="Full-time">Full-time</option>
-                    <option value="Part-time">Part-time</option>
-                    <option value="Contract">Contract</option>
+                    <option value="">雇用形態を選択</option>
+                    <option value="Full-time">正社員</option>
+                    <option value="Part-time">アルバイト・パート</option>
+                    <option value="Contract">契約社員</option>
                   </select>
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-gray-600 mb-1 uppercase">Visa ステータス</label>
+                  <label className="block text-xs font-bold text-gray-600 mb-1 uppercase">ビザステータス</label>
                   <select name="visaステータス" value={formData.visaステータス} onChange={handleChange} className="w-full px-4 py-2 border rounded-md text-sm focus:ring-1 focus:ring-[#162D50]" required>
-                    <option value="">Select Visa ステータス</option>
-                    <option value="Working Visa">Working Visa</option>
-                    <option value="Student Visa">Student Visa</option>
-                    <option value="Permanent Resident">Permanent Resident</option>
-                    <option value="Dependent Visa">Dependent Visa</option>
+                    <option value="">ビザステータスを選択</option>
+                    <option value="Working Visa">就労ビザ</option>
+                    <option value="Student Visa">学生ビザ</option>
+                    <option value="Permanent Resident">永住者</option>
+                    <option value="Dependent Visa">家族滞在ビザ</option>
                   </select>
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-gray-600 mb-1 uppercase">Visa Start 日付</label>
+                  <label className="block text-xs font-bold text-gray-600 mb-1 uppercase">ビザ開始日</label>
                   <input type="date" name="visaStartDate" value={formData.visaStartDate} onChange={handleChange} className="w-full px-4 py-2 border rounded-md text-sm focus:ring-1 focus:ring-[#162D50]" />
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-gray-600 mb-1 uppercase">Visa End 日付</label>
+                  <label className="block text-xs font-bold text-gray-600 mb-1 uppercase">ビザ終了日</label>
                   <input type="date" name="visaEndDate" value={formData.visaEndDate} onChange={handleChange} className="w-full px-4 py-2 border rounded-md text-sm focus:ring-1 focus:ring-[#162D50]" />
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-gray-600 mb-1 uppercase">Visa Renewal 日付</label>
+                  <label className="block text-xs font-bold text-gray-600 mb-1 uppercase">ビザ更新日</label>
                   <input type="date" name="visaRenewalDate" value={formData.visaRenewalDate} onChange={handleChange} className="w-full px-4 py-2 border rounded-md text-sm focus:ring-1 focus:ring-[#162D50]" />
                 </div>
               </div>
 
-              <hr className="border-gray-200 my-6" />
 
-              {/* Working Mode Calendar */}
-              <div>
-                <h3 className="text-sm font-bold text-[#162D50] uppercase tracking-wider mb-4">Working Days</h3>
-                <p className="text-xs text-gray-500 mb-3">Select the specific calendar dates this staff member is scheduled to work.</p>
-                <div className="flex justify-center bg-gray-50 p-4 border border-gray-200 rounded-md">
-                  <MultiDatePicker 
-                    selectedDates={formData.workingDays} 
-                    onChange={(newDates) => setFormData(prev => ({...prev, workingDays: newDates}))} 
-                  />
-                </div>
-              </div>
             </div>
 
             {/* TAB: Education & Experience */}
-            <div className={activeTab === 'Education & Experience' ? 'block' : 'hidden'}>
+            <div className={activeTab === '学歴・職歴' ? 'block' : 'hidden'}>
               {/* Education */}
               <div className="mb-8">
                 <div className="flex justify-between items-center mb-4">
-                  <h3 className="font-bold text-[#162D50]">Educational Qualifications</h3>
+                  <h3 className="font-bold text-[#162D50]">学歴</h3>
                   <button type="button" onClick={() => addArrayItem('educationalQualifications', { passingYear: '', qualification: '', institution: '' })} className="flex items-center text-sm text-[#162D50] hover:underline">
-                    <Plus className="w-4 h-4 mr-1" /> Add Education
+                    <Plus className="w-4 h-4 mr-1" /> 学歴を追加
                   </button>
                 </div>
                 <div className="space-y-4">
                   {formData.educationalQualifications.map((edu, index) => (
                     <div key={index} className="flex gap-4 items-start p-4 bg-gray-50 rounded-lg border border-gray-100">
-                      <input type="text" placeholder="Year (e.g. 2022)" value={edu.passingYear} onChange={(e) => updateArrayItem('educationalQualifications', index, 'passingYear', e.target.value)} className="w-1/4 px-3 py-2 border rounded text-sm" />
-                      <input type="text" placeholder="Qualification" value={edu.qualification} onChange={(e) => updateArrayItem('educationalQualifications', index, 'qualification', e.target.value)} className="w-1/4 px-3 py-2 border rounded text-sm" />
-                      <input type="text" placeholder="Institution" value={edu.institution} onChange={(e) => updateArrayItem('educationalQualifications', index, 'institution', e.target.value)} className="flex-1 px-3 py-2 border rounded text-sm" />
+                      <input type="text" placeholder="年 (例: 2022)" value={edu.passingYear} onChange={(e) => updateArrayItem('educationalQualifications', index, 'passingYear', e.target.value)} className="w-1/4 px-3 py-2 border rounded text-sm" />
+                      <input type="text" placeholder="学位・資格" value={edu.qualification} onChange={(e) => updateArrayItem('educationalQualifications', index, 'qualification', e.target.value)} className="w-1/4 px-3 py-2 border rounded text-sm" />
+                      <input type="text" placeholder="学校・機関名" value={edu.institution} onChange={(e) => updateArrayItem('educationalQualifications', index, 'institution', e.target.value)} className="flex-1 px-3 py-2 border rounded text-sm" />
                       <button type="button" onClick={() => removeArrayItem('educationalQualifications', index)} className="p-2 text-red-500 hover:bg-red-50 rounded">
                         <Trash2 className="w-4 h-4" />
                       </button>
                     </div>
                   ))}
-                  {formData.educationalQualifications.length === 0 && <p className="text-sm text-gray-500 italic">No education history added.</p>}
+                  {formData.educationalQualifications.length === 0 && <p className="text-sm text-gray-500 italic">追加された学歴はありません。</p>}
                 </div>
               </div>
 
               {/* Work Experience */}
               <div>
                 <div className="flex justify-between items-center mb-4">
-                  <h3 className="font-bold text-[#162D50]">Work Experience</h3>
+                  <h3 className="font-bold text-[#162D50]">職歴</h3>
                   <button type="button" onClick={() => addArrayItem('workExperience', { companyName: '', workPeriod: '', jobDescription: '' })} className="flex items-center text-sm text-[#162D50] hover:underline">
-                    <Plus className="w-4 h-4 mr-1" /> Add Experience
+                    <Plus className="w-4 h-4 mr-1" /> 職歴を追加
                   </button>
                 </div>
                 <div className="space-y-4">
                   {formData.workExperience.map((exp, index) => (
                     <div key={index} className="flex flex-col gap-3 p-4 bg-gray-50 rounded-lg border border-gray-100 relative">
                       <div className="flex gap-4">
-                        <input type="text" placeholder="Company Name" value={exp.companyName} onChange={(e) => updateArrayItem('workExperience', index, 'companyName', e.target.value)} className="w-1/2 px-3 py-2 border rounded text-sm" />
-                        <input type="text" placeholder="Work Period (e.g. Jan 2020 - Dec 2022)" value={exp.workPeriod} onChange={(e) => updateArrayItem('workExperience', index, 'workPeriod', e.target.value)} className="w-1/2 px-3 py-2 border rounded text-sm" />
+                        <input type="text" placeholder="会社名" value={exp.companyName} onChange={(e) => updateArrayItem('workExperience', index, 'companyName', e.target.value)} className="w-1/2 px-3 py-2 border rounded text-sm" />
+                        <input type="text" placeholder="勤務期間 (例: 2020年1月 - 2022年12月)" value={exp.workPeriod} onChange={(e) => updateArrayItem('workExperience', index, 'workPeriod', e.target.value)} className="w-1/2 px-3 py-2 border rounded text-sm" />
                       </div>
-                      <textarea placeholder="Job Description" value={exp.jobDescription} onChange={(e) => updateArrayItem('workExperience', index, 'jobDescription', e.target.value)} className="w-full px-3 py-2 border rounded text-sm" rows="2" />
+                      <textarea placeholder="職務内容" value={exp.jobDescription} onChange={(e) => updateArrayItem('workExperience', index, 'jobDescription', e.target.value)} className="w-full px-3 py-2 border rounded text-sm" rows="2" />
                       <button type="button" onClick={() => removeArrayItem('workExperience', index)} className="absolute top-4 right-4 p-1.5 text-red-500 hover:bg-red-50 rounded">
                         <Trash2 className="w-4 h-4" />
                       </button>
                     </div>
                   ))}
-                  {formData.workExperience.length === 0 && <p className="text-sm text-gray-500 italic">No work experience added.</p>}
+                  {formData.workExperience.length === 0 && <p className="text-sm text-gray-500 italic">追加された職歴はありません。</p>}
                 </div>
               </div>
             </div>
 
             {/* TAB: Physical & More */}
-            <div className={activeTab === 'Physical & More' ? 'block' : 'hidden'}>
+            <div className={activeTab === '身体情報・その他' ? 'block' : 'hidden'}>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 {/* Physical Attributes */}
                 <div>
-                  <h3 className="font-bold text-[#162D50] mb-4">Physical Attributes</h3>
+                  <h3 className="font-bold text-[#162D50] mb-4">身体的特徴</h3>
                   <div className="space-y-4">
                     <div>
-                      <label className="block text-xs font-bold text-gray-600 mb-1">Height (cm)</label>
+                      <label className="block text-xs font-bold text-gray-600 mb-1">身長 (cm)</label>
                       <input type="number" value={formData.physicalAttributes.height} onChange={(e) => handleNestedChange('physicalAttributes', 'height', e.target.value)} className="w-full px-4 py-2 border rounded-md text-sm" />
                     </div>
                     <div>
-                      <label className="block text-xs font-bold text-gray-600 mb-1">Weight (kg)</label>
+                      <label className="block text-xs font-bold text-gray-600 mb-1">体重 (kg)</label>
                       <input type="number" value={formData.physicalAttributes.weight} onChange={(e) => handleNestedChange('physicalAttributes', 'weight', e.target.value)} className="w-full px-4 py-2 border rounded-md text-sm" />
                     </div>
                     <div>
-                      <label className="block text-xs font-bold text-gray-600 mb-1">Clothing Size</label>
+                      <label className="block text-xs font-bold text-gray-600 mb-1">服のサイズ</label>
                       <input type="text" value={formData.physicalAttributes.clothingSize} onChange={(e) => handleNestedChange('physicalAttributes', 'clothingSize', e.target.value)} className="w-full px-4 py-2 border rounded-md text-sm" />
                     </div>
                     <div>
-                      <label className="block text-xs font-bold text-gray-600 mb-1">Shoe Size (cm)</label>
+                      <label className="block text-xs font-bold text-gray-600 mb-1">靴のサイズ (cm)</label>
                       <input type="text" value={formData.physicalAttributes.shoeSize} onChange={(e) => handleNestedChange('physicalAttributes', 'shoeSize', e.target.value)} className="w-full px-4 py-2 border rounded-md text-sm" />
                     </div>
                   </div>
@@ -412,29 +400,29 @@ export default function StaffEditModal({ employee, onClose, onEditComplete, init
 
                 {/* Language & Personality */}
                 <div>
-                  <h3 className="font-bold text-[#162D50] mb-4">Language & Personality</h3>
+                  <h3 className="font-bold text-[#162D50] mb-4">語学力・性格</h3>
                   <div className="space-y-4">
                     <div>
-                      <label className="block text-xs font-bold text-gray-600 mb-1">English Level</label>
-                      <input type="text" value={formData.languageFluency.english} onChange={(e) => handleNestedChange('languageFluency', 'english', e.target.value)} className="w-full px-4 py-2 border rounded-md text-sm" placeholder="e.g. Fluent, Basic" />
+                      <label className="block text-xs font-bold text-gray-600 mb-1">英語レベル</label>
+                      <input type="text" value={formData.languageFluency.english} onChange={(e) => handleNestedChange('languageFluency', 'english', e.target.value)} className="w-full px-4 py-2 border rounded-md text-sm" placeholder="例: 流暢、基礎" />
                     </div>
                     <div>
-                      <label className="block text-xs font-bold text-gray-600 mb-1">Japanese Level</label>
-                      <input type="text" value={formData.languageFluency.japanese} onChange={(e) => handleNestedChange('languageFluency', 'japanese', e.target.value)} className="w-full px-4 py-2 border rounded-md text-sm" placeholder="e.g. Native, N2" />
+                      <label className="block text-xs font-bold text-gray-600 mb-1">日本語レベル</label>
+                      <input type="text" value={formData.languageFluency.japanese} onChange={(e) => handleNestedChange('languageFluency', 'japanese', e.target.value)} className="w-full px-4 py-2 border rounded-md text-sm" placeholder="例: ネイティブ、N2" />
                     </div>
                     <div className="flex gap-2">
                       <div className="flex-1">
-                        <label className="block text-xs font-bold text-gray-600 mb-1">Other Language</label>
-                        <input type="text" value={formData.languageFluency.other.name} onChange={(e) => handleOtherLanguageChange('name', e.target.value)} className="w-full px-4 py-2 border rounded-md text-sm" placeholder="Name" />
+                        <label className="block text-xs font-bold text-gray-600 mb-1">その他の言語</label>
+                        <input type="text" value={formData.languageFluency.other.name} onChange={(e) => handleOtherLanguageChange('name', e.target.value)} className="w-full px-4 py-2 border rounded-md text-sm" placeholder="言語名" />
                       </div>
                       <div className="flex-1">
-                        <label className="block text-xs font-bold text-gray-600 mb-1">Level</label>
-                        <input type="text" value={formData.languageFluency.other.level} onChange={(e) => handleOtherLanguageChange('level', e.target.value)} className="w-full px-4 py-2 border rounded-md text-sm" placeholder="Level" />
+                        <label className="block text-xs font-bold text-gray-600 mb-1">レベル</label>
+                        <input type="text" value={formData.languageFluency.other.level} onChange={(e) => handleOtherLanguageChange('level', e.target.value)} className="w-full px-4 py-2 border rounded-md text-sm" placeholder="レベル" />
                       </div>
                     </div>
                     <div>
-                      <label className="block text-xs font-bold text-gray-600 mb-1 mt-4">Personality Traits</label>
-                      <input type="text" name="personality" value={formData.personality || ''} onChange={handleChange} className="w-full px-4 py-2 border rounded-md text-sm" placeholder="e.g. Friendly, Hardworking" />
+                      <label className="block text-xs font-bold text-gray-600 mb-1 mt-4">性格的特徴</label>
+                      <input type="text" name="personality" value={formData.personality || ''} onChange={handleChange} className="w-full px-4 py-2 border rounded-md text-sm" placeholder="例: フレンドリー、働き者" />
                     </div>
                   </div>
                 </div>
@@ -447,11 +435,11 @@ export default function StaffEditModal({ employee, onClose, onEditComplete, init
         {/* Footer */}
         <div className="px-8 py-4 bg-gray-50 border-t border-gray-100 flex justify-end space-x-3 flex-shrink-0">
           <button type="button" onClick={onClose} disabled={saving} className="px-6 py-2.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50">
-            Cancel
+            キャンセル
           </button>
           <button type="submit" form="editStaffForm" disabled={saving} className="flex items-center px-6 py-2.5 text-sm font-bold text-white bg-[#162D50] rounded-lg hover:bg-[#0f1f3a] transition-colors shadow-sm disabled:opacity-50">
             <Save className="w-4 h-4 mr-2" />
-            {saving ? 'Saving...' : 'Save All Changes'}
+            {saving ? '保存中...' : '変更を保存'}
           </button>
         </div>
 

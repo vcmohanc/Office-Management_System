@@ -17,7 +17,7 @@ export default function NewCase() {
     id: 1,
     expenseType: '種類を選択',
     advancerCategory: 'カテゴリを選択',
-    bearingParty: 'Select 負担先',
+    bearingParty: '負担先を選択',
     expense金額: 0,
     advancerName: ''
   }]);
@@ -164,7 +164,7 @@ export default function NewCase() {
       id: Date.now(),
       expenseType: '種類を選択',
       advancerCategory: 'カテゴリを選択',
-      bearingParty: 'Select 負担先',
+      bearingParty: '負担先を選択',
       expense金額: '',
       suggested金額: 0,
       advancerName: '',
@@ -299,7 +299,7 @@ export default function NewCase() {
         id: Date.now(),
         expenseType: '種類を選択',
         advancerCategory: 'カテゴリを選択',
-        bearingParty: 'Select 負担先',
+        bearingParty: '負担先を選択',
         expense金額: '',
         suggested金額: 0,
         advancerName: '',
@@ -571,7 +571,7 @@ export default function NewCase() {
               <label className="block text-sm font-bold text-gray-700 mb-2">拠点 <span className="text-red-500">*</span></label>
               <div className="relative">
                 <select value={staffInfo.location} onChange={e => setStaffInfo({...staffInfo, location: e.target.value})} className="w-full px-4 py-2 border border-gray-300 rounded-md appearance-none focus:outline-none focus:ring-1 focus:ring-[#162D50] text-gray-600">
-                  <option value="">Select 拠点</option>
+                  <option value="">拠点を選択</option>
                   {options.拠点.map((opt) => (
                     <option key={opt._id} value={opt.value}>{opt.label}</option>
                   ))}
@@ -664,7 +664,7 @@ export default function NewCase() {
                   value={caseItem.bearingParty}
                   onChange={(e) => updateCase(index, 'bearingParty', e.target.value)}
                   className="w-full px-4 py-2 border border-gray-300 rounded-md appearance-none focus:outline-none focus:ring-1 focus:ring-[#162D50] text-gray-600">
-                  <option value="">Select 負担先</option>
+                  <option value="">負担先を選択</option>
                   {options.BearingParty.map((opt) => (
                     <option key={opt._id} value={opt.value}>{opt.label}</option>
                   ))}
@@ -775,14 +775,14 @@ export default function NewCase() {
       <div className="flex justify-end pt-4">
         <button 
           onClick={() => {
-            if (!staffInfo.fullName || !staffInfo.id || !staffInfo.location || staffInfo.location === 'Select 拠点') {
-              toast.error('Please fill out all required スタッフ情報 fields.');
+            if (!staffInfo.fullName || !staffInfo.id || !staffInfo.location || staffInfo.location === '拠点を選択') {
+              toast.error('必要なスタッフ情報をすべて入力してください。');
               return;
             }
             for (let i = 0; i < cases.length; i++) {
               const c = cases[i];
-              if (c.expenseType === '種類を選択' || c.advancerCategory === 'カテゴリを選択' || c.bearingParty === 'Select 負担先' || !c.expense金額) {
-                toast.error(`Please fill out all required fields for 案件カテゴリ #${i+1}.`);
+              if (c.expenseType === '種類を選択' || c.advancerCategory === 'カテゴリを選択' || c.bearingParty === '負担先を選択' || !c.expense金額) {
+                toast.error(`案件カテゴリ #${i+1} の必要な項目をすべて入力してください。`);
                 return;
               }
               const validation = validateExpenseAmount(c.expense金額, c.suggested金額);

@@ -51,7 +51,7 @@ export default function Settings({ user }) {
 
   return (
     <div className="p-8 max-w-4xl">
-      <h1 className="text-2xl font-bold text-[#162D50] mb-6">Account Settings</h1>
+      <h1 className="text-2xl font-bold text-[#162D50] mb-6">アカウント設定</h1>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
         
@@ -59,7 +59,7 @@ export default function Settings({ user }) {
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
           <div className="px-6 py-4 border-b border-gray-200 bg-gray-50 flex items-center">
             <User className="w-5 h-5 text-gray-500 mr-2" />
-            <h2 className="font-semibold text-gray-700">Profile Information</h2>
+            <h2 className="font-semibold text-gray-700">プロフィール情報</h2>
           </div>
           <div className="p-6 space-y-4">
             <div className="flex items-center space-x-4 mb-6">
@@ -73,7 +73,7 @@ export default function Settings({ user }) {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Username</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">ユーザー名</label>
               <input 
                 type="text" 
                 value={user?.username || ''} 
@@ -83,7 +83,7 @@ export default function Settings({ user }) {
             </div>
             
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Role / Department</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">役割 / 部門</label>
               <input 
                 type="text" 
                 value={user?.role || ''} 
@@ -101,7 +101,7 @@ export default function Settings({ user }) {
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
           <div className="px-6 py-4 border-b border-gray-200 bg-gray-50 flex items-center">
             <Lock className="w-5 h-5 text-gray-500 mr-2" />
-            <h2 className="font-semibold text-gray-700">Change Password</h2>
+            <h2 className="font-semibold text-gray-700">パスワード変更</h2>
           </div>
           <div className="p-6">
             {status.message && (
@@ -113,7 +113,7 @@ export default function Settings({ user }) {
 
             <form onSubmit={handlePasswordSubmit} className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Current Password</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">現在のパスワード</label>
                 <input 
                   type="password" 
                   value={currentPassword}
@@ -124,7 +124,7 @@ export default function Settings({ user }) {
               </div>
               
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">New Password</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">新しいパスワード</label>
                 <input 
                   type="password" 
                   value={newPassword}
@@ -135,7 +135,7 @@ export default function Settings({ user }) {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Confirm New Password</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">新しいパスワードの確認</label>
                 <input 
                   type="password" 
                   value={confirmPassword}

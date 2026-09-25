@@ -143,7 +143,7 @@ export default function PaymentStatus() {
 
   const handleエクスポート = (dataToエクスポート) => {
     if (!dataToエクスポート || dataToエクスポート.length === 0) {
-      toast.error('いいえ data to export');
+      toast.error('エクスポートするデータがありません');
       return;
     }
 
@@ -561,7 +561,7 @@ export default function PaymentStatus() {
         autoTable(doc, {
           startY: curY + titleGap,
           margin,
-          head: [['いいえ.', 'Claim ID', 'Type', '日付', '金額']],
+          head: [['No.', 'Claim ID', 'Type', '日付', '金額']],
           body: itemsBody,
           theme: 'grid',
           styles: sharedStyles,
@@ -683,9 +683,9 @@ export default function PaymentStatus() {
           {/* Filter Bar */}
           <div className="bg-[#F8F9FA] border border-gray-200 rounded-md p-4 flex items-end space-x-4">
             <div className="flex-1">
-              <label className="block text-xs font-bold text-gray-600 mb-1">Search</label>
+              <label className="block text-xs font-bold text-gray-600 mb-1">検索</label>
               <div className="relative">
-                <input type="text" placeholder="案件ID、スタッフ名をSearch..." className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-[#162D50]" />
+                <input type="text" placeholder="案件ID、スタッフ名を検索..." className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-[#162D50]" />
                 <Search className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
               </div>
             </div>
@@ -849,11 +849,11 @@ export default function PaymentStatus() {
 
               {/* Itemized 案件詳細 */}
               <div className="border-b border-dashed border-[#162D50] pb-8 mb-8 print:pb-4 print:mb-4">
-                <div className="text-xs font-bold uppercase tracking-widest text-gray-500 mb-6 print:mb-2">Itemized Claims</div>
+                <div className="text-xs font-bold uppercase tracking-widest text-gray-500 mb-6 print:mb-2">内訳</div>
                 <div className="grid grid-cols-12 gap-4 text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-4 border-b border-gray-200 pb-2">
                   <div className="col-span-1">いいえ.</div>
-                  <div className="col-span-3">Claim ID</div>
-                  <div className="col-span-4">Type</div>
+                  <div className="col-span-3">請求ID</div>
+                  <div className="col-span-4">タイプ</div>
                   <div className="col-span-2">日付</div>
                   <div className="col-span-2 text-right">金額</div>
                 </div>
@@ -876,25 +876,25 @@ export default function PaymentStatus() {
                 </div>
               </div>
 
-              {/* Agreed Terms (Read-Only) */}
+              {/* 合意条件 (Read-Only) */}
               {selectedCase.advancerCategory !== 'Staff' && (
                 <div className="border-b border-dashed border-[#162D50] pb-8 mb-8 print:pb-4 print:mb-4">
-                  <div className="text-xs font-bold uppercase tracking-widest text-gray-500 mb-6 print:mb-2">Agreed Terms</div>
+                  <div className="text-xs font-bold uppercase tracking-widest text-gray-500 mb-6 print:mb-2">合意条件</div>
                   <div className="grid grid-cols-4 gap-6">
                     <div>
                       <label className="block text-[10px] font-bold uppercase tracking-widest mb-1 text-gray-400">Collection / Settlement Method</label>
                       <div className="font-mono text-sm">{selectedCase.advancerCategory === 'Staff' ? (selectedCase.settlement_method || selectedCase.settlementMethod || 'N/A') : (selectedCase.collection_method || selectedCase.collectionMethod || 'N/A')}</div>
                     </div>
                     <div>
-                      <label className="block text-[10px] font-bold uppercase tracking-widest mb-1 text-gray-400">Installment Plan</label>
+                      <label className="block text-[10px] font-bold uppercase tracking-widest mb-1 text-gray-400">分割払いプラン</label>
                       <div className="font-mono text-sm">{selectedCase.installment_plan || selectedCase.installmentPlan || 'N/A'}</div>
                     </div>
                     <div>
-                      <label className="block text-[10px] font-bold uppercase tracking-widest mb-1 text-gray-400">Start Month</label>
+                      <label className="block text-[10px] font-bold uppercase tracking-widest mb-1 text-gray-400">開始月</label>
                       <div className="font-mono text-sm">{selectedCase.collection_start_month || selectedCase.collectionStartMonth || 'N/A'}</div>
                     </div>
                     <div>
-                      <label className="block text-[10px] font-bold uppercase tracking-widest mb-1 text-gray-400">Current Term</label>
+                      <label className="block text-[10px] font-bold uppercase tracking-widest mb-1 text-gray-400">現在の期間</label>
                       <div className="font-mono text-sm">
                         {selectedCaseTotalTerms > 1 ? `Term ${selectedCaseCurrentTerm} of ${selectedCaseTotalTerms}` : 'N/A'}
                       </div>
@@ -905,7 +905,7 @@ export default function PaymentStatus() {
 
               {/* 支払方法 & Deductions Form (Interactive) */}
               <div className="mt-8 print:hidden border-t border-dashed border-[#162D50] pt-8">
-                <div className="text-xs font-bold uppercase tracking-widest text-gray-500 mb-6">Record Payment</div>
+                <div className="text-xs font-bold uppercase tracking-widest text-gray-500 mb-6">支払いを記録</div>
                 <div className="space-y-6">
                   <div className="flex flex-col sm:flex-row gap-6">
                     <div className="flex-1">
@@ -916,19 +916,19 @@ export default function PaymentStatus() {
                         className="w-full border border-gray-400 bg-white/70 rounded-none px-4 py-2.5 text-gray-700 focus:ring-2 focus:ring-[#162D50] focus:border-[#162D50] outline-none font-mono text-sm"
                         required
                       >
-                        <option value="" disabled>Select Method</option>
-                        <option value="Bank Transfer">Bank Transfer</option>
+                        <option value="" disabled>支払い方法を選択</option>
+                        <option value="銀行振込">銀行振込</option>
                         {selectedCase.advancerCategory === 'Staff' ? (
                           <>
-                            <option value="Pay in Salary">Pay in Salary</option>
-                            <option value="Petty Cash">Petty Cash</option>
-                            <option value="Company Check">Company Check</option>
+                            <option value="給与振込">給与振込</option>
+                            <option value="小口現金">小口現金</option>
+                            <option value="小切手">小切手</option>
                           </>
                         ) : (
                           <>
-                            <option value="Corporate Card">Corporate Card</option>
+                            <option value="法人カード">法人カード</option>
                             <option value="Cash">Cash</option>
-                            <option value="Payroll Deduction">Payroll Deduction</option>
+                            <option value="給与控除">給与控除</option>
                           </>
                         )}
                       </select>
@@ -946,7 +946,7 @@ export default function PaymentStatus() {
                     </div>
                   </div>
 
-                  {paymentMethod === 'Bank Transfer' && (
+                  {paymentMethod === '銀行振込' && (
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 bg-white/50 p-5 rounded border-2 border-dashed border-gray-300">
                       <div>
                         <label className="block text-xs font-semibold text-gray-600 uppercase mb-2">Bank Name <span className="text-red-500">*</span></label>
@@ -963,7 +963,7 @@ export default function PaymentStatus() {
                     </div>
                   )}
 
-                  {(paymentMethod === 'Payroll Deduction' || paymentMethod === 'Pay in Salary') && (
+                  {(paymentMethod === '給与控除' || paymentMethod === '給与振込') && (
                     <div className="space-y-4 bg-white/50 p-5 rounded border-2 border-dashed border-gray-300">
                       <div>
                         <label className="block text-[10px] font-bold uppercase tracking-widest text-gray-700 mb-2">Target Payroll 期間 <span className="text-red-500">*</span></label>
@@ -972,10 +972,10 @@ export default function PaymentStatus() {
                     </div>
                   )}
 
-                  {paymentMethod === 'Company Check' && (
+                  {paymentMethod === '小切手' && (
                     <div className="grid grid-cols-2 gap-6 bg-white/50 p-5 rounded border-2 border-dashed border-gray-300">
                       <div>
-                        <label className="block text-[10px] font-bold uppercase tracking-widest text-gray-600 mb-2">Check Number <span className="text-red-500">*</span></label>
+                        <label className="block text-[10px] font-bold uppercase tracking-widest text-gray-600 mb-2">小切手番号 <span className="text-red-500">*</span></label>
                         <input type="text" onChange={(e) => set目的地Details({...destinationDetails, checkNumber: e.target.value})} className="w-full border border-gray-400 bg-white/70 rounded-none px-3 py-2 text-sm focus:ring-[#162D50] focus:border-[#162D50] outline-none font-mono" required />
                       </div>
                       <div>
@@ -985,20 +985,20 @@ export default function PaymentStatus() {
                     </div>
                   )}
 
-                  {paymentMethod === 'Corporate Card' && (
+                  {paymentMethod === '法人カード' && (
                     <div className="grid grid-cols-2 gap-6 bg-white/50 p-5 rounded border-2 border-dashed border-gray-300">
                       <div>
                         <label className="block text-[10px] font-bold uppercase tracking-widest text-gray-600 mb-2">Card Used (Last 4) <span className="text-red-500">*</span></label>
                         <input type="text" maxLength={4} pattern="\d{4}" onChange={(e) => set目的地Details({...destinationDetails, cardLast4: e.target.value})} className="w-full border border-gray-400 bg-white/70 rounded-none px-3 py-2 text-sm focus:ring-[#162D50] focus:border-[#162D50] outline-none font-mono" required />
                       </div>
                       <div>
-                        <label className="block text-[10px] font-bold uppercase tracking-widest text-gray-600 mb-2">Cardholder Name <span className="text-red-500">*</span></label>
+                        <label className="block text-[10px] font-bold uppercase tracking-widest text-gray-600 mb-2">カード名義 <span className="text-red-500">*</span></label>
                         <input type="text" onChange={(e) => set目的地Details({...destinationDetails, cardholderName: e.target.value})} className="w-full border border-gray-400 bg-white/70 rounded-none px-3 py-2 text-sm focus:ring-[#162D50] focus:border-[#162D50] outline-none font-mono" required />
                       </div>
                     </div>
                   )}
 
-                  {(paymentMethod === 'Cash' || paymentMethod === 'Petty Cash') && (
+                  {(paymentMethod === 'Cash' || paymentMethod === '小口現金') && (
                     <div className="bg-white/50 p-5 rounded border-2 border-dashed border-gray-300">
                       <label className="block text-[10px] font-bold uppercase tracking-widest text-gray-600 mb-2">Collected By / Receiver Name <span className="text-red-500">*</span></label>
                       <input type="text" onChange={(e) => set目的地Details({...destinationDetails, receiverName: e.target.value})} className="w-full border border-gray-400 bg-white/70 rounded-none px-3 py-2 text-sm focus:ring-[#162D50] focus:border-[#162D50] outline-none font-mono" required />
@@ -1057,7 +1057,7 @@ export default function PaymentStatus() {
                       disabled={is送信ting || !paymentMethod}
                       className="px-8 py-2 bg-[#162D50] text-[#F5F1E6] rounded-none text-xs font-bold uppercase tracking-widest hover:bg-black transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
                     >
-                      {is送信ting ? '処理中...' : 'Record Payment'}
+                      {is送信ting ? '処理中...' : '支払いを記録'}
                       {!is送信ting && <ArrowRight className="w-4 h-4 ml-2" />}
                     </button>
                   </div>
@@ -1083,8 +1083,8 @@ export default function PaymentStatus() {
 
         <div className="flex justify-between items-start mb-6">
           <div>
-            <h2 className="text-2xl font-bold text-[#162D50] mb-1">Payroll & Settlement エクスポート</h2>
-            <p className="text-gray-500 text-sm">Generate bulk data files for payroll integration and banking transfers.</p>
+            <h2 className="text-2xl font-bold text-[#162D50] mb-1">給与・精算エクスポート</h2>
+            <p className="text-gray-500 text-sm">給与統合や銀行振込用の一括データファイルを生成します。</p>
           </div>
           <div className="flex items-center space-x-3">
             <div className="flex items-center border border-gray-300 rounded-md px-3 py-2 bg-white text-sm text-gray-700">
@@ -1101,7 +1101,7 @@ export default function PaymentStatus() {
         {/* Metric Cards */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
           <div className="bg-white border border-gray-200 p-5 rounded-md shadow-sm">
-            <h3 className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-2">TOTAL OFFICE PAYMENT</h3>
+            <h3 className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-2">オフィスの総支払額</h3>
             <div className="flex justify-between items-center">
               <div>
                 <p className="text-3xl font-bold text-[#162D50]">¥{totalOfficePayment.toLocaleString()}</p>
@@ -1117,7 +1117,7 @@ export default function PaymentStatus() {
           </div>
 
           <div className="bg-white border border-gray-200 p-5 rounded-md shadow-sm">
-            <h3 className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-2">TOTAL STAFF PAYMENT</h3>
+            <h3 className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-2">スタッフの総支払額</h3>
             <div className="flex justify-between items-center">
               <div>
                 <p className="text-3xl font-bold text-[#162D50]">¥{totalStaffPayment.toLocaleString()}</p>
@@ -1132,7 +1132,7 @@ export default function PaymentStatus() {
           </div>
 
           <div className="bg-white border border-yellow-400 p-5 rounded-md shadow-sm border-l-4 border-l-yellow-400">
-            <h3 className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-2">PENDING ADJUSTMENTS</h3>
+            <h3 className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-2">保留中の調整</h3>
             <div className="flex justify-between items-center">
               <div>
                 <p className="text-3xl font-bold text-[#162D50]">{pendingCount} items</p>
@@ -1149,7 +1149,7 @@ export default function PaymentStatus() {
           </div>
 
           <div className="bg-white border border-red-400 p-5 rounded-md shadow-sm border-l-4 border-l-red-500">
-            <h3 className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-2">BOUNCED PAYMENTS</h3>
+            <h3 className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-2">不渡り</h3>
             <div className="flex justify-between items-center">
               <div>
                 <p className="text-3xl font-bold text-red-600">{processingCount} items</p>
@@ -1186,7 +1186,7 @@ export default function PaymentStatus() {
                   ! {overdueCount} 期限切れ
                 </span>
                 <span className="bg-red-600 text-white px-2 py-0.5 rounded-md text-xs font-bold flex items-center">
-                  <AlertTriangle className="w-3 h-3 mr-1" /> {processingCount} Bounced
+                  <AlertTriangle className="w-3 h-3 mr-1" /> {processingCount} 不渡り
                 </span>
               </div>
             </div>
@@ -1199,11 +1199,11 @@ export default function PaymentStatus() {
           <div className="p-3 bg-[#F8F9FA] border-b border-gray-200 flex space-x-3">
             <div className="relative flex-1">
               <Search className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-              <input type="text" placeholder="Search installments by スタッフID or Name..." className="w-full pl-9 pr-4 py-2 border border-gray-200 rounded-md text-sm focus:outline-none focus:border-gray-300" />
+              <input type="text" placeholder="検索 installments by スタッフID or Name..." className="w-full pl-9 pr-4 py-2 border border-gray-200 rounded-md text-sm focus:outline-none focus:border-gray-300" />
             </div>
             <div className="relative w-48">
               <select className="w-full pl-3 pr-8 py-2 border border-gray-200 rounded-md text-sm appearance-none focus:outline-none focus:border-gray-300 text-gray-600">
-                <option>Filter by Category</option>
+                <option>カテゴリでフィルタリング</option>
               </select>
               <ChevronDown className="w-4 h-4 absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none" />
             </div>
@@ -1220,10 +1220,10 @@ export default function PaymentStatus() {
                   <input type="checkbox" className="rounded border-gray-300" />
                 </th>
                 <th className="py-3 px-4">スタッフID & Name</th>
-                <th className="py-3 px-4">Payment Term</th>
+                <th className="py-3 px-4">支払条件</th>
                 <th className="py-3 px-4 w-32">進捗</th>
-                <th className="py-3 px-4">Next Payment</th>
-                <th className="py-3 px-4 text-center">Bounced</th>
+                <th className="py-3 px-4">次回支払日</th>
+                <th className="py-3 px-4 text-center">不渡り</th>
                 <th className="py-3 px-4 text-right">残り Balance</th>
                 <th className="py-3 px-4 text-center">ステータス</th>
               </tr>
@@ -1279,12 +1279,12 @@ export default function PaymentStatus() {
 
   return (
     <div className="w-full px-4 sm:px-6 lg:px-8 xl:px-12 space-y-6 pb-10">
-      <h2 className="text-2xl font-bold text-[#162D50] mb-4">Payment Application List</h2>
+      <h2 className="text-2xl font-bold text-[#162D50] mb-4">支払申請一覧</h2>
       
       {/* Metric Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
         <div className="bg-white border border-gray-200 p-5 rounded-md shadow-sm">
-          <h3 className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-2">TOTAL OFFICE PAYMENT</h3>
+          <h3 className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-2">オフィスの総支払額</h3>
           <div className="flex justify-between items-center">
             <div>
               <p className="text-3xl font-bold text-[#162D50]">¥{totalOfficePayment.toLocaleString()}</p>
@@ -1300,7 +1300,7 @@ export default function PaymentStatus() {
         </div>
 
         <div className="bg-white border border-gray-200 p-5 rounded-md shadow-sm">
-          <h3 className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-2">TOTAL STAFF PAYMENT</h3>
+          <h3 className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-2">スタッフの総支払額</h3>
           <div className="flex justify-between items-center">
             <div>
               <p className="text-3xl font-bold text-[#162D50]">¥{totalStaffPayment.toLocaleString()}</p>
@@ -1315,7 +1315,7 @@ export default function PaymentStatus() {
         </div>
 
         <div className="bg-white border border-yellow-400 p-5 rounded-md shadow-sm border-l-4 border-l-yellow-400">
-          <h3 className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-2">PENDING ADJUSTMENTS</h3>
+          <h3 className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-2">保留中の調整</h3>
           <div className="flex justify-between items-center">
             <div>
               <p className="text-3xl font-bold text-[#162D50]">{pendingCount} items</p>
@@ -1332,7 +1332,7 @@ export default function PaymentStatus() {
         </div>
 
         <div className="bg-white border border-red-400 p-5 rounded-md shadow-sm border-l-4 border-l-red-500">
-          <h3 className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-2">BOUNCED PAYMENTS</h3>
+          <h3 className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-2">不渡り</h3>
           <div className="flex justify-between items-center">
             <div>
               <p className="text-3xl font-bold text-red-600">{processingCount} items</p>
@@ -1372,9 +1372,9 @@ export default function PaymentStatus() {
       {/* Filter Bar */}
       <div className="bg-[#F8F9FA] border border-gray-200 rounded-md p-4 flex items-end space-x-4">
         <div className="flex-1">
-          <label className="block text-xs font-bold text-gray-600 mb-1">Search</label>
+          <label className="block text-xs font-bold text-gray-600 mb-1">検索</label>
           <div className="relative">
-            <input type="text" placeholder="案件ID、スタッフ名をSearch..." className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-[#162D50]" />
+            <input type="text" placeholder="案件ID、スタッフ名を検索..." className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-[#162D50]" />
             <Search className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
           </div>
         </div>
@@ -1430,9 +1430,9 @@ export default function PaymentStatus() {
               <th className="py-3 px-6">スタッフ名</th>
               <th className="py-3 px-6">経費の種類</th>
               <th className="py-3 px-6">残額</th>
-              <th className="py-3 px-6">Collection Terms</th>
+              <th className="py-3 px-6">回収条件</th>
               <th className="py-3 px-6">ステータス</th>
-              <th className="py-3 px-6 text-right">Actions</th>
+              <th className="py-3 px-6 text-right">アクション</th>
             </tr>
           </thead>
           <tbody className="text-sm">

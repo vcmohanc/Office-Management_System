@@ -72,7 +72,7 @@ export default function AdminNewRegistration({ setActiveTab }) {
             <UserPlus className="w-6 h-6" />
           </div>
           <div>
-            <h1 className="text-xl font-bold text-[#162D50]">New User Registration</h1>
+            <h1 className="text-xl font-bold text-[#162D50]">新規ユーザー登録</h1>
             <p className="text-sm text-gray-500">Create a new account and assign a department role.</p>
           </div>
         </div>
@@ -92,7 +92,7 @@ export default function AdminNewRegistration({ setActiveTab }) {
 
           <div className="space-y-4">
             <div>
-              <label className="block text-sm font-bold text-gray-700 mb-2">Username</label>
+              <label className="block text-sm font-bold text-gray-700 mb-2">ユーザー名</label>
               <input 
                 type="text" 
                 name="username"
@@ -105,7 +105,7 @@ export default function AdminNewRegistration({ setActiveTab }) {
             </div>
 
             <div>
-              <label className="block text-sm font-bold text-gray-700 mb-2">Role / Department</label>
+              <label className="block text-sm font-bold text-gray-700 mb-2">役割 / 部門</label>
               <select
                 name="role"
                 value={formData.role}
@@ -120,7 +120,7 @@ export default function AdminNewRegistration({ setActiveTab }) {
             </div>
 
             <div>
-              <label className="block text-sm font-bold text-gray-700 mb-2">Password</label>
+              <label className="block text-sm font-bold text-gray-700 mb-2">パスワード</label>
               <input 
                 type="password" 
                 name="password"
@@ -133,7 +133,7 @@ export default function AdminNewRegistration({ setActiveTab }) {
             </div>
 
             <div>
-              <label className="block text-sm font-bold text-gray-700 mb-2">Confirm Password</label>
+              <label className="block text-sm font-bold text-gray-700 mb-2">パスワードの確認</label>
               <input 
                 type="password" 
                 name="confirmPassword"

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Search, Filter, Download, MoreVertical, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Search, Filter, Download, MoreVertical, ChevronLeft, ChevronRight, Printer } from 'lucide-react';
 import { apiFetch } from '../../utils/apiFetch.js';
 
 
@@ -129,6 +129,85 @@ export default function VisaManagement() {
   const expired = employees.filter(e => getVisaステータス(e) === 'Expired').length;
   const pendingRenewals = employees.filter(e => getVisaステータス(e) === 'Renewal In Progress').length;
 
+  const handlePrint = () => {
+    window.print();
+  };
+
+  const handleExportPDF = async () => {
+    try {
+      setIsSubmitting(true);
+      const { jsPDF } = await import('jspdf');
+      const autoTable = (await import('jspdf-autotable')).default;
+
+      const pdf = new jsPDF('p', 'pt', 'a4');
+
+      // Fetch the local Japanese font
+      const fontResponse = await fetch('/mplus.ttf');
+      const fontBuffer = await fontResponse.arrayBuffer();
+      const fontBase64 = btoa(
+        new Uint8Array(fontBuffer).reduce((data, byte) => data + String.fromCharCode(byte), '')
+      );
+
+      pdf.addFileToVFS('mplus.ttf', fontBase64);
+      pdf.addFont('mplus.ttf', 'mplus', 'normal');
+      pdf.setFont('mplus');
+
+      // Add a premium header
+      pdf.setFontSize(22);
+      pdf.setTextColor(22, 45, 80); // Slate-800
+      pdf.text('ビザ管理レポート (Visa Management Report)', 40, 50);
+      
+      pdf.setFontSize(10);
+      pdf.setTextColor(100, 116, 139);
+      pdf.text(`出力日 (Export Date): ${new Date().toLocaleDateString()}`, 40, 70);
+
+      // Prepare Table Data
+      const tableColumn = ["STAFF ID", "STAFF NAME", "NATIONALITY", "VISA TYPE", "EXPIRY DATE", "APP STATUS", "STATUS"];
+      const tableRows = [];
+
+      filteredEmployees.forEach((employee) => {
+        const status = getVisaステータス(employee);
+        const rowData = [
+          "#" + (employee._id?.slice(-6).toUpperCase() || ''),
+          employee.romajiName || 'N/A',
+          employee.nationality || 'N/A',
+          employee.visaStatus || 'Employment Visa',
+          employee.visaEndDate ? new Date(employee.visaEndDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'N/A',
+          employee.visaAppStatus || 'Not Applied',
+          status
+        ];
+        tableRows.push(rowData);
+      });
+
+      autoTable(pdf, {
+        head: [tableColumn],
+        body: tableRows,
+        startY: 90,
+        styles: { 
+          font: 'mplus',
+          fontSize: 9,
+          cellPadding: 6,
+          textColor: [51, 65, 85]
+        },
+        headStyles: {
+          fillColor: [30, 41, 59], // Slate 800
+          textColor: [255, 255, 255],
+          fontStyle: 'bold'
+        },
+        alternateRowStyles: {
+          fillColor: [248, 250, 252] // Slate 50
+        }
+      });
+
+      pdf.save('Visa_Management_Report.pdf');
+    } catch (err) {
+      console.error('Error generating PDF:', err);
+      alert('PDFのエクスポートに失敗しました。');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   return (
     <div className="w-full pb-10">
       {/* Stats Cards */}
@@ -164,13 +243,20 @@ export default function VisaManagement() {
           />
         </div>
         <div className="flex space-x-3">
-          <button className="flex items-center justify-center bg-white border border-gray-300 text-gray-700 px-4 py-2 rounded-md text-sm font-medium hover:bg-gray-50 transition-colors shadow-sm">
-            <Filter className="w-4 h-4 mr-2" />
-            Filter
+          <button 
+            onClick={handlePrint}
+            className="flex items-center justify-center bg-white border border-gray-300 text-gray-700 px-4 py-2 rounded-md text-sm font-medium hover:bg-gray-50 transition-colors shadow-sm"
+          >
+            <Printer className="w-4 h-4 mr-2" />
+            印刷
           </button>
-          <button className="flex items-center justify-center bg-white border border-gray-300 text-gray-700 px-4 py-2 rounded-md text-sm font-medium hover:bg-gray-50 transition-colors shadow-sm">
+          <button 
+            onClick={handleExportPDF}
+            disabled={isSubmitting}
+            className="flex items-center justify-center bg-white border border-gray-300 text-gray-700 px-4 py-2 rounded-md text-sm font-medium hover:bg-gray-50 transition-colors shadow-sm disabled:opacity-50"
+          >
             <Download className="w-4 h-4 mr-2" />
-            Export
+            {isSubmitting ? '処理中...' : 'エクスポート'}
           </button>
         </div>
       </div>

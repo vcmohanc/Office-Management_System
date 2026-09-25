@@ -87,7 +87,7 @@ export default function AdminUserList({ setActiveTab }) {
               <Users className="w-6 h-6" />
             </div>
             <div>
-              <h1 className="text-xl font-bold text-[#162D50]">User List</h1>
+              <h1 className="text-xl font-bold text-[#162D50]">ユーザー一覧</h1>
               <p className="text-sm text-gray-500">Manage all registered users in the system.</p>
             </div>
           </div>
@@ -113,11 +113,11 @@ export default function AdminUserList({ setActiveTab }) {
               <table className="w-full text-left border-collapse">
                 <thead>
                   <tr className="border-b border-gray-200 bg-gray-50">
-                    <th className="py-4 px-6 text-xs font-bold text-gray-500 uppercase tracking-wider">Username</th>
-                    <th className="py-4 px-6 text-xs font-bold text-gray-500 uppercase tracking-wider">Role</th>
-                    <th className="py-4 px-6 text-xs font-bold text-gray-500 uppercase tracking-wider">Password</th>
-                    <th className="py-4 px-6 text-xs font-bold text-gray-500 uppercase tracking-wider">Created 日付</th>
-                    <th className="py-4 px-6 text-xs font-bold text-gray-500 uppercase tracking-wider text-right">Actions</th>
+                    <th className="py-4 px-6 text-xs font-bold text-gray-500 uppercase tracking-wider">ユーザー名</th>
+                    <th className="py-4 px-6 text-xs font-bold text-gray-500 uppercase tracking-wider">役割</th>
+                    <th className="py-4 px-6 text-xs font-bold text-gray-500 uppercase tracking-wider">パスワード</th>
+                    <th className="py-4 px-6 text-xs font-bold text-gray-500 uppercase tracking-wider">作成日</th>
+                    <th className="py-4 px-6 text-xs font-bold text-gray-500 uppercase tracking-wider text-right">アクション</th>
                   </tr>
                 </thead>
                 <tbody className="text-sm divide-y divide-gray-100">

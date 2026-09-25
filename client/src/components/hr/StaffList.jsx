@@ -57,8 +57,8 @@ export default function StaffList({ setActiveTab }) {
     setSelectedStaffToEdit(null);
   };
 
-  const getPrimaryアクション = (employee) => {
-    if (employee.onboardingステータス === 'Active') {
+  const getPrimaryAction = (employee) => {
+    if (employee.onboardingStatus === 'Active') {
       return { 
         label: 'View', 
         type: 'default', 
@@ -67,7 +67,7 @@ export default function StaffList({ setActiveTab }) {
       };
     }
 
-    if (employee.onboardingステータス === 'Missing Documents') {
+    if (employee.onboardingStatus === 'Missing Documents') {
       return { 
         label: 'アクション Required', 
         type: 'urgent', 
@@ -106,7 +106,7 @@ export default function StaffList({ setActiveTab }) {
     } else if (activeTab === 'Office Staff') {
       matchesTab = isEmpOffice(employee);
     } else if (activeTab === 'New Reg. Staff') {
-      matchesTab = employee.onboardingステータス && employee.onboardingステータス !== 'Active';
+      matchesTab = employee.onboardingStatus && employee.onboardingStatus !== 'Active';
     }
 
     // 2. Search Query Filtering
@@ -131,25 +131,25 @@ export default function StaffList({ setActiveTab }) {
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
         <div className="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
-          <p className="text-sm text-gray-500 mb-2">Total Staff</p>
+          <p className="text-sm text-gray-500 mb-2">全スタッフ</p>
           <p className="text-3xl font-bold text-[#162D50]">{employees.length}</p>
         </div>
         <div className="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
-          <p className="text-sm text-gray-500 mb-2">Total Haken Staff</p>
+          <p className="text-sm text-gray-500 mb-2">全派遣スタッフ</p>
           <p className="text-3xl font-bold text-[#162D50]">
             {employees.filter(e => !isEmpOffice(e)).length}
           </p>
         </div>
         <div className="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
-          <p className="text-sm text-gray-500 mb-2">Total Office Staff</p>
+          <p className="text-sm text-gray-500 mb-2">全内勤スタッフ</p>
           <p className="text-3xl font-bold text-[#162D50]">
             {employees.filter(e => isEmpOffice(e)).length}
           </p>
         </div>
         <div className="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
-          <p className="text-sm text-gray-500 mb-2">New Reg. Staff</p>
+          <p className="text-sm text-gray-500 mb-2">新規登録スタッフ</p>
           <p className="text-3xl font-bold text-yellow-500">
-            {employees.filter(e => e.onboardingステータス && e.onboardingステータス !== 'Active').length}
+            {employees.filter(e => e.onboardingStatus && e.onboardingStatus !== 'Active').length}
           </p>
         </div>
       </div>
@@ -167,7 +167,7 @@ export default function StaffList({ setActiveTab }) {
                   : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
               }`}
             >
-              {tab}
+              {tab === 'All Staff' ? '全スタッフ' : tab === 'Haken Staff' ? '派遣スタッフ' : tab === 'Office Staff' ? '内勤スタッフ' : '新規登録スタッフ'}
             </button>
           ))}
         </nav>
@@ -179,7 +179,7 @@ export default function StaffList({ setActiveTab }) {
           <Search className="w-5 h-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
           <input 
             type="text" 
-            placeholder="Search by name or スタッフID..." 
+            placeholder="名前またはスタッフIDで検索..." 
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-[#162D50]"
@@ -202,7 +202,7 @@ export default function StaffList({ setActiveTab }) {
           className="flex items-center justify-center bg-white border border-gray-300 text-gray-700 px-4 py-2 rounded-md text-sm font-medium hover:bg-gray-50 transition-colors w-full sm:w-auto"
         >
           <Filter className="w-4 h-4 mr-2" />
-          Clear Filter
+          フィルターをクリア
         </button>
       </div>
 
@@ -214,11 +214,11 @@ export default function StaffList({ setActiveTab }) {
               <tr className="bg-[#F8F9FA] border-b border-gray-200 text-xs font-bold text-gray-500 uppercase tracking-wider">
                 <th className="py-4 px-6 w-16">S.N.</th>
                 <th className="py-4 px-6">スタッフID</th>
-                <th className="py-4 px-6">Name</th>
-                <th className="py-4 px-6">Department</th>
-                <th className="py-4 px-6">Join 日付</th>
-                <th className="py-4 px-6">STATUS</th>
-                <th className="py-4 px-6 text-right">Actions</th>
+                <th className="py-4 px-6">氏名</th>
+                <th className="py-4 px-6">部署</th>
+                <th className="py-4 px-6">入社日</th>
+                <th className="py-4 px-6">オンボーディング状況</th>
+                <th className="py-4 px-6 text-right">アクション</th>
               </tr>
             </thead>
             <tbody className="text-sm">
@@ -228,7 +228,7 @@ export default function StaffList({ setActiveTab }) {
                 </tr>
               ) : filteredEmployees.length === 0 ? (
                 <tr>
-                  <td colSpan="6" className="py-4 px-6 text-center text-gray-500">No staff found matching the filters.</td>
+                  <td colSpan="6" className="py-4 px-6 text-center text-gray-500">条件に一致するスタッフが見つかりません。</td>
                 </tr>
               ) : (
                 filteredEmployees.map((employee, index) => (
@@ -238,15 +238,19 @@ export default function StaffList({ setActiveTab }) {
                     <td className="py-4 px-6 font-bold text-gray-900">{employee.romajiName || employee.katakanaName}</td>
                     <td className="py-4 px-6 text-gray-600">{Array.isArray(employee.department) ? employee.department.join(', ') : employee.department}</td>
                     <td className="py-4 px-6 text-gray-600">
-                      {new Date(employee.joinDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                      {employee.joinDate ? new Date(employee.joinDate).toLocaleDateString('ja-JP', { year: 'numeric', month: 'short', day: 'numeric' }) : 'N/A'}
                     </td>
                     <td className="py-4 px-6">
                       <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-                        employee.onboardingステータス === 'Active' ? 'bg-green-100 text-green-700' :
-                        employee.onboardingステータス === 'Verification 保留中' ? 'bg-blue-100 text-blue-700' :
+                        employee.onboardingStatus === 'Active' ? 'bg-green-100 text-green-700' :
+                        employee.onboardingStatus === 'Verification 保留中' ? 'bg-blue-100 text-blue-700' :
                         'bg-gray-100 text-gray-700'
                       }`}>
-                        {employee.onboardingステータス || 'Active'}
+                        {employee.onboardingStatus === 'Active' ? 'アクティブ' : 
+                         employee.onboardingStatus === 'Verification 保留中' ? '確認保留中' : 
+                         employee.onboardingStatus === 'Missing Pledges' ? '誓約書未提出' : 
+                         employee.onboardingStatus === '拒否' ? '拒否' : 
+                         (employee.onboardingStatus || 'アクティブ')}
                       </span>
                     </td>
                     <td className="py-4 px-6 text-right">

@@ -4,22 +4,22 @@ export default function Resignation() {
   return (
     <div className="max-w-6xl mx-auto pb-10">
       <div className="mb-6">
-        <h2 className="text-2xl font-bold text-[#162D50] mb-2">Resignation Management</h2>
-        <p className="text-gray-500 text-sm">Track and manage staff resignation procedures, clearance status, and final settlements.</p>
+        <h2 className="text-2xl font-bold text-[#162D50] mb-2">退職管理</h2>
+        <p className="text-gray-500 text-sm">スタッフの退職手続き、クリアランス状況、および最終精算を追跡および管理します。</p>
       </div>
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
         <div className="bg-[#F8F9FA] border border-gray-200 rounded-lg p-5 shadow-sm">
-          <p className="text-sm text-gray-600 mb-2 font-medium">Active Notices</p>
+          <p className="text-sm text-gray-600 mb-2 font-medium">アクティブな通知</p>
           <p className="text-3xl font-bold text-[#162D50]">8</p>
         </div>
         <div className="bg-[#F8F9FA] border border-gray-200 rounded-lg p-5 shadow-sm">
-          <p className="text-sm text-gray-600 mb-2 font-medium">保留中 Clearance</p>
+          <p className="text-sm text-gray-600 mb-2 font-medium">クリアランス保留中</p>
           <p className="text-3xl font-bold text-[#162D50]">5</p>
         </div>
         <div className="bg-[#F8F9FA] border border-gray-200 rounded-lg p-5 shadow-sm">
-          <p className="text-sm text-gray-600 mb-2 font-medium">Exit Interviews Scheduled</p>
+          <p className="text-sm text-gray-600 mb-2 font-medium">退職面談予定</p>
           <p className="text-3xl font-bold text-[#162D50]">3</p>
         </div>
       </div>
@@ -30,18 +30,18 @@ export default function Resignation() {
           <Search className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
           <input 
             type="text" 
-            placeholder="Search staff by name or ID..." 
+            placeholder="名前またはIDでスタッフを検索..." 
             className="w-full pl-9 pr-4 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-[#162D50] bg-white"
           />
         </div>
         <div className="flex space-x-3 w-full sm:w-auto">
           <button className="flex items-center justify-center bg-white border border-gray-300 text-gray-700 px-4 py-2 rounded-md text-sm font-medium hover:bg-gray-50 transition-colors shadow-sm">
             <Filter className="w-4 h-4 mr-2" />
-            Filter
+            フィルター
           </button>
           <button className="flex items-center justify-center bg-[#0A192F] text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-[#162D50] transition-colors shadow-sm">
             <Plus className="w-4 h-4 mr-2" />
-            New Resignation
+            新規退職
           </button>
         </div>
       </div>
@@ -53,11 +53,11 @@ export default function Resignation() {
             <thead>
               <tr className="bg-[#F8F9FA] border-b border-gray-200 text-sm font-bold text-[#162D50]">
                 <th className="py-4 px-6">スタッフID</th>
-                <th className="py-4 px-6">Name</th>
-                <th className="py-4 px-6">Resignation 日付</th>
-                <th className="py-4 px-6">Last Working Day</th>
-                <th className="py-4 px-6">Clearance ステータス</th>
-                <th className="py-4 px-6">Actions</th>
+                <th className="py-4 px-6">氏名</th>
+                <th className="py-4 px-6">退職日</th>
+                <th className="py-4 px-6">最終出勤日</th>
+                <th className="py-4 px-6">クリアランス状況</th>
+                <th className="py-4 px-6">アクション</th>
               </tr>
             </thead>
             <tbody className="text-sm">
@@ -67,10 +67,10 @@ export default function Resignation() {
                 <td className="py-4 px-6 text-gray-600">Oct 12, 2023</td>
                 <td className="py-4 px-6 text-gray-600">Nov 12, 2023</td>
                 <td className="py-4 px-6">
-                  <span className="bg-purple-100 text-purple-700 px-3 py-1 rounded-full text-xs font-medium">Notice Period</span>
+                  <span className="bg-purple-100 text-purple-700 px-3 py-1 rounded-full text-xs font-medium">通知期間</span>
                 </td>
                 <td className="py-4 px-6">
-                  <button className="text-[#162D50] font-bold hover:underline text-sm">View Details</button>
+                  <button className="text-[#162D50] font-bold hover:underline text-sm">詳細を表示</button>
                 </td>
               </tr>
               
@@ -80,10 +80,10 @@ export default function Resignation() {
                 <td className="py-4 px-6 text-gray-600">Oct 05, 2023</td>
                 <td className="py-4 px-6 text-gray-600">Nov 05, 2023</td>
                 <td className="py-4 px-6">
-                  <span className="bg-yellow-100 text-yellow-700 px-3 py-1 rounded-full text-xs font-medium">Exit Interview</span>
+                  <span className="bg-yellow-100 text-yellow-700 px-3 py-1 rounded-full text-xs font-medium">退職面談</span>
                 </td>
                 <td className="py-4 px-6">
-                  <button className="text-[#162D50] font-bold hover:underline text-sm">View Details</button>
+                  <button className="text-[#162D50] font-bold hover:underline text-sm">詳細を表示</button>
                 </td>
               </tr>
 
@@ -93,10 +93,10 @@ export default function Resignation() {
                 <td className="py-4 px-6 text-gray-600">Sep 28, 2023</td>
                 <td className="py-4 px-6 text-gray-600">Oct 28, 2023</td>
                 <td className="py-4 px-6">
-                  <span className="bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-xs font-medium">Accounting Clearance</span>
+                  <span className="bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-xs font-medium">経理クリアランス</span>
                 </td>
                 <td className="py-4 px-6">
-                  <button className="text-[#162D50] font-bold hover:underline text-sm">View Details</button>
+                  <button className="text-[#162D50] font-bold hover:underline text-sm">詳細を表示</button>
                 </td>
               </tr>
 
@@ -109,7 +109,7 @@ export default function Resignation() {
                   <span className="bg-green-100 text-green-700 px-3 py-1 rounded-full text-xs font-medium">完了</span>
                 </td>
                 <td className="py-4 px-6">
-                  <button className="text-[#162D50] font-bold hover:underline text-sm">View Details</button>
+                  <button className="text-[#162D50] font-bold hover:underline text-sm">詳細を表示</button>
                 </td>
               </tr>
             </tbody>
