@@ -59,7 +59,7 @@ export default function Login({ setToken }) {
           <div className="bg-blue-50 border-l-4 border-blue-500 p-4 mb-4">
             <p className="text-sm text-blue-700">
               <strong>Password Recovery:</strong><br />
-              Please contact your System Administrator to reset your password. Admins can assign a new password directly from the Admin Dashboard.
+              Please contact your システム管理者 to reset your password. Admins can assign a new password directly from the Admin Dashboard.
             </p>
           </div>
         )}

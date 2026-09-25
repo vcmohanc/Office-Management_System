@@ -6,7 +6,7 @@ const TermRow = ({ term, caseId, defaultMethod }) => {
   const queryClient = useQueryClient();
   const [isPaying, setIsPaying] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
-  const [editAmount, setEditAmount] = useState(term.netPayable);
+  const [edit金額, setEdit金額] = useState(term.netPayable);
   
   const [paymentData, setPaymentData] = useState({
     paymentMethod: defaultMethod || 'bank_transfer',
@@ -93,18 +93,18 @@ const TermRow = ({ term, caseId, defaultMethod }) => {
             <span className="text-gray-500">¥</span>
             <input 
               type="number" 
-              value={editAmount}
-              onChange={(e) => setEditAmount(e.target.value)}
+              value={edit金額}
+              onChange={(e) => setEdit金額(e.target.value)}
               className="w-24 p-1 border border-gray-300 rounded outline-none"
             />
-            <button onClick={() => editMutation.mutate(editAmount)} className="text-green-600 text-xs font-bold hover:underline">SAVE</button>
+            <button onClick={() => editMutation.mutate(edit金額)} className="text-green-600 text-xs font-bold hover:underline">SAVE</button>
             <button onClick={() => setIsEditing(false)} className="text-gray-500 text-xs hover:underline">CANCEL</button>
           </div>
         ) : (
           <div className="col-span-3 font-bold">
             ¥ {term.netPayable.toLocaleString()}
             {term.status === 'pending' && (
-              <button onClick={() => setIsEditing(true)} className="ml-2 text-xs text-[#1a3622] underline font-normal">Edit</button>
+              <button onClick={() => setIsEditing(true)} className="ml-2 text-xs text-[#1a3622] underline font-normal">編集</button>
             )}
           </div>
         )}
@@ -147,7 +147,7 @@ const TermRow = ({ term, caseId, defaultMethod }) => {
               </select>
             </div>
             <div>
-              <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Date</label>
+              <label className="block text-xs font-bold text-gray-500 uppercase mb-1">日付</label>
               <input 
                 type="date" 
                 value={paymentData.paymentDate} 
@@ -270,8 +270,8 @@ const SettlementLedger = ({ caseId }) => {
           <p className="text-xs text-gray-500">ID: {ledger.staffId}</p>
         </div>
         <div className="text-right">
-          <p className="text-xs font-bold text-gray-500 uppercase">Base Claim Amount</p>
-          <p className="text-xl font-bold text-gray-900">¥ {ledger.baseClaimAmount.toLocaleString()}</p>
+          <p className="text-xs font-bold text-gray-500 uppercase">Base Claim 金額</p>
+          <p className="text-xl font-bold text-gray-900">¥ {ledger.baseClaim金額.toLocaleString()}</p>
         </div>
       </div>
 
@@ -310,7 +310,7 @@ const SettlementLedger = ({ caseId }) => {
             <p className="font-bold">{new Date(ledger.agreedTerms.startMonth).toISOString().slice(0, 7)}</p>
           </div>
           <div>
-            <p className="text-xs text-gray-500 uppercase mb-1">Ledger Status</p>
+            <p className="text-xs text-gray-500 uppercase mb-1">Ledger ステータス</p>
             <p className="font-bold uppercase">{ledger.status.replace('_', ' ')}</p>
           </div>
         </div>
@@ -322,9 +322,9 @@ const SettlementLedger = ({ caseId }) => {
           <div className="col-span-1">Term</div>
           <div className="col-span-2">Due Month</div>
           <div className="col-span-3">Net Payable</div>
-          <div className="col-span-2">Status</div>
+          <div className="col-span-2">ステータス</div>
           <div className="col-span-2">Details</div>
-          <div className="col-span-2 text-right">Action</div>
+          <div className="col-span-2 text-right">アクション</div>
         </div>
         
         {payments.map(term => (

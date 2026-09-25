@@ -26,10 +26,10 @@ export default function Dashboard({ setToken }) {
   const user = JSON.parse(localStorage.getItem('user')) || { role: 'admin', username: 'admin' };
   
   const [activeTab, setActiveTab] = useState(() => {
-    if (user.role === 'hr') return 'HR Department';
-    if (user.role === 'account') return 'Account Department';
-    if (user.role === 'support') return 'Support Department';
-    return 'B2B Department';
+    if (user.role === 'hr') return '人事部門';
+    if (user.role === 'account') return '経理部門';
+    if (user.role === 'support') return 'サポート部門';
+    return 'B2B部門';
   });
   const [openMenus, setOpenMenus] = useState({});
 
@@ -59,28 +59,28 @@ export default function Dashboard({ setToken }) {
 
         <div className="flex-1 overflow-auto p-8">
           {activeTab === 'Dashboard' && <DashboardHome setActiveTab={setActiveTab} />}
-          {activeTab === 'Account Department' && <AccountDashboard />}
-          {activeTab === 'HR Department' && <HRDashboard />}
+          {activeTab === '経理部門' && <AccountDashboard />}
+          {activeTab === '人事部門' && <HRDashboard />}
           {activeTab === 'New Case' && <NewCase setActiveTab={setActiveTab} />}
           {activeTab === 'Case List' && <CaseList />}
-          {activeTab === 'Payment Entry' && <PaymentStatus />}
-          {activeTab === 'Paid Status' && <PaymentEntry />}
+          {activeTab === 'Payment Entry' && <PaymentEntry />}
+          {activeTab === 'Paid Status' && <PaymentStatus />}
           {activeTab === 'Staff Registration' && <StaffRegistration setActiveTab={setActiveTab} />}
           {activeTab === 'Staff List' && <StaffList setActiveTab={setActiveTab} />}
           {activeTab === 'Assign Work Place' && <AssignWorkPlace />}
           {activeTab === 'Visa Management' && <VisaManagement />}
           {activeTab === 'Resignation' && <Resignation />}
-          {activeTab === 'Support Department' && <SupportDashboard />}
+          {activeTab === 'サポート部門' && <SupportDashboard />}
           {activeTab === 'Staff Claim Request' && <StaffClaimRequest />}
           {activeTab === 'Claim List' && <ClaimList />}
           {activeTab === 'Admin New Registration' && <AdminNewRegistration setActiveTab={setActiveTab} />}
           {activeTab === 'Admin User List' && <AdminUserList setActiveTab={setActiveTab} />}
           {activeTab === 'Settings' && <Settings user={user} />}
           {activeTab === 'Expense SetUp' && <ExpenseSetup />}
-          {activeTab === 'B2B Department' && <B2BDashboard />}
-          {activeTab !== 'Dashboard' && activeTab !== 'Account Department' && activeTab !== 'HR Department' && activeTab !== 'New Case' && activeTab !== 'Case List' && activeTab !== 'Payment Entry' && activeTab !== 'Paid Status' && activeTab !== 'Staff Registration' && activeTab !== 'Staff List' && activeTab !== 'Assign Work Place' && activeTab !== 'Visa Management' && activeTab !== 'Resignation' && activeTab !== 'Support Department' && activeTab !== 'Staff Claim Request' && activeTab !== 'Claim List' && activeTab !== 'Admin New Registration' && activeTab !== 'Admin User List' && activeTab !== 'Settings' && activeTab !== 'Expense SetUp' && activeTab !== 'B2B Department' && (
+          {activeTab === 'B2B部門' && <B2BDashboard />}
+          {activeTab !== 'Dashboard' && activeTab !== '経理部門' && activeTab !== '人事部門' && activeTab !== 'New Case' && activeTab !== 'Case List' && activeTab !== 'Payment Entry' && activeTab !== 'Paid Status' && activeTab !== 'Staff Registration' && activeTab !== 'Staff List' && activeTab !== 'Assign Work Place' && activeTab !== 'Visa Management' && activeTab !== 'Resignation' && activeTab !== 'サポート部門' && activeTab !== 'Staff Claim Request' && activeTab !== 'Claim List' && activeTab !== 'Admin New Registration' && activeTab !== 'Admin User List' && activeTab !== 'Settings' && activeTab !== 'Expense SetUp' && activeTab !== 'B2B部門' && (
             <div className="flex items-center justify-center h-full text-gray-400">
-              <p>Content for {activeTab} is not yet implemented.</p>
+              <p>{activeTab} のコンテンツはまだ実装されていません。</p>
             </div>
           )}
         </div>

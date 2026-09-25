@@ -8,21 +8,21 @@ import toast from 'react-hot-toast';
 export default function NewCase() {
   const [newCaseStep, setNewCaseStep] = useState(1);
   const [options, setOptions] = useState({
-    Location: [],
+    拠点: [],
     ExpenseType: [],
     AdvancerCategory: [],
     BearingParty: []
   });
   const [cases, setCases] = useState([{
     id: 1,
-    expenseType: 'Select Type',
-    advancerCategory: 'Select Category',
-    bearingParty: 'Select Bearing Party',
-    expenseAmount: 0,
+    expenseType: '種類を選択',
+    advancerCategory: 'カテゴリを選択',
+    bearingParty: 'Select 負担先',
+    expense金額: 0,
     advancerName: ''
   }]);
   
-  const [staffInfo, setStaffInfo] = useState({ fullName: '', id: '', location: '', branchAndFarmName: '', visaStatus: '', visaAvailableTime: '' });
+  const [staffInfo, setStaffInfo] = useState({ fullName: '', id: '', location: '', branchAndFarmName: '', visaステータス: '', visaAvailableTime: '' });
   const [employees, setEmployees] = useState([]);
   const [regions, setRegions] = useState([]);
   const [postalMatrix, setPostalMatrix] = useState({});
@@ -45,7 +45,7 @@ export default function NewCase() {
           if (!acc[opt.type]) acc[opt.type] = [];
           acc[opt.type].push(opt);
           return acc;
-        }, { Location: [], ExpenseType: [], AdvancerCategory: [], BearingParty: [] });
+        }, { 拠点: [], ExpenseType: [], AdvancerCategory: [], BearingParty: [] });
 
         setOptions(groupedOptions);
 
@@ -78,7 +78,7 @@ export default function NewCase() {
     if (field === 'expenseType') {
       switch (value) {
         case 'Postage':
-        case 'Transportation Expenses / Flight Fare':
+        case 'Transportation Expenses / 飛行機 Fare':
           newCases[index].advancerCategory = 'Service staff';
           newCases[index].bearingParty = 'VC';
           newCases[index].advancerName = 'Transfer to the person concerned';
@@ -119,16 +119,16 @@ export default function NewCase() {
         if (senderId && recipientId && postalMatrix[senderId] && postalMatrix[senderId][recipientId]) {
           const rawCost = postalMatrix[senderId][recipientId];
           const numericCost = typeof rawCost === 'string' ? Number(rawCost.replace(/,/g, '')) : rawCost;
-          newCases[index].suggestedAmount = numericCost || 0;
+          newCases[index].suggested金額 = numericCost || 0;
         } else {
-          newCases[index].suggestedAmount = 0;
+          newCases[index].suggested金額 = 0;
         }
       } else {
-        newCases[index].suggestedAmount = 0;
+        newCases[index].suggested金額 = 0;
       }
     }
 
-    if (currentExpenseType === 'Transportation Expenses / Flight Fare' && (field === 'departure' || field === 'destination' || field === 'expenseType' || field === 'transportMethod')) {
+    if (currentExpenseType === 'Transportation Expenses / 飛行機 Fare' && (field === 'departure' || field === 'destination' || field === 'expenseType' || field === 'transportMethod')) {
       const departureName = field === 'departure' ? value : newCases[index].departure;
       const destinationName = field === 'destination' ? value : newCases[index].destination;
       const method = field === 'transportMethod' ? value : newCases[index].transportMethod;
@@ -143,16 +143,16 @@ export default function NewCase() {
           } else if (rawCost && typeof rawCost === 'object') {
             const busCost = rawCost.bus ? Number(String(rawCost.bus).replace(/,/g, '')) : 0;
             const flightCost = rawCost.flight ? Number(String(rawCost.flight).replace(/,/g, '')) : 0;
-            if (method === 'Bus') numericCost = busCost;
-            else if (method === 'Flight') numericCost = flightCost;
+            if (method === 'バス') numericCost = busCost;
+            else if (method === '飛行機') numericCost = flightCost;
             else numericCost = Math.max(busCost, flightCost);
           }
-          newCases[index].suggestedAmount = numericCost || 0;
+          newCases[index].suggested金額 = numericCost || 0;
         } else {
-          newCases[index].suggestedAmount = 0;
+          newCases[index].suggested金額 = 0;
         }
       } else {
-        newCases[index].suggestedAmount = 0;
+        newCases[index].suggested金額 = 0;
       }
     }
 
@@ -162,11 +162,11 @@ export default function NewCase() {
   const handleAddAnotherCase = () => {
     setCases([...cases, {
       id: Date.now(),
-      expenseType: 'Select Type',
-      advancerCategory: 'Select Category',
-      bearingParty: 'Select Bearing Party',
-      expenseAmount: '',
-      suggestedAmount: 0,
+      expenseType: '種類を選択',
+      advancerCategory: 'カテゴリを選択',
+      bearingParty: 'Select 負担先',
+      expense金額: '',
+      suggested金額: 0,
       advancerName: '',
       receipts: [],
       remark: ''
@@ -192,7 +192,7 @@ export default function NewCase() {
     for (const file of files) {
       if (!ALLOWED_TYPES.includes(file.type)) {
         toast.error(`Invalid file type: ${file.name}. Only JPG, PNG, and PDF files are allowed.`);
-        // Clear the input so the user can try again
+        // クリア the input so the user can try again
         e.target.value = '';
         return;
       }
@@ -230,15 +230,15 @@ export default function NewCase() {
     }
   };
 
-  const totalExpenseAmount = cases.reduce((sum, c) => sum + Number(c.expenseAmount || 0), 0);
-  const finalTotalAmount = totalExpenseAmount + (includeBalance ? unsettledBalance : 0);
+  const totalExpense金額 = cases.reduce((sum, c) => sum + Number(c.expense金額 || 0), 0);
+  const finalTotal金額 = totalExpense金額 + (includeBalance ? unsettledBalance : 0);
 
   let installments = 1;
   if (recoveryPlan.includes('3 Months')) installments = 3;
   else if (recoveryPlan.includes('6 Months')) installments = 6;
-  const monthlyDeduction = finalTotalAmount / installments;
+  const monthlyDeduction = finalTotal金額 / installments;
 
-  const handleSubmit = async () => {
+  const handle送信 = async () => {
     try {
       const submissions = cases.map(caseItem => {
         const payload = {
@@ -247,15 +247,15 @@ export default function NewCase() {
           staff_id: staffInfo.id || "N/A",
           location: staffInfo.location || "N/A",
           branch_farm_name: staffInfo.branchAndFarmName || "",
-          visa_status: staffInfo.visaStatus || "",
+          visa_status: staffInfo.visaステータス || "",
           visa_available_time: staffInfo.visaAvailableTime || null,
           expense_type: caseItem.expenseType,
           advancer_category: caseItem.advancerCategory,
           payment_process_type: caseItem.advancerName || "N/A",
           bearing_party: caseItem.bearingParty,
-          expense_amount: parseFloat(caseItem.expenseAmount) || 0,
-          expense_period_start: caseItem.expensePeriodStart || caseItem.dateUsed || caseItem.dormitoryStartDate || caseItem.consultationDate || caseItem.purchaseDate || caseItem.wifiStartDate || new Date().toISOString(),
-          expense_period_end: caseItem.expensePeriodEnd || caseItem.dormitoryEndDate || caseItem.expensePeriodStart || caseItem.dateUsed || caseItem.dormitoryStartDate || caseItem.consultationDate || caseItem.purchaseDate || caseItem.wifiStartDate || new Date().toISOString(),
+          expense_amount: parseFloat(caseItem.expense金額) || 0,
+          expense_period_start: caseItem.expense期間Start || caseItem.dateUsed || caseItem.dormitoryStartDate || caseItem.consultationDate || caseItem.purchaseDate || caseItem.wifiStartDate || new Date().toISOString(),
+          expense_period_end: caseItem.expense期間End || caseItem.dormitoryEndDate || caseItem.expense期間Start || caseItem.dateUsed || caseItem.dormitoryStartDate || caseItem.consultationDate || caseItem.purchaseDate || caseItem.wifiStartDate || new Date().toISOString(),
           sender: caseItem.sender || "",
           recipient: caseItem.postageTo || '',
           departure: caseItem.departure || '',
@@ -263,11 +263,11 @@ export default function NewCase() {
           transport_method: caseItem.transportMethod || '',
           receipts: caseItem.receipts || [],
           remark: caseItem.remark || caseItem.damageReason || "",
-          total_expense: totalExpenseAmount,
+          total_expense: totalExpense金額,
           currency: 'JPY',
           previous_unsettled_balance: unsettledBalance,
           includeBalance: includeBalance,
-          final_total_amount: finalTotalAmount,
+          final_total_amount: finalTotal金額,
           settlement_method: settlementMethod,
           expected_settlement_date: expectedSettlementDate || new Date().toISOString(),
           collection_method: collectionMethod,
@@ -275,7 +275,7 @@ export default function NewCase() {
           installment_count: installments,
           collection_start_month: collectionStartMonth || "TBD",
           monthly_deduction: monthlyDeduction,
-          status: 'Pending'
+          status: '保留中'
         };
 
         return apiFetch('/api/cases', {
@@ -291,17 +291,17 @@ export default function NewCase() {
       });
 
       await Promise.all(submissions);
-      toast.success(`Successfully Submitted ${cases.length} Cases to Database!`);
+      toast.success(`Successfully 送信ted ${cases.length} Cases to Database!`);
       
       // Reset form
       setNewCaseStep(1);
       setCases([{
         id: Date.now(),
-        expenseType: 'Select Type',
-        advancerCategory: 'Select Category',
-        bearingParty: 'Select Bearing Party',
-        expenseAmount: '',
-        suggestedAmount: 0,
+        expenseType: '種類を選択',
+        advancerCategory: 'カテゴリを選択',
+        bearingParty: 'Select 負担先',
+        expense金額: '',
+        suggested金額: 0,
         advancerName: '',
         receipts: [],
         remark: ''
@@ -322,8 +322,8 @@ export default function NewCase() {
         return (
           <div className="grid grid-cols-2 gap-6 mb-8 bg-blue-50 p-6 rounded-md">
             <div>
-              <label className="block text-sm font-bold text-gray-700 mb-2">Sender</label>
-              <input type="text" list={`sender-list-${index}`} value={caseItem.sender || ''} onChange={(e) => updateCase(index, 'sender', e.target.value)} placeholder="Enter sender" className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50]" />
+              <label className="block text-sm font-bold text-gray-700 mb-2">差出人</label>
+              <input type="text" list={`sender-list-${index}`} value={caseItem.sender || ''} onChange={(e) => updateCase(index, 'sender', e.target.value)} placeholder="差出人を入力" className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50]" />
               <datalist id={`sender-list-${index}`}>
                 {regions.map(r => (
                   <option key={r._id} value={r.name1} />
@@ -331,8 +331,8 @@ export default function NewCase() {
               </datalist>
             </div>
             <div>
-              <label className="block text-sm font-bold text-gray-700 mb-2">Recipient</label>
-              <input type="text" list={`recipient-list-${index}`} value={caseItem.recipient || ''} onChange={(e) => updateCase(index, 'recipient', e.target.value)} placeholder="Enter recipient" className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50]" />
+              <label className="block text-sm font-bold text-gray-700 mb-2">受取人</label>
+              <input type="text" list={`recipient-list-${index}`} value={caseItem.recipient || ''} onChange={(e) => updateCase(index, 'recipient', e.target.value)} placeholder="受取人を入力" className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50]" />
               <datalist id={`recipient-list-${index}`}>
                 {regions.map(r => (
                   <option key={r._id} value={r.name2} />
@@ -341,12 +341,12 @@ export default function NewCase() {
             </div>
           </div>
         );
-      case 'Transportation Expenses / Flight Fare':
+      case 'Transportation Expenses / 飛行機 Fare':
         return (
           <div className="grid grid-cols-2 gap-6 mb-8 bg-blue-50 p-6 rounded-md">
             <div>
-              <label className="block text-sm font-bold text-gray-700 mb-2">Departure Location</label>
-              <input type="text" list={`departure-list-${index}`} value={caseItem.departure || ''} onChange={(e) => updateCase(index, 'departure', e.target.value)} placeholder="Enter departure" className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50]" />
+              <label className="block text-sm font-bold text-gray-700 mb-2">Departure 拠点</label>
+              <input type="text" list={`departure-list-${index}`} value={caseItem.departure || ''} onChange={(e) => updateCase(index, 'departure', e.target.value)} placeholder="出発地を入力" className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50]" />
               <datalist id={`departure-list-${index}`}>
                 {regions.map(r => (
                   <option key={r._id} value={r.name1} />
@@ -354,8 +354,8 @@ export default function NewCase() {
               </datalist>
             </div>
             <div>
-              <label className="block text-sm font-bold text-gray-700 mb-2">Destination</label>
-              <input type="text" list={`destination-list-${index}`} value={caseItem.destination || ''} onChange={(e) => updateCase(index, 'destination', e.target.value)} placeholder="Enter destination" className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50]" />
+              <label className="block text-sm font-bold text-gray-700 mb-2">目的地</label>
+              <input type="text" list={`destination-list-${index}`} value={caseItem.destination || ''} onChange={(e) => updateCase(index, 'destination', e.target.value)} placeholder="目的地を入力" className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50]" />
               <datalist id={`destination-list-${index}`}>
                 {regions.map(r => (
                   <option key={r._id} value={r.name2} />
@@ -363,17 +363,17 @@ export default function NewCase() {
               </datalist>
             </div>
             <div>
-              <label className="block text-sm font-bold text-gray-700 mb-2">Date Used</label>
+              <label className="block text-sm font-bold text-gray-700 mb-2">利用日</label>
               <div className="relative">
                 <input type="date" value={caseItem.dateUsed || ''} onChange={(e) => updateCase(index, 'dateUsed', e.target.value)} className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50] text-gray-600" />
               </div>
             </div>
             <div>
-              <label className="block text-sm font-bold text-gray-700 mb-2">Transport Method</label>
+              <label className="block text-sm font-bold text-gray-700 mb-2">交通手段</label>
               <select value={caseItem.transportMethod || ''} onChange={(e) => updateCase(index, 'transportMethod', e.target.value)} className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50]">
-                <option value="">Select method...</option>
-                <option value="Bus">Bus</option>
-                <option value="Flight">Flight</option>
+                <option value="">手段を選択...</option>
+                <option value="バス">バス</option>
+                <option value="飛行機">飛行機</option>
               </select>
             </div>
           </div>
@@ -382,17 +382,17 @@ export default function NewCase() {
         return (
           <div className="grid grid-cols-3 gap-6 mb-8 bg-blue-50 p-6 rounded-md">
             <div>
-              <label className="block text-sm font-bold text-gray-700 mb-2">Dormitory Name</label>
-              <input type="text" value={caseItem.dormitoryName || ''} onChange={(e) => updateCase(index, 'dormitoryName', e.target.value)} placeholder="Enter name" className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50]" />
+              <label className="block text-sm font-bold text-gray-700 mb-2">寮名</label>
+              <input type="text" value={caseItem.dormitoryName || ''} onChange={(e) => updateCase(index, 'dormitoryName', e.target.value)} placeholder="名前を入力" className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50]" />
             </div>
             <div>
-              <label className="block text-sm font-bold text-gray-700 mb-2">Usage Start Date</label>
+              <label className="block text-sm font-bold text-gray-700 mb-2">利用開始日</label>
               <div className="relative">
                 <input type="date" value={caseItem.dormitoryStartDate || ''} onChange={(e) => updateCase(index, 'dormitoryStartDate', e.target.value)} className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50] text-gray-600" />
               </div>
             </div>
             <div>
-              <label className="block text-sm font-bold text-gray-700 mb-2">Usage End Date</label>
+              <label className="block text-sm font-bold text-gray-700 mb-2">利用終了日</label>
               <div className="relative">
                 <input type="date" value={caseItem.dormitoryEndDate || ''} onChange={(e) => updateCase(index, 'dormitoryEndDate', e.target.value)} className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50] text-gray-600" />
               </div>
@@ -403,17 +403,17 @@ export default function NewCase() {
         return (
           <div className="grid grid-cols-3 gap-6 mb-8 bg-blue-50 p-6 rounded-md">
             <div>
-              <label className="block text-sm font-bold text-gray-700 mb-2">Consultation Date</label>
+              <label className="block text-sm font-bold text-gray-700 mb-2">受診日</label>
               <div className="relative">
                 <input type="date" value={caseItem.consultationDate || ''} onChange={(e) => updateCase(index, 'consultationDate', e.target.value)} className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50] text-gray-600" />
               </div>
             </div>
             <div>
-              <label className="block text-sm font-bold text-gray-700 mb-2">Consultation Fee</label>
+              <label className="block text-sm font-bold text-gray-700 mb-2">診察料</label>
               <input type="number" value={caseItem.consultationFee || 0} onChange={(e) => updateCase(index, 'consultationFee', e.target.value)} className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50] text-gray-600" />
             </div>
             <div>
-              <label className="block text-sm font-bold text-gray-700 mb-2">Medicine Cost</label>
+              <label className="block text-sm font-bold text-gray-700 mb-2">薬代</label>
               <input type="number" value={caseItem.medicineCost || 0} onChange={(e) => updateCase(index, 'medicineCost', e.target.value)} className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50] text-gray-600" />
             </div>
           </div>
@@ -422,22 +422,22 @@ export default function NewCase() {
         return (
           <div className="grid grid-cols-2 gap-6 mb-8 bg-blue-50 p-6 rounded-md">
             <div>
-              <label className="block text-sm font-bold text-gray-700 mb-2">Item Name</label>
-              <input type="text" value={caseItem.itemName || ''} onChange={(e) => updateCase(index, 'itemName', e.target.value)} placeholder="Enter item" className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50]" />
+              <label className="block text-sm font-bold text-gray-700 mb-2">品名</label>
+              <input type="text" value={caseItem.itemName || ''} onChange={(e) => updateCase(index, 'itemName', e.target.value)} placeholder="品名を入力" className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50]" />
             </div>
             <div>
-              <label className="block text-sm font-bold text-gray-700 mb-2">Quantity</label>
+              <label className="block text-sm font-bold text-gray-700 mb-2">数量</label>
               <input type="number" value={caseItem.quantity || 1} onChange={(e) => updateCase(index, 'quantity', e.target.value)} className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50] text-gray-600" />
             </div>
             <div>
-              <label className="block text-sm font-bold text-gray-700 mb-2">Purchase Date</label>
+              <label className="block text-sm font-bold text-gray-700 mb-2">購入日</label>
               <div className="relative">
                 <input type="date" value={caseItem.purchaseDate || ''} onChange={(e) => updateCase(index, 'purchaseDate', e.target.value)} className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50] text-gray-600" />
               </div>
             </div>
             <div className="col-span-2">
-              <label className="block text-sm font-bold text-gray-700 mb-2">Reason for damage, malfunction, shortage, etc.</label>
-              <textarea value={caseItem.damageReason || ''} onChange={(e) => updateCase(index, 'damageReason', e.target.value)} placeholder="Enter reason" rows="3" className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50]"></textarea>
+              <label className="block text-sm font-bold text-gray-700 mb-2">破損、故障、不足などの理由</label>
+              <textarea value={caseItem.damageReason || ''} onChange={(e) => updateCase(index, 'damageReason', e.target.value)} placeholder="理由を入力" rows="3" className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50]"></textarea>
             </div>
           </div>
         );
@@ -445,11 +445,11 @@ export default function NewCase() {
         return (
           <div className="grid grid-cols-2 gap-6 mb-8 bg-blue-50 p-6 rounded-md">
             <div>
-              <label className="block text-sm font-bold text-gray-700 mb-2">Target Host Company / Farm</label>
-              <input type="text" value={caseItem.hostCompany || ''} onChange={(e) => updateCase(index, 'hostCompany', e.target.value)} placeholder="Enter company/farm" className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50]" />
+              <label className="block text-sm font-bold text-gray-700 mb-2">対象ホスト企業/農場</label>
+              <input type="text" value={caseItem.hostCompany || ''} onChange={(e) => updateCase(index, 'hostCompany', e.target.value)} placeholder="企業/農場を入力" className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50]" />
             </div>
             <div>
-              <label className="block text-sm font-bold text-gray-700 mb-2">Usage Start Date</label>
+              <label className="block text-sm font-bold text-gray-700 mb-2">利用開始日</label>
               <div className="relative">
                 <input type="date" value={caseItem.wifiStartDate || ''} onChange={(e) => updateCase(index, 'wifiStartDate', e.target.value)} className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50] text-gray-600" />
               </div>
@@ -466,20 +466,20 @@ export default function NewCase() {
       {/* Header and Stepper */}
       <div className="flex justify-between items-start pt-2">
         <div>
-          <h2 className="text-2xl font-bold text-[#162D50] mb-2">New Case Registration</h2>
-          <p className="text-gray-500 text-sm">Register a new advance or settlement case with relevant financial details.</p>
+          <h2 className="text-2xl font-bold text-[#162D50] mb-2">新規案件登録</h2>
+          <p className="text-gray-500 text-sm">財務詳細を含む新しい立替・精算案件を登録します。</p>
         </div>
         <div className="flex items-center space-x-4 text-sm font-medium mt-2">
           <div className="flex items-center text-[#162D50]">
             <div className="w-6 h-6 rounded-full bg-[#162D50] text-white flex items-center justify-center mr-2">1</div>
-            Case Details
+            案件詳細
           </div>
           <div className={`w-16 h-px ${newCaseStep >= 2 ? 'bg-[#162D50]' : 'bg-gray-300'}`}></div>
           <div className={`flex items-center ${newCaseStep >= 2 ? 'text-[#162D50]' : 'text-gray-400'}`}>
             {newCaseStep >= 2 && (
               <div className="w-6 h-6 rounded-full bg-[#162D50] text-white flex items-center justify-center mr-2">2</div>
             )}
-            Expense Details
+            経費詳細
           </div>
           <div className={`w-16 h-px ${newCaseStep >= 3 ? 'bg-[#162D50]' : 'bg-gray-300'}`}></div>
           <div className={`flex items-center ${newCaseStep >= 3 ? 'text-[#162D50]' : 'text-gray-400'}`}>
@@ -488,24 +488,24 @@ export default function NewCase() {
             ) : (
               <div className="w-6 h-6 rounded-full border border-gray-300 flex items-center justify-center mr-2">3</div>
             )}
-            Confirmation
+            確認
           </div>
         </div>
       </div>
 
       {newCaseStep === 1 && (
         <>
-          {/* Staff Information Section */}
+          {/* スタッフ情報 Section */}
       <div className="bg-white border border-gray-200 rounded-md">
         <div className="p-6">
           <div className="flex items-center text-[#162D50] font-bold mb-4">
             <User className="w-4 h-4 mr-2" />
-            Staff Information
+            スタッフ情報
           </div>
           <div className="grid grid-cols-3 gap-6">
             <div className="relative">
-              <label className="block text-sm font-bold text-gray-700 mb-2">Full Name <span className="text-red-500">*</span></label>
-              <input type="text" placeholder="Enter full name" list="employeeNames" value={staffInfo.fullName} onChange={e => {
+              <label className="block text-sm font-bold text-gray-700 mb-2">氏名 <span className="text-red-500">*</span></label>
+              <input type="text" placeholder="氏名を入力" list="employeeNames" value={staffInfo.fullName} onChange={e => {
                 const val = e.target.value;
                 setStaffInfo({...staffInfo, fullName: val});
                 const match = employees.find(emp => (emp.romajiName && emp.romajiName.toLowerCase() === val.toLowerCase()) || (emp.katakanaName && emp.katakanaName === val));
@@ -515,7 +515,7 @@ export default function NewCase() {
                     id: 'ID-' + match._id.slice(-6).toUpperCase(), 
                     location: match.location || staffInfo.location,
                     branchAndFarmName: match.branchAndFarmName || match.location || '',
-                    visaStatus: match.visaStatus || '',
+                    visaステータス: match.visaステータス || '',
                     visaAvailableTime: match.visaEndDate ? new Date(match.visaEndDate).toISOString().split('T')[0] : ''
                   });
                 }
@@ -523,7 +523,7 @@ export default function NewCase() {
                 if (staffInfo.fullName) {
                   const match = employees.find(emp => (emp.romajiName && emp.romajiName.toLowerCase() === staffInfo.fullName.toLowerCase()) || (emp.katakanaName && emp.katakanaName === staffInfo.fullName));
                   if (!match) {
-                    setStaffInfo({...staffInfo, fullName: '', id: '', location: '', branchAndFarmName: '', visaStatus: '', visaAvailableTime: ''});
+                    setStaffInfo({...staffInfo, fullName: '', id: '', location: '', branchAndFarmName: '', visaステータス: '', visaAvailableTime: ''});
                     toast.error('Please select a valid staff member from the list.');
                   }
                 }
@@ -535,7 +535,7 @@ export default function NewCase() {
               </datalist>
             </div>
             <div className="relative">
-              <label className="block text-sm font-bold text-gray-700 mb-2">Staff ID <span className="text-red-500">*</span></label>
+              <label className="block text-sm font-bold text-gray-700 mb-2">スタッフID <span className="text-red-500">*</span></label>
               <input type="text" placeholder="ID-00000" list="employeeIds" value={staffInfo.id} onChange={e => {
                 const val = e.target.value;
                 setStaffInfo({...staffInfo, id: val});
@@ -547,7 +547,7 @@ export default function NewCase() {
                     fullName: match.romajiName || match.katakanaName || staffInfo.fullName, 
                     location: match.location || staffInfo.location,
                     branchAndFarmName: match.branchAndFarmName || match.location || '',
-                    visaStatus: match.visaStatus || '',
+                    visaステータス: match.visaステータス || '',
                     visaAvailableTime: match.visaEndDate ? new Date(match.visaEndDate).toISOString().split('T')[0] : ''
                   });
                 }
@@ -556,7 +556,7 @@ export default function NewCase() {
                   const searchId = staffInfo.id.replace('ID-', '').toLowerCase();
                   const match = employees.find(emp => emp._id.slice(-6) === searchId);
                   if (!match) {
-                    setStaffInfo({...staffInfo, fullName: '', id: '', location: '', branchAndFarmName: '', visaStatus: '', visaAvailableTime: ''});
+                    setStaffInfo({...staffInfo, fullName: '', id: '', location: '', branchAndFarmName: '', visaステータス: '', visaAvailableTime: ''});
                     toast.error('Please select a valid staff ID from the list.');
                   }
                 }
@@ -568,11 +568,11 @@ export default function NewCase() {
               </datalist>
             </div>
             <div>
-              <label className="block text-sm font-bold text-gray-700 mb-2">Location <span className="text-red-500">*</span></label>
+              <label className="block text-sm font-bold text-gray-700 mb-2">拠点 <span className="text-red-500">*</span></label>
               <div className="relative">
                 <select value={staffInfo.location} onChange={e => setStaffInfo({...staffInfo, location: e.target.value})} className="w-full px-4 py-2 border border-gray-300 rounded-md appearance-none focus:outline-none focus:ring-1 focus:ring-[#162D50] text-gray-600">
-                  <option value="">Select Location</option>
-                  {options.Location.map((opt) => (
+                  <option value="">Select 拠点</option>
+                  {options.拠点.map((opt) => (
                     <option key={opt._id} value={opt.value}>{opt.label}</option>
                   ))}
                 </select>
@@ -580,48 +580,48 @@ export default function NewCase() {
               </div>
             </div>
             <div>
-              <label className="block text-sm font-bold text-gray-700 mb-2">Branch and farm name</label>
-              <input type="text" placeholder="Branch/Farm" value={staffInfo.branchAndFarmName} onChange={e => setStaffInfo({...staffInfo, branchAndFarmName: e.target.value})} className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50]" />
+              <label className="block text-sm font-bold text-gray-700 mb-2">支店・農場名</label>
+              <input type="text" placeholder="支店/農場" value={staffInfo.branchAndFarmName} onChange={e => setStaffInfo({...staffInfo, branchAndFarmName: e.target.value})} className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50]" />
             </div>
             <div>
-              <label className="block text-sm font-bold text-gray-700 mb-2">Visa Status</label>
-              <input type="text" placeholder="Visa Status" value={staffInfo.visaStatus} onChange={e => setStaffInfo({...staffInfo, visaStatus: e.target.value})} className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50]" />
+              <label className="block text-sm font-bold text-gray-700 mb-2">ビザステータス</label>
+              <input type="text" placeholder="ビザステータス" value={staffInfo.visaステータス} onChange={e => setStaffInfo({...staffInfo, visaステータス: e.target.value})} className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50]" />
             </div>
             <div>
-              <label className="block text-sm font-bold text-gray-700 mb-2">Visa Available Time</label>
+              <label className="block text-sm font-bold text-gray-700 mb-2">ビザ有効期限</label>
               <input type="date" value={staffInfo.visaAvailableTime} onChange={e => setStaffInfo({...staffInfo, visaAvailableTime: e.target.value})} className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50] text-gray-600" />
             </div>
           </div>
         </div>
       </div>
 
-      {/* Case Category Section */}
+      {/* 案件カテゴリ Section */}
       {cases.map((caseItem, index) => (
       <div key={index} className="bg-white border border-gray-200 rounded-md mb-6">
         <div className="p-6">
           <div className="flex justify-between items-center mb-4">
             <div className="flex items-center text-[#162D50] font-bold">
               <Box className="w-4 h-4 mr-2" />
-              Case Category {cases.length > 1 && `#${index + 1}`}
+              案件カテゴリ {cases.length > 1 && `#${index + 1}`}
             </div>
             {cases.length > 1 && (
               <button 
                 onClick={() => removeCase(index)}
                 className="text-red-500 hover:text-red-700 text-sm font-medium flex items-center transition-colors">
-                Delete Category
+                カテゴリを削除
               </button>
             )}
           </div>
           
           <div className="grid grid-cols-3 gap-6 mb-6">
             <div>
-              <label className="block text-sm font-bold text-gray-700 mb-2">Expense Type <span className="text-red-500">*</span></label>
+              <label className="block text-sm font-bold text-gray-700 mb-2">経費の種類 <span className="text-red-500">*</span></label>
               <div className="relative">
                 <select 
                   value={caseItem.expenseType}
                   onChange={(e) => updateCase(index, 'expenseType', e.target.value)}
                   className="w-full px-4 py-2 border border-gray-300 rounded-md appearance-none focus:outline-none focus:ring-1 focus:ring-[#162D50] text-gray-600">
-                  <option value="">Select Type</option>
+                  <option value="">種類を選択</option>
                   {options.ExpenseType.map((opt) => (
                     <option key={opt._id} value={opt.value}>{opt.label}</option>
                   ))}
@@ -630,13 +630,13 @@ export default function NewCase() {
               </div>
             </div>
             <div>
-              <label className="block text-sm font-bold text-gray-700 mb-2">Advancer Category <span className="text-red-500">*</span></label>
+              <label className="block text-sm font-bold text-gray-700 mb-2">立替者カテゴリ <span className="text-red-500">*</span></label>
               <div className="relative">
                 <select 
                   value={caseItem.advancerCategory}
                   onChange={(e) => updateCase(index, 'advancerCategory', e.target.value)}
                   className="w-full px-4 py-2 border border-gray-300 rounded-md appearance-none focus:outline-none focus:ring-1 focus:ring-[#162D50] text-gray-600">
-                  <option value="">Select Category</option>
+                  <option value="">カテゴリを選択</option>
                   {options.AdvancerCategory.map((opt) => (
                     <option key={opt._id} value={opt.value}>{opt.label}</option>
                   ))}
@@ -645,10 +645,10 @@ export default function NewCase() {
               </div>
             </div>
             <div>
-              <label className="block text-sm font-bold text-gray-700 mb-2">Payment Process Types <span className="text-red-500">*</span></label>
+              <label className="block text-sm font-bold text-gray-700 mb-2">支払処理タイプ <span className="text-red-500">*</span></label>
               <input 
                 type="text" 
-                placeholder="Enter name" 
+                placeholder="名前を入力" 
                 value={caseItem.advancerName}
                 onChange={(e) => updateCase(index, 'advancerName', e.target.value)}
                 className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50]" 
@@ -658,13 +658,13 @@ export default function NewCase() {
           
           <div className="grid grid-cols-3 gap-6 mb-8">
             <div>
-              <label className="block text-sm font-bold text-gray-700 mb-2">Bearing Party <span className="text-red-500">*</span></label>
+              <label className="block text-sm font-bold text-gray-700 mb-2">負担先 <span className="text-red-500">*</span></label>
               <div className="relative">
                 <select 
                   value={caseItem.bearingParty}
                   onChange={(e) => updateCase(index, 'bearingParty', e.target.value)}
                   className="w-full px-4 py-2 border border-gray-300 rounded-md appearance-none focus:outline-none focus:ring-1 focus:ring-[#162D50] text-gray-600">
-                  <option value="">Select Bearing Party</option>
+                  <option value="">Select 負担先</option>
                   {options.BearingParty.map((opt) => (
                     <option key={opt._id} value={opt.value}>{opt.label}</option>
                   ))}
@@ -673,20 +673,20 @@ export default function NewCase() {
               </div>
             </div>
             <div>
-              <label className="block text-sm font-bold text-gray-700 mb-2">Expense Amount (¥) <span className="text-red-500">*</span></label>
+              <label className="block text-sm font-bold text-gray-700 mb-2">経費金額 (¥) <span className="text-red-500">*</span></label>
               <input 
                 type="number" 
-                value={caseItem.expenseAmount} 
-                onChange={(e) => updateCase(index, 'expenseAmount', e.target.value)} 
-                placeholder="Enter amount"
+                value={caseItem.expense金額} 
+                onChange={(e) => updateCase(index, 'expense金額', e.target.value)} 
+                placeholder="金額を入力"
                 className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50] text-gray-900 font-medium" 
               />
               {(() => {
-                const validation = validateExpenseAmount(caseItem.expenseAmount, caseItem.suggestedAmount);
+                const validation = validateExpenseAmount(caseItem.expense金額, caseItem.suggested金額);
                 if (!validation.isValid) {
                   return (
                     <div 
-                      onClick={() => updateCase(index, 'expenseAmount', caseItem.suggestedAmount)}
+                      onClick={() => updateCase(index, 'expense金額', caseItem.suggested金額)}
                       className="mt-2 text-xs text-red-600 font-medium flex items-center bg-red-50 px-3 py-1.5 rounded border border-red-200 cursor-pointer hover:bg-red-100 transition-colors">
                       {validation.message} (Click to apply)
                     </div>
@@ -696,17 +696,17 @@ export default function NewCase() {
               })()}
             </div>
             <div>
-              <label className="block text-sm font-bold text-gray-700 mb-2">Expense Period</label>
+              <label className="block text-sm font-bold text-gray-700 mb-2">経費対象期間</label>
               <div className="flex items-center space-x-2">
                 <div className="relative flex-1">
-                  <input type="date" value={caseItem.expensePeriodStart || ''} onChange={(e) => updateCase(index, 'expensePeriodStart', e.target.value)} className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50] text-gray-600" />
+                  <input type="date" value={caseItem.expense期間Start || ''} onChange={(e) => updateCase(index, 'expense期間Start', e.target.value)} className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50] text-gray-600" />
                 </div>
                 <span className="text-gray-500">-</span>
                 <div className="relative flex-1">
-                  <input type="date" value={caseItem.expensePeriodEnd || ''} onChange={(e) => updateCase(index, 'expensePeriodEnd', e.target.value)} className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50] text-gray-600" />
+                  <input type="date" value={caseItem.expense期間End || ''} onChange={(e) => updateCase(index, 'expense期間End', e.target.value)} className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50] text-gray-600" />
                 </div>
               </div>
-              <p className="text-xs text-gray-400 mt-2 leading-tight">Note: Claims are typically processed for expenses between the 11th and 27th of the month.</p>
+              <p className="text-xs text-gray-400 mt-2 leading-tight">注: 経費精算は通常、その月の11日から27日の間に処理されます。</p>
             </div>
           </div>
 
@@ -716,11 +716,11 @@ export default function NewCase() {
           <div className="border-t border-gray-200 mt-6 pt-6">
             <div className="grid grid-cols-2 gap-6">
               <div>
-                <label className="block text-sm font-bold text-gray-700 mb-2">Bill / Receipt Upload</label>
+                <label className="block text-sm font-bold text-gray-700 mb-2">請求書/領収書のアップロード</label>
                 <div className="border-2 border-dashed border-gray-300 rounded-md p-4 text-center hover:bg-gray-50 transition-colors cursor-pointer relative">
                   <input type="file" multiple accept=".jpg,.jpeg,.png,.pdf,image/jpeg,image/png,application/pdf" className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" onChange={(e) => handleFileUpload(e, index)} />
                   <FileText className="w-6 h-6 mx-auto text-gray-400 mb-2" />
-                  <p className="text-sm text-gray-600">Drag and drop files or click to upload</p>
+                  <p className="text-sm text-gray-600">ファイルをドラッグ＆ドロップするか、クリックしてアップロード</p>
                 </div>
                 {caseItem.receipts && caseItem.receipts.length > 0 && (
                   <div className="mt-3 flex flex-wrap gap-2">
@@ -733,11 +733,11 @@ export default function NewCase() {
                 )}
               </div>
               <div>
-                <label className="block text-sm font-bold text-gray-700 mb-2">Remarks</label>
+                <label className="block text-sm font-bold text-gray-700 mb-2">備考</label>
                 <textarea 
                   value={caseItem.remark || ''} 
                   onChange={(e) => updateCase(index, 'remark', e.target.value)}
-                  placeholder="Enter any additional details or remarks for this case..." 
+                  placeholder="この案件に関する追加の詳細や備考を入力してください..." 
                   className="w-full h-[120px] px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50] resize-none"
                 ></textarea>
               </div>
@@ -752,12 +752,12 @@ export default function NewCase() {
         <div className="p-6">
           <div className="bg-[#F8F9FA] border border-gray-200 rounded-md p-6 flex justify-between items-center mb-6">
             <div>
-              <div className="font-bold text-sm text-gray-800 mb-1">Multiple Case Summary</div>
-              <div className="text-xs text-gray-500">Total calculation of all items above</div>
+              <div className="font-bold text-sm text-gray-800 mb-1">複数案件の概要</div>
+              <div className="text-xs text-gray-500">上記すべての項目の合計</div>
             </div>
             <div className="text-right">
-              <div className="font-bold text-xs text-gray-800 mb-1">Total Expense Amount</div>
-              <div className="text-2xl font-bold text-[#162D50]">¥ {totalExpenseAmount.toLocaleString()}</div>
+              <div className="font-bold text-xs text-gray-800 mb-1">Total 経費金額</div>
+              <div className="text-2xl font-bold text-[#162D50]">¥ {totalExpense金額.toLocaleString()}</div>
             </div>
           </div>
 
@@ -765,7 +765,7 @@ export default function NewCase() {
           <button 
             onClick={handleAddAnotherCase}
             className="flex items-center px-5 py-2 border border-[#162D50] text-[#162D50] rounded-md font-bold text-sm hover:bg-gray-50 transition-colors">
-            + Add Another Case
+            + 案件を追加
           </button>
         </div>
       </div>
@@ -775,23 +775,23 @@ export default function NewCase() {
       <div className="flex justify-end pt-4">
         <button 
           onClick={() => {
-            if (!staffInfo.fullName || !staffInfo.id || !staffInfo.location || staffInfo.location === 'Select Location') {
-              toast.error('Please fill out all required Staff Information fields.');
+            if (!staffInfo.fullName || !staffInfo.id || !staffInfo.location || staffInfo.location === 'Select 拠点') {
+              toast.error('Please fill out all required スタッフ情報 fields.');
               return;
             }
             for (let i = 0; i < cases.length; i++) {
               const c = cases[i];
-              if (c.expenseType === 'Select Type' || c.advancerCategory === 'Select Category' || c.bearingParty === 'Select Bearing Party' || !c.expenseAmount) {
-                toast.error(`Please fill out all required fields for Case Category #${i+1}.`);
+              if (c.expenseType === '種類を選択' || c.advancerCategory === 'カテゴリを選択' || c.bearingParty === 'Select 負担先' || !c.expense金額) {
+                toast.error(`Please fill out all required fields for 案件カテゴリ #${i+1}.`);
                 return;
               }
-              const validation = validateExpenseAmount(c.expenseAmount, c.suggestedAmount);
+              const validation = validateExpenseAmount(c.expense金額, c.suggested金額);
               if (!validation.isValid) {
                 toast.error(`Row ${i + 1}: ${validation.message}`);
                 return;
               }
               if (c.advancerCategory !== 'Office' && !c.advancerName) {
-                toast.error(`Please provide the Payment Process Types for Case Category #${i+1}.`);
+                toast.error(`Please provide the 支払処理タイプ for 案件カテゴリ #${i+1}.`);
                 return;
               }
             }
@@ -806,18 +806,18 @@ export default function NewCase() {
 
       {newCaseStep === 2 && (
         <>
-          {/* Amount Details Section */}
+          {/* 金額 Details Section */}
           <div className="bg-white border border-gray-200 rounded-md">
             <div className="p-6">
               <div className="flex items-center text-[#162D50] font-bold mb-4">
                 <Wallet className="w-4 h-4 mr-2" />
-                Amount Details
+                金額 Details
               </div>
               
               <div className="grid grid-cols-2 gap-6 mb-6">
                 <div>
                   <label className="block text-sm font-bold text-gray-700 mb-2">Total Expense (¥)</label>
-                  <input type="number" value={totalExpenseAmount} readOnly className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50] text-gray-600 bg-gray-50" />
+                  <input type="number" value={totalExpense金額} readOnly className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50] text-gray-600 bg-gray-50" />
                 </div>
                 <div>
                   <label className="block text-sm font-bold text-gray-700 mb-2">Currency</label>
@@ -845,9 +845,9 @@ export default function NewCase() {
               </div>
 
               <div>
-                <label className="block text-sm font-bold text-gray-700 mb-2">Final Total Amount (¥)</label>
+                <label className="block text-sm font-bold text-gray-700 mb-2">Final 合計金額 (¥)</label>
                 <div className="w-full bg-[#162D50] text-white px-4 py-3 rounded-md font-bold">
-                  ¥ {finalTotalAmount.toLocaleString()}
+                  ¥ {finalTotal金額.toLocaleString()}
                 </div>
               </div>
             </div>
@@ -872,7 +872,7 @@ export default function NewCase() {
                   </div>
                 </div>
                 <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-2">Expected Settlement Date <span className="text-red-500">*</span></label>
+                  <label className="block text-sm font-bold text-gray-700 mb-2">Expected Settlement 日付 <span className="text-red-500">*</span></label>
                   <div className="relative">
                     <input type="date" value={expectedSettlementDate} onChange={e => setExpectedSettlementDate(e.target.value)} className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50] text-gray-600" />
 
@@ -887,7 +887,7 @@ export default function NewCase() {
             <div className="p-6">
               <div className="flex items-center text-[#162D50] font-bold mb-4">
                 <FileText className="w-4 h-4 mr-2" />
-                Collection from Bearing Party
+                Collection from 負担先
               </div>
               <div className="grid grid-cols-3 gap-6 mb-8">
                 <div>
@@ -947,7 +947,7 @@ export default function NewCase() {
 
       {newCaseStep === 3 && (
         <div className="bg-[#F8F9FA] border border-gray-200 rounded-md p-8">
-          <h3 className="text-[#162D50] text-xl font-bold mb-2">Confirmation & Submission</h3>
+          <h3 className="text-[#162D50] text-xl font-bold mb-2">確認 & Submission</h3>
           <p className="text-gray-500 text-sm mb-8">Please review all case information before final submission.</p>
           
           <div className="grid grid-cols-2 gap-8 mb-8">
@@ -957,17 +957,17 @@ export default function NewCase() {
               <div className="bg-white border border-gray-200 rounded-md p-6 mb-4">
                 <div className="space-y-4 text-sm">
                   <div className="grid grid-cols-2">
-                    <span className="text-gray-500">Staff Name</span>
+                    <span className="text-gray-500">スタッフ名</span>
                     <span className="font-bold text-[#162D50]">{staffInfo.fullName || "N/A"}</span>
                   </div>
                   <div className="grid grid-cols-2">
-                    <span className="text-gray-500">Staff ID</span>
+                    <span className="text-gray-500">スタッフID</span>
                     <span className="font-bold text-[#162D50]">{staffInfo.id || "N/A"}</span>
                   </div>
                 </div>
               </div>
               
-              <h4 className="text-[#162D50] font-bold mb-4 mt-6">Expense Details</h4>
+              <h4 className="text-[#162D50] font-bold mb-4 mt-6">経費詳細</h4>
               <div className="space-y-4">
                 {cases.map((c, i) => (
                   <div key={i} className="bg-white border border-gray-200 rounded-md p-4">
@@ -977,8 +977,8 @@ export default function NewCase() {
                         <span className="font-bold text-[#162D50]">{c.expenseType}</span>
                       </div>
                       <div className="grid grid-cols-2">
-                        <span className="text-gray-500">Amount</span>
-                        <span className="font-bold text-[#162D50]">¥ {Number(c.expenseAmount).toLocaleString()}</span>
+                        <span className="text-gray-500">金額</span>
+                        <span className="font-bold text-[#162D50]">¥ {Number(c.expense金額).toLocaleString()}</span>
                       </div>
                     </div>
                   </div>
@@ -991,8 +991,8 @@ export default function NewCase() {
               <h4 className="text-[#162D50] font-bold mb-4">Financial Overview</h4>
               <div className="bg-[#162D50] rounded-md p-6 text-white h-full flex flex-col justify-center">
                 <div className="flex justify-between items-center mb-6">
-                  <span className="text-blue-200 text-sm">Total Amount</span>
-                  <span className="text-2xl font-bold">¥ {finalTotalAmount.toLocaleString()}</span>
+                  <span className="text-blue-200 text-sm">合計金額</span>
+                  <span className="text-2xl font-bold">¥ {finalTotal金額.toLocaleString()}</span>
                 </div>
                 <div className="border-t border-blue-800/50 my-2 pt-4 space-y-3 text-sm">
                   <div className="flex justify-between">
@@ -1031,9 +1031,9 @@ export default function NewCase() {
               <ArrowLeft className="w-4 h-4 mr-2" /> Back
             </button>
             <button 
-              onClick={handleSubmit}
+              onClick={handle送信}
               className="bg-[#0A192F] text-white px-10 py-3 rounded-md font-bold text-sm flex items-center hover:bg-[#162D50] transition-colors shadow-sm">
-              Submit
+              送信
             </button>
           </div>
         </div>

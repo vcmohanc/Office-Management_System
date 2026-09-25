@@ -112,9 +112,9 @@ export default function AdminNewRegistration({ setActiveTab }) {
                 onChange={handleChange}
                 className="w-full border border-gray-300 rounded-md px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
               >
-                <option value="account">Account Department</option>
-                <option value="hr">HR Department</option>
-                <option value="support">Support Department</option>
+                <option value="account">経理部門</option>
+                <option value="hr">人事部門</option>
+                <option value="support">サポート部門</option>
                 <option value="admin">System Admin</option>
               </select>
             </div>

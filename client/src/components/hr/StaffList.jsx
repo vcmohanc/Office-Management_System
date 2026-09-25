@@ -57,8 +57,8 @@ export default function StaffList({ setActiveTab }) {
     setSelectedStaffToEdit(null);
   };
 
-  const getPrimaryAction = (employee) => {
-    if (employee.onboardingStatus === 'Active') {
+  const getPrimaryアクション = (employee) => {
+    if (employee.onboardingステータス === 'Active') {
       return { 
         label: 'View', 
         type: 'default', 
@@ -67,9 +67,9 @@ export default function StaffList({ setActiveTab }) {
       };
     }
 
-    if (employee.onboardingStatus === 'Missing Documents') {
+    if (employee.onboardingステータス === 'Missing Documents') {
       return { 
-        label: 'Action Required', 
+        label: 'アクション Required', 
         type: 'urgent', 
         className: 'bg-[#E30A17] text-white hover:bg-red-700',
         onClick: () => { setSelectedStaffToEdit(employee); setEditModalTab('Basic'); } 
@@ -106,7 +106,7 @@ export default function StaffList({ setActiveTab }) {
     } else if (activeTab === 'Office Staff') {
       matchesTab = isEmpOffice(employee);
     } else if (activeTab === 'New Reg. Staff') {
-      matchesTab = employee.onboardingStatus && employee.onboardingStatus !== 'Active';
+      matchesTab = employee.onboardingステータス && employee.onboardingステータス !== 'Active';
     }
 
     // 2. Search Query Filtering
@@ -115,7 +115,7 @@ export default function StaffList({ setActiveTab }) {
     const idStr = employee._id ? employee._id.toLowerCase() : '';
     const matchesSearch = nameStr.includes(searchString) || idStr.includes(searchString);
 
-    // 3. Join Date Filtering
+    // 3. Join 日付 Filtering
     let matchesDate = true;
     if (joinDateFilter) {
       const empDate = new Date(employee.joinDate).toISOString().split('T')[0];
@@ -149,7 +149,7 @@ export default function StaffList({ setActiveTab }) {
         <div className="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
           <p className="text-sm text-gray-500 mb-2">New Reg. Staff</p>
           <p className="text-3xl font-bold text-yellow-500">
-            {employees.filter(e => e.onboardingStatus && e.onboardingStatus !== 'Active').length}
+            {employees.filter(e => e.onboardingステータス && e.onboardingステータス !== 'Active').length}
           </p>
         </div>
       </div>
@@ -179,7 +179,7 @@ export default function StaffList({ setActiveTab }) {
           <Search className="w-5 h-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
           <input 
             type="text" 
-            placeholder="Search by name or Staff ID..." 
+            placeholder="Search by name or スタッフID..." 
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-[#162D50]"
@@ -213,10 +213,10 @@ export default function StaffList({ setActiveTab }) {
             <thead>
               <tr className="bg-[#F8F9FA] border-b border-gray-200 text-xs font-bold text-gray-500 uppercase tracking-wider">
                 <th className="py-4 px-6 w-16">S.N.</th>
-                <th className="py-4 px-6">Staff ID</th>
+                <th className="py-4 px-6">スタッフID</th>
                 <th className="py-4 px-6">Name</th>
                 <th className="py-4 px-6">Department</th>
-                <th className="py-4 px-6">Join Date</th>
+                <th className="py-4 px-6">Join 日付</th>
                 <th className="py-4 px-6">STATUS</th>
                 <th className="py-4 px-6 text-right">Actions</th>
               </tr>
@@ -224,7 +224,7 @@ export default function StaffList({ setActiveTab }) {
             <tbody className="text-sm">
               {loading ? (
                 <tr>
-                  <td colSpan="6" className="py-4 px-6 text-center text-gray-500">Loading...</td>
+                  <td colSpan="6" className="py-4 px-6 text-center text-gray-500">読み込み中...</td>
                 </tr>
               ) : filteredEmployees.length === 0 ? (
                 <tr>
@@ -242,11 +242,11 @@ export default function StaffList({ setActiveTab }) {
                     </td>
                     <td className="py-4 px-6">
                       <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-                        employee.onboardingStatus === 'Active' ? 'bg-green-100 text-green-700' :
-                        employee.onboardingStatus === 'Verification Pending' ? 'bg-blue-100 text-blue-700' :
+                        employee.onboardingステータス === 'Active' ? 'bg-green-100 text-green-700' :
+                        employee.onboardingステータス === 'Verification 保留中' ? 'bg-blue-100 text-blue-700' :
                         'bg-gray-100 text-gray-700'
                       }`}>
-                        {employee.onboardingStatus || 'Active'}
+                        {employee.onboardingステータス || 'Active'}
                       </span>
                     </td>
                     <td className="py-4 px-6 text-right">

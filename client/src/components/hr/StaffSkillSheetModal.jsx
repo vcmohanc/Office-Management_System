@@ -53,16 +53,16 @@ export default function StaffSkillSheetModal({ employee, onClose }) {
                 <h2 className="text-2xl font-bold text-gray-900">{employee.romajiName || 'Unknown'}</h2>
                 <p className="text-gray-600 mb-2">{employee.katakanaName || 'N/A'}</p>
                 <div className="text-sm">
-                  <span className="font-semibold uppercase mr-2">Staff ID:</span> #{employee._id?.slice(-6).toUpperCase()}
+                  <span className="font-semibold uppercase mr-2">スタッフID:</span> #{employee._id?.slice(-6).toUpperCase()}
                 </div>
                 <div className="text-sm mt-1">
-                  <span className="font-semibold uppercase mr-2">Status:</span> {employee.onboardingStatus || 'Active'}
+                  <span className="font-semibold uppercase mr-2">ステータス:</span> {employee.onboardingステータス || 'Active'}
                 </div>
               </div>
             </div>
             <div className="text-left md:text-right text-sm">
               <div className="mb-1"><span className="font-semibold uppercase mr-1">Department:</span> {Array.isArray(employee.department) ? employee.department.join(', ') : (employee.department || 'N/A')}</div>
-              <div className="mb-1"><span className="font-semibold uppercase mr-1">Join Date:</span> {formatDate(employee.joinDate)}</div>
+              <div className="mb-1"><span className="font-semibold uppercase mr-1">Join 日付:</span> {formatDate(employee.joinDate)}</div>
               <div className="mb-1"><span className="font-semibold uppercase mr-1">Nationality:</span> {employee.nationality || 'N/A'}</div>
               <div><span className="font-semibold uppercase mr-1">Gender:</span> {employee.gender || 'N/A'}</div>
             </div>
@@ -74,7 +74,7 @@ export default function StaffSkillSheetModal({ employee, onClose }) {
             <table className="w-full text-sm border-collapse border border-gray-300">
               <tbody>
                 <tr>
-                  <td className="border border-gray-300 bg-gray-100 font-semibold p-2 w-1/4">Date of Birth</td>
+                  <td className="border border-gray-300 bg-gray-100 font-semibold p-2 w-1/4">日付 of Birth</td>
                   <td className="border border-gray-300 p-2 w-1/4">{formatDate(employee.dob)}</td>
                   <td className="border border-gray-300 bg-gray-100 font-semibold p-2 w-1/4">Age</td>
                   <td className="border border-gray-300 p-2 w-1/4">{employee.age} years</td>
@@ -97,19 +97,19 @@ export default function StaffSkillSheetModal({ employee, onClose }) {
 
           {/* Visa & Employment */}
           <div className="mb-8">
-            <h3 className="text-lg font-bold uppercase border-b border-gray-400 mb-4 pb-1">2. Visa & Employment Status</h3>
+            <h3 className="text-lg font-bold uppercase border-b border-gray-400 mb-4 pb-1">2. Visa & Employment ステータス</h3>
             <table className="w-full text-sm border-collapse border border-gray-300">
               <tbody>
                 <tr>
                   <td className="border border-gray-300 bg-gray-100 font-semibold p-2 w-1/4">Joining Type</td>
                   <td className="border border-gray-300 p-2 w-1/4">{employee.joiningType || 'N/A'}</td>
-                  <td className="border border-gray-300 bg-gray-100 font-semibold p-2 w-1/4">Visa Status</td>
-                  <td className="border border-gray-300 p-2 w-1/4">{employee.visaStatus || 'N/A'}</td>
+                  <td className="border border-gray-300 bg-gray-100 font-semibold p-2 w-1/4">Visa ステータス</td>
+                  <td className="border border-gray-300 p-2 w-1/4">{employee.visaステータス || 'N/A'}</td>
                 </tr>
                 <tr>
-                  <td className="border border-gray-300 bg-gray-100 font-semibold p-2">Visa Start Date</td>
+                  <td className="border border-gray-300 bg-gray-100 font-semibold p-2">Visa Start 日付</td>
                   <td className="border border-gray-300 p-2">{formatDate(employee.visaStartDate)}</td>
-                  <td className="border border-gray-300 bg-gray-100 font-semibold p-2">Visa End Date</td>
+                  <td className="border border-gray-300 bg-gray-100 font-semibold p-2">Visa End 日付</td>
                   <td className="border border-gray-300 p-2">{formatDate(employee.visaEndDate)}</td>
                 </tr>
                 <tr>

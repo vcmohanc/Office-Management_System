@@ -50,8 +50,8 @@ export default function CaseList() {
     return 'Office';
   });
 
-  const [statusFilter, setStatusFilter] = useState('All Statuses');
-  const [expenseTypeFilter, setExpenseTypeFilter] = useState('All Types');
+  const [statusFilter, setステータスFilter] = useState('All ステータスes');
+  const [expenseTypeFilter, setExpenseTypeFilter] = useState('すべての種類');
   const [expenseTypeOptions, setExpenseTypeOptions] = useState([]);
   const [selectedCase, setSelectedCase] = useState(null);
   
@@ -233,7 +233,7 @@ export default function CaseList() {
     const payload = {};
     if (isClaim) {
       payload.expenseType = editData.expense_type;
-      payload.totalExpenseAmount = parseFloat(editData.total_expense);
+      payload.totalExpense金額 = parseFloat(editData.total_expense);
       payload.settlement_method = editData.settlement_method;
       payload.collection_method = editData.collection_method;
       payload.bill_receipt_url = editData.receipts;
@@ -272,7 +272,7 @@ export default function CaseList() {
         {
           text: editData.short_note,
           date: new Date().toISOString(),
-          author: user.username === 'account_user' ? 'Account Department' : (user.username || 'Account Department')
+          author: user.username === 'account_user' ? '経理部門' : (user.username || '経理部門')
         }
       ];
       if (user.role !== 'support') {
@@ -317,11 +317,11 @@ export default function CaseList() {
     }
   };
 
-  const handleUpdateStatus = async (newStatus) => {
+  const handleUpdateステータス = async (newステータス) => {
     if (!selectedCase) return;
     
-    if (newStatus === 'REJECTED' || newStatus === 'RETURNED_FOR_CORRECTION') {
-      const actionName = newStatus === 'REJECTED' ? 'Reject' : 'Return for Correction';
+    if (newステータス === 'REJECTED' || newステータス === 'RETURNED_FOR_CORRECTION') {
+      const actionName = newステータス === 'REJECTED' ? 'Reject' : 'Return for Correction';
       const confirmed = await toastConfirm(`Are you sure you want to ${actionName} ${selectedCase.displayId}?`);
       if (!confirmed) return;
     }
@@ -336,7 +336,7 @@ export default function CaseList() {
       if (c._id === selectedCase._id) {
         const updatedMessages = c.messages ? [...c.messages] : [];
         if (newMessage) updatedMessages.push(newMessage);
-        return { ...c, status: newStatus, messages: updatedMessages, supportUpdatedFields: [] };
+        return { ...c, status: newステータス, messages: updatedMessages, supportUpdatedFields: [] };
       }
       return c;
     };
@@ -351,13 +351,13 @@ export default function CaseList() {
     setSelectedCase(prev => {
       const updatedMessages = prev.messages ? [...prev.messages] : [];
       if (newMessage) updatedMessages.push(newMessage);
-      return { ...prev, status: newStatus, messages: updatedMessages, supportUpdatedFields: [] };
+      return { ...prev, status: newステータス, messages: updatedMessages, supportUpdatedFields: [] };
     });
 
     // Update the backend
     apiFetch(`${endpoint}`, {
       method: 'PATCH',
-      body: JSON.stringify({ status: newStatus, newMessage, clearSupportUpdatedFields: true, hasSupportNotification: true })
+      body: JSON.stringify({ status: newステータス, newMessage, clearSupportUpdatedFields: true, hasSupportNotification: true })
     }).catch(err => console.error('Failed to update status', err));
   };
 
@@ -393,8 +393,8 @@ export default function CaseList() {
   const thirtyDaysAgo = new Date();
   thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
-  const filterOldRejected = (c) => {
-    if (c.status === 'Rejected' || c.status === 'REJECTED') {
+  const filterOld拒否 = (c) => {
+    if (c.status === '拒否' || c.status === 'REJECTED') {
       let rejectDate = c.updatedAt ? new Date(c.updatedAt) : new Date(c.createdAt || Date.now());
       if (c.messages && c.messages.length > 0) {
         const lastMsgDate = new Date(c.messages[c.messages.length - 1].date);
@@ -408,7 +408,7 @@ export default function CaseList() {
   };
 
   // Map Cases
-  const mappedCases = cases.filter(filterOldRejected).map(c => ({
+  const mappedCases = cases.filter(filterOld拒否).map(c => ({
     ...c,
     _isClaim: false,
     type: c.case_type || 'Office Case',
@@ -421,22 +421,22 @@ export default function CaseList() {
   }));
 
   // Map Claims
-  const mappedClaims = claims.filter(filterOldRejected).map(c => ({
+  const mappedClaims = claims.filter(filterOld拒否).map(c => ({
     ...c,
     _isClaim: true,
     type: 'Staff Case',
     displayId: c.claim_id || c.claimId || `#CLM-${(c._id || '').slice(-6).toUpperCase()}`,
     displayDate: new Date(c.expensePeriodStart || c.expense_period_start || c.createdAt).toLocaleDateString('en-US'),
     displayName: c.fullName || c.full_name || 'N/A',
-    displayTotal: c.totalExpenseAmount || c.total_expense_amount || 0,
+    displayTotal: c.totalExpense金額 || c.total_expense_amount || 0,
     currencySymbol: c.currency === 'JPY' ? '¥' : '$',
     expense_type: c.expenseType || c.expense_type || 'N/A',
   }));
 
-  const isPreApprovalStatus = (status) => ['New', 'Pending', 'Pending Correction', 'RETURNED_FOR_CORRECTION', 'Rejected', 'REJECTED', 'Registered', 'New Case'].includes(status);
+  const isPreApprovalステータス = (status) => ['New', '保留中', '保留中 Correction', 'RETURNED_FOR_CORRECTION', '拒否', 'REJECTED', 'Registered', 'New Case'].includes(status);
 
-  const preApprovalCases = mappedCases.filter(c => isPreApprovalStatus(c.status));
-  const preApprovalClaims = mappedClaims.filter(c => isPreApprovalStatus(c.status));
+  const preApprovalCases = mappedCases.filter(c => isPreApprovalステータス(c.status));
+  const preApprovalClaims = mappedClaims.filter(c => isPreApprovalステータス(c.status));
 
   const allRecords = [...preApprovalCases, ...preApprovalClaims];
 
@@ -466,10 +466,10 @@ export default function CaseList() {
   const filteredRecords = allRecords.filter(c => {
     const activeCaseType = activeTab + ' Case';
     const matchesTab = c.type === activeCaseType || (activeTab === 'Host Company' && false);
-    const matchesStatus = statusFilter === 'All Statuses' || c.status === statusFilter;
-    const matchesType = expenseTypeFilter === 'All Types' || c.expense_type === expenseTypeFilter;
+    const matchesステータス = statusFilter === 'All ステータスes' || c.status === statusFilter;
+    const matchesType = expenseTypeFilter === 'すべての種類' || c.expense_type === expenseTypeFilter;
     
-    return matchesTab && matchesStatus && matchesType;
+    return matchesTab && matchesステータス && matchesType;
   });
 
   useEffect(() => {
@@ -532,29 +532,29 @@ export default function CaseList() {
       {/* Filter Bar */}
       <div className="bg-[#F8F9FA] border border-gray-200 rounded-md p-4 flex items-end space-x-4">
         <div className="flex-1">
-          <label className="block text-xs font-bold text-gray-600 mb-1">Search</label>
+          <label className="block text-xs font-bold text-gray-600 mb-1">検索</label>
           <div className="relative">
-            <input type="text" placeholder="Search Case ID, Staff Name..." className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-[#162D50]" />
+            <input type="text" placeholder="Search 案件ID, スタッフ名..." className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-[#162D50]" />
             <Search className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
           </div>
         </div>
         <div className="w-48">
-          <label className="block text-xs font-bold text-gray-600 mb-1">Status</label>
+          <label className="block text-xs font-bold text-gray-600 mb-1">ステータス</label>
           <div className="relative">
-            <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)} className="w-full pl-4 pr-10 py-2 border border-gray-300 rounded-md text-sm appearance-none focus:outline-none focus:ring-1 focus:ring-[#162D50] text-gray-600">
-              <option value="All Statuses">All Statuses</option>
+            <select value={statusFilter} onChange={e => setステータスFilter(e.target.value)} className="w-full pl-4 pr-10 py-2 border border-gray-300 rounded-md text-sm appearance-none focus:outline-none focus:ring-1 focus:ring-[#162D50] text-gray-600">
+              <option value="All ステータスes">All ステータスes</option>
               {[...new Set(cases.map(c => c.status))].filter(Boolean).map(status => (
-                <option key={status} value={status}>{status === 'Pending' ? 'New-Case' : status}</option>
+                <option key={status} value={status}>{status === '保留中' ? 'New-Case' : status}</option>
               ))}
             </select>
             <ChevronDown className="w-4 h-4 absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none" />
           </div>
         </div>
         <div className="w-48">
-          <label className="block text-xs font-bold text-gray-600 mb-1">Expense Type</label>
+          <label className="block text-xs font-bold text-gray-600 mb-1">経費の種類</label>
           <div className="relative">
             <select value={expenseTypeFilter} onChange={e => setExpenseTypeFilter(e.target.value)} className="w-full pl-4 pr-10 py-2 border border-gray-300 rounded-md text-sm appearance-none focus:outline-none focus:ring-1 focus:ring-[#162D50] text-gray-600">
-              <option value="All Types">All Types</option>
+              <option value="すべての種類">すべての種類</option>
               {expenseTypeOptions.map(opt => (
                 <option key={opt._id || opt.value} value={opt.value}>{opt.label}</option>
               ))}
@@ -563,7 +563,7 @@ export default function CaseList() {
           </div>
         </div>
         <div className="w-48">
-          <label className="block text-xs font-bold text-gray-600 mb-1">Date Range</label>
+          <label className="block text-xs font-bold text-gray-600 mb-1">日付 Range</label>
           <div className="relative">
             <input type="text" placeholder="YYYY / MM / DD" className="w-full pl-4 pr-10 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-[#162D50]" />
             <Calendar className="w-4 h-4 absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-800" />
@@ -579,23 +579,23 @@ export default function CaseList() {
         <table className="w-full text-left border-collapse">
           <thead>
             <tr className="bg-[#F8F9FA] border-b border-gray-200 text-xs font-bold text-gray-600">
-              <th className="py-3 px-6">Case ID</th>
-              <th className="py-3 px-6">Date</th>
-              <th className="py-3 px-6">Staff Name</th>
-              <th className="py-3 px-6">Expense Type</th>
-              <th className="py-3 px-6">Total Amount</th>
-              <th className="py-3 px-6">Status</th>
+              <th className="py-3 px-6">案件ID</th>
+              <th className="py-3 px-6">日付</th>
+              <th className="py-3 px-6">スタッフ名</th>
+              <th className="py-3 px-6">経費の種類</th>
+              <th className="py-3 px-6">合計金額</th>
+              <th className="py-3 px-6">ステータス</th>
               <th className="py-3 px-6">Actions</th>
             </tr>
           </thead>
           <tbody className="text-sm">
             {loading ? (
               <tr>
-                <td colSpan="7" className="py-4 px-6 text-center text-gray-500">Loading...</td>
+                <td colSpan="7" className="py-4 px-6 text-center text-gray-500">読み込み中...</td>
               </tr>
             ) : filteredRecords.length === 0 ? (
               <tr>
-                <td colSpan="7" className="py-4 px-6 text-center text-gray-500">No cases found.</td>
+                <td colSpan="7" className="py-4 px-6 text-center text-gray-500">案件が見つかりません.</td>
               </tr>
             ) : (
               filteredRecords.map(c => (
@@ -611,13 +611,13 @@ export default function CaseList() {
                   </td>
                   <td className="py-4 px-6">
                     <span className={`px-3 py-1 rounded-full text-xs font-medium border ${
-                      c.status === 'Pending Correction' || c.status === 'RETURNED_FOR_CORRECTION' ? 'bg-orange-100 text-orange-700 border-orange-200' :
-                      c.status === 'Rejected' || c.status === 'REJECTED' ? 'bg-red-100 text-red-700 border-red-200' :
+                      c.status === '保留中 Correction' || c.status === 'RETURNED_FOR_CORRECTION' ? 'bg-orange-100 text-orange-700 border-orange-200' :
+                      c.status === '拒否' || c.status === 'REJECTED' ? 'bg-red-100 text-red-700 border-red-200' :
                       c.status === 'New' || c.status === 'Registered' ? 'bg-blue-100 text-blue-700 border-blue-200' :
-                      c.status === 'Pending' ? 'bg-yellow-100 text-yellow-700 border-yellow-200' :
+                      c.status === '保留中' ? 'bg-yellow-100 text-yellow-700 border-yellow-200' :
                       'bg-gray-100 text-gray-700 border-gray-200'
                     }`}>
-                      {c.status === 'Pending' ? 'New-Case' : c.status}
+                      {c.status === '保留中' ? 'New-Case' : c.status}
                     </span>
                   </td>
                   <td className="py-4 px-6">
@@ -630,7 +630,7 @@ export default function CaseList() {
                           View Details
                         </button>
                         {user.role === 'support' && (c.hasSupportNotification || (c.messages && c.messages.some(m => !m.readBySupport))) && (
-                            <span className="absolute -top-1 -right-3 flex h-3 w-3" title="New update from Account Department">
+                            <span className="absolute -top-1 -right-3 flex h-3 w-3" title="New update from 経理部門">
                             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
                             <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
                           </span>
@@ -692,15 +692,15 @@ export default function CaseList() {
               <h4 className="text-xs font-bold text-gray-500 mb-4 tracking-wider">CASE INFORMATION</h4>
               <div className="space-y-3 text-sm">
                 <div className="flex justify-between">
-                  <span className="text-gray-500">Case ID</span>
+                  <span className="text-gray-500">案件ID</span>
                   <span className="font-bold text-gray-800">{selectedCase.displayId}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-500">Staff Name</span>
+                  <span className="text-gray-500">スタッフ名</span>
                   <span className="font-bold text-gray-800">{selectedCase.displayName}</span>
                 </div>
                 <div className="flex justify-between items-center">
-                  <span className="text-gray-500">Expense Type</span>
+                  <span className="text-gray-500">経費の種類</span>
                   {isEditing ? (
                     <select
                       value={editData.expense_type || ''}
@@ -718,7 +718,7 @@ export default function CaseList() {
                   )}
                 </div>
                 <div className="flex justify-between items-center">
-                  <span className="text-gray-500">Total Amount</span>
+                  <span className="text-gray-500">合計金額</span>
                   {isEditing ? (
                     <div className="flex items-center">
                       <span className="mr-1 font-bold text-gray-800">{selectedCase.currencySymbol}</span>
@@ -838,14 +838,14 @@ export default function CaseList() {
                 <div className="w-full">
                   <h4 className="text-xs font-bold text-gray-500 mb-4 tracking-wider">REASON / MESSAGE HISTORY</h4>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {/* Account Department Messages */}
+                    {/* 経理部門 Messages */}
                     <div>
-                      <h5 className="text-sm font-bold text-orange-700 mb-3 border-b border-orange-200 pb-1">Account Department</h5>
+                      <h5 className="text-sm font-bold text-orange-700 mb-3 border-b border-orange-200 pb-1">経理部門</h5>
                       <div className="space-y-3">
-                        {(selectedCase.messages || []).filter(m => m.author === 'account_user' || m.author === 'Account Department' || !m.author).map((m, i) => (
+                        {(selectedCase.messages || []).filter(m => m.author === 'account_user' || m.author === '経理部門' || !m.author).map((m, i) => (
                           <div key={i} className="bg-orange-50 border border-orange-200 rounded-md p-3 text-sm text-gray-700">
                             <div className="flex justify-between items-center mb-1 pb-1 border-b border-orange-200/50">
-                              <span className="text-xs font-bold text-orange-700">Account Department</span>
+                              <span className="text-xs font-bold text-orange-700">経理部門</span>
                               <span className="text-xs text-orange-600">{m.date ? new Date(m.date).toLocaleString() : ''}</span>
                             </div>
                             <div className="whitespace-pre-wrap mt-1">{m.text}</div>
@@ -854,12 +854,12 @@ export default function CaseList() {
                       </div>
                     </div>
 
-                    {/* Support Department Messages */}
+                    {/* サポート部門 Messages */}
                     <div>
-                      <h5 className="text-sm font-bold text-blue-700 mb-3 border-b border-blue-200 pb-1">Support Department</h5>
+                      <h5 className="text-sm font-bold text-blue-700 mb-3 border-b border-blue-200 pb-1">サポート部門</h5>
                       <div className="space-y-3">
-                        {(selectedCase.messages || []).filter(m => !(m.author === 'account_user' || m.author === 'Account Department' || !m.author)).map((m, i) => {
-                          const displayAuthor = m.author === 'support_user' ? 'Support Department' : m.author;
+                        {(selectedCase.messages || []).filter(m => !(m.author === 'account_user' || m.author === '経理部門' || !m.author)).map((m, i) => {
+                          const displayAuthor = m.author === 'support_user' ? 'サポート部門' : m.author;
                           return (
                             <div key={i} className="bg-blue-50 border border-blue-200 rounded-md p-3 text-sm text-gray-700">
                               <div className="flex justify-between items-center mb-1 pb-1 border-b border-blue-200/50">
@@ -898,33 +898,33 @@ export default function CaseList() {
             </div>
           </div>
 
-          {/* Action Buttons */}
+          {/* アクション Buttons */}
           <div className="p-4 border-t border-gray-200 flex justify-end items-center space-x-4 bg-gray-50 rounded-b-md">
             {user.role !== 'support' && (
               <>
-                {(selectedCase.status === 'Rejected' || selectedCase.status === 'REJECTED' || selectedCase.status === 'Pending Correction' || selectedCase.status === 'RETURNED_FOR_CORRECTION') && (
+                {(selectedCase.status === '拒否' || selectedCase.status === 'REJECTED' || selectedCase.status === '保留中 Correction' || selectedCase.status === 'RETURNED_FOR_CORRECTION') && (
                   <button 
-                    onClick={() => handleUpdateStatus('Pending')}
+                    onClick={() => handleUpdateステータス('保留中')}
                     className="text-blue-600 font-medium px-4 hover:underline mr-auto"
                   >
-                    Revert to Pending
+                    Revert to 保留中
                   </button>
                 )}
                 <button 
-                  onClick={() => handleUpdateStatus('REJECTED')}
+                  onClick={() => handleUpdateステータス('REJECTED')}
                   className="text-red-500 font-medium px-4 hover:underline"
                 >
                   Reject
                 </button>
                 <button 
-                  onClick={() => handleUpdateStatus('RETURNED_FOR_CORRECTION')}
+                  onClick={() => handleUpdateステータス('RETURNED_FOR_CORRECTION')}
                   className="border border-gray-300 bg-white text-gray-600 px-6 py-2 rounded-md font-medium hover:bg-gray-50"
                 >
                   Return for Correction
                 </button>
                 <button 
                   onClick={() => {
-                    handleUpdateStatus('APPROVED_FOR_PAYMENT');
+                    handleUpdateステータス('APPROVED_FOR_PAYMENT');
                     // Additional toast or local UI feedback can go here
                   }}
                   className="bg-[#0A192F] text-white px-6 py-2 rounded-md font-bold hover:bg-[#162D50] shadow-sm"

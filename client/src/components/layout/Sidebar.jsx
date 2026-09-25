@@ -33,53 +33,56 @@ export default function Sidebar({ activeTab, setActiveTab, openMenus, toggleMenu
   const [isCollapsed, setIsCollapsed] = useState(false);
 
   const allNavItems = [
-    { name: 'Dashboard', icon: LayoutDashboard },
-    { name: 'B2B Department', icon: Briefcase },
+    { name: 'Dashboard', label: 'ダッシュボード', icon: LayoutDashboard },
+    { name: 'B2B部門', label: 'B2B部門', icon: Briefcase },
     { 
-      name: 'Account Department', 
+      name: '経理部門', 
+      label: '経理部門',
       icon: Building2,
       subItems: [
-        { name: 'New Case', icon: FilePlus },
-        { name: 'Case List', icon: ListTodo },
-        { name: 'Payment Entry', icon: CreditCard },
-        { name: 'Paid Status', icon: Banknote }
+        { name: 'New Case', label: '新規案件', icon: FilePlus },
+        { name: 'Case List', label: '案件一覧', icon: ListTodo },
+        { name: 'Payment Entry', label: '支払入力', icon: CreditCard },
+        { name: 'Paid Status', label: '支払状況', icon: Banknote }
       ]
     },
     { 
-      name: 'HR Department', 
+      name: '人事部門', 
+      label: '人事部門',
       icon: Users,
       subItems: [
-        { name: 'Staff Registration', icon: UserPlus },
-        { name: 'Staff List', icon: List },
-        { name: 'Assign Work Place', icon: MapPin },
-        { name: 'Visa Management', icon: Plane },
-        { name: 'Resignation', icon: UserMinus }
+        { name: 'Staff Registration', label: 'スタッフ登録', icon: UserPlus },
+        { name: 'Staff List', label: 'スタッフ一覧', icon: List },
+        { name: 'Assign Work Place', label: '配属先', icon: MapPin },
+        { name: 'Visa Management', label: 'ビザ管理', icon: Plane },
+        { name: 'Resignation', label: '退職', icon: UserMinus }
       ]
     },
-    { name: 'Business Department', icon: Briefcase },
+    { name: '事業部門', label: '事業部門', icon: Briefcase },
     { 
-      name: 'Support Department', 
+      name: 'サポート部門', 
+      label: 'サポート部門',
       icon: LifeBuoy,
       subItems: [
-        { name: 'Staff Claim Request', icon: FileText },
-        { name: 'Case List', icon: ClipboardList }
+        { name: 'Staff Claim Request', label: 'スタッフ経費精算', icon: FileText },
+        { name: 'Case List', label: '案件一覧', icon: ClipboardList }
       ]
     },
-    { name: 'Expense SetUp', icon: Wallet },
-    { name: 'Settings', icon: SettingsIcon },
+    { name: 'Expense SetUp', label: '経費設定', icon: Wallet },
+    { name: 'Settings', label: '設定', icon: SettingsIcon },
   ];
 
   const navItems = allNavItems.filter(item => {
-    // Admin sees all departments except Business Department, Expense SetUp, and Settings
+    // Admin sees all departments except 事業部門, Expense SetUp, and Settings
     if (!user || user.role === 'admin') {
-      return item.name !== 'Business Department' && item.name !== 'Expense SetUp';
+      return item.name !== '事業部門' && item.name !== 'Expense SetUp';
     }
     
     // Other roles see their department and Settings
     if (item.name === 'Settings') return true;
-    if (user.role === 'hr' && item.name === 'HR Department') return true;
-    if (user.role === 'account' && (item.name === 'Account Department' || item.name === 'Expense SetUp')) return true;
-    if (user.role === 'support' && item.name === 'Support Department') return true;
+    if (user.role === 'hr' && item.name === '人事部門') return true;
+    if (user.role === 'account' && (item.name === '経理部門' || item.name === 'Expense SetUp')) return true;
+    if (user.role === 'support' && item.name === 'サポート部門') return true;
     
     return false;
   }).map(item => {
@@ -107,8 +110,8 @@ export default function Sidebar({ activeTab, setActiveTab, openMenus, toggleMenu
             </div>
             {!isCollapsed && (
               <div className="whitespace-nowrap">
-                <h2 className="text-[#162D50] font-bold text-lg leading-tight capitalize truncate w-32">{user?.username || 'Admin'}</h2>
-                <p className="text-xs text-gray-500 capitalize truncate w-32">{user?.role === 'admin' ? 'System Administrator' : `${user?.role} Department`}</p>
+                <h2 className="text-[#162D50] font-bold text-lg leading-tight capitalize truncate w-32">{user?.username || '管理者'}</h2>
+                <p className="text-xs text-gray-500 capitalize truncate w-32">{user?.role === 'admin' ? 'システム管理者' : `${user?.role} 部門`}</p>
               </div>
             )}
           </div>
@@ -140,7 +143,7 @@ export default function Sidebar({ activeTab, setActiveTab, openMenus, toggleMenu
                 >
                   <div className="flex items-center">
                     <Icon className={`w-5 h-5 ${isCollapsed ? '' : 'mr-3'} ${isActive ? 'text-white' : 'text-gray-500'}`} />
-                    {!isCollapsed && <span className="text-sm whitespace-nowrap">{item.name}</span>}
+                    {!isCollapsed && <span className="text-sm whitespace-nowrap">{item.label || item.name}</span>}
                   </div>
                 </button>
                 
@@ -154,9 +157,9 @@ export default function Sidebar({ activeTab, setActiveTab, openMenus, toggleMenu
                         <button
                           key={subItem.name}
                           onClick={() => {
-                            if (subItem.name === 'Case List' && item.name === 'Support Department') {
+                            if (subItem.name === 'Case List' && item.name === 'サポート部門') {
                               sessionStorage.setItem('caseListTab', 'Staff');
-                            } else if (subItem.name === 'Case List' && item.name === 'Account Department') {
+                            } else if (subItem.name === 'Case List' && item.name === '経理部門') {
                               sessionStorage.setItem('caseListTab', 'Office');
                             }
                             setActiveTab(subItem.name);
@@ -168,7 +171,7 @@ export default function Sidebar({ activeTab, setActiveTab, openMenus, toggleMenu
                           }`}
                         >
                           <SubIcon className={`w-4 h-4 mr-3 ${isSubActive ? 'text-white' : 'text-gray-400'}`} />
-                          {subItem.name}
+                          {subItem.label || subItem.name}
                         </button>
                       );
                     })}
@@ -183,7 +186,7 @@ export default function Sidebar({ activeTab, setActiveTab, openMenus, toggleMenu
       <div className="p-3 space-y-1 mb-2">
         <a href="#" className={`flex items-center ${isCollapsed ? 'justify-center' : ''} px-4 py-2 text-[#4A5568] hover:bg-gray-200 rounded-md transition-colors`} title={isCollapsed ? 'Support' : undefined}>
           <HelpCircle className={`w-5 h-5 ${isCollapsed ? '' : 'mr-3'} text-gray-500`} />
-          {!isCollapsed && <span className="font-medium text-sm whitespace-nowrap">Support</span>}
+          {!isCollapsed && <span className="font-medium text-sm whitespace-nowrap">サポート</span>}
         </a>
         <button 
           onClick={handleLogout}
@@ -191,7 +194,7 @@ export default function Sidebar({ activeTab, setActiveTab, openMenus, toggleMenu
           title={isCollapsed ? 'Log Out' : undefined}
         >
           <LogOut className={`w-5 h-5 ${isCollapsed ? '' : 'mr-3'} text-gray-500`} />
-          {!isCollapsed && <span className="font-medium text-sm whitespace-nowrap">Log Out</span>}
+          {!isCollapsed && <span className="font-medium text-sm whitespace-nowrap">ログアウト</span>}
         </button>
       </div>
     </aside>

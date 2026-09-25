@@ -15,8 +15,8 @@ export default function PaymentStatus() {
   const [activePaymentTab, setActivePaymentTab] = useState('Office');
   const [cases, setCases] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [statusFilter, setStatusFilter] = useState('All Statuses');
-  const [expenseTypeFilter, setExpenseTypeFilter] = useState('All Types');
+  const [statusFilter, setステータスFilter] = useState('All ステータスes');
+  const [expenseTypeFilter, setExpenseTypeFilter] = useState('すべての種類');
   const [expenseTypeOptions, setExpenseTypeOptions] = useState([]);
   const [dateFilterStart, setDateFilterStart] = useState('');
   const [dateFilterEnd, setDateFilterEnd] = useState('');
@@ -42,7 +42,7 @@ export default function PaymentStatus() {
         setCases(prev => [{
           ...c,
           advancerCategory: 'Staff',
-          finalTotal: c.totalExpenseAmount || c.total_expense_amount || 0,
+          finalTotal: c.totalExpense金額 || c.total_expense_amount || 0,
           staffId: c.staffId || c.staff_id || 'N/A',
           staffName: c.fullName || c.full_name || 'N/A',
           expenseType: c.expenseType || c.expense_type || 'Claim',
@@ -69,7 +69,7 @@ export default function PaymentStatus() {
         setCases(prev => prev.map(item => item._id === c._id ? {
           ...c,
           advancerCategory: 'Staff',
-          finalTotal: c.totalExpenseAmount || c.total_expense_amount || 0,
+          finalTotal: c.totalExpense金額 || c.total_expense_amount || 0,
           staffId: c.staffId || c.staff_id || 'N/A',
           staffName: c.fullName || c.full_name || 'N/A',
           expenseType: c.expenseType || c.expense_type || 'Claim',
@@ -96,11 +96,11 @@ export default function PaymentStatus() {
   useEffect(() => {
     if (selectedCase) {
       const totalTerms = selectedCase.installmentPlan ? (selectedCase.installmentPlan.match(/\d+/) ? parseInt(selectedCase.installmentPlan.match(/\d+/)[0], 10) : 1) : 1;
-      const claimAmount = selectedCase.nextPaymentAmount || Math.round((selectedCase.finalTotal || selectedCase.totalExpense || 0) / totalTerms);
+      const claim金額 = selectedCase.nextPayment金額 || Math.round((selectedCase.finalTotal || selectedCase.totalExpense || 0) / totalTerms);
       const advanceToRecover = selectedCase.previousBalance || 0;
       
       if (paymentMethod === 'Payroll Deduction') {
-        setDeductions(claimAmount);
+        setDeductions(claim金額);
       } else if (advanceToRecover > 0) {
         setDeductions(Math.round(advanceToRecover / totalTerms));
       } else {
@@ -111,7 +111,7 @@ export default function PaymentStatus() {
 
   useEffect(() => {
     if (selectedCase) {
-      // Auto-populate Payment Method based on agreed terms
+      // Auto-populate 支払方法 based on agreed terms
       if (selectedCase.advancerCategory === 'Staff') {
         let method = selectedCase.settlement_method || selectedCase.settlementMethod || '';
         if (method === 'Cash') method = 'Petty Cash';
@@ -165,16 +165,16 @@ export default function PaymentStatus() {
     
     for (const currentCase of selectedBatchCases) {
       const totalTerms = currentCase.installmentPlan ? (currentCase.installmentPlan.match(/\d+/) ? parseInt(currentCase.installmentPlan.match(/\d+/)[0], 10) : 1) : 1;
-      const claimAmount = currentCase.nextPaymentAmount || Math.round((currentCase.finalTotal || currentCase.totalExpense || 0) / totalTerms);
+      const claim金額 = currentCase.nextPayment金額 || Math.round((currentCase.finalTotal || currentCase.totalExpense || 0) / totalTerms);
       
       let caseDeduction = 0;
       if (remainingDeduction > 0) {
-        if (remainingDeduction <= claimAmount) {
+        if (remainingDeduction <= claim金額) {
           caseDeduction = remainingDeduction;
           remainingDeduction = 0;
         } else {
-          caseDeduction = claimAmount;
-          remainingDeduction -= claimAmount;
+          caseDeduction = claim金額;
+          remainingDeduction -= claim金額;
         }
       }
       
@@ -184,9 +184,9 @@ export default function PaymentStatus() {
         paymentMethod,
         destinationDetails,
         financials: {
-          claimAmount,
+          claim金額,
           deductions: caseDeduction,
-          netPayable: claimAmount - caseDeduction
+          netPayable: claim金額 - caseDeduction
         },
         transactionRefId,
         paymentDate,
@@ -203,9 +203,9 @@ export default function PaymentStatus() {
         if (response.ok) {
           newCases = newCases.map(c => {
             if (c._id === currentCase._id) {
-              const newPaidTerms = (c.paidTerms || 0) + 1;
-              const newStatus = newPaidTerms >= totalTerms ? 'Completed' : 'Processing';
-              return { ...c, paidTerms: newPaidTerms, status: newStatus };
+              const new支払済Terms = (c.paidTerms || 0) + 1;
+              const newステータス = new支払済Terms >= totalTerms ? '完了' : '処理中';
+              return { ...c, paidTerms: new支払済Terms, status: newステータス };
             }
             return c;
           });
@@ -278,7 +278,7 @@ export default function PaymentStatus() {
       const mappedClaims = claimsData.map(c => ({
         ...c,
         advancerCategory: 'Staff',
-        finalTotal: c.totalExpenseAmount || c.total_expense_amount || 0,
+        finalTotal: c.totalExpense金額 || c.total_expense_amount || 0,
         staffId: c.staffId || c.staff_id || 'N/A',
         staffName: c.fullName || c.full_name || 'N/A',
         expenseType: c.expenseType || c.expense_type || 'Claim',
@@ -303,11 +303,11 @@ export default function PaymentStatus() {
   }, []);
 
   const postApprovalCases = cases.filter(c => {
-    if (c.status === 'Completed') return false;
+    if (c.status === '完了') return false;
     const totalTerms = c.installment_count || (c.installmentPlan ? (c.installmentPlan.match(/\d+/) ? parseInt(c.installmentPlan.match(/\d+/)[0], 10) : 1) : 1);
     if (c.paidTerms >= totalTerms && totalTerms > 0) return false;
     
-    return ['APPROVED_FOR_PAYMENT', 'Payment Pending', 'Processing', 'Overdue'].includes(c.status) || c.status === 'Approve for Payment' || c.status === 'Approved for Payment';
+    return ['APPROVED_FOR_PAYMENT', 'Payment 保留中', '処理中', '期限切れ'].includes(c.status) || c.status === 'Approve for Payment' || c.status === '承認済 for Payment';
   });
 
   const officeCasesCount = postApprovalCases.filter(c => c.advancerCategory === 'Office').length;
@@ -316,10 +316,10 @@ export default function PaymentStatus() {
 
   const filteredCases = postApprovalCases.filter(c => {
     const matchesTab = c.advancerCategory === activePaymentTab || (!c.advancerCategory && activePaymentTab === 'Office');
-    const matchesStatus = statusFilter === 'All Statuses' || c.status === statusFilter;
-    const matchesType = expenseTypeFilter === 'All Types' || c.expenseType === expenseTypeFilter;
+    const matchesステータス = statusFilter === 'All ステータスes' || c.status === statusFilter;
+    const matchesType = expenseTypeFilter === 'すべての種類' || c.expenseType === expenseTypeFilter;
     
-    return matchesTab && matchesStatus && matchesType;
+    return matchesTab && matchesステータス && matchesType;
   });
 
   const tabCases = postApprovalCases.filter(c => c.advancerCategory === activePaymentTab || (!c.advancerCategory && activePaymentTab === 'Office'));
@@ -327,46 +327,46 @@ export default function PaymentStatus() {
   const getRemainingBalance = (c) => {
     const totalTerms = c.installment_count || (c.installmentPlan ? (c.installmentPlan.match(/\d+/) ? parseInt(c.installmentPlan.match(/\d+/)[0], 10) : 1) : 1);
     const paidTerms = c.paidTerms || 0;
-    const nextPaymentAmount = c.nextPaymentAmount || (c.finalTotal || c.totalExpense || 0) / totalTerms;
-    return Math.max(0, (c.finalTotal || c.totalExpense || 0) - (paidTerms * nextPaymentAmount));
+    const nextPayment金額 = c.nextPayment金額 || (c.finalTotal || c.totalExpense || 0) / totalTerms;
+    return Math.max(0, (c.finalTotal || c.totalExpense || 0) - (paidTerms * nextPayment金額));
   };
 
   const totalOfficePayment = postApprovalCases.filter(c => c.advancerCategory === 'Office').reduce((sum, c) => sum + getRemainingBalance(c), 0);
   const totalStaffPayment = postApprovalCases.filter(c => c.advancerCategory === 'Staff').reduce((sum, c) => sum + getRemainingBalance(c), 0);
-  const pendingCount = postApprovalCases.filter(c => c.status === 'Payment Pending' || c.status === 'APPROVED_FOR_PAYMENT').length;
-  const processingCount = postApprovalCases.filter(c => c.status === 'Processing').length;
-  const completedCount = postApprovalCases.filter(c => c.status === 'Completed').length;
-  const overdueCount = postApprovalCases.filter(c => c.status === 'Overdue').length;
+  const pendingCount = postApprovalCases.filter(c => c.status === 'Payment 保留中' || c.status === 'APPROVED_FOR_PAYMENT').length;
+  const processingCount = postApprovalCases.filter(c => c.status === '処理中').length;
+  const completedCount = postApprovalCases.filter(c => c.status === '完了').length;
+  const overdueCount = postApprovalCases.filter(c => c.status === '期限切れ').length;
 
   if (selectedCase) {
     const personCases = postApprovalCases.filter(c => c.staffId === selectedCase.staffId && (c.advancerCategory === activePaymentTab || (!c.advancerCategory && activePaymentTab === 'Office')));
     const personTotalOfficePayment = personCases.filter(c => c.advancerCategory === 'Office').reduce((sum, c) => sum + getRemainingBalance(c), 0);
     const personTotalStaffPayment = personCases.filter(c => c.advancerCategory === 'Staff').reduce((sum, c) => sum + getRemainingBalance(c), 0);
-    const personPendingCount = personCases.filter(c => c.status === 'Payment Pending' || c.status === 'APPROVED_FOR_PAYMENT').length;
-    const personProcessingCount = personCases.filter(c => c.status === 'Processing').length;
+    const person保留中Count = personCases.filter(c => c.status === 'Payment 保留中' || c.status === 'APPROVED_FOR_PAYMENT').length;
+    const person処理中Count = personCases.filter(c => c.status === '処理中').length;
     
     const filteredPersonCases = personCases.filter(c => {
-      const matchesStatus = statusFilter === 'All Statuses' || c.status === statusFilter;
-      const matchesType = expenseTypeFilter === 'All Types' || c.expenseType === expenseTypeFilter;
+      const matchesステータス = statusFilter === 'All ステータスes' || c.status === statusFilter;
+      const matchesType = expenseTypeFilter === 'すべての種類' || c.expenseType === expenseTypeFilter;
       const matchesDateStart = !dateFilterStart || new Date(c.expensePeriodStart || c.createdAt) >= new Date(dateFilterStart);
       const matchesDateEnd = !dateFilterEnd || new Date(c.expensePeriodEnd || c.createdAt) <= new Date(dateFilterEnd);
-      return matchesStatus && matchesType && matchesDateStart && matchesDateEnd;
+      return matchesステータス && matchesType && matchesDateStart && matchesDateEnd;
     });
 
-    let batchTotalClaimAmount = selectedBatchCases.reduce((total, currentCase) => {
+    let batchTotalClaim金額 = selectedBatchCases.reduce((total, currentCase) => {
       const totalTerms = currentCase.installment_count || (currentCase.installmentPlan ? (currentCase.installmentPlan.match(/\d+/) ? parseInt(currentCase.installmentPlan.match(/\d+/)[0], 10) : 1) : 1);
-      return total + (currentCase.nextPaymentAmount || Math.round((currentCase.finalTotal || currentCase.totalExpense || 0) / totalTerms));
+      return total + (currentCase.nextPayment金額 || Math.round((currentCase.finalTotal || currentCase.totalExpense || 0) / totalTerms));
     }, 0);
 
     let batchTotalRemainingBalance = selectedBatchCases.reduce((total, currentCase) => {
       const totalTerms = currentCase.installment_count || (currentCase.installmentPlan ? (currentCase.installmentPlan.match(/\d+/) ? parseInt(currentCase.installmentPlan.match(/\d+/)[0], 10) : 1) : 1);
-      const paymentAmount = currentCase.nextPaymentAmount || Math.round((currentCase.finalTotal || currentCase.totalExpense || 0) / totalTerms);
-      return total + Math.max(0, (currentCase.finalTotal || currentCase.totalExpense || 0) - (((currentCase.paidTerms || 0) + 1) * paymentAmount));
+      const payment金額 = currentCase.nextPayment金額 || Math.round((currentCase.finalTotal || currentCase.totalExpense || 0) / totalTerms);
+      return total + Math.max(0, (currentCase.finalTotal || currentCase.totalExpense || 0) - (((currentCase.paidTerms || 0) + 1) * payment金額));
     }, 0);
 
     // Auto add remaining balance to Net Payable if less than 1000 yen
     if (batchTotalRemainingBalance > 0 && batchTotalRemainingBalance < 1000) {
-      batchTotalClaimAmount += batchTotalRemainingBalance;
+      batchTotalClaim金額 += batchTotalRemainingBalance;
       batchTotalRemainingBalance = 0;
     }
 
@@ -384,25 +384,25 @@ export default function PaymentStatus() {
         </button>
 
         <div className="mb-6 print:hidden">
-          <h2 className="text-2xl font-bold text-[#162D50] mb-1">Staff Name: {selectedCase.staffName}</h2>
-          <p className="text-gray-500 text-sm">Staff ID: {selectedCase.staffId}</p>
+          <h2 className="text-2xl font-bold text-[#162D50] mb-1">スタッフ名: {selectedCase.staffName}</h2>
+          <p className="text-gray-500 text-sm">スタッフID: {selectedCase.staffId}</p>
         </div>
 
         <div className="print:hidden space-y-6">
           {/* Filter Bar */}
           <div className="bg-[#F8F9FA] border border-gray-200 rounded-md p-4 flex items-end space-x-4">
             <div className="flex-1">
-              <label className="block text-xs font-bold text-gray-600 mb-1">Search</label>
+              <label className="block text-xs font-bold text-gray-600 mb-1">検索</label>
               <div className="relative">
-                <input type="text" placeholder="Search Case ID, Staff Name..." className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-[#162D50]" />
+                <input type="text" placeholder="Search 案件ID, スタッフ名..." className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-[#162D50]" />
                 <Search className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
               </div>
             </div>
             <div className="w-48">
-              <label className="block text-xs font-bold text-gray-600 mb-1">Status</label>
+              <label className="block text-xs font-bold text-gray-600 mb-1">ステータス</label>
               <div className="relative">
-                <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)} className="w-full pl-4 pr-10 py-2 border border-gray-300 rounded-md text-sm appearance-none focus:outline-none focus:ring-1 focus:ring-[#162D50] text-gray-600">
-                  <option value="All Statuses">All Statuses</option>
+                <select value={statusFilter} onChange={e => setステータスFilter(e.target.value)} className="w-full pl-4 pr-10 py-2 border border-gray-300 rounded-md text-sm appearance-none focus:outline-none focus:ring-1 focus:ring-[#162D50] text-gray-600">
+                  <option value="All ステータスes">All ステータスes</option>
                   {[...new Set(personCases.map(c => c.status))].filter(Boolean).map(status => (
                     <option key={status} value={status}>{status}</option>
                   ))}
@@ -411,10 +411,10 @@ export default function PaymentStatus() {
               </div>
             </div>
             <div className="w-48">
-              <label className="block text-xs font-bold text-gray-600 mb-1">Expense Type</label>
+              <label className="block text-xs font-bold text-gray-600 mb-1">経費の種類</label>
               <div className="relative">
                 <select value={expenseTypeFilter} onChange={e => setExpenseTypeFilter(e.target.value)} className="w-full pl-4 pr-10 py-2 border border-gray-300 rounded-md text-sm appearance-none focus:outline-none focus:ring-1 focus:ring-[#162D50] text-gray-600">
-                  <option value="All Types">All Types</option>
+                  <option value="すべての種類">すべての種類</option>
                   {expenseTypeOptions.map(opt => (
                     <option key={opt._id || opt.value} value={opt.value}>{opt.label}</option>
                   ))}
@@ -424,11 +424,11 @@ export default function PaymentStatus() {
             </div>
             <div className="flex space-x-2">
               <div className="w-32">
-                <label className="block text-xs font-bold text-gray-600 mb-1">Start Date</label>
+                <label className="block text-xs font-bold text-gray-600 mb-1">Start 日付</label>
                 <input type="date" value={dateFilterStart} onChange={e => setDateFilterStart(e.target.value)} className="w-full px-2 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-[#162D50]" />
               </div>
               <div className="w-32">
-                <label className="block text-xs font-bold text-gray-600 mb-1">End Date</label>
+                <label className="block text-xs font-bold text-gray-600 mb-1">End 日付</label>
                 <input type="date" value={dateFilterEnd} onChange={e => setDateFilterEnd(e.target.value)} className="w-full px-2 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-[#162D50]" />
               </div>
             </div>
@@ -447,7 +447,7 @@ export default function PaymentStatus() {
         {/* Payment History Section */}
         <div className="bg-white border border-gray-200 rounded-md shadow-sm overflow-hidden overflow-x-auto mt-6 print:hidden">
           <div className="px-6 py-4 border-b border-gray-200 bg-[#F8F9FA]">
-            <h3 className="text-lg font-bold text-[#162D50]">Payment History & Related Cases</h3>
+            <h3 className="text-lg font-bold text-[#162D50]">支払履歴および関連案件</h3>
           </div>
           <table className="w-full text-left border-collapse">
             <thead>
@@ -460,17 +460,17 @@ export default function PaymentStatus() {
                     onChange={(e) => handleSelectAllCases(e, filteredPersonCases)}
                   />
                 </th>
-                <th className="py-3 px-6">Case ID</th>
+                <th className="py-3 px-6">案件ID</th>
                 <th className="py-3 px-6">Period</th>
-                <th className="py-3 px-6">Expense Type</th>
-                <th className="py-3 px-6">Remaining Amount</th>
-                <th className="py-3 px-6">Status</th>
-                <th className="py-3 px-6 text-right">Action</th>
+                <th className="py-3 px-6">経費の種類</th>
+                <th className="py-3 px-6">Remaining 金額</th>
+                <th className="py-3 px-6">ステータス</th>
+                <th className="py-3 px-6 text-right">アクション</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100 text-sm">
               {filteredPersonCases.length === 0 ? (
-                <tr><td colSpan="6" className="py-4 px-6 text-center text-gray-500">No cases found matching filters.</td></tr>
+                <tr><td colSpan="6" className="py-4 px-6 text-center text-gray-500">案件が見つかりません matching filters.</td></tr>
               ) : (
                 filteredPersonCases.map(c => (
                 <tr key={c._id} className={`hover:bg-gray-50 transition-colors ${selectedBatchCases.some(item => item._id === c._id) ? 'bg-blue-50' : ''}`}>
@@ -488,16 +488,16 @@ export default function PaymentStatus() {
                   <td className="py-4 px-6 font-bold text-[#162D50]">{c.currency === 'JPY' ? '¥' : '$'}{Math.round(getRemainingBalance(c)).toLocaleString()}</td>
                   <td className="py-4 px-6">
                     <span className={`px-2 py-1 rounded-full text-xs font-medium border ${
-                      c.status === 'Payment Pending' || c.status === 'APPROVED_FOR_PAYMENT' ? 'bg-yellow-100 text-yellow-700 border-yellow-200' :
-                      c.status === 'Processing' ? 'bg-blue-100 text-blue-700 border-blue-200' :
-                      c.status === 'Completed' ? 'bg-green-100 text-green-700 border-green-200' :
+                      c.status === 'Payment 保留中' || c.status === 'APPROVED_FOR_PAYMENT' ? 'bg-yellow-100 text-yellow-700 border-yellow-200' :
+                      c.status === '処理中' ? 'bg-blue-100 text-blue-700 border-blue-200' :
+                      c.status === '完了' ? 'bg-green-100 text-green-700 border-green-200' :
                       'bg-gray-100 text-gray-700 border-gray-200'
                     }`}>
                       {c.status}
                     </span>
                   </td>
                   <td className="py-4 px-6 text-right">
-                    <button onClick={() => setSelectedCase(c)} className="text-[#162D50] font-bold hover:underline text-xs">View</button>
+                    <button onClick={() => setSelectedCase(c)} className="text-[#162D50] font-bold hover:underline text-xs">表示</button>
                   </td>
                 </tr>
               ))
@@ -544,18 +544,18 @@ export default function PaymentStatus() {
                   {selectedCase.staffId && <div className="font-mono text-xs text-gray-500 mt-1">ID: {selectedCase.staffId}</div>}
                 </div>
                 <div className="text-right">
-                  <label className="block text-xs font-bold uppercase tracking-widest mb-1 text-gray-500">Base Claim Amount</label>
-                  <div className="font-mono text-2xl">¥ {batchTotalClaimAmount.toLocaleString()}</div>
+                  <label className="block text-xs font-bold uppercase tracking-widest mb-1 text-gray-500">Base Claim 金額</label>
+                  <div className="font-mono text-2xl">¥ {batchTotalClaim金額.toLocaleString()}</div>
                 </div>
               </div>
 
-              {/* Itemized Case Details */}
+              {/* Itemized 案件詳細 */}
               <div className="border-b border-dashed border-[#20301F] pb-8 mb-8 print:pb-4 print:mb-4">
                 <div className="text-xs font-bold uppercase tracking-widest text-gray-500 mb-6 print:mb-2">Itemized Claims</div>
                 <div className="space-y-4 print:space-y-2">
                   {selectedBatchCases.map((c, idx) => {
                     const totalTerms = c.installmentPlan ? (c.installmentPlan.match(/\d+/) ? parseInt(c.installmentPlan.match(/\d+/)[0], 10) : 1) : 1;
-                    const claimAmount = c.nextPaymentAmount || Math.round((c.finalTotal || c.totalExpense || 0) / totalTerms);
+                    const claim金額 = c.nextPayment金額 || Math.round((c.finalTotal || c.totalExpense || 0) / totalTerms);
                     return (
                       <div key={c._id} className="grid grid-cols-12 gap-4 text-sm items-center">
                         <div className="col-span-1 font-mono text-gray-500">{String(idx + 1).padStart(2, '0')}</div>
@@ -564,7 +564,7 @@ export default function PaymentStatus() {
                         <div className="col-span-2 font-mono text-gray-500 text-xs">
                           {new Date(c.expensePeriodStart || c.createdAt).toISOString().split('T')[0].replace(/-/g, '/')}
                         </div>
-                        <div className="col-span-2 text-right font-mono font-bold">¥ {claimAmount.toLocaleString()}</div>
+                        <div className="col-span-2 text-right font-mono font-bold">¥ {claim金額.toLocaleString()}</div>
                       </div>
                     );
                   })}
@@ -598,10 +598,10 @@ export default function PaymentStatus() {
                 </div>
               )}
 
-              {/* Payment Method & Deductions */}
+              {/* 支払方法 & Deductions */}
               <div className="space-y-8 print:space-y-4 border-b border-dashed border-[#20301F] pb-8 print:pb-4">
                 <div>
-                  <label className="block text-xs font-bold uppercase tracking-widest mb-2">Payment Method <span className="text-[#B5482F]">*</span></label>
+                  <label className="block text-xs font-bold uppercase tracking-widest mb-2">支払方法 <span className="text-[#B5482F]">*</span></label>
                   <select 
                     value={paymentMethod} 
                     onChange={(e) => setPaymentMethod(e.target.value)}
@@ -689,7 +689,7 @@ export default function PaymentStatus() {
                     <input type="text" value={transactionRefId} onChange={(e) => setTransactionRefId(e.target.value)} className="w-full bg-transparent border-b border-dashed border-[#20301F] focus:outline-none focus:border-[#2F6F4E] py-2 font-mono rounded-none" />
                   </div>
                   <div>
-                    <label className="block text-xs font-bold uppercase tracking-widest mb-2">Payment Date <span className="text-[#B5482F]">*</span></label>
+                    <label className="block text-xs font-bold uppercase tracking-widest mb-2">Payment 日付 <span className="text-[#B5482F]">*</span></label>
                     <input type="date" required value={paymentDate} onChange={(e) => setPaymentDate(e.target.value)} className="w-full bg-transparent border-b border-dashed border-[#20301F] focus:outline-none focus:border-[#2F6F4E] py-2 font-mono rounded-none" />
                   </div>
                   <div>
@@ -711,7 +711,7 @@ export default function PaymentStatus() {
               <div className="pt-2 pb-8 print:pb-4 border-b-[3px] border-double border-[#20301F]">
                 <div className="flex justify-between items-end mb-4">
                   <div className="text-sm font-bold uppercase tracking-widest">Net Payable</div>
-                  <div className="font-mono text-4xl font-bold tracking-tight">¥ {Math.max(0, batchTotalClaimAmount - deductions).toLocaleString()}</div>
+                  <div className="font-mono text-4xl font-bold tracking-tight">¥ {Math.max(0, batchTotalClaim金額 - deductions).toLocaleString()}</div>
                 </div>
                 <div className="flex justify-between items-end">
                   <div className="text-xs font-bold uppercase tracking-widest text-gray-500">Remaining Balance (Post-Payment)</div>
@@ -719,7 +719,7 @@ export default function PaymentStatus() {
                 </div>
               </div>
 
-              {/* Action / Stamp */}
+              {/* アクション / Stamp */}
               <div className="flex flex-col md:flex-row justify-between items-center pt-8 print:pt-4">
                 <div className="flex items-start space-x-4 mb-8 md:mb-0 md:w-1/2 print:mb-0">
                   <input 
@@ -855,15 +855,15 @@ export default function PaymentStatus() {
                 Active Installments <span className="ml-2 bg-blue-900 text-white px-2 rounded-full text-xs opacity-80">{pendingCount + processingCount}</span>
               </button>
               <button className="flex items-center px-4 py-1.5 text-gray-500 hover:bg-gray-100 rounded-full text-sm font-medium">
-                Completed <span className="ml-2 bg-gray-200 text-gray-600 px-2 rounded-full text-xs">{completedCount}</span>
+                完了 <span className="ml-2 bg-gray-200 text-gray-600 px-2 rounded-full text-xs">{completedCount}</span>
               </button>
               <button className="flex items-center px-4 py-1.5 text-gray-500 hover:bg-gray-100 rounded-full text-sm font-medium">
-                Overdue <span className="ml-2 bg-gray-200 text-gray-600 px-2 rounded-full text-xs">{overdueCount}</span>
+                期限切れ <span className="ml-2 bg-gray-200 text-gray-600 px-2 rounded-full text-xs">{overdueCount}</span>
               </button>
               
               <div className="flex items-center space-x-2 ml-4 border-l border-gray-200 pl-4">
                 <span className="bg-red-50 text-red-600 border border-red-200 px-2 py-0.5 rounded-md text-xs font-bold flex items-center">
-                  ! {overdueCount} Overdue
+                  ! {overdueCount} 期限切れ
                 </span>
                 <span className="bg-red-600 text-white px-2 py-0.5 rounded-md text-xs font-bold flex items-center">
                   <AlertTriangle className="w-3 h-3 mr-1" /> {processingCount} Bounced
@@ -879,7 +879,7 @@ export default function PaymentStatus() {
           <div className="p-3 bg-[#F8F9FA] border-b border-gray-200 flex space-x-3">
             <div className="relative flex-1">
               <Search className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-              <input type="text" placeholder="Search installments by Staff ID or Name..." className="w-full pl-9 pr-4 py-2 border border-gray-200 rounded-md text-sm focus:outline-none focus:border-gray-300" />
+              <input type="text" placeholder="Search installments by スタッフID or Name..." className="w-full pl-9 pr-4 py-2 border border-gray-200 rounded-md text-sm focus:outline-none focus:border-gray-300" />
             </div>
             <div className="relative w-48">
               <select className="w-full pl-3 pr-8 py-2 border border-gray-200 rounded-md text-sm appearance-none focus:outline-none focus:border-gray-300 text-gray-600">
@@ -899,13 +899,13 @@ export default function PaymentStatus() {
                 <th className="py-3 px-4 w-10">
                   <input type="checkbox" className="rounded border-gray-300" />
                 </th>
-                <th className="py-3 px-4">Staff ID & Name</th>
+                <th className="py-3 px-4">スタッフID & Name</th>
                 <th className="py-3 px-4">Payment Term</th>
                 <th className="py-3 px-4 w-32">Progress</th>
                 <th className="py-3 px-4">Next Payment</th>
                 <th className="py-3 px-4 text-center">Bounced</th>
                 <th className="py-3 px-4 text-right">Remaining Balance</th>
-                <th className="py-3 px-4 text-center">Status</th>
+                <th className="py-3 px-4 text-center">ステータス</th>
               </tr>
             </thead>
             <tbody className="text-sm">
@@ -925,9 +925,9 @@ export default function PaymentStatus() {
                     <td className="py-3 px-4">
                       <div className="flex items-center space-x-2">
                         <div className="w-full h-1.5 bg-gray-200 rounded-full overflow-hidden overflow-x-auto">
-                          <div className="h-full bg-blue-500" style={{ width: c.status === 'Completed' ? '100%' : '50%' }}></div>
+                          <div className="h-full bg-blue-500" style={{ width: c.status === '完了' ? '100%' : '50%' }}></div>
                         </div>
-                        <span className="text-xs text-gray-500 whitespace-nowrap">{c.status === 'Completed' ? '1/1' : '0/1'}</span>
+                        <span className="text-xs text-gray-500 whitespace-nowrap">{c.status === '完了' ? '1/1' : '0/1'}</span>
                       </div>
                     </td>
                     <td className="py-3 px-4">
@@ -938,10 +938,10 @@ export default function PaymentStatus() {
                     <td className="py-3 px-4 text-right font-bold text-gray-800">{c.currency === 'JPY' ? '¥' : '$'}{(c.finalTotal || 0).toLocaleString()}</td>
                     <td className="py-3 px-4 text-center">
                       <span className={`px-3 py-1 rounded-full text-xs font-medium border ${
-                        c.status === 'Payment Pending' ? 'bg-yellow-100 text-yellow-700 border-yellow-200' :
-                        c.status === 'Processing' ? 'bg-blue-100 text-blue-700 border-blue-200' :
-                        c.status === 'Completed' ? 'bg-green-100 text-green-700 border-green-200' :
-                        c.status === 'Overdue' ? 'bg-red-100 text-red-700 border-red-200' :
+                        c.status === 'Payment 保留中' ? 'bg-yellow-100 text-yellow-700 border-yellow-200' :
+                        c.status === '処理中' ? 'bg-blue-100 text-blue-700 border-blue-200' :
+                        c.status === '完了' ? 'bg-green-100 text-green-700 border-green-200' :
+                        c.status === '期限切れ' ? 'bg-red-100 text-red-700 border-red-200' :
                         'bg-gray-100 text-gray-700 border-gray-200'
                       }`}>
                         {c.status}
@@ -1052,17 +1052,17 @@ export default function PaymentStatus() {
       {/* Filter Bar */}
       <div className="bg-[#F8F9FA] border border-gray-200 rounded-md p-4 flex items-end space-x-4">
         <div className="flex-1">
-          <label className="block text-xs font-bold text-gray-600 mb-1">Search</label>
+          <label className="block text-xs font-bold text-gray-600 mb-1">検索</label>
           <div className="relative">
-            <input type="text" placeholder="Search Case ID, Staff Name..." className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-[#162D50]" />
+            <input type="text" placeholder="Search 案件ID, スタッフ名..." className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-[#162D50]" />
             <Search className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
           </div>
         </div>
         <div className="w-48">
-          <label className="block text-xs font-bold text-gray-600 mb-1">Status</label>
+          <label className="block text-xs font-bold text-gray-600 mb-1">ステータス</label>
           <div className="relative">
-            <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)} className="w-full pl-4 pr-10 py-2 border border-gray-300 rounded-md text-sm appearance-none focus:outline-none focus:ring-1 focus:ring-[#162D50] text-gray-600">
-              <option value="All Statuses">All Statuses</option>
+            <select value={statusFilter} onChange={e => setステータスFilter(e.target.value)} className="w-full pl-4 pr-10 py-2 border border-gray-300 rounded-md text-sm appearance-none focus:outline-none focus:ring-1 focus:ring-[#162D50] text-gray-600">
+              <option value="All ステータスes">All ステータスes</option>
               {[...new Set(cases.map(c => c.status))].filter(Boolean).map(status => (
                 <option key={status} value={status}>{status}</option>
               ))}
@@ -1071,10 +1071,10 @@ export default function PaymentStatus() {
           </div>
         </div>
         <div className="w-48">
-          <label className="block text-xs font-bold text-gray-600 mb-1">Expense Type</label>
+          <label className="block text-xs font-bold text-gray-600 mb-1">経費の種類</label>
           <div className="relative">
             <select value={expenseTypeFilter} onChange={e => setExpenseTypeFilter(e.target.value)} className="w-full pl-4 pr-10 py-2 border border-gray-300 rounded-md text-sm appearance-none focus:outline-none focus:ring-1 focus:ring-[#162D50] text-gray-600">
-              <option value="All Types">All Types</option>
+              <option value="すべての種類">すべての種類</option>
               {expenseTypeOptions.map(opt => (
                 <option key={opt._id || opt.value} value={opt.value}>{opt.label}</option>
               ))}
@@ -1083,7 +1083,7 @@ export default function PaymentStatus() {
           </div>
         </div>
         <div className="w-48">
-          <label className="block text-xs font-bold text-gray-600 mb-1">Date Range</label>
+          <label className="block text-xs font-bold text-gray-600 mb-1">日付 Range</label>
           <div className="relative">
             <input type="text" placeholder="YYYY / MM / DD" className="w-full pl-4 pr-10 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-[#162D50]" />
             <Calendar className="w-4 h-4 absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-800" />
@@ -1105,34 +1105,34 @@ export default function PaymentStatus() {
         <table className="w-full text-left border-collapse">
           <thead>
             <tr className="bg-[#F8F9FA] border-b border-gray-200 text-xs font-bold text-gray-600">
-              <th className="py-3 px-6">Case ID</th>
-              <th className="py-3 px-6">Date</th>
-              <th className="py-3 px-6">Staff Name</th>
-              <th className="py-3 px-6">Expense Type</th>
-              <th className="py-3 px-6">Remaining Amount</th>
+              <th className="py-3 px-6">案件ID</th>
+              <th className="py-3 px-6">日付</th>
+              <th className="py-3 px-6">スタッフ名</th>
+              <th className="py-3 px-6">経費の種類</th>
+              <th className="py-3 px-6">Remaining 金額</th>
               <th className="py-3 px-6">Collection Terms</th>
-              <th className="py-3 px-6">Status</th>
+              <th className="py-3 px-6">ステータス</th>
               <th className="py-3 px-6 text-right">Actions</th>
             </tr>
           </thead>
           <tbody className="text-sm">
             {loading ? (
               <tr>
-                <td colSpan="8" className="py-4 px-6 text-center text-gray-500">Loading...</td>
+                <td colSpan="8" className="py-4 px-6 text-center text-gray-500">読み込み中...</td>
               </tr>
             ) : filteredCases.length === 0 ? (
               <tr>
-                <td colSpan="8" className="py-4 px-6 text-center text-gray-500">No cases found.</td>
+                <td colSpan="8" className="py-4 px-6 text-center text-gray-500">案件が見つかりません.</td>
               </tr>
             ) : (
               filteredCases.map(c => {
                 const totalTerms = c.installment_count || (c.installmentPlan ? (c.installmentPlan.match(/\d+/) ? parseInt(c.installmentPlan.match(/\d+/)[0], 10) : 1) : 1);
                 const paidTerms = c.paidTerms || 0;
                 const pendingTerms = Math.max(0, totalTerms - paidTerms);
-                const isCompleted = paidTerms >= totalTerms;
+                const is完了 = paidTerms >= totalTerms;
                 
                 // Override status badge if completed via installment logic
-                const displayStatus = isCompleted ? 'Completed' : c.status;
+                const displayステータス = is完了 ? '完了' : c.status;
 
                 return (
                   <tr key={c._id} className="border-b border-gray-100 hover:bg-gray-50">
@@ -1156,18 +1156,18 @@ export default function PaymentStatus() {
                       </div>
                       {totalTerms > 1 && (
                         <div className="text-[10px] text-gray-400 mt-1 uppercase font-bold tracking-wider">
-                          Term {Math.min(paidTerms, totalTerms)} of {totalTerms} Completed ({pendingTerms} Pending)
+                          Term {Math.min(paidTerms, totalTerms)} of {totalTerms} 完了 ({pendingTerms} 保留中)
                         </div>
                       )}
                     </td>
                     <td className="py-4 px-6">
                       <span className={`px-3 py-1 rounded-full text-xs font-medium border ${
-                        displayStatus === 'Pending' ? 'bg-yellow-100 text-yellow-700 border-yellow-200' :
-                        (displayStatus === 'Processing' || displayStatus === 'APPROVED_FOR_PAYMENT') ? 'bg-blue-100 text-blue-700 border-blue-200' :
-                        displayStatus === 'Completed' ? 'bg-green-100 text-green-700 border-green-200' :
+                        displayステータス === '保留中' ? 'bg-yellow-100 text-yellow-700 border-yellow-200' :
+                        (displayステータス === '処理中' || displayステータス === 'APPROVED_FOR_PAYMENT') ? 'bg-blue-100 text-blue-700 border-blue-200' :
+                        displayステータス === '完了' ? 'bg-green-100 text-green-700 border-green-200' :
                         'bg-gray-100 text-gray-700 border-gray-200'
                       }`}>
-                        {totalTerms > 1 ? `${Math.min(paidTerms, totalTerms)}/${totalTerms} Completed` : (displayStatus === 'Processing' ? 'APPROVED_FOR_PAYMENT' : displayStatus)}
+                        {totalTerms > 1 ? `${Math.min(paidTerms, totalTerms)}/${totalTerms} 完了` : (displayステータス === '処理中' ? 'APPROVED_FOR_PAYMENT' : displayステータス)}
                       </span>
                     </td>
                     <td className="py-4 px-6 text-right whitespace-nowrap">

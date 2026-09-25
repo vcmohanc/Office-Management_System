@@ -18,7 +18,7 @@ export default function DatePicker({
   minDate,          // ISO string
   maxDate,
   disabledDates = [],
-  placeholder = "Select Date",
+  placeholder = "Select 日付",
   className = "",
   disabled = false,
   required = false
@@ -172,7 +172,7 @@ export default function DatePicker({
               type="button"
               className="text-gray-400 hover:text-gray-600 focus:outline-none"
               onClick={(e) => { e.stopPropagation(); onChange(mode === 'range' ? [] : ''); }}
-              aria-label="Clear Date"
+              aria-label="Clear 日付"
             >
               <X className="w-4 h-4" />
             </button>

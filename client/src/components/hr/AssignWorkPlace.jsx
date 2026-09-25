@@ -127,12 +127,12 @@ export default function AssignWorkPlace() {
     try {
       const res = await apiFetch(`/api/employees/${selectedStaff._id}`, {
         method: 'PUT',
-        body: JSON.stringify({ ...selectedStaff, assignedWorkPlace: draftWorkPlaces, department: draftDepartments, office: draftOffices, staffType: draftStaffType, onboardingStatus: 'Active' }),
+        body: JSON.stringify({ ...selectedStaff, assignedWorkPlace: draftWorkPlaces, department: draftDepartments, office: draftOffices, staffType: draftStaffType, onboardingステータス: 'Active' }),
       });
       
       if (res.ok) {
         setEmployees(prev => prev.map(emp => 
-          emp._id === selectedStaff._id ? { ...emp, assignedWorkPlace: draftWorkPlaces, department: draftDepartments, office: draftOffices, staffType: draftStaffType, onboardingStatus: 'Active' } : emp
+          emp._id === selectedStaff._id ? { ...emp, assignedWorkPlace: draftWorkPlaces, department: draftDepartments, office: draftOffices, staffType: draftStaffType, onboardingステータス: 'Active' } : emp
         ));
         setIsModalOpen(false);
         setSelectedStaff(null);
@@ -159,7 +159,7 @@ export default function AssignWorkPlace() {
     if (mainCategory === 'Haken') matchesMainCategory = !isEmpOffice;
     if (mainCategory === 'Office') matchesMainCategory = isEmpOffice;
     
-    const isUnassigned = (!emp.assignedWorkPlace || emp.assignedWorkPlace.length === 0) && (!emp.department || emp.department.length === 0) || emp.onboardingStatus !== 'Active';
+    const isUnassigned = (!emp.assignedWorkPlace || emp.assignedWorkPlace.length === 0) && (!emp.department || emp.department.length === 0) || emp.onboardingステータス !== 'Active';
 
     let matchesFilter = false;
     if (filterWorkPlace === 'All') {
@@ -168,16 +168,16 @@ export default function AssignWorkPlace() {
       matchesFilter = isUnassigned;
     } else {
       if (mainCategory === 'Haken') {
-        matchesFilter = includesValue(emp.assignedWorkPlace, filterWorkPlace) && emp.onboardingStatus === 'Active';
+        matchesFilter = includesValue(emp.assignedWorkPlace, filterWorkPlace) && emp.onboardingステータス === 'Active';
       } else if (mainCategory === 'Office') {
         const isDepartmentFilter = OFFICE_DEPARTMENTS.includes(filterWorkPlace);
         if (isDepartmentFilter) {
-          matchesFilter = includesValue(emp.department, filterWorkPlace) && emp.onboardingStatus === 'Active';
+          matchesFilter = includesValue(emp.department, filterWorkPlace) && emp.onboardingステータス === 'Active';
         } else {
-          matchesFilter = includesValue(emp.office, filterWorkPlace) && emp.onboardingStatus === 'Active';
+          matchesFilter = includesValue(emp.office, filterWorkPlace) && emp.onboardingステータス === 'Active';
         }
       } else {
-        matchesFilter = (includesValue(emp.assignedWorkPlace, filterWorkPlace) || includesValue(emp.department, filterWorkPlace) || includesValue(emp.office, filterWorkPlace)) && emp.onboardingStatus === 'Active';
+        matchesFilter = (includesValue(emp.assignedWorkPlace, filterWorkPlace) || includesValue(emp.department, filterWorkPlace) || includesValue(emp.office, filterWorkPlace)) && emp.onboardingステータス === 'Active';
       }
     }
                           
@@ -191,19 +191,19 @@ export default function AssignWorkPlace() {
     if (mainCategory === 'Office') baseEmps = employees.filter(e => isEmpOffice(e));
     
     if (filterVal === 'All') return baseEmps.length;
-    if (filterVal === 'Unassigned') return baseEmps.filter(e => (!e.assignedWorkPlace || e.assignedWorkPlace.length === 0) && (!e.department || e.department.length === 0) || e.onboardingStatus !== 'Active').length;
+    if (filterVal === 'Unassigned') return baseEmps.filter(e => (!e.assignedWorkPlace || e.assignedWorkPlace.length === 0) && (!e.department || e.department.length === 0) || e.onboardingステータス !== 'Active').length;
     
     if (mainCategory === 'Haken') {
-      return baseEmps.filter(e => includesValue(e.assignedWorkPlace, filterVal) && e.onboardingStatus === 'Active').length;
+      return baseEmps.filter(e => includesValue(e.assignedWorkPlace, filterVal) && e.onboardingステータス === 'Active').length;
     } else if (mainCategory === 'Office') {
       const isDepartmentFilter = OFFICE_DEPARTMENTS.includes(filterVal);
       if (isDepartmentFilter) {
-        return baseEmps.filter(e => includesValue(e.department, filterVal) && e.onboardingStatus === 'Active').length;
+        return baseEmps.filter(e => includesValue(e.department, filterVal) && e.onboardingステータス === 'Active').length;
       } else {
-        return baseEmps.filter(e => includesValue(e.office, filterVal) && e.onboardingStatus === 'Active').length;
+        return baseEmps.filter(e => includesValue(e.office, filterVal) && e.onboardingステータス === 'Active').length;
       }
     } else {
-      return baseEmps.filter(e => (includesValue(e.assignedWorkPlace, filterVal) || includesValue(e.department, filterVal) || includesValue(e.office, filterVal)) && e.onboardingStatus === 'Active').length;
+      return baseEmps.filter(e => (includesValue(e.assignedWorkPlace, filterVal) || includesValue(e.department, filterVal) || includesValue(e.office, filterVal)) && e.onboardingステータス === 'Active').length;
     }
   };
 
@@ -316,7 +316,7 @@ export default function AssignWorkPlace() {
       {/* Toolbar */}
       <div className="bg-gray-50 p-4 rounded-t-xl border border-gray-200 border-b-0 flex flex-col sm:flex-row justify-between items-center gap-4">
         <h3 className="text-lg font-bold text-[#162D50] flex-1">
-          {filterWorkPlace === 'All' ? 'Staff Work Location Registry' : 
+          {filterWorkPlace === 'All' ? 'Staff Work 拠点 Registry' : 
            filterWorkPlace === 'Unassigned' ? 'Unassigned Staff Registry' : 
            `${filterWorkPlace} Staff Registry`}
         </h3>
@@ -337,7 +337,7 @@ export default function AssignWorkPlace() {
               onChange={(e) => setFilterWorkPlace(e.target.value)}
               className="w-full pl-4 pr-8 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#162D50] bg-white appearance-none cursor-pointer"
             >
-              <option value="All">{mainCategory === 'Office' ? 'Select Office' : 'All Locations'}</option>
+              <option value="All">{mainCategory === 'Office' ? 'Select Office' : 'All 拠点s'}</option>
               <option value="Unassigned">Unassigned</option>
               {mainCategory === 'Office' 
                 ? OFFICE_LOCATIONS.map(loc => <option key={loc} value={loc}>{loc}</option>)
@@ -356,11 +356,11 @@ export default function AssignWorkPlace() {
             <thead>
               <tr className="bg-[#F8F9FA] border-b border-gray-200 text-xs font-bold text-gray-500 uppercase tracking-wider">
                 <th className="py-4 px-6">S.No.</th>
-                <th className="py-4 px-6">Staff ID</th>
-                <th className="py-4 px-6">Full Name</th>
+                <th className="py-4 px-6">スタッフID</th>
+                <th className="py-4 px-6">氏名</th>
                 <th className="py-4 px-6">Department</th>
                 <th className="py-4 px-6">{mainCategory === 'Office' ? 'Select Office' : 'Work Place'}</th>
-                <th className="py-4 px-6">Join Date</th>
+                <th className="py-4 px-6">Join 日付</th>
                 <th className="py-4 px-6 text-center">Actions</th>
               </tr>
             </thead>
@@ -381,9 +381,9 @@ export default function AssignWorkPlace() {
                     <td className="py-4 px-6 font-bold text-gray-900">{employee.romajiName || 'N/A'}</td>
                     <td className="py-4 px-6 text-gray-600">{Array.isArray(employee.department) ? employee.department.join(', ') : employee.department || 'N/A'}</td>
                     <td className="py-4 px-6">
-                      {employee.onboardingStatus !== 'Active' ? (
+                      {employee.onboardingステータス !== 'Active' ? (
                         <span className="px-3 py-1 bg-red-100 text-red-800 rounded-full text-xs font-semibold whitespace-nowrap">
-                          {employee.onboardingStatus || 'Inactive'}
+                          {employee.onboardingステータス || 'Inactive'}
                         </span>
                       ) : mainCategory === 'Office' ? (
                         employee.office && employee.office.length > 0 ? (
@@ -392,7 +392,7 @@ export default function AssignWorkPlace() {
                           </span>
                         ) : (
                           <span className="px-3 py-1 bg-amber-100 text-amber-800 rounded-full text-xs font-semibold whitespace-nowrap">
-                            Pending Assignment
+                            保留中 Assignment
                           </span>
                         )
                       ) : employee.assignedWorkPlace && employee.assignedWorkPlace.length > 0 ? (
@@ -401,7 +401,7 @@ export default function AssignWorkPlace() {
                         </span>
                       ) : (
                         <span className="px-3 py-1 bg-amber-100 text-amber-800 rounded-full text-xs font-semibold whitespace-nowrap">
-                          Pending Assignment
+                          保留中 Assignment
                         </span>
                       )}
                     </td>
@@ -454,7 +454,7 @@ export default function AssignWorkPlace() {
             <div className="px-8 py-5 border-b border-gray-100 flex justify-between items-center bg-white">
               <h3 className="text-xl font-bold text-[#162D50] flex items-center">
                 <MapPin className="w-6 h-6 mr-3 text-blue-600" />
-                Assign Work Location
+                Assign Work 拠点
               </h3>
               <button 
                 onClick={() => setIsModalOpen(false)}

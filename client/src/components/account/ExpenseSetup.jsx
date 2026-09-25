@@ -87,7 +87,7 @@ export default function ExpenseSetup() {
           const errData = await res.json();
           if (errData.message) errMsg = `Failed to save changes: ${errData.message}`;
         } catch (e) {
-          errMsg = `Failed to save changes. Status: ${res.status}`;
+          errMsg = `Failed to save changes. ステータス: ${res.status}`;
         }
         toast.error(errMsg);
       }
@@ -319,8 +319,8 @@ export default function ExpenseSetup() {
                             />
                           </td>
                           <td className="p-3 border border-gray-200 text-center">
-                            <button onClick={() => handleUpdateRegion(region._id)} className="text-blue-600 hover:text-blue-800 mr-3 font-medium">Save</button>
-                            <button onClick={() => setEditingRegion(null)} className="text-gray-500 hover:text-gray-700 font-medium">Cancel</button>
+                            <button onClick={() => handleUpdateRegion(region._id)} className="text-blue-600 hover:text-blue-800 mr-3 font-medium">保存</button>
+                            <button onClick={() => setEditingRegion(null)} className="text-gray-500 hover:text-gray-700 font-medium">キャンセル</button>
                           </td>
                         </>
                       ) : (
@@ -338,7 +338,7 @@ export default function ExpenseSetup() {
                             >
                               Edit
                             </button>
-                            <button onClick={() => handleDeleteRegion(region._id)} className="text-red-600 hover:text-red-800 text-sm font-medium">Delete</button>
+                            <button onClick={() => handleDeleteRegion(region._id)} className="text-red-600 hover:text-red-800 text-sm font-medium">削除</button>
                           </td>
                         </>
                       )}

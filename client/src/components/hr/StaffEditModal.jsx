@@ -250,7 +250,7 @@ export default function StaffEditModal({ employee, onClose, onEditComplete, init
                   </div>
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-gray-600 mb-1 uppercase">Join Date</label>
+                  <label className="block text-xs font-bold text-gray-600 mb-1 uppercase">Join 日付</label>
                   <input type="date" name="joinDate" value={formData.joinDate} onChange={handleChange} className="w-full px-4 py-2 border rounded-md text-sm focus:ring-1 focus:ring-[#162D50]" required />
                 </div>
                 <div>
@@ -258,7 +258,7 @@ export default function StaffEditModal({ employee, onClose, onEditComplete, init
                   <input type="text" name="nationality" value={formData.nationality || ''} onChange={handleChange} className="w-full px-4 py-2 border rounded-md text-sm focus:ring-1 focus:ring-[#162D50]" />
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-gray-600 mb-1 uppercase">Date of Birth</label>
+                  <label className="block text-xs font-bold text-gray-600 mb-1 uppercase">日付 of Birth</label>
                   <input type="date" name="dob" value={formData.dob} onChange={handleChange} className="w-full px-4 py-2 border rounded-md text-sm focus:ring-1 focus:ring-[#162D50]" />
                 </div>
                 <div>
@@ -271,17 +271,17 @@ export default function StaffEditModal({ employee, onClose, onEditComplete, init
                   </select>
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-gray-600 mb-1 uppercase">Onboarding Status</label>
-                  <select name="onboardingStatus" value={formData.onboardingStatus} onChange={handleChange} className="w-full px-4 py-2 border rounded-md text-sm focus:ring-1 focus:ring-[#162D50]" required>
+                  <label className="block text-xs font-bold text-gray-600 mb-1 uppercase">Onboarding ステータス</label>
+                  <select name="onboardingステータス" value={formData.onboardingステータス} onChange={handleChange} className="w-full px-4 py-2 border rounded-md text-sm focus:ring-1 focus:ring-[#162D50]" required>
                     <option value="Active">Active</option>
-                    <option value="Verification Pending">Verification Pending</option>
+                    <option value="Verification 保留中">Verification 保留中</option>
                     <option value="Missing Documents">Missing Documents</option>
                   </select>
                 </div>
               </div>
             </div>
 
-            {/* TAB: Visa & Status */}
+            {/* TAB: Visa & ステータス */}
             <div className={activeTab === 'Visa' ? 'block' : 'hidden'}>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
@@ -294,9 +294,9 @@ export default function StaffEditModal({ employee, onClose, onEditComplete, init
                   </select>
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-gray-600 mb-1 uppercase">Visa Status</label>
-                  <select name="visaStatus" value={formData.visaStatus} onChange={handleChange} className="w-full px-4 py-2 border rounded-md text-sm focus:ring-1 focus:ring-[#162D50]" required>
-                    <option value="">Select Visa Status</option>
+                  <label className="block text-xs font-bold text-gray-600 mb-1 uppercase">Visa ステータス</label>
+                  <select name="visaステータス" value={formData.visaステータス} onChange={handleChange} className="w-full px-4 py-2 border rounded-md text-sm focus:ring-1 focus:ring-[#162D50]" required>
+                    <option value="">Select Visa ステータス</option>
                     <option value="Working Visa">Working Visa</option>
                     <option value="Student Visa">Student Visa</option>
                     <option value="Permanent Resident">Permanent Resident</option>
@@ -304,15 +304,15 @@ export default function StaffEditModal({ employee, onClose, onEditComplete, init
                   </select>
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-gray-600 mb-1 uppercase">Visa Start Date</label>
+                  <label className="block text-xs font-bold text-gray-600 mb-1 uppercase">Visa Start 日付</label>
                   <input type="date" name="visaStartDate" value={formData.visaStartDate} onChange={handleChange} className="w-full px-4 py-2 border rounded-md text-sm focus:ring-1 focus:ring-[#162D50]" />
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-gray-600 mb-1 uppercase">Visa End Date</label>
+                  <label className="block text-xs font-bold text-gray-600 mb-1 uppercase">Visa End 日付</label>
                   <input type="date" name="visaEndDate" value={formData.visaEndDate} onChange={handleChange} className="w-full px-4 py-2 border rounded-md text-sm focus:ring-1 focus:ring-[#162D50]" />
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-gray-600 mb-1 uppercase">Visa Renewal Date</label>
+                  <label className="block text-xs font-bold text-gray-600 mb-1 uppercase">Visa Renewal 日付</label>
                   <input type="date" name="visaRenewalDate" value={formData.visaRenewalDate} onChange={handleChange} className="w-full px-4 py-2 border rounded-md text-sm focus:ring-1 focus:ring-[#162D50]" />
                 </div>
               </div>
