@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { apiFetch } from '../../utils/apiFetch.js';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import { fontBase64 } from '../../fonts/Kosugi-Regular.js';
 
 import { Search, ChevronDown, Calendar, Download, Building, Landmark, AlertCircle, AlertTriangle, ArrowRight, ArrowLeft, Printer, Trash2 } from 'lucide-react';
 import toast from 'react-hot-toast';
@@ -444,7 +445,7 @@ export default function PaymentStatus() {
         const drawFooter = () => {
           doc.setFillColor(...primaryColor);
           doc.rect(0, pageHeight - 8, pageWidth, 8, 'F');
-          doc.setFont('helvetica', 'italic');
+          doc.setFont('Kosugi', 'normal');
           doc.setFontSize(fs(6.5));
           doc.setTextColor(180, 200, 230);
           doc.text('Office Management System — Confidential', 10, pageHeight - 2.8);
@@ -457,13 +458,13 @@ export default function PaymentStatus() {
         doc.setFillColor(59, 130, 246);
         doc.rect(0, 0, 3.5, headerH, 'F');
 
-        doc.setFont('helvetica', 'bold');
+        doc.setFont('Kosugi', 'normal');
         doc.setFontSize(fs(13));
         doc.setTextColor(255, 255, 255);
         doc.text('OFFICE MANAGEMENT SYSTEM', 11, headerH * 0.42);
 
         const title = selectedCase.advancerCategory === 'Staff' ? 'Reimbursement Receipt' : 'Settlement Ledger';
-        doc.setFont('helvetica', 'normal');
+        doc.setFont('Kosugi', 'normal');
         doc.setFontSize(fs(8));
         doc.setTextColor(180, 200, 230);
         doc.text(title, 11, headerH * 0.78);
@@ -485,12 +486,12 @@ export default function PaymentStatus() {
         doc.line(0, statusTop + statusH, pageWidth, statusTop + statusH);
 
         const statusMidY = statusTop + statusH * 0.62;
-        doc.setFont('helvetica', 'bold');
+        doc.setFont('Kosugi', 'normal');
         doc.setFontSize(fs(9.5));
         doc.setTextColor(22, 163, 74);
         doc.text(`ステータス: 保留中 Settlement`, 11, statusMidY);
 
-        doc.setFont('helvetica', 'bold');
+        doc.setFont('Kosugi', 'normal');
         doc.setFontSize(fs(8.5));
         doc.setTextColor(...primaryColor);
         const remStr = `Net Payable: JPY ${batchTotalNextPayment.toLocaleString()}`;
@@ -499,7 +500,7 @@ export default function PaymentStatus() {
         let curY = statusTop + statusH + gap(3);
         const cp = pad(2.8);
         const sharedStyles = {
-          font: 'helvetica',
+          font: 'Kosugi',
           fontSize: fs(8),
           textColor: [30, 40, 55],
           lineColor: [210, 220, 235],
@@ -511,7 +512,7 @@ export default function PaymentStatus() {
         const headS = {
           fillColor: primaryColor,
           textColor: [255, 255, 255],
-          fontStyle: 'bold',
+          fontStyle: 'normal',
           fontSize: fs(8),
           cellPadding: { top: cp, bottom: cp, left: cp + 1, right: cp + 1 },
         };
@@ -520,7 +521,7 @@ export default function PaymentStatus() {
         const titleGap = gap(3);
 
         // HEADER DETAILS
-        doc.setFont('helvetica', 'bold');
+        doc.setFont('Kosugi', 'normal');
         doc.setFontSize(fs(8.5));
         doc.setTextColor(...primaryColor);
         doc.text('HEADER DETAILS', 10, curY);
@@ -541,7 +542,7 @@ export default function PaymentStatus() {
 
         // ITEMIZED CLAIMS
         curY = doc.lastAutoTable.finalY + secGap;
-        doc.setFont('helvetica', 'bold');
+        doc.setFont('Kosugi', 'normal');
         doc.setFontSize(fs(8.5));
         doc.setTextColor(...primaryColor);
         doc.text('ITEMIZED CLAIMS', 10, curY);
@@ -572,7 +573,7 @@ export default function PaymentStatus() {
         // AGREED TERMS (If いいえt Staff)
         if (selectedCase.advancerCategory !== 'Staff') {
           curY = doc.lastAutoTable.finalY + secGap;
-          doc.setFont('helvetica', 'bold');
+          doc.setFont('Kosugi', 'normal');
           doc.setFontSize(fs(8.5));
           doc.setTextColor(...primaryColor);
           doc.text('AGREED TERMS', 10, curY);
@@ -595,7 +596,7 @@ export default function PaymentStatus() {
 
         if (paymentMethod) {
           curY = doc.lastAutoTable.finalY + secGap;
-          doc.setFont('helvetica', 'bold');
+          doc.setFont('Kosugi', 'normal');
           doc.setFontSize(fs(8.5));
           doc.setTextColor(...primaryColor);
           doc.text('TRANSACTION DETAILS', 10, curY);
@@ -815,14 +816,14 @@ export default function PaymentStatus() {
                   className="flex items-center px-4 py-2 border-2 border-[#162D50] hover:bg-[#162D50] hover:text-[#F5F1E6] text-xs font-bold uppercase tracking-widest transition-colors"
                 >
                   <Printer className="w-4 h-4 mr-2" />
-                  Print
+                  印刷
                 </button>
               </div>
               <h3 className="text-2xl font-bold tracking-widest uppercase mb-2">
-                {selectedCase.advancerCategory === 'Staff' ? 'Reimbursement Receipt' : 'Settlement Ledger'}
+                {selectedCase.advancerCategory === 'Staff' ? '経費精算領収書' : '精算台帳'}
               </h3>
               <p className="font-mono text-sm tracking-widest">
-                {selectedBatchCases.length} {selectedBatchCases.length === 1 ? 'CASE' : 'CASES'} SELECTED
+                {selectedBatchCases.length} 件選択中
               </p>
             </div>
             
@@ -837,12 +838,12 @@ export default function PaymentStatus() {
               {/* Header Details */}
               <div className="grid grid-cols-2 gap-8 print:gap-4 border-b border-dashed border-[#162D50] pb-8 print:pb-4">
                 <div>
-                  <label className="block text-xs font-bold uppercase tracking-widest mb-1 text-gray-500">{selectedCase.advancerCategory === 'Staff' ? 'Employee' : 'Payee'}</label>
+                  <label className="block text-xs font-bold uppercase tracking-widest mb-1 text-gray-500">{selectedCase.advancerCategory === 'Staff' ? '従業員' : '支払先'}</label>
                   <div className="font-mono text-xl">{selectedCase.staffName || selectedCase.advancerName || 'N/A'}</div>
                   {selectedCase.staffId && <div className="font-mono text-xs text-gray-500 mt-1">ID: {selectedCase.staffId}</div>}
                 </div>
                 <div className="text-right">
-                  <label className="block text-xs font-bold uppercase tracking-widest mb-1 text-gray-500">Base Claim 金額</label>
+                  <label className="block text-xs font-bold uppercase tracking-widest mb-1 text-gray-500">基本請求金額</label>
                   <div className="font-mono text-2xl">¥ {batchTotalBaseClaim.toLocaleString()}</div>
                 </div>
               </div>
@@ -851,7 +852,7 @@ export default function PaymentStatus() {
               <div className="border-b border-dashed border-[#162D50] pb-8 mb-8 print:pb-4 print:mb-4">
                 <div className="text-xs font-bold uppercase tracking-widest text-gray-500 mb-6 print:mb-2">内訳</div>
                 <div className="grid grid-cols-12 gap-4 text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-4 border-b border-gray-200 pb-2">
-                  <div className="col-span-1">いいえ.</div>
+                  <div className="col-span-1">No.</div>
                   <div className="col-span-3">請求ID</div>
                   <div className="col-span-4">タイプ</div>
                   <div className="col-span-2">日付</div>
@@ -882,7 +883,7 @@ export default function PaymentStatus() {
                   <div className="text-xs font-bold uppercase tracking-widest text-gray-500 mb-6 print:mb-2">合意条件</div>
                   <div className="grid grid-cols-4 gap-6">
                     <div>
-                      <label className="block text-[10px] font-bold uppercase tracking-widest mb-1 text-gray-400">Collection / Settlement Method</label>
+                      <label className="block text-[10px] font-bold uppercase tracking-widest mb-1 text-gray-400">回収・精算方法</label>
                       <div className="font-mono text-sm">{selectedCase.advancerCategory === 'Staff' ? (selectedCase.settlement_method || selectedCase.settlementMethod || 'N/A') : (selectedCase.collection_method || selectedCase.collectionMethod || 'N/A')}</div>
                     </div>
                     <div>
@@ -896,7 +897,7 @@ export default function PaymentStatus() {
                     <div>
                       <label className="block text-[10px] font-bold uppercase tracking-widest mb-1 text-gray-400">現在の期間</label>
                       <div className="font-mono text-sm">
-                        {selectedCaseTotalTerms > 1 ? `Term ${selectedCaseCurrentTerm} of ${selectedCaseTotalTerms}` : 'N/A'}
+                        {selectedCaseTotalTerms > 1 ? `第${selectedCaseCurrentTerm}回 / 全${selectedCaseTotalTerms}回` : 'N/A'}
                       </div>
                     </div>
                   </div>
@@ -935,7 +936,7 @@ export default function PaymentStatus() {
                     </div>
                     
                     <div className="flex-1">
-                      <label className="block text-sm font-semibold text-gray-700 mb-2">Payment 日付 <span className="text-red-500">*</span></label>
+                      <label className="block text-sm font-semibold text-gray-700 mb-2">支払日 <span className="text-red-500">*</span></label>
                       <input 
                         type="date" 
                         required 
@@ -949,15 +950,15 @@ export default function PaymentStatus() {
                   {paymentMethod === '銀行振込' && (
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 bg-white/50 p-5 rounded border-2 border-dashed border-gray-300">
                       <div>
-                        <label className="block text-xs font-semibold text-gray-600 uppercase mb-2">Bank Name <span className="text-red-500">*</span></label>
+                        <label className="block text-xs font-semibold text-gray-600 uppercase mb-2">銀行名 <span className="text-red-500">*</span></label>
                         <input type="text" onChange={(e) => set目的地Details({...destinationDetails, bankName: e.target.value})} className="w-full border border-gray-400 bg-white/70 rounded-none px-3 py-2 text-sm focus:ring-[#162D50] focus:border-[#162D50] outline-none font-mono" required />
                       </div>
                       <div>
-                        <label className="block text-[10px] font-bold text-gray-600 uppercase tracking-widest mb-2">Branch Code <span className="text-red-500">*</span></label>
+                        <label className="block text-[10px] font-bold text-gray-600 uppercase tracking-widest mb-2">支店コード <span className="text-red-500">*</span></label>
                         <input type="text" onChange={(e) => set目的地Details({...destinationDetails, branchCode: e.target.value})} className="w-full border border-gray-400 bg-white/70 rounded-none px-3 py-2 text-sm focus:ring-[#162D50] focus:border-[#162D50] outline-none font-mono" required />
                       </div>
                       <div>
-                        <label className="block text-[10px] font-bold text-gray-600 uppercase tracking-widest mb-2">Account いいえ <span className="text-red-500">*</span></label>
+                        <label className="block text-[10px] font-bold text-gray-600 uppercase tracking-widest mb-2">口座番号 <span className="text-red-500">*</span></label>
                         <input type="text" onChange={(e) => set目的地Details({...destinationDetails, accountNumber: e.target.value})} className="w-full border border-gray-400 bg-white/70 rounded-none px-3 py-2 text-sm focus:ring-[#162D50] focus:border-[#162D50] outline-none font-mono" required />
                       </div>
                     </div>
@@ -966,7 +967,7 @@ export default function PaymentStatus() {
                   {(paymentMethod === '給与控除' || paymentMethod === '給与振込') && (
                     <div className="space-y-4 bg-white/50 p-5 rounded border-2 border-dashed border-gray-300">
                       <div>
-                        <label className="block text-[10px] font-bold uppercase tracking-widest text-gray-700 mb-2">Target Payroll 期間 <span className="text-red-500">*</span></label>
+                        <label className="block text-[10px] font-bold uppercase tracking-widest text-gray-700 mb-2">対象給与期間 <span className="text-red-500">*</span></label>
                         <input type="month" onChange={(e) => set目的地Details({...destinationDetails, payroll期間: e.target.value})} className="w-full border border-gray-400 bg-white/70 rounded-none px-3 py-2 text-sm focus:ring-[#162D50] focus:border-[#162D50] outline-none font-mono" required />
                       </div>
                     </div>
@@ -979,7 +980,7 @@ export default function PaymentStatus() {
                         <input type="text" onChange={(e) => set目的地Details({...destinationDetails, checkNumber: e.target.value})} className="w-full border border-gray-400 bg-white/70 rounded-none px-3 py-2 text-sm focus:ring-[#162D50] focus:border-[#162D50] outline-none font-mono" required />
                       </div>
                       <div>
-                        <label className="block text-[10px] font-bold uppercase tracking-widest text-gray-600 mb-2">Mailing Address / Delivery <span className="text-red-500">*</span></label>
+                        <label className="block text-[10px] font-bold uppercase tracking-widest text-gray-600 mb-2">送付先 <span className="text-red-500">*</span></label>
                         <input type="text" onChange={(e) => set目的地Details({...destinationDetails, checkDelivery: e.target.value})} className="w-full border border-gray-400 bg-white/70 rounded-none px-3 py-2 text-sm focus:ring-[#162D50] focus:border-[#162D50] outline-none font-mono" required />
                       </div>
                     </div>
@@ -988,7 +989,7 @@ export default function PaymentStatus() {
                   {paymentMethod === '法人カード' && (
                     <div className="grid grid-cols-2 gap-6 bg-white/50 p-5 rounded border-2 border-dashed border-gray-300">
                       <div>
-                        <label className="block text-[10px] font-bold uppercase tracking-widest text-gray-600 mb-2">Card Used (Last 4) <span className="text-red-500">*</span></label>
+                        <label className="block text-[10px] font-bold uppercase tracking-widest text-gray-600 mb-2">使用カード (下4桁) <span className="text-red-500">*</span></label>
                         <input type="text" maxLength={4} pattern="\d{4}" onChange={(e) => set目的地Details({...destinationDetails, cardLast4: e.target.value})} className="w-full border border-gray-400 bg-white/70 rounded-none px-3 py-2 text-sm focus:ring-[#162D50] focus:border-[#162D50] outline-none font-mono" required />
                       </div>
                       <div>
@@ -1000,14 +1001,14 @@ export default function PaymentStatus() {
 
                   {(paymentMethod === 'Cash' || paymentMethod === '小口現金') && (
                     <div className="bg-white/50 p-5 rounded border-2 border-dashed border-gray-300">
-                      <label className="block text-[10px] font-bold uppercase tracking-widest text-gray-600 mb-2">Collected By / Receiver Name <span className="text-red-500">*</span></label>
+                      <label className="block text-[10px] font-bold uppercase tracking-widest text-gray-600 mb-2">受取人名 <span className="text-red-500">*</span></label>
                       <input type="text" onChange={(e) => set目的地Details({...destinationDetails, receiverName: e.target.value})} className="w-full border border-gray-400 bg-white/70 rounded-none px-3 py-2 text-sm focus:ring-[#162D50] focus:border-[#162D50] outline-none font-mono" required />
                     </div>
                   )}
 
                   <div className="flex flex-col sm:flex-row gap-6">
                     <div className="flex-1">
-                      <label className="block text-sm font-semibold text-gray-700 mb-2">Transaction Ref</label>
+                      <label className="block text-sm font-semibold text-gray-700 mb-2">取引参照番号</label>
                       <input 
                         type="text" 
                         value={transactionRefId} 
@@ -1017,7 +1018,7 @@ export default function PaymentStatus() {
                       />
                     </div>
                     <div className="flex-1">
-                      <label className="block text-sm font-semibold text-gray-700 mb-2">Less Deductions</label>
+                      <label className="block text-sm font-semibold text-gray-700 mb-2">控除額</label>
                       <div className="relative">
                         <span className="absolute left-4 top-2.5 text-gray-500 font-medium font-mono text-sm">¥</span>
                         <input 
@@ -1032,8 +1033,8 @@ export default function PaymentStatus() {
 
                   <div className="bg-white/50 p-6 rounded border-2 border-dashed border-[#162D50] mt-6 flex flex-col sm:flex-row justify-between items-center">
                     <div>
-                      <p className="text-xs font-bold uppercase tracking-widest text-gray-500 mb-1">Net Payable 金額</p>
-                      <div className="font-mono text-xs text-gray-500 mt-1">残り Balance: ¥ {batchTotal残りBalance.toLocaleString()}</div>
+                      <p className="text-xs font-bold uppercase tracking-widest text-gray-500 mb-1">差引支払額</p>
+                      <div className="font-mono text-xs text-gray-500 mt-1">残り残高: ¥ {batchTotal残りBalance.toLocaleString()}</div>
                     </div>
                     <div className="font-mono text-3xl font-bold text-[#162D50] mt-4 sm:mt-0">
                       ¥{Math.max(0, batchTotalNextPayment - deductions).toLocaleString()}
@@ -1109,7 +1110,7 @@ export default function PaymentStatus() {
                   <div className="w-3 h-3 rounded-full border-2 border-green-600 flex items-center justify-center mr-1">
                     <div className="w-1.5 h-1.5 bg-green-600 rounded-full"></div>
                   </div>
-                  {postApprovalCases.filter(c => c.advancerCategory === 'Office').length} Office Cases
+                  {postApprovalCases.filter(c => c.advancerCategory === 'Office').length} オフィス案件数
                 </div>
               </div>
               <Landmark className="w-10 h-10 text-gray-100" />
@@ -1125,7 +1126,7 @@ export default function PaymentStatus() {
                   <div className="w-3 h-3 rounded-full border-2 border-green-600 flex items-center justify-center mr-1">
                     <div className="w-1.5 h-1.5 bg-green-600 rounded-full"></div>
                   </div>
-                  {postApprovalCases.filter(c => c.advancerCategory === 'Staff').length} Staff Cases
+                  {postApprovalCases.filter(c => c.advancerCategory === 'Staff').length} スタッフ案件数
                 </div>
               </div>
             </div>
@@ -1292,7 +1293,7 @@ export default function PaymentStatus() {
                 <div className="w-3 h-3 rounded-full border-2 border-green-600 flex items-center justify-center mr-1">
                   <div className="w-1.5 h-1.5 bg-green-600 rounded-full"></div>
                 </div>
-                {postApprovalCases.filter(c => c.advancerCategory === 'Office').length} Office Cases
+                {postApprovalCases.filter(c => c.advancerCategory === 'Office').length} オフィス案件数
               </div>
             </div>
             <Landmark className="w-10 h-10 text-gray-100" />
@@ -1308,7 +1309,7 @@ export default function PaymentStatus() {
                 <div className="w-3 h-3 rounded-full border-2 border-green-600 flex items-center justify-center mr-1">
                   <div className="w-1.5 h-1.5 bg-green-600 rounded-full"></div>
                 </div>
-                {postApprovalCases.filter(c => c.advancerCategory === 'Staff').length} Staff Cases
+                {postApprovalCases.filter(c => c.advancerCategory === 'Staff').length} スタッフ案件数
               </div>
             </div>
           </div>
@@ -1355,17 +1356,17 @@ export default function PaymentStatus() {
         <button 
           onClick={() => setActivePaymentTab('Office')}
           className={`flex-1 py-2 text-sm font-bold rounded-md transition-colors ${activePaymentTab === 'Office' ? 'text-white bg-[#0A192F] shadow-sm' : 'text-gray-500 hover:bg-gray-200'}`}>
-          Office Payment Cases <span className={`ml-2 px-2 py-0.5 rounded-full text-xs ${activePaymentTab === 'Office' ? 'bg-white text-[#0A192F]' : 'bg-gray-200 text-gray-600'}`}>{officeCasesCount}</span>
+          オフィス支払案件 <span className={`ml-2 px-2 py-0.5 rounded-full text-xs ${activePaymentTab === 'Office' ? 'bg-white text-[#0A192F]' : 'bg-gray-200 text-gray-600'}`}>{officeCasesCount}</span>
         </button>
         <button 
           onClick={() => setActivePaymentTab('Staff')}
           className={`flex-1 py-2 text-sm font-bold rounded-md transition-colors ${activePaymentTab === 'Staff' ? 'text-white bg-[#0A192F] shadow-sm' : 'text-gray-500 hover:bg-gray-200'}`}>
-          Staff Payment Cases <span className={`ml-2 px-2 py-0.5 rounded-full text-xs ${activePaymentTab === 'Staff' ? 'bg-white text-[#0A192F]' : 'bg-gray-200 text-gray-600'}`}>{staffCasesCount}</span>
+          スタッフ支払案件 <span className={`ml-2 px-2 py-0.5 rounded-full text-xs ${activePaymentTab === 'Staff' ? 'bg-white text-[#0A192F]' : 'bg-gray-200 text-gray-600'}`}>{staffCasesCount}</span>
         </button>
         <button 
           onClick={() => setActivePaymentTab('Host Company')}
           className={`flex-1 py-2 text-sm font-bold rounded-md transition-colors ${activePaymentTab === 'Host Company' ? 'text-white bg-[#0A192F] shadow-sm' : 'text-gray-500 hover:bg-gray-200'}`}>
-          Host Company Cases <span className={`ml-2 px-2 py-0.5 rounded-full text-xs ${activePaymentTab === 'Host Company' ? 'bg-white text-[#0A192F]' : 'bg-gray-200 text-gray-600'}`}>{hostCompanyCasesCount}</span>
+          ホスト会社案件 <span className={`ml-2 px-2 py-0.5 rounded-full text-xs ${activePaymentTab === 'Host Company' ? 'bg-white text-[#0A192F]' : 'bg-gray-200 text-gray-600'}`}>{hostCompanyCasesCount}</span>
         </button>
       </div>
 

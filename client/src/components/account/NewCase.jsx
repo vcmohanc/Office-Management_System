@@ -3,6 +3,30 @@ import { apiFetch } from '../../utils/apiFetch.js';
 import { validateExpenseAmount } from '../../utils/amountHelper.js';
 import { User, ChevronDown, Box, Calendar, UploadCloud, ArrowRight, Wallet, Landmark, FileText, ArrowLeft, Image } from 'lucide-react';
 import toast from 'react-hot-toast';
+// Japanese translation map for dropdown option labels
+const optionLabelJP = {
+  'Postage': '郵便料金',
+  'Transportation Expenses / Flight Fare': '交通費 / 航空運賃',
+  'Visa application fee': 'ビザ申請料',
+  'Waiting Dormitory Fee': '待機寮費',
+  'Hospital Fee': '病院費',
+  'Equipment/Supplies': '備品・消耗品',
+  'WIFI': 'WIFI',
+  'others': 'その他',
+  'Service staff': 'サービススタッフ',
+  'VC': 'VC',
+  'Dispatch destination: Farm': '派遣先：農園',
+  'Select for each project': 'プロジェクト毎に選択',
+  'Office': 'オフィス',
+  'Staff': 'スタッフ',
+  'Host Company': 'ホスト企業',
+  'Transfer to the person concerned': '本人への振込',
+  'Salary deduction': '給与控除',
+  'Invoice from the client company': 'クライアント会社からの請求書',
+};
+const toJP = (label) => optionLabelJP[label] ?? label;
+
+
 
 
 export default function NewCase() {
@@ -29,10 +53,10 @@ export default function NewCase() {
   const [travelMatrix, setTravelMatrix] = useState({});
   const [unsettledBalance, setUnsettledBalance] = useState(0);
   const [includeBalance, setIncludeBalance] = useState(false);
-  const [settlementMethod, setSettlementMethod] = useState('Bank Transfer');
-  const [recoveryPlan, setRecoveryPlan] = useState('Payroll Deduction (3 Months)');
+  const [settlementMethod, setSettlementMethod] = useState('銀行振込');
+  const [recoveryPlan, setRecoveryPlan] = useState('給与控除（3ヶ月）');
   const [expectedSettlementDate, setExpectedSettlementDate] = useState('');
-  const [collectionMethod, setCollectionMethod] = useState('Select Method');
+  const [collectionMethod, setCollectionMethod] = useState('方法を選択');
   const [collectionStartMonth, setCollectionStartMonth] = useState('');
 
   useEffect(() => {
@@ -191,13 +215,13 @@ export default function NewCase() {
     const validFiles = [];
     for (const file of files) {
       if (!ALLOWED_TYPES.includes(file.type)) {
-        toast.error(`Invalid file type: ${file.name}. Only JPG, PNG, and PDF files are allowed.`);
+        toast.error(`ファイル形式が無効です: ${file.name}。JPG、PNG、PDFファイルのみアップロード可能です。`);
         // クリア the input so the user can try again
         e.target.value = '';
         return;
       }
       if (file.size > MAX_SIZE) {
-        toast.error(`File too large: ${file.name}. Maximum size is 2 MB per file.`);
+        toast.error(`ファイルサイズが大きすぎます: ${file.name}。1ファイルの最大サイズは2MBです。`);
         e.target.value = '';
         return;
       }
@@ -222,11 +246,11 @@ export default function NewCase() {
         setCases(newCases);
       } else {
         console.error('Failed to upload files');
-        toast.error('Failed to upload files.');
+        toast.error('ファイルのアップロードに失敗しました。');
       }
     } catch (error) {
       console.error('Error uploading files:', error);
-      toast.error('Error uploading files.');
+      toast.error('ファイルのアップロード中にエラーが発生しました。');
     }
   };
 
@@ -234,8 +258,8 @@ export default function NewCase() {
   const finalTotal金額 = totalExpense金額 + (includeBalance ? unsettledBalance : 0);
 
   let installments = 1;
-  if (recoveryPlan.includes('3 Months')) installments = 3;
-  else if (recoveryPlan.includes('6 Months')) installments = 6;
+  if (recoveryPlan.includes('3') || recoveryPlan.includes('3ヶ月')) installments = 3;
+  else if (recoveryPlan.includes('6') || recoveryPlan.includes('6ヶ月')) installments = 6;
   const monthlyDeduction = finalTotal金額 / installments;
 
   const handle送信 = async () => {
@@ -284,14 +308,14 @@ export default function NewCase() {
         }).then(async res => {
           if (!res.ok) {
             const err = await res.json().catch(() => ({}));
-            throw new Error(err.message || 'Failed to submit case');
+            throw new Error(err.message || '案件の送信に失敗しました');
           }
           return res;
         });
       });
 
       await Promise.all(submissions);
-      toast.success(`Successfully 送信ted ${cases.length} Cases to Database!`);
+      toast.success(`${cases.length}件の案件をデータベースに送信しました！`);
       
       // Reset form
       setNewCaseStep(1);
@@ -312,7 +336,7 @@ export default function NewCase() {
       setCollectionStartMonth('');
     } catch (error) {
       console.error("Error submitting cases:", error);
-      toast.error("Failed to submit cases. Check console for details.");
+      toast.error("案件の送信に失敗しました。詳細はコンソールを確認してください。");
     }
   };
 
@@ -345,7 +369,7 @@ export default function NewCase() {
         return (
           <div className="grid grid-cols-2 gap-6 mb-8 bg-blue-50 p-6 rounded-md">
             <div>
-              <label className="block text-sm font-bold text-gray-700 mb-2">Departure 拠点</label>
+              <label className="block text-sm font-bold text-gray-700 mb-2">出発拠点</label>
               <input type="text" list={`departure-list-${index}`} value={caseItem.departure || ''} onChange={(e) => updateCase(index, 'departure', e.target.value)} placeholder="出発地を入力" className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50]" />
               <datalist id={`departure-list-${index}`}>
                 {regions.map(r => (
@@ -514,8 +538,8 @@ export default function NewCase() {
                     fullName: val, 
                     id: 'ID-' + match._id.slice(-6).toUpperCase(), 
                     location: match.location || staffInfo.location,
-                    branchAndFarmName: match.branchAndFarmName || match.location || '',
-                    visaステータス: match.visaステータス || '',
+                    branchAndFarmName: (match.assignedWorkPlace && match.assignedWorkPlace.length > 0) ? match.assignedWorkPlace.join(', ') : (match.location || ''),
+                    visaステータス: match.visaStatus || '',
                     visaAvailableTime: match.visaEndDate ? new Date(match.visaEndDate).toISOString().split('T')[0] : ''
                   });
                 }
@@ -524,7 +548,7 @@ export default function NewCase() {
                   const match = employees.find(emp => (emp.romajiName && emp.romajiName.toLowerCase() === staffInfo.fullName.toLowerCase()) || (emp.katakanaName && emp.katakanaName === staffInfo.fullName));
                   if (!match) {
                     setStaffInfo({...staffInfo, fullName: '', id: '', location: '', branchAndFarmName: '', visaステータス: '', visaAvailableTime: ''});
-                    toast.error('Please select a valid staff member from the list.');
+                    toast.error('リストから有効なスタッフを選択してください。');
                   }
                 }
               }} className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50]" />
@@ -546,8 +570,8 @@ export default function NewCase() {
                     id: val, 
                     fullName: match.romajiName || match.katakanaName || staffInfo.fullName, 
                     location: match.location || staffInfo.location,
-                    branchAndFarmName: match.branchAndFarmName || match.location || '',
-                    visaステータス: match.visaステータス || '',
+                    branchAndFarmName: (match.assignedWorkPlace && match.assignedWorkPlace.length > 0) ? match.assignedWorkPlace.join(', ') : (match.location || ''),
+                    visaステータス: match.visaStatus || '',
                     visaAvailableTime: match.visaEndDate ? new Date(match.visaEndDate).toISOString().split('T')[0] : ''
                   });
                 }
@@ -557,7 +581,7 @@ export default function NewCase() {
                   const match = employees.find(emp => emp._id.slice(-6) === searchId);
                   if (!match) {
                     setStaffInfo({...staffInfo, fullName: '', id: '', location: '', branchAndFarmName: '', visaステータス: '', visaAvailableTime: ''});
-                    toast.error('Please select a valid staff ID from the list.');
+                    toast.error('リストから有効なスタッフIDを選択してください。');
                   }
                 }
               }} className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50]" />
@@ -573,7 +597,7 @@ export default function NewCase() {
                 <select value={staffInfo.location} onChange={e => setStaffInfo({...staffInfo, location: e.target.value})} className="w-full px-4 py-2 border border-gray-300 rounded-md appearance-none focus:outline-none focus:ring-1 focus:ring-[#162D50] text-gray-600">
                   <option value="">拠点を選択</option>
                   {options.拠点.map((opt) => (
-                    <option key={opt._id} value={opt.value}>{opt.label}</option>
+                    <option key={opt._id} value={opt.value}>{toJP(opt.label)}</option>
                   ))}
                 </select>
                 <ChevronDown className="w-4 h-4 absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 pointer-events-none" />
@@ -623,7 +647,7 @@ export default function NewCase() {
                   className="w-full px-4 py-2 border border-gray-300 rounded-md appearance-none focus:outline-none focus:ring-1 focus:ring-[#162D50] text-gray-600">
                   <option value="">種類を選択</option>
                   {options.ExpenseType.map((opt) => (
-                    <option key={opt._id} value={opt.value}>{opt.label}</option>
+                    <option key={opt._id} value={opt.value}>{toJP(opt.label)}</option>
                   ))}
                 </select>
                 <ChevronDown className="w-4 h-4 absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 pointer-events-none" />
@@ -638,7 +662,7 @@ export default function NewCase() {
                   className="w-full px-4 py-2 border border-gray-300 rounded-md appearance-none focus:outline-none focus:ring-1 focus:ring-[#162D50] text-gray-600">
                   <option value="">カテゴリを選択</option>
                   {options.AdvancerCategory.map((opt) => (
-                    <option key={opt._id} value={opt.value}>{opt.label}</option>
+                    <option key={opt._id} value={opt.value}>{toJP(opt.label)}</option>
                   ))}
                 </select>
                 <ChevronDown className="w-4 h-4 absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 pointer-events-none" />
@@ -666,7 +690,7 @@ export default function NewCase() {
                   className="w-full px-4 py-2 border border-gray-300 rounded-md appearance-none focus:outline-none focus:ring-1 focus:ring-[#162D50] text-gray-600">
                   <option value="">負担先を選択</option>
                   {options.BearingParty.map((opt) => (
-                    <option key={opt._id} value={opt.value}>{opt.label}</option>
+                    <option key={opt._id} value={opt.value}>{toJP(opt.label)}</option>
                   ))}
                 </select>
                 <ChevronDown className="w-4 h-4 absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 pointer-events-none" />
@@ -688,7 +712,7 @@ export default function NewCase() {
                     <div 
                       onClick={() => updateCase(index, 'expense金額', caseItem.suggested金額)}
                       className="mt-2 text-xs text-red-600 font-medium flex items-center bg-red-50 px-3 py-1.5 rounded border border-red-200 cursor-pointer hover:bg-red-100 transition-colors">
-                      {validation.message} (Click to apply)
+                      {validation.message} （クリックして適用）
                     </div>
                   );
                 }
@@ -756,7 +780,7 @@ export default function NewCase() {
               <div className="text-xs text-gray-500">上記すべての項目の合計</div>
             </div>
             <div className="text-right">
-              <div className="font-bold text-xs text-gray-800 mb-1">Total 経費金額</div>
+              <div className="font-bold text-xs text-gray-800 mb-1">経費合計金額</div>
               <div className="text-2xl font-bold text-[#162D50]">¥ {totalExpense金額.toLocaleString()}</div>
             </div>
           </div>
@@ -787,18 +811,18 @@ export default function NewCase() {
               }
               const validation = validateExpenseAmount(c.expense金額, c.suggested金額);
               if (!validation.isValid) {
-                toast.error(`Row ${i + 1}: ${validation.message}`);
+                toast.error(`第${i + 1}行: ${validation.message}`);
                 return;
               }
               if (c.advancerCategory !== 'Office' && !c.advancerName) {
-                toast.error(`Please provide the 支払処理タイプ for 案件カテゴリ #${i+1}.`);
+                toast.error(`案件カテゴリ #${i+1} の支払処理タイプを入力してください。`);
                 return;
               }
             }
             setNewCaseStep(2);
           }}
           className="bg-[#0A192F] text-white px-8 py-3 rounded-md font-bold text-sm flex items-center hover:bg-[#162D50] transition-colors shadow-sm">
-          Next <ArrowRight className="w-4 h-4 ml-2" />
+          次へ <ArrowRight className="w-4 h-4 ml-2" />
         </button>
       </div>
       </>
@@ -806,46 +830,46 @@ export default function NewCase() {
 
       {newCaseStep === 2 && (
         <>
-          {/* 金額 Details Section */}
+          {/* 金額詳細 Section */}
           <div className="bg-white border border-gray-200 rounded-md">
             <div className="p-6">
               <div className="flex items-center text-[#162D50] font-bold mb-4">
                 <Wallet className="w-4 h-4 mr-2" />
-                金額 Details
+                金額詳細
               </div>
               
               <div className="grid grid-cols-2 gap-6 mb-6">
                 <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-2">Total Expense (¥)</label>
+                  <label className="block text-sm font-bold text-gray-700 mb-2">経費合計 (¥)</label>
                   <input type="number" value={totalExpense金額} readOnly className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50] text-gray-600 bg-gray-50" />
                 </div>
                 <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-2">Currency</label>
+                  <label className="block text-sm font-bold text-gray-700 mb-2">通貨</label>
                   <div className="relative">
                     <select className="w-full px-4 py-2 border border-gray-300 rounded-md appearance-none focus:outline-none focus:ring-1 focus:ring-[#162D50] text-gray-600">
-                      <option>JPY (Japanese Yen)</option>
+                      <option>JPY（日本円）</option>
                     </select>
                     <ChevronDown className="w-4 h-4 absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 pointer-events-none" />
                   </div>
                 </div>
                 <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-2">Previous Unsettled Balance (¥)</label>
+                  <label className="block text-sm font-bold text-gray-700 mb-2">前回未精算残高 (¥)</label>
                   <input type="number" value={unsettledBalance} onChange={e => setUnsettledBalance(Number(e.target.value))} className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50] text-gray-600" />
                 </div>
                 <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-2">Add unsettled balance to the total?</label>
+                  <label className="block text-sm font-bold text-gray-700 mb-2">未精算残高を合計に含めますか？</label>
                   <div className="flex items-center mt-3">
                     <div className="relative inline-block w-10 mr-2 align-middle select-none transition duration-200 ease-in">
                       <input type="checkbox" name="toggle" id="toggle" checked={includeBalance} onChange={e => setIncludeBalance(e.target.checked)} className="toggle-checkbox absolute block w-5 h-5 rounded-full bg-white border-4 appearance-none cursor-pointer" />
                       <label htmlFor="toggle" className="toggle-label block overflow-hidden h-5 rounded-full bg-gray-300 cursor-pointer"></label>
                     </div>
-                    <span className="text-gray-500 text-sm font-medium">Include balance</span>
+                    <span className="text-gray-500 text-sm font-medium">残高を含める</span>
                   </div>
                 </div>
               </div>
 
               <div>
-                <label className="block text-sm font-bold text-gray-700 mb-2">Final 合計金額 (¥)</label>
+                <label className="block text-sm font-bold text-gray-700 mb-2">最終合計金額 (¥)</label>
                 <div className="w-full bg-[#162D50] text-white px-4 py-3 rounded-md font-bold">
                   ¥ {finalTotal金額.toLocaleString()}
                 </div>
@@ -858,21 +882,21 @@ export default function NewCase() {
             <div className="p-6">
               <div className="flex items-center text-[#162D50] font-bold mb-4">
                 <Landmark className="w-4 h-4 mr-2" />
-                Settlement to Advancer
+                立替者への精算
               </div>
               <div className="grid grid-cols-2 gap-6">
                 <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-2">Settlement Method <span className="text-red-500">*</span></label>
+                  <label className="block text-sm font-bold text-gray-700 mb-2">精算方法 <span className="text-red-500">*</span></label>
                   <div className="relative">
                     <select value={settlementMethod} onChange={e => setSettlementMethod(e.target.value)} className="w-full px-4 py-2 border border-gray-300 rounded-md appearance-none focus:outline-none focus:ring-1 focus:ring-[#162D50] text-gray-600">
-                      <option>Bank Transfer</option>
-                      <option>Cash</option>
+                      <option>銀行振込</option>
+                      <option>現金</option>
                     </select>
                     <ChevronDown className="w-4 h-4 absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 pointer-events-none" />
                   </div>
                 </div>
                 <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-2">Expected Settlement 日付 <span className="text-red-500">*</span></label>
+                  <label className="block text-sm font-bold text-gray-700 mb-2">精算予定日 <span className="text-red-500">*</span></label>
                   <div className="relative">
                     <input type="date" value={expectedSettlementDate} onChange={e => setExpectedSettlementDate(e.target.value)} className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50] text-gray-600" />
 
@@ -887,33 +911,33 @@ export default function NewCase() {
             <div className="p-6">
               <div className="flex items-center text-[#162D50] font-bold mb-4">
                 <FileText className="w-4 h-4 mr-2" />
-                Collection from 負担先
+                負担先からの回収
               </div>
               <div className="grid grid-cols-3 gap-6 mb-8">
                 <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-2">Collection Method <span className="text-red-500">*</span></label>
+                  <label className="block text-sm font-bold text-gray-700 mb-2">回収方法 <span className="text-red-500">*</span></label>
                   <div className="relative">
                     <select value={collectionMethod} onChange={e => setCollectionMethod(e.target.value)} className="w-full px-4 py-2 border border-gray-300 rounded-md appearance-none focus:outline-none focus:ring-1 focus:ring-[#162D50] text-gray-600">
-                      <option>Select Method</option>
-                      <option>Bank Transfer</option>
-                      <option>Cash</option>
+                      <option>方法を選択</option>
+                      <option>銀行振込</option>
+                      <option>現金</option>
                     </select>
                     <ChevronDown className="w-4 h-4 absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 pointer-events-none" />
                   </div>
                 </div>
                 <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-2">Installment Plan</label>
+                  <label className="block text-sm font-bold text-gray-700 mb-2">分割払いプラン</label>
                   <div className="relative">
                     <select value={recoveryPlan} onChange={e => setRecoveryPlan(e.target.value)} className="w-full px-4 py-2 border border-gray-300 rounded-md appearance-none focus:outline-none focus:ring-1 focus:ring-[#162D50] text-gray-600">
-                      <option>Single Payment</option>
-                      <option>Payroll Deduction (3 Months)</option>
-                      <option>Payroll Deduction (6 Months)</option>
+                      <option>一括払い</option>
+                      <option>給与控除（3ヶ月）</option>
+                      <option>給与控除（6ヶ月）</option>
                     </select>
                     <ChevronDown className="w-4 h-4 absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 pointer-events-none" />
                   </div>
                 </div>
                 <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-2">Collection Start Month <span className="text-red-500">*</span></label>
+                  <label className="block text-sm font-bold text-gray-700 mb-2">回収開始月 <span className="text-red-500">*</span></label>
                   <div className="relative">
                     <input type="month" value={collectionStartMonth} onChange={e => setCollectionStartMonth(e.target.value)} className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50] text-gray-600" />
 
@@ -926,18 +950,18 @@ export default function NewCase() {
                 <button 
                   onClick={() => setNewCaseStep(1)}
                   className="px-8 py-2 border border-gray-300 text-gray-700 rounded-md font-bold text-sm flex items-center hover:bg-gray-50 transition-colors shadow-sm">
-                  <ArrowLeft className="w-4 h-4 mr-2" /> Back
+                  <ArrowLeft className="w-4 h-4 mr-2" /> 戻る
                 </button>
                 <button 
                   onClick={() => {
-                    if (!settlementMethod || !expectedSettlementDate || collectionMethod === 'Select Method' || !collectionStartMonth) {
-                      toast.error('Please fill out all required Settlement and Collection fields.');
+                    if (!settlementMethod || !expectedSettlementDate || collectionMethod === '方法を選択' || !collectionStartMonth) {
+                      toast.error('決済および回収の必須項目をすべて入力してください。');
                       return;
                     }
                     setNewCaseStep(3);
                   }}
                   className="bg-[#0A192F] text-white px-8 py-3 rounded-md font-bold text-sm flex items-center hover:bg-[#162D50] transition-colors shadow-sm">
-                  Next <ArrowRight className="w-4 h-4 ml-2" />
+                  次へ <ArrowRight className="w-4 h-4 ml-2" />
                 </button>
               </div>
             </div>
@@ -947,13 +971,13 @@ export default function NewCase() {
 
       {newCaseStep === 3 && (
         <div className="bg-[#F8F9FA] border border-gray-200 rounded-md p-8">
-          <h3 className="text-[#162D50] text-xl font-bold mb-2">確認 & Submission</h3>
-          <p className="text-gray-500 text-sm mb-8">Please review all case information before final submission.</p>
+          <h3 className="text-[#162D50] text-xl font-bold mb-2">確認・送信</h3>
+          <p className="text-gray-500 text-sm mb-8">最終送信前に、すべての案件情報をご確認ください。</p>
           
           <div className="grid grid-cols-2 gap-8 mb-8">
-            {/* Left Column: Case Information */}
+            {/* Left Column: 案件情報 */}
             <div>
-              <h4 className="text-[#162D50] font-bold mb-4">Case Information</h4>
+              <h4 className="text-[#162D50] font-bold mb-4">案件情報</h4>
               <div className="bg-white border border-gray-200 rounded-md p-6 mb-4">
                 <div className="space-y-4 text-sm">
                   <div className="grid grid-cols-2">
@@ -973,7 +997,7 @@ export default function NewCase() {
                   <div key={i} className="bg-white border border-gray-200 rounded-md p-4">
                     <div className="space-y-2 text-sm">
                       <div className="grid grid-cols-2">
-                        <span className="text-gray-500">Type</span>
+                        <span className="text-gray-500">種類</span>
                         <span className="font-bold text-[#162D50]">{c.expenseType}</span>
                       </div>
                       <div className="grid grid-cols-2">
@@ -986,9 +1010,9 @@ export default function NewCase() {
               </div>
             </div>
 
-            {/* Right Column: Financial Overview */}
+            {/* Right Column: 財務概要 */}
             <div>
-              <h4 className="text-[#162D50] font-bold mb-4">Financial Overview</h4>
+              <h4 className="text-[#162D50] font-bold mb-4">財務概要</h4>
               <div className="bg-[#162D50] rounded-md p-6 text-white h-full flex flex-col justify-center">
                 <div className="flex justify-between items-center mb-6">
                   <span className="text-blue-200 text-sm">合計金額</span>
@@ -996,24 +1020,24 @@ export default function NewCase() {
                 </div>
                 <div className="border-t border-blue-800/50 my-2 pt-4 space-y-3 text-sm">
                   <div className="flex justify-between">
-                    <span className="text-blue-200">Method</span>
+                    <span className="text-blue-200">精算方法</span>
                     <span className="font-medium">{settlementMethod}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-blue-200">Collection</span>
+                    <span className="text-blue-200">回収方法</span>
                     <span className="font-medium">{collectionMethod}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-blue-200">Recovery</span>
+                    <span className="text-blue-200">回収プラン</span>
                     <span className="font-medium">{recoveryPlan}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-blue-200">Start Month</span>
+                    <span className="text-blue-200">開始月</span>
                     <span className="font-medium">{collectionStartMonth || "TBD"}</span>
                   </div>
                   {installments > 1 && (
                     <div className="flex justify-between items-center border-t border-blue-800/50 pt-3 mt-3">
-                      <span className="text-blue-200">Monthly Deduction ({installments}x)</span>
+                      <span className="text-blue-200">月次控除額（{installments}回）</span>
                       <span className="font-bold text-white text-lg">¥ {Math.ceil(monthlyDeduction).toLocaleString()}</span>
                     </div>
                   )}
@@ -1028,7 +1052,7 @@ export default function NewCase() {
             <button 
               onClick={() => setNewCaseStep(2)}
               className="px-8 py-2 border border-gray-300 text-gray-700 rounded-md font-bold text-sm flex items-center hover:bg-gray-50 transition-colors shadow-sm">
-              <ArrowLeft className="w-4 h-4 mr-2" /> Back
+              <ArrowLeft className="w-4 h-4 mr-2" /> 戻る
             </button>
             <button 
               onClick={handle送信}

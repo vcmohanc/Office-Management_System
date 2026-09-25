@@ -200,19 +200,10 @@ export default function VisaManagement() {
       setIsSubmitting(true);
 
       const pdf = new jsPDF('p', 'pt', 'a4');
+      pdf.addFileToVFS('Kosugi-Regular.ttf', fontBase64);
+      pdf.addFont('Kosugi-Regular.ttf', 'Kosugi', 'normal');
 
-      // Fetch the local Japanese font
-      const fontResponse = await fetch('/mplus.ttf');
-      const fontBuffer = await fontResponse.arrayBuffer();
-      const fontBase64 = await new Promise((resolve) => {
-        const reader = new FileReader();
-        reader.onload = () => resolve(reader.result.split(',')[1]);
-        reader.readAsDataURL(new Blob([fontBuffer]));
-      });
-
-      pdf.addFileToVFS('mplus.ttf', fontBase64);
-      pdf.addFont('mplus.ttf', 'mplus', 'normal');
-      pdf.setFont('mplus');
+      pdf.setFont('Kosugi');
 
       // Add a premium header
       pdf.setFontSize(22);
@@ -247,7 +238,7 @@ export default function VisaManagement() {
         body: tableRows,
         startY: 90,
         styles: { 
-          font: 'mplus',
+          font: 'Kosugi',
           fontSize: 9,
           cellPadding: 6,
           textColor: [51, 65, 85]
@@ -255,7 +246,7 @@ export default function VisaManagement() {
         headStyles: {
           fillColor: [30, 41, 59], // Slate 800
           textColor: [255, 255, 255],
-          fontStyle: 'bold'
+          fontStyle: 'normal'
         },
         alternateRowStyles: {
           fillColor: [248, 250, 252] // Slate 50

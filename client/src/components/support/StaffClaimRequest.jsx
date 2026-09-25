@@ -1,9 +1,38 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import { FileText, Calendar, Plus, Trash2, CheckCircle, ChevronDown, User, Box, Image, X, Download } from 'lucide-react';
 import { apiFetch } from '../../utils/apiFetch.js';
 import { fileUrl } from '../../utils/fileUrl.js';
 import { validateExpenseAmount } from '../../utils/amountHelper.js';
 import toast from 'react-hot-toast';
+
+// Japanese translation map for dropdown option labels (keeps English values for internal logic)
+const optionLabelJP = {
+  // ExpenseType
+  'Postage': '郵便料金',
+  'Transportation Expenses / Flight Fare': '交通費 / 航空運賃',
+  'Visa application fee': 'ビザ申請料',
+  'Waiting Dormitory Fee': '待機寮費',
+  'Hospital Fee': '病院費',
+  'Equipment/Supplies': '備品・消耗品',
+  'WIFI': 'WIFI',
+  'others': 'その他',
+  // AdvancerCategory
+  'Service staff': 'サービススタッフ',
+  'VC': 'VC',
+  'Dispatch destination: Farm': '派遣先：農園',
+  'Select for each project': 'プロジェクト毎に選択',
+  // BearingParty
+  'Office': 'オフィス',
+  'Staff': 'スタッフ',
+  'Host Company': 'ホスト企業',
+  // Payment process types
+  'Transfer to the person concerned': '本人への振込',
+  'Salary deduction': '給与控除',
+  'Invoice from the client company': 'クライアント会社からの請求書',
+};
+
+const toJP = (label) => optionLabelJP[label] ?? label;
+
 
 
 export default function StaffClaimRequest() {
@@ -201,12 +230,12 @@ export default function StaffClaimRequest() {
     const validFiles = [];
     for (const file of files) {
       if (!ALLOWED_TYPES.includes(file.type)) {
-        toast.error(`Invalid file type: ${file.name}. Only JPG, PNG, and PDF files are allowed.`);
+        toast.error(`ファイル形式が無効です: ${file.name}。JPG、PNG、PDFファイルのみアップロード可能です。`);
         e.target.value = '';
         return;
       }
       if (file.size > MAX_SIZE) {
-        toast.error(`File too large: ${file.name}. Maximum size is 2 MB per file.`);
+        toast.error(`ファイルサイズが大きすぎます: ${file.name}。1ファイルの最大サイズは2MBです。`);
         e.target.value = '';
         return;
       }
@@ -250,7 +279,7 @@ export default function StaffClaimRequest() {
           <div className="grid grid-cols-2 gap-6 mb-8 bg-blue-50 p-6 rounded-md">
             <div>
               <label className="block text-sm font-bold text-gray-700 mb-2">出発地</label>
-              <input type="text" list={`from-list-${index}`} value={claimItem.postageFrom || ''} onChange={(e) => updateClaim(index, 'postageFrom', e.target.value)} placeholder="Enter sender details" className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50]" />
+              <input type="text" list={`from-list-${index}`} value={claimItem.postageFrom || ''} onChange={(e) => updateClaim(index, 'postageFrom', e.target.value)} placeholder="送信者の詳細を入力" className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50]" />
               <datalist id={`from-list-${index}`}>
                 {regions.map(r => (
                   <option key={r._id} value={r.name1} />
@@ -259,7 +288,7 @@ export default function StaffClaimRequest() {
             </div>
             <div>
               <label className="block text-sm font-bold text-gray-700 mb-2">到着地</label>
-              <input type="text" list={`to-list-${index}`} value={claimItem.postageTo || ''} onChange={(e) => updateClaim(index, 'postageTo', e.target.value)} placeholder="Enter recipient details" className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50]" />
+              <input type="text" list={`to-list-${index}`} value={claimItem.postageTo || ''} onChange={(e) => updateClaim(index, 'postageTo', e.target.value)} placeholder="受取人の詳細を入力" className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50]" />
               <datalist id={`to-list-${index}`}>
                 {regions.map(r => (
                   <option key={r._id} value={r.name2} />
@@ -273,7 +302,7 @@ export default function StaffClaimRequest() {
           <div className="grid grid-cols-2 gap-6 mb-8 bg-blue-50 p-6 rounded-md">
             <div>
               <label className="block text-sm font-bold text-gray-700 mb-2">出発拠点</label>
-              <input type="text" list={`departure-list-${index}`} value={claimItem.departure || ''} onChange={(e) => updateClaim(index, 'departure', e.target.value)} placeholder="Enter departure" className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50]" />
+              <input type="text" list={`departure-list-${index}`} value={claimItem.departure || ''} onChange={(e) => updateClaim(index, 'departure', e.target.value)} placeholder="出発地を入力" className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50]" />
               <datalist id={`departure-list-${index}`}>
                 {regions.map(r => (
                   <option key={r._id} value={r.name1} />
@@ -282,7 +311,7 @@ export default function StaffClaimRequest() {
             </div>
             <div>
               <label className="block text-sm font-bold text-gray-700 mb-2">目的地</label>
-              <input type="text" list={`destination-list-${index}`} value={claimItem.destination || ''} onChange={(e) => updateClaim(index, 'destination', e.target.value)} placeholder="Enter destination" className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50]" />
+              <input type="text" list={`destination-list-${index}`} value={claimItem.destination || ''} onChange={(e) => updateClaim(index, 'destination', e.target.value)} placeholder="目的地を入力" className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50]" />
               <datalist id={`destination-list-${index}`}>
                 {regions.map(r => (
                   <option key={r._id} value={r.name2} />
@@ -292,14 +321,14 @@ export default function StaffClaimRequest() {
             <div className="col-span-2">
               <label className="block text-sm font-bold text-gray-700 mb-2">交通手段</label>
               <select value={claimItem.transportMethod || ''} onChange={(e) => updateClaim(index, 'transportMethod', e.target.value)} className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50]">
-                <option value="">Select method...</option>
-                <option value="Bus">Bus</option>
-                <option value="Flight">Flight</option>
+                <option value="">方法を選択...</option>
+                <option value="Bus">バス</option>
+                <option value="Flight">フライト</option>
               </select>
             </div>
             <div className="col-span-2">
               <label className="block text-sm font-bold text-gray-700 mb-2">理由</label>
-              <textarea value={claimItem.transportReason || ''} onChange={(e) => updateClaim(index, 'transportReason', e.target.value)} placeholder="Enter reason for travel" rows="3" className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50]"></textarea>
+              <textarea value={claimItem.transportReason || ''} onChange={(e) => updateClaim(index, 'transportReason', e.target.value)} placeholder="移動理由を入力" rows="3" className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50]"></textarea>
             </div>
           </div>
         );
@@ -344,7 +373,7 @@ export default function StaffClaimRequest() {
           <div className="grid grid-cols-2 gap-6 mb-8 bg-blue-50 p-6 rounded-md">
             <div>
               <label className="block text-sm font-bold text-gray-700 mb-2">品名</label>
-              <input type="text" value={claimItem.itemName || ''} onChange={(e) => updateClaim(index, 'itemName', e.target.value)} placeholder="Enter item" className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50]" />
+              <input type="text" value={claimItem.itemName || ''} onChange={(e) => updateClaim(index, 'itemName', e.target.value)} placeholder="品目を入力" className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50]" />
             </div>
             <div>
               <label className="block text-sm font-bold text-gray-700 mb-2">数量</label>
@@ -358,7 +387,7 @@ export default function StaffClaimRequest() {
             </div>
             <div className="col-span-2">
               <label className="block text-sm font-bold text-gray-700 mb-2">破損、故障、不足などの理由</label>
-              <textarea value={claimItem.damageReason || ''} onChange={(e) => updateClaim(index, 'damageReason', e.target.value)} placeholder="Enter reason" rows="3" className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50]"></textarea>
+              <textarea value={claimItem.damageReason || ''} onChange={(e) => updateClaim(index, 'damageReason', e.target.value)} placeholder="理由を入力" rows="3" className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50]"></textarea>
             </div>
           </div>
         );
@@ -367,7 +396,7 @@ export default function StaffClaimRequest() {
           <div className="grid grid-cols-2 gap-6 mb-8 bg-blue-50 p-6 rounded-md">
             <div>
               <label className="block text-sm font-bold text-gray-700 mb-2">対象の受入企業/農園</label>
-              <input type="text" value={claimItem.hostCompany || ''} onChange={(e) => updateClaim(index, 'hostCompany', e.target.value)} placeholder="Enter company/farm" className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50]" />
+              <input type="text" value={claimItem.hostCompany || ''} onChange={(e) => updateClaim(index, 'hostCompany', e.target.value)} placeholder="企業/農園を入力" className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50]" />
             </div>
             <div>
               <label className="block text-sm font-bold text-gray-700 mb-2">利用開始日</label>
@@ -449,7 +478,7 @@ export default function StaffClaimRequest() {
         });
 
         if (!response.ok) {
-          throw new Error('Failed to submit claim');
+          throw new Error('請求の送信に失敗しました');
         }
       }
 
@@ -462,7 +491,7 @@ export default function StaffClaimRequest() {
 
     } catch (error) {
       console.error('Error submitting claims:', error);
-      toast.error('An error occurred while submitting. Please try again.');
+      toast.error('送信中にエラーが発生しました。もう一度お試しください。');
     } finally {
       setIsSubmitting(false);
     }
@@ -475,12 +504,12 @@ export default function StaffClaimRequest() {
           <CheckCircle className="w-16 h-16 text-green-500" />
         </div>
         <h2 className="text-2xl font-bold text-[#162D50] mb-2">送信が完了しました！</h2>
-        <p className="text-gray-500 mb-6">Your expense claims have been submitted.</p>
+        <p className="text-gray-500 mb-6">経費請求が送信されました。</p>
         <button 
           onClick={() => setShowSuccess(false)}
           className="bg-[#0A192F] text-white px-6 py-2 rounded-md hover:bg-[#162D50] transition-colors"
         >
-          Submit Another Request
+          別のリクエストを送信
         </button>
       </div>
     );
@@ -494,7 +523,7 @@ export default function StaffClaimRequest() {
         <div className="p-6">
           <div className="flex items-center text-[#162D50] font-bold mb-4">
             <User className="w-4 h-4 mr-2" />
-            Staff Information
+            スタッフ情報
           </div>
           <div className="grid grid-cols-3 gap-6">
             <div className="relative">
@@ -567,7 +596,7 @@ export default function StaffClaimRequest() {
                 <select value={staffInfo.location} onChange={e => setStaffInfo({...staffInfo, location: e.target.value})} className="w-full px-4 py-2 border border-gray-300 rounded-md appearance-none focus:outline-none focus:ring-1 focus:ring-[#162D50] text-gray-600">
                   <option value="">拠点を選択</option>
                   {options.拠点.map((opt) => (
-                    <option key={opt._id} value={opt.value}>{opt.label}</option>
+                    <option key={opt._id} value={opt.value}>{toJP(opt.label)}</option>
                   ))}
                 </select>
                 <ChevronDown className="w-4 h-4 absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 pointer-events-none" />
@@ -617,32 +646,32 @@ export default function StaffClaimRequest() {
                   className="w-full px-4 py-2 border border-gray-300 rounded-md appearance-none focus:outline-none focus:ring-1 focus:ring-[#162D50] text-gray-600">
                   <option value="">種類を選択</option>
                   {options.ExpenseType.map((opt) => (
-                    <option key={opt._id} value={opt.value}>{opt.label}</option>
+                    <option key={opt._id} value={opt.value}>{toJP(opt.label)}</option>
                   ))}
                 </select>
                 <ChevronDown className="w-4 h-4 absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 pointer-events-none" />
               </div>
             </div>
             <div>
-              <label className="block text-sm font-bold text-gray-700 mb-2">Advancer Category <span className="text-red-500">*</span></label>
+              <label className="block text-sm font-bold text-gray-700 mb-2">立替カテゴリ <span className="text-red-500">*</span></label>
               <div className="relative">
                 <select 
                   value={claimItem.advancerCategory}
                   onChange={(e) => updateClaim(index, 'advancerCategory', e.target.value)}
                   className="w-full px-4 py-2 border border-gray-300 rounded-md appearance-none focus:outline-none focus:ring-1 focus:ring-[#162D50] text-gray-600">
-                  <option value="">Select Category</option>
+                  <option value="">カテゴリを選択</option>
                   {options.AdvancerCategory.map((opt) => (
-                    <option key={opt._id} value={opt.value}>{opt.label}</option>
+                    <option key={opt._id} value={opt.value}>{toJP(opt.label)}</option>
                   ))}
                 </select>
                 <ChevronDown className="w-4 h-4 absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 pointer-events-none" />
               </div>
             </div>
             <div>
-              <label className="block text-sm font-bold text-gray-700 mb-2">Payment Process Types <span className="text-red-500">*</span></label>
+              <label className="block text-sm font-bold text-gray-700 mb-2">支払い処理タイプ <span className="text-red-500">*</span></label>
               <input 
                 type="text" 
-                placeholder="Enter name" 
+                placeholder="名前を入力" 
                 value={claimItem.advancerName}
                 onChange={(e) => updateClaim(index, 'advancerName', e.target.value)}
                 className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50]" 
@@ -652,27 +681,27 @@ export default function StaffClaimRequest() {
           
           <div className="grid grid-cols-3 gap-6 mb-8">
             <div>
-              <label className="block text-sm font-bold text-gray-700 mb-2">Bearing Party <span className="text-red-500">*</span></label>
+              <label className="block text-sm font-bold text-gray-700 mb-2">負担者 <span className="text-red-500">*</span></label>
               <div className="relative">
                 <select 
                   value={claimItem.bearingParty}
                   onChange={(e) => updateClaim(index, 'bearingParty', e.target.value)}
                   className="w-full px-4 py-2 border border-gray-300 rounded-md appearance-none focus:outline-none focus:ring-1 focus:ring-[#162D50] text-gray-600">
-                  <option value="">Select Bearing Party</option>
+                  <option value="">負担者を選択</option>
                   {options.BearingParty.map((opt) => (
-                    <option key={opt._id} value={opt.value}>{opt.label}</option>
+                    <option key={opt._id} value={opt.value}>{toJP(opt.label)}</option>
                   ))}
                 </select>
                 <ChevronDown className="w-4 h-4 absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 pointer-events-none" />
               </div>
             </div>
             <div>
-              <label className="block text-sm font-bold text-gray-700 mb-2">Expense 金額 (¥) <span className="text-red-500">*</span></label>
+              <label className="block text-sm font-bold text-gray-700 mb-2">経費金額 (¥) <span className="text-red-500">*</span></label>
               <input 
                 type="number" 
                 value={claimItem.expense金額} 
                 onChange={(e) => updateClaim(index, 'expense金額', e.target.value)} 
-                placeholder="Enter amount"
+                placeholder="金額を入力"
                 className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50] text-gray-900 font-medium" 
               />
               {(() => {
@@ -710,11 +739,11 @@ export default function StaffClaimRequest() {
           <div className="border-t border-gray-200 mt-6 pt-6">
             <div className="grid grid-cols-2 gap-6">
               <div>
-                <label className="block text-sm font-bold text-gray-700 mb-2">Bill / Receipt Upload</label>
+                <label className="block text-sm font-bold text-gray-700 mb-2">請求書・領収書のアップロード</label>
                 <div className="border-2 border-dashed border-gray-300 rounded-md p-6 text-center hover:bg-gray-50 transition-colors cursor-pointer relative flex flex-col items-center justify-center min-h-[120px]">
                   <input type="file" multiple accept=".jpg,.jpeg,.png,.pdf,image/jpeg,image/png,application/pdf" className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" onChange={(e) => handleFileUpload(index, e)} />
                   <FileText className="w-8 h-8 text-gray-400 mb-2" />
-                  <p className="text-sm text-gray-600">Drag and drop files or click to upload</p>
+                  <p className="text-sm text-gray-600">ファイルをドラッグ＆ドロップするかクリックしてアップロード</p>
                 </div>
                 {claimItem.receipts && claimItem.receipts.length > 0 && (
                   <div className="mt-3 flex flex-wrap gap-2">
@@ -750,8 +779,8 @@ export default function StaffClaimRequest() {
         <div className="p-6">
           <div className="bg-[#F8F9FA] border border-gray-200 rounded-md p-6 flex justify-between items-center mb-6">
             <div>
-              <div className="font-bold text-sm text-gray-800 mb-1">Multiple Case Summary</div>
-              <div className="text-xs text-gray-500">Total calculation of all items above</div>
+              <div className="font-bold text-sm text-gray-800 mb-1">複数案件サマリー</div>
+              <div className="text-xs text-gray-500">上記すべての項目の合計金額</div>
             </div>
             <div className="text-right">
               <div className="font-bold text-xs text-gray-800 mb-1">経費合計金額</div>

@@ -53,6 +53,12 @@ app.use(cors({
 app.use(express.json());
 app.use(compressionMiddleware);
 
+// Force UTF-8 charset on all responses
+app.use((_req, res, next) => {
+  res.setHeader('Content-Type', 'application/json; charset=utf-8');
+  next();
+});
+
 // Authenticated file serving — replaces the public express.static for /uploads.
 // Supports token via Authorization header OR ?token= query param so that
 // browser <a href> and <img src> links (which can't set headers) still work.
