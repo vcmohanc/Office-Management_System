@@ -5,8 +5,8 @@ COPY package*.json ./
 RUN apk add --no-cache python3 make g++
 RUN npm ci
 COPY . .
-ARG VITE_API_URL
-ENV VITE_API_URL=$VITE_API_URL
+# VITE_API_URL is intentionally not set — empty string means relative paths (/api/...)
+# which nginx proxies to the server container. No hardcoded domain needed.
 RUN npm run build
 
 # Production stage
