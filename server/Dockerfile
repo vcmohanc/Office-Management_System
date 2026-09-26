@@ -4,5 +4,7 @@ COPY package*.json ./
 RUN apk add --no-cache python3 make g++
 RUN npm ci
 COPY . .
+RUN chown -R node:node /app
+USER node
 EXPOSE 5000
 CMD ["npm", "start"]

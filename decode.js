@@ -1,0 +1,3 @@
+const zlib = require('zlib');
+const buf = Buffer.from("1f8b08000000000002035d924f4bc43010c5efc27e873867db282808263da82c5e44f00fe83126633b6e9ad464acdb6f2fed56d9ee293393e1f7de2351c72e5a1e3a140db7be5a1da9f114de9a5ae7816a7524846ad8b8a91242b5c846d8c6a48cacae1e5795d5c82908bcda86b92bf0eb9b7a0d373130062e9e870e41d85da7", 'hex');
+console.log(zlib.gunzipSync(buf).toString());
