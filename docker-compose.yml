@@ -1,40 +1,52 @@
 services:
   client:
-    image: mohanc35/oms-client
+    image: mohanc35/oms-client:latest
+    restart: unless-stopped
     ports:
       - "80:80"
       - "443:443"
     volumes:
+      - ./client/nginx.conf:/etc/nginx/conf.d/default.conf:ro
       - /etc/letsencrypt:/etc/letsencrypt:ro
+      - /var/www/certbot:/var/www/certbot:ro
     depends_on:
-      - server
+      server:
+        condition: service_healthy
 
   server:
-    image: mohanc35/oms-server
-    ports:
-      - "5000:5000"
+    image: mohanc35/oms-server:latest
+    restart: unless-stopped
     environment:
-      - PORT=5000
-      - MONGO_URI=mongodb://admin:SuperSecretStrongPassword123!@mongo:27017/office_manage_system?authSource=admin
-      - JWT_SECRET=your_super_secret_jwt_key
-      - CLIENT_URL=https://oms.vegecoop.net
+      - PORT=${PORT}
+      - MONGO_URI=${MONGO_URI}
+      - JWT_SECRET=${JWT_SECRET}
+      - CLIENT_URL=${CLIENT_URL}
     volumes:
       - uploads_data:/app/uploads
     depends_on:
-      - mongo
+      mongo:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "nc", "-z", "127.0.0.1", "5000"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
   mongo:
-    image: mongo:6
+    image: mongo:6.0
     restart: unless-stopped
     environment:
-      MONGO_INITDB_ROOT_USERNAME: admin
-      MONGO_INITDB_ROOT_PASSWORD: SuperSecretStrongPassword123!
-      MONGO_INITDB_DATABASE: office_manage_system
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_INITDB_ROOT_USERNAME}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_INITDB_ROOT_PASSWORD}
+      MONGO_INITDB_DATABASE: ${MONGO_INITDB_DATABASE}
     volumes:
       - mongo_data:/data/db
       - mongo_config:/data/configdb
-    ports:
-      - "127.0.0.1:27017:27017"
+    healthcheck:
+      test: echo 'db.runCommand("ping").ok' | mongosh localhost:27017/test --quiet
+      interval: 15s
+      timeout: 5s
+      retries: 5
 
 volumes:
   mongo_data:
