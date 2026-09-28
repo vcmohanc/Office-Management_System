@@ -876,7 +876,7 @@ export default function CaseList() {
                       <textarea 
                         value={newMessageInput}
                         onChange={(e) => setNewMessageInput(e.target.value)}
-                        placeholder="Type a message to the other department..."
+                        placeholder="他の部署へのメッセージを入力..."
                         className="w-full min-h-[60px] p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#162D50] text-sm resize-y"
                       ></textarea>
                     </div>
@@ -885,7 +885,7 @@ export default function CaseList() {
                       disabled={!newMessageInput.trim()}
                       className="whitespace-nowrap bg-[#162D50] hover:bg-[#0f1f3d] text-white px-6 py-3 rounded-md text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      Send Message
+                      メッセージを送信
                     </button>
                   </div>
                 </div>
@@ -902,20 +902,20 @@ export default function CaseList() {
                     onClick={() => handleUpdateステータス('保留中')}
                     className="text-blue-600 font-medium px-4 hover:underline mr-auto"
                   >
-                    Revert to 保留中
+                    保留中に戻す
                   </button>
                 )}
                 <button 
                   onClick={() => handleUpdateステータス('REJECTED')}
                   className="text-red-500 font-medium px-4 hover:underline"
                 >
-                  Reject
+                  拒否
                 </button>
                 <button 
                   onClick={() => handleUpdateステータス('RETURNED_FOR_CORRECTION')}
                   className="border border-gray-300 bg-white text-gray-600 px-6 py-2 rounded-md font-medium hover:bg-gray-50"
                 >
-                  Return for Correction
+                  修正依頼
                 </button>
                 <button 
                   onClick={() => {
@@ -924,7 +924,7 @@ export default function CaseList() {
                   }}
                   className="bg-[#0A192F] text-white px-6 py-2 rounded-md font-bold hover:bg-[#162D50] shadow-sm"
                 >
-                  Approve for Payment
+                  支払承認
                 </button>
               </>
             )}
