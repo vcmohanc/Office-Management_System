@@ -1,4 +1,4 @@
-﻿import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { apiFetch } from '../../utils/apiFetch.js';
 import { jsPDF } from 'jspdf';
@@ -102,7 +102,7 @@ export default function PaymentStatus() {
       const claimAmount = selectedCase.nextPaymentAmount || Math.round((selectedCase.finalTotal || selectedCase.totalExpense || 0) / totalTerms);
       const advanceToRecover = selectedCase.previousBalance || 0;
       
-      if (paymentMethod === 'Payroll Deduction') {
+      if (paymentMethod === '給与控除' || paymentMethod === '給与振込') {
         setDeductions(claimAmount);
       } else if (advanceToRecover > 0) {
         setDeductions(Math.round(advanceToRecover / totalTerms));
@@ -115,13 +115,25 @@ export default function PaymentStatus() {
   useEffect(() => {
     if (selectedCase) {
       // Auto-populate 支払方法 based on agreed terms
+      let method = '';
       if (selectedCase.advancerCategory === 'Staff') {
-        let method = selectedCase.settlement_method || selectedCase.settlementMethod || '';
-        if (method === 'Cash') method = 'Petty Cash';
-        setPaymentMethod(method);
+        method = selectedCase.settlement_method || selectedCase.settlementMethod || '';
+        if (method === 'Cash' || method === 'Petty Cash') method = '小口現金';
+        if (method === 'Payroll') method = '給与振込';
+        if (method === 'Bank Transfer') method = '銀行振込';
+        if (method === 'Check') method = '小切手';
       } else {
-        let method = selectedCase.collection_method || selectedCase.collectionMethod || '';
-        setPaymentMethod(method);
+        method = selectedCase.collection_method || selectedCase.collectionMethod || '';
+        if (method === 'Corporate Card') method = '法人カード';
+        if (method === 'Payroll Deduction') method = '給与控除';
+        if (method === 'Bank Transfer') method = '銀行振込';
+      }
+      setPaymentMethod(method);
+
+      if (selectedCase.expectedSettlementDate) {
+        setPaymentDate(new Date(selectedCase.expectedSettlementDate).toISOString().split('T')[0]);
+      } else {
+        setPaymentDate(new Date().toISOString().split('T')[0]);
       }
     }
   }, [selectedCase]);
