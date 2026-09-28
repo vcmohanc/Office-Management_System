@@ -558,10 +558,12 @@ export default function PaymentEntry() {
           const s = terms[i];
           const actualSettlement = settlements[i];
           const totalTerms = record.originalCase.installment_count || (record.originalCase.installmentPlan ? (record.originalCase.installmentPlan.match(/\d+/) ? parseInt(record.originalCase.installmentPlan.match(/\d+/)[0], 10) : 1) : 1);
-          const fallbackAmt = Math.round((record.originalCase.finalTotal || record.originalCase.totalExpense || 0) / totalTerms);
+          const totalAmt = (record.originalCase.finalTotal || record.originalCase.totalExpense || 0);
+          const baseAmt = Math.round(totalAmt / totalTerms);
+          const lastTermAmt = totalAmt - (baseAmt * (totalTerms - 1));
+          const fallbackAmt = (i === totalTerms - 1) ? lastTermAmt : baseAmt;
           
           let amt = fallbackAmt;
-          const totalAmt = (record.originalCase.finalTotal || record.originalCase.totalExpense || 0);
           
           if (actualSettlement?.financials?.netPayable) {
             // If the saved settlement accidentally saved the full amount for a multi-term plan (due to a previous bug), ignore it.

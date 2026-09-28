@@ -42,8 +42,8 @@ export default function Sidebar({ activeTab, setActiveTab, openMenus, toggleMenu
       subItems: [
         { name: 'New Case', label: '新規案件', icon: FilePlus },
         { name: 'Case List', label: '案件一覧', icon: ListTodo },
-        { name: 'Payment Entry', label: '支払入力', icon: CreditCard },
-        { name: 'Paid Status', label: '支払申請一覧', icon: Banknote }
+        { name: 'Paid Status', label: '支払台帳', icon: Banknote },
+        { name: 'Payment Entry', label: '支払済請求書一覧', icon: CreditCard }
       ]
     },
     { 
