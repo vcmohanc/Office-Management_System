@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+﻿import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { apiFetch } from '../../utils/apiFetch.js';
 import { jsPDF } from 'jspdf';
@@ -18,7 +18,7 @@ export default function PaymentStatus() {
   const [activePaymentTab, setActivePaymentTab] = useState('Office');
   const [cases, setCases] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [statusFilter, setステータスFilter] = useState('すべてのステータス');
+  const [statusFilter, setStatusFilter] = useState('すべてのステータス');
   const [expenseTypeFilter, setExpenseTypeFilter] = useState('すべての種類');
   const [expenseTypeOptions, setExpenseTypeOptions] = useState([]);
   const [dateFilterStart, setDateFilterStart] = useState('');
@@ -31,7 +31,7 @@ export default function PaymentStatus() {
   const [transactionRefId, setTransactionRefId] = useState('');
   const [paymentDate, setPaymentDate] = useState(new Date().toISOString().split('T')[0]);
   const [isConfirmed, setIsConfirmed] = useState(false);
-  const [is送信ting, setIs送信ting] = useState(false);
+  const [isSubmitting, setisSubmitting] = useState(false);
 
   // SSE Subscription
   useEffect(() => {
@@ -45,7 +45,7 @@ export default function PaymentStatus() {
         setCases(prev => [{
           ...c,
           advancerCategory: 'Staff',
-          finalTotal: c.totalExpense金額 || c.total_expense_amount || 0,
+          finalTotal: c.totalExpenseAmount || c.total_expense_amount || 0,
           staffId: c.staffId || c.staff_id || 'N/A',
           staffName: c.fullName || c.full_name || 'N/A',
           expenseType: c.expenseType || c.expense_type || 'Claim',
@@ -72,7 +72,7 @@ export default function PaymentStatus() {
         setCases(prev => prev.map(item => item._id === c._id ? {
           ...c,
           advancerCategory: 'Staff',
-          finalTotal: c.totalExpense金額 || c.total_expense_amount || 0,
+          finalTotal: c.totalExpenseAmount || c.total_expense_amount || 0,
           staffId: c.staffId || c.staff_id || 'N/A',
           staffName: c.fullName || c.full_name || 'N/A',
           expenseType: c.expenseType || c.expense_type || 'Claim',
@@ -99,11 +99,11 @@ export default function PaymentStatus() {
   useEffect(() => {
     if (selectedCase) {
       const totalTerms = selectedCase.installmentPlan ? (selectedCase.installmentPlan.match(/\d+/) ? parseInt(selectedCase.installmentPlan.match(/\d+/)[0], 10) : 1) : 1;
-      const claim金額 = selectedCase.nextPayment金額 || Math.round((selectedCase.finalTotal || selectedCase.totalExpense || 0) / totalTerms);
+      const claimAmount = selectedCase.nextPaymentAmount || Math.round((selectedCase.finalTotal || selectedCase.totalExpense || 0) / totalTerms);
       const advanceToRecover = selectedCase.previousBalance || 0;
       
       if (paymentMethod === 'Payroll Deduction') {
-        setDeductions(claim金額);
+        setDeductions(claimAmount);
       } else if (advanceToRecover > 0) {
         setDeductions(Math.round(advanceToRecover / totalTerms));
       } else {
@@ -158,8 +158,8 @@ export default function PaymentStatus() {
       
       const totalTerms = row.installment_count || (row.installmentPlan ? (row.installmentPlan.match(/\d+/) ? parseInt(row.installmentPlan.match(/\d+/)[0], 10) : 1) : 1);
       const paidTerms = row.paidTerms || 0;
-      const nextPayment金額 = row.nextPayment金額 || (row.finalTotal || row.totalExpense || 0) / totalTerms;
-      const remaining金額 = Math.max(0, (row.finalTotal || row.totalExpense || 0) - (paidTerms * nextPayment金額));
+      const nextPaymentAmount = row.nextPaymentAmount || (row.finalTotal || row.totalExpense || 0) / totalTerms;
+      const remainingAmount = Math.max(0, (row.finalTotal || row.totalExpense || 0) - (paidTerms * nextPaymentAmount));
       
       const status = row.status || 'N/A';
       const advancerCategory = row.advancerCategory || 'N/A';
@@ -169,7 +169,7 @@ export default function PaymentStatus() {
         `"${caseId}"`,
         `"${period}"`,
         `"${expenseType}"`,
-        `"${Math.round(remaining金額)}"`,
+        `"${Math.round(remainingAmount)}"`,
         `"${status}"`,
         `"${advancerCategory}"`,
         `"${staffName}"`
@@ -204,27 +204,27 @@ export default function PaymentStatus() {
     }
   };
 
-  const handleForm送信 = async (e, forceConfirmed = false) => {
+  const handleFormSubmit = async (e, forceConfirmed = false) => {
     if (e && e.preventDefault) e.preventDefault();
     if (selectedBatchCases.length === 0 || (!isConfirmed && !forceConfirmed)) return;
 
-    setIs送信ting(true);
+    setisSubmitting(true);
     let allSuccess = true;
     let remainingDeduction = deductions;
     let newCases = [...cases];
     
     for (const currentCase of selectedBatchCases) {
       const totalTerms = currentCase.installmentPlan ? (currentCase.installmentPlan.match(/\d+/) ? parseInt(currentCase.installmentPlan.match(/\d+/)[0], 10) : 1) : 1;
-      const claim金額 = currentCase.nextPayment金額 || Math.round((currentCase.finalTotal || currentCase.totalExpense || 0) / totalTerms);
+      const claimAmount = currentCase.nextPaymentAmount || Math.round((currentCase.finalTotal || currentCase.totalExpense || 0) / totalTerms);
       
       let caseDeduction = 0;
       if (remainingDeduction > 0) {
-        if (remainingDeduction <= claim金額) {
+        if (remainingDeduction <= claimAmount) {
           caseDeduction = remainingDeduction;
           remainingDeduction = 0;
         } else {
-          caseDeduction = claim金額;
-          remainingDeduction -= claim金額;
+          caseDeduction = claimAmount;
+          remainingDeduction -= claimAmount;
         }
       }
       
@@ -234,9 +234,9 @@ export default function PaymentStatus() {
         paymentMethod,
         destinationDetails,
         financials: {
-          claim金額,
+          claimAmount,
           deductions: caseDeduction,
-          netPayable: claim金額 - caseDeduction
+          netPayable: claimAmount - caseDeduction
         },
         transactionRefId,
         paymentDate,
@@ -253,9 +253,9 @@ export default function PaymentStatus() {
         if (response.ok) {
           newCases = newCases.map(c => {
             if (c._id === currentCase._id) {
-              const new支払済Terms = (c.paidTerms || 0) + 1;
-              const newステータス = new支払済Terms >= totalTerms ? '完了' : '処理中';
-              return { ...c, paidTerms: new支払済Terms, status: newステータス };
+              const newPaidTerms = (c.paidTerms || 0) + 1;
+              const newStatus = newPaidTerms >= totalTerms ? '完了' : '処理中';
+              return { ...c, paidTerms: newPaidTerms, status: newStatus };
             }
             return c;
           });
@@ -272,7 +272,7 @@ export default function PaymentStatus() {
     }
     
     setCases(newCases);
-    setIs送信ting(false);
+    setisSubmitting(false);
     
     if (allSuccess) {
       toast.success('Settlement processed successfully for all selected cases!');
@@ -328,7 +328,7 @@ export default function PaymentStatus() {
       const mappedClaims = claimsData.map(c => ({
         ...c,
         advancerCategory: 'Staff',
-        finalTotal: c.totalExpense金額 || c.total_expense_amount || 0,
+        finalTotal: c.totalExpenseAmount || c.total_expense_amount || 0,
         staffId: c.staffId || c.staff_id || 'N/A',
         staffName: c.fullName || c.full_name || 'N/A',
         expenseType: c.expenseType || c.expense_type || 'Claim',
@@ -369,10 +369,10 @@ export default function PaymentStatus() {
 
   const filteredCases = postApprovalCases.filter(c => {
     const matchesTab = c.advancerCategory === activePaymentTab || (!c.advancerCategory && activePaymentTab === 'Office');
-    const matchesステータス = statusFilter === 'すべてのステータス' || c.status === statusFilter;
+    const matchesStatus = statusFilter === 'すべてのステータス' || c.status === statusFilter;
     const matchesType = expenseTypeFilter === 'すべての種類' || c.expenseType === expenseTypeFilter;
     
-    return matchesTab && matchesステータス && matchesType;
+    return matchesTab && matchesStatus && matchesType;
   });
 
   const tabCases = postApprovalCases.filter(c => c.advancerCategory === activePaymentTab || (!c.advancerCategory && activePaymentTab === 'Office'));
@@ -380,8 +380,8 @@ export default function PaymentStatus() {
   const get残りBalance = (c) => {
     const totalTerms = c.installment_count || (c.installmentPlan ? (c.installmentPlan.match(/\d+/) ? parseInt(c.installmentPlan.match(/\d+/)[0], 10) : 1) : 1);
     const paidTerms = c.paidTerms || 0;
-    const nextPayment金額 = c.nextPayment金額 || (c.finalTotal || c.totalExpense || 0) / totalTerms;
-    return Math.max(0, (c.finalTotal || c.totalExpense || 0) - (paidTerms * nextPayment金額));
+    const nextPaymentAmount = c.nextPaymentAmount || (c.finalTotal || c.totalExpense || 0) / totalTerms;
+    return Math.max(0, (c.finalTotal || c.totalExpense || 0) - (paidTerms * nextPaymentAmount));
   };
 
   const totalOfficePayment = postApprovalCases.filter(c => c.advancerCategory === 'Office').reduce((sum, c) => sum + get残りBalance(c), 0);
@@ -399,16 +399,16 @@ export default function PaymentStatus() {
     const person処理中Count = personCases.filter(c => c.status === '処理中').length;
     
     const filteredPersonCases = personCases.filter(c => {
-      const matchesステータス = statusFilter === 'すべてのステータス' || c.status === statusFilter;
+      const matchesStatus = statusFilter === 'すべてのステータス' || c.status === statusFilter;
       const matchesType = expenseTypeFilter === 'すべての種類' || c.expenseType === expenseTypeFilter;
       const matchesDateStart = !dateFilterStart || new Date(c.expense期間Start || c.createdAt) >= new Date(dateFilterStart);
       const matchesDateEnd = !dateFilterEnd || new Date(c.expense期間End || c.createdAt) <= new Date(dateFilterEnd);
-      return matchesステータス && matchesType && matchesDateStart && matchesDateEnd;
+      return matchesStatus && matchesType && matchesDateStart && matchesDateEnd;
     });
 
     let batchTotalNextPayment = selectedBatchCases.reduce((total, currentCase) => {
       const totalTerms = currentCase.installment_count || (currentCase.installmentPlan ? (currentCase.installmentPlan.match(/\d+/) ? parseInt(currentCase.installmentPlan.match(/\d+/)[0], 10) : 1) : 1);
-      return total + (currentCase.nextPayment金額 || Math.round((currentCase.finalTotal || currentCase.totalExpense || 0) / totalTerms));
+      return total + (currentCase.nextPaymentAmount || Math.round((currentCase.finalTotal || currentCase.totalExpense || 0) / totalTerms));
     }, 0);
 
     let batchTotalBaseClaim = selectedBatchCases.reduce((total, currentCase) => {
@@ -417,8 +417,8 @@ export default function PaymentStatus() {
 
     let batchTotal残りBalance = selectedBatchCases.reduce((total, currentCase) => {
       const totalTerms = currentCase.installment_count || (currentCase.installmentPlan ? (currentCase.installmentPlan.match(/\d+/) ? parseInt(currentCase.installmentPlan.match(/\d+/)[0], 10) : 1) : 1);
-      const payment金額 = currentCase.nextPayment金額 || Math.round((currentCase.finalTotal || currentCase.totalExpense || 0) / totalTerms);
-      return total + Math.max(0, (currentCase.finalTotal || currentCase.totalExpense || 0) - (((currentCase.paidTerms || 0) + 1) * payment金額));
+      const paymentAmount = currentCase.nextPaymentAmount || Math.round((currentCase.finalTotal || currentCase.totalExpense || 0) / totalTerms);
+      return total + Math.max(0, (currentCase.finalTotal || currentCase.totalExpense || 0) - (((currentCase.paidTerms || 0) + 1) * paymentAmount));
     }, 0);
 
     // Auto add remaining balance to Net Payable if less than 1000 yen
@@ -549,7 +549,7 @@ export default function PaymentStatus() {
 
         const itemsBody = selectedBatchCases.map((c, idx) => {
           const totalTerms = c.installment_count || (c.installmentPlan ? (c.installmentPlan.match(/\d+/) ? parseInt(c.installmentPlan.match(/\d+/)[0], 10) : 1) : 1);
-          const claimAmt = c.nextPayment金額 || Math.round((c.finalTotal || c.totalExpense || 0) / totalTerms);
+          const claimAmt = c.nextPaymentAmount || Math.round((c.finalTotal || c.totalExpense || 0) / totalTerms);
           return [
             String(idx + 1).padStart(2, '0'),
             `#${c._id.slice(-6).toUpperCase()}`,
@@ -693,7 +693,7 @@ export default function PaymentStatus() {
             <div className="w-48">
               <label className="block text-xs font-bold text-gray-600 mb-1">ステータス</label>
               <div className="relative">
-                <select value={statusFilter} onChange={e => setステータスFilter(e.target.value)} className="w-full pl-4 pr-10 py-2 border border-gray-300 rounded-md text-sm appearance-none focus:outline-none focus:ring-1 focus:ring-[#162D50] text-gray-600">
+                <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)} className="w-full pl-4 pr-10 py-2 border border-gray-300 rounded-md text-sm appearance-none focus:outline-none focus:ring-1 focus:ring-[#162D50] text-gray-600">
                   <option value="すべてのステータス">すべてのステータス</option>
                   {[...new Set(personCases.map(c => c.status))].filter(Boolean).map(status => (
                     <option key={status} value={status}>{status}</option>
@@ -827,12 +827,12 @@ export default function PaymentStatus() {
               </p>
             </div>
             
-            <form className="space-y-8 print:space-y-4" on送信={async (e) => {
+            <form className="space-y-8 print:space-y-4" onSubmit={async (e) => {
               e.preventDefault();
               const confirm = await toastConfirm("Are you sure you want to record this payment?");
               if (confirm) {
                 setIsConfirmed(true);
-                setTimeout(() => handleForm送信(e, true), 0);
+                setTimeout(() => handleFormSubmit(e, true), 0);
               }
             }}>
               {/* Header Details */}
@@ -861,7 +861,7 @@ export default function PaymentStatus() {
                 <div className="space-y-4 print:space-y-2">
                   {selectedBatchCases.map((c, idx) => {
                     const totalTerms = c.installment_count || (c.installmentPlan ? (c.installmentPlan.match(/\d+/) ? parseInt(c.installmentPlan.match(/\d+/)[0], 10) : 1) : 1);
-                    const claim金額 = c.nextPayment金額 || Math.round((c.finalTotal || c.totalExpense || 0) / totalTerms);
+                    const claimAmount = c.nextPaymentAmount || Math.round((c.finalTotal || c.totalExpense || 0) / totalTerms);
                     return (
                       <div key={c._id} className="grid grid-cols-12 gap-4 text-sm items-center">
                         <div className="col-span-1 font-mono text-gray-500">{String(idx + 1).padStart(2, '0')}</div>
@@ -870,7 +870,7 @@ export default function PaymentStatus() {
                         <div className="col-span-2 font-mono text-gray-500 text-xs">
                           {new Date(c.expense期間Start || c.createdAt).toLocaleDateString()}
                         </div>
-                        <div className="col-span-2 text-right font-mono font-bold">¥ {claim金額.toLocaleString()}</div>
+                        <div className="col-span-2 text-right font-mono font-bold">¥ {claimAmount.toLocaleString()}</div>
                       </div>
                     );
                   })}
@@ -1055,11 +1055,11 @@ export default function PaymentStatus() {
                     </button>
                     <button 
                       type="submit" 
-                      disabled={is送信ting || !paymentMethod}
+                      disabled={isSubmitting || !paymentMethod}
                       className="px-8 py-2 bg-[#162D50] text-[#F5F1E6] rounded-none text-xs font-bold uppercase tracking-widest hover:bg-black transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
                     >
-                      {is送信ting ? '処理中...' : '支払いを記録'}
-                      {!is送信ting && <ArrowRight className="w-4 h-4 ml-2" />}
+                      {isSubmitting ? '処理中...' : '支払いを記録'}
+                      {!isSubmitting && <ArrowRight className="w-4 h-4 ml-2" />}
                     </button>
                   </div>
                 </div>
@@ -1384,7 +1384,7 @@ export default function PaymentStatus() {
         <div className="w-48">
           <label className="block text-xs font-bold text-gray-600 mb-1">ステータス</label>
           <div className="relative">
-            <select value={statusFilter} onChange={e => setステータスFilter(e.target.value)} className="w-full pl-4 pr-10 py-2 border border-gray-300 rounded-md text-sm appearance-none focus:outline-none focus:ring-1 focus:ring-[#162D50] text-gray-600">
+            <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)} className="w-full pl-4 pr-10 py-2 border border-gray-300 rounded-md text-sm appearance-none focus:outline-none focus:ring-1 focus:ring-[#162D50] text-gray-600">
               <option value="すべてのステータス">すべてのステータス</option>
               {[...new Set(cases.map(c => c.status))].filter(Boolean).map(status => (
                 <option key={status} value={status}>{status}</option>
@@ -1455,7 +1455,7 @@ export default function PaymentStatus() {
                 const is完了 = paidTerms >= totalTerms;
                 
                 // Override status badge if completed via installment logic
-                const displayステータス = is完了 ? '完了' : c.status;
+                const displayStatus = is完了 ? '完了' : c.status;
 
                 return (
                   <tr key={c._id} className="border-b border-gray-100 hover:bg-gray-50">
@@ -1485,12 +1485,12 @@ export default function PaymentStatus() {
                     </td>
                     <td className="py-4 px-6">
                       <span className={`px-3 py-1 rounded-full text-xs font-medium border ${
-                        displayステータス === '保留中' ? 'bg-yellow-100 text-yellow-700 border-yellow-200' :
-                        (displayステータス === '処理中' || displayステータス === 'APPROVED_FOR_PAYMENT') ? 'bg-blue-100 text-blue-700 border-blue-200' :
-                        displayステータス === '完了' ? 'bg-green-100 text-green-700 border-green-200' :
+                        displayStatus === '保留中' ? 'bg-yellow-100 text-yellow-700 border-yellow-200' :
+                        (displayStatus === '処理中' || displayStatus === 'APPROVED_FOR_PAYMENT') ? 'bg-blue-100 text-blue-700 border-blue-200' :
+                        displayStatus === '完了' ? 'bg-green-100 text-green-700 border-green-200' :
                         'bg-gray-100 text-gray-700 border-gray-200'
                       }`}>
-                        {totalTerms > 1 ? `${Math.min(paidTerms, totalTerms)}/${totalTerms} 完了` : (displayステータス === '処理中' ? 'APPROVED_FOR_PAYMENT' : displayステータス)}
+                        {totalTerms > 1 ? `${Math.min(paidTerms, totalTerms)}/${totalTerms} 完了` : (displayStatus === '処理中' ? 'APPROVED_FOR_PAYMENT' : displayStatus)}
                       </span>
                     </td>
                     <td className="py-4 px-6 text-right whitespace-nowrap">
