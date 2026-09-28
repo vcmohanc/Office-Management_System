@@ -405,7 +405,7 @@ export default function PaymentStatus() {
     if (c.paidTerms > 0 && c.paidTerms < totalTerms) return true;
     if (c.status && c.status.includes('完了') && c.status !== '完了') return true;
     
-    return ['APPROVED_FOR_PAYMENT', 'Payment 保留中', '処理中', '期限切れ'].includes(c.status) || c.status === 'Approve for Payment' || c.status === '承認済 for Payment';
+    return ['支払承認済', 'Payment 保留中', '処理中', '期限切れ'].includes(c.status) || c.status === 'Approve for Payment' || c.status === '承認済 for Payment';
   });
 
   const officeCasesCount = postApprovalCases.filter(c => c.advancerCategory === 'Office').length;
@@ -433,7 +433,7 @@ export default function PaymentStatus() {
 
   const totalOfficePayment = postApprovalCases.filter(c => c.advancerCategory === 'Office').reduce((sum, c) => sum + get残りBalance(c), 0);
   const totalStaffPayment = postApprovalCases.filter(c => c.advancerCategory === 'Staff').reduce((sum, c) => sum + get残りBalance(c), 0);
-  const pendingCount = postApprovalCases.filter(c => c.status === 'Payment 保留中' || c.status === 'APPROVED_FOR_PAYMENT').length;
+  const pendingCount = postApprovalCases.filter(c => c.status === 'Payment 保留中' || c.status === '支払承認済').length;
   const processingCount = postApprovalCases.filter(c => c.status === '処理中').length;
   const completedCount = postApprovalCases.filter(c => c.status === '完了').length;
   const overdueCount = postApprovalCases.filter(c => c.status === '期限切れ').length;
@@ -442,7 +442,7 @@ export default function PaymentStatus() {
     const personCases = postApprovalCases.filter(c => c.staffId === selectedCase.staffId && (c.advancerCategory === activePaymentTab || (!c.advancerCategory && activePaymentTab === 'Office')));
     const personTotalOfficePayment = personCases.filter(c => c.advancerCategory === 'Office').reduce((sum, c) => sum + get残りBalance(c), 0);
     const personTotalStaffPayment = personCases.filter(c => c.advancerCategory === 'Staff').reduce((sum, c) => sum + get残りBalance(c), 0);
-    const person保留中Count = personCases.filter(c => c.status === 'Payment 保留中' || c.status === 'APPROVED_FOR_PAYMENT').length;
+    const person保留中Count = personCases.filter(c => c.status === 'Payment 保留中' || c.status === '支払承認済').length;
     const person処理中Count = personCases.filter(c => c.status === '処理中').length;
     
     const filteredPersonCases = personCases.filter(c => {
@@ -835,7 +835,7 @@ export default function PaymentStatus() {
                   <td className="py-4 px-6 font-bold text-[#162D50]">{c.currency === 'JPY' ? '¥' : '$'}{Math.round(get残りBalance(c)).toLocaleString()}</td>
                   <td className="py-4 px-6">
                     <span className={`px-2 py-1 rounded-full text-xs font-medium border ${
-                      c.status === 'Payment 保留中' || c.status === 'APPROVED_FOR_PAYMENT' ? 'bg-yellow-100 text-yellow-700 border-yellow-200' :
+                      c.status === 'Payment 保留中' || c.status === '支払承認済' ? 'bg-yellow-100 text-yellow-700 border-yellow-200' :
                       c.status === '処理中' || (c.status && c.status.includes('完了') && c.status !== '完了') ? 'bg-blue-100 text-blue-700 border-blue-200' :
                       c.status === '完了' ? 'bg-green-100 text-green-700 border-green-200' :
                       'bg-gray-100 text-gray-700 border-gray-200'
@@ -1545,11 +1545,11 @@ export default function PaymentStatus() {
                     <td className="py-4 px-6">
                       <span className={`px-3 py-1 rounded-full text-xs font-medium border ${
                         displayStatus === '保留中' ? 'bg-yellow-100 text-yellow-700 border-yellow-200' :
-                        (displayStatus === '処理中' || displayStatus === 'APPROVED_FOR_PAYMENT') ? 'bg-blue-100 text-blue-700 border-blue-200' :
+                        (displayStatus === '処理中' || displayStatus === '支払承認済') ? 'bg-blue-100 text-blue-700 border-blue-200' :
                         displayStatus === '完了' ? 'bg-green-100 text-green-700 border-green-200' :
                         'bg-gray-100 text-gray-700 border-gray-200'
                       }`}>
-                        {totalTerms > 1 ? `${Math.min(paidTerms, totalTerms)}/${totalTerms} 完了` : (displayStatus === '処理中' ? 'APPROVED_FOR_PAYMENT' : displayStatus)}
+                        {totalTerms > 1 ? `${Math.min(paidTerms, totalTerms)}/${totalTerms} 完了` : (displayStatus === '処理中' ? '支払承認済' : displayStatus)}
                       </span>
                     </td>
                     <td className="py-4 px-6 text-right whitespace-nowrap">
