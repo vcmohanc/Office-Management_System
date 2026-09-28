@@ -958,6 +958,33 @@ export default function NewCase() {
                       toast.error('決済および回収の必須項目をすべて入力してください。');
                       return;
                     }
+
+                    if (staffInfo.visaAvailableTime) {
+                      const visaDate = new Date(staffInfo.visaAvailableTime);
+                      let isVisaInvalid = false;
+                      
+                      const expectedDate = new Date(expectedSettlementDate);
+                      if (visaDate < expectedDate) {
+                        isVisaInvalid = true;
+                      }
+                      
+                      let finalPlanDate = new Date(collectionStartMonth + '-01');
+                      if (installments > 1) {
+                        finalPlanDate.setMonth(finalPlanDate.getMonth() + installments - 1);
+                      }
+                      // Set to the end of the final plan month
+                      finalPlanDate = new Date(finalPlanDate.getFullYear(), finalPlanDate.getMonth() + 1, 0);
+                      
+                      if (visaDate < finalPlanDate) {
+                        isVisaInvalid = true;
+                      }
+
+                      if (isVisaInvalid) {
+                        toast.error('ビザの有効期限が精算予定日または分割払いの完了月より前です。期間を見直してください。');
+                        return;
+                      }
+                    }
+
                     setNewCaseStep(3);
                   }}
                   className="bg-[#0A192F] text-white px-8 py-3 rounded-md font-bold text-sm flex items-center hover:bg-[#162D50] transition-colors shadow-sm">
