@@ -58,8 +58,8 @@ export default function AccountDashboard() {
           <p className="text-3xl font-bold text-[#162D50] mb-2">
             {loading ? '...' : formatCurrency(data.totalActiveAdvances)}
           </p>
-          <p className="text-xs font-medium text-blue-500 flex items-center">
-            <TrendingUp className="w-3 h-3 mr-1" /> 先月比 +12%
+          <p className={`text-xs font-medium flex items-center ${data.activeAdvancesMoM >= 0 ? 'text-blue-500' : 'text-red-500'}`}>
+            <TrendingUp className="w-3 h-3 mr-1" /> 先月比 {data.activeAdvancesMoM >= 0 ? '+' : ''}{data.activeAdvancesMoM || 0}%
           </p>
         </div>
         
@@ -87,7 +87,7 @@ export default function AccountDashboard() {
             {loading ? '...' : formatCurrency(data.recoveredThisPeriod)}
           </p>
           <p className="text-xs font-medium text-gray-500">
-            回収率 98%
+            回収率 {data.overallRecoveryRate || 0}%
           </p>
         </div>
       </div>
