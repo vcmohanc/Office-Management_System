@@ -50,7 +50,8 @@ const employeeSchema = new mongoose.Schema({
   staffType: { type: String },
   workingDays: { type: [Date], default: [] },
   visaAppStatus: { type: String, default: 'Not Applied' },
-  visaExpiryHistory: { type: [Date], default: [] }
+  visaExpiryHistory: { type: [Date], default: [] },
+  pledgeDocument: { type: String }
 }, { timestamps: true });
 
 export default mongoose.model('Employee', employeeSchema);
