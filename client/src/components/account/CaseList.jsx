@@ -433,30 +433,25 @@ export default function CaseList() {
     expense_type: c.expenseType || c.expense_type || 'N/A',
   }));
 
-  const isPreApprovalステータス = (status) => ['New', '保留中', '保留中 Correction', 'RETURNED_FOR_CORRECTION', '拒否', 'REJECTED', 'Registered', 'New Case'].includes(status);
-
-  const preApprovalCases = mappedCases.filter(c => isPreApprovalステータス(c.status));
-  const preApprovalClaims = mappedClaims.filter(c => isPreApprovalステータス(c.status));
-
-  const allRecords = [...preApprovalCases, ...preApprovalClaims];
+  const allRecords = [...mappedCases, ...mappedClaims];
 
   const officeCasesCount = allRecords.filter(c => c.type === 'Office Case').length;
   const staffCasesCount = allRecords.filter(c => c.type === 'Staff Case').length;
   const hostCompanyCasesCount = allRecords.filter(c => c.type === 'Host Company Case').length;
 
-  const hasOfficeNotification = preApprovalCases.some(c => 
+  const hasOfficeNotification = mappedCases.some(c => 
     c.type === 'Office Case' && (
       (user.role === 'support' && (c.hasSupportNotification || (c.messages && c.messages.some(m => !m.readBySupport)))) ||
       (user.role !== 'support' && c.hasAccountNotification)
     )
   );
 
-  const hasStaffNotification = preApprovalClaims.some(c => 
+  const hasStaffNotification = mappedClaims.some(c => 
     (user.role === 'support' && (c.hasSupportNotification || (c.messages && c.messages.some(m => !m.readBySupport)))) ||
     (user.role !== 'support' && c.hasAccountNotification)
   );
 
-  const hasHostCompanyNotification = preApprovalCases.some(c => 
+  const hasHostCompanyNotification = mappedCases.some(c => 
     c.type === 'Host Company Case' && (
       (user.role === 'support' && (c.hasSupportNotification || (c.messages && c.messages.some(m => !m.readBySupport)))) ||
       (user.role !== 'support' && c.hasAccountNotification)
