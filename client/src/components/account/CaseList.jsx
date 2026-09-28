@@ -441,7 +441,10 @@ export default function CaseList() {
   };
 
   const allRecords = [...mappedCases, ...mappedClaims]
-    .filter(c => !['APPROVED_FOR_PAYMENT', 'Approve for Payment', '支払承認', '承認済 for Payment', 'Payment 保留中', '処理中', '完了'].includes(c.status))
+    .filter(c => {
+      if (c.status && c.status.includes('完了')) return false;
+      return !['APPROVED_FOR_PAYMENT', 'Approve for Payment', '支払承認', '承認済 for Payment', 'Payment 保留中', '処理中', 'Processing', 'processing'].includes(c.status);
+    })
     .map(c => ({ ...c, displayStatus: getDisplayStatus(c.status) }));
 
   const officeCasesCount = allRecords.filter(c => c.type === 'Office Case').length;

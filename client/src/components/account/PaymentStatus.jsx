@@ -98,11 +98,15 @@ export default function PaymentStatus() {
 
   useEffect(() => {
     if (selectedCase) {
-      const totalTerms = selectedCase.installmentPlan ? (selectedCase.installmentPlan.match(/\d+/) ? parseInt(selectedCase.installmentPlan.match(/\d+/)[0], 10) : 1) : 1;
-      const claimAmount = selectedCase.nextPaymentAmount || Math.round((selectedCase.finalTotal || selectedCase.totalExpense || 0) / totalTerms);
+      const totalTerms = selectedCase.installment_count || (selectedCase.installmentPlan ? (selectedCase.installmentPlan.match(/\d+/) ? parseInt(selectedCase.installmentPlan.match(/\d+/)[0], 10) : 1) : 1);
+      const totalAmt = selectedCase.finalTotal || selectedCase.totalExpense || 0;
+      const baseAmt = Math.round(totalAmt / totalTerms);
+      const isLastTerm = ((selectedCase.paidTerms || 0) + 1) >= totalTerms;
+      const calculatedAmt = isLastTerm ? (totalAmt - (baseAmt * (totalTerms - 1))) : baseAmt;
+      const claimAmount = selectedCase.nextPaymentAmount || calculatedAmt;
       const advanceToRecover = selectedCase.previousBalance || 0;
       
-      if (paymentMethod === 'Payroll Deduction') {
+      if (paymentMethod === '給与控除' || paymentMethod === '給与振込') {
         setDeductions(claimAmount);
       } else if (advanceToRecover > 0) {
         setDeductions(Math.round(advanceToRecover / totalTerms));
@@ -115,14 +119,46 @@ export default function PaymentStatus() {
   useEffect(() => {
     if (selectedCase) {
       // Auto-populate 支払方法 based on agreed terms
+      let method = '';
       if (selectedCase.advancerCategory === 'Staff') {
-        let method = selectedCase.settlement_method || selectedCase.settlementMethod || '';
-        if (method === 'Cash') method = 'Petty Cash';
+        const rawMethod = selectedCase.settlement_method || selectedCase.settlementMethod || '';
+        if (rawMethod === 'Cash' || rawMethod === 'Petty Cash' || rawMethod === '小口現金') method = '小口現金';
+        else if (rawMethod.includes('Bank') || rawMethod.includes('銀行')) method = '銀行振込';
+        else if (rawMethod.includes('Salary') || rawMethod.includes('Payroll') || rawMethod.includes('給与')) method = '給与振込';
+        else if (rawMethod.includes('Check') || rawMethod.includes('小切手')) method = '小切手';
+        else method = rawMethod;
+      } else {
+        const rawMethod = selectedCase.collection_method || selectedCase.collectionMethod || '';
+        if (rawMethod === 'Cash' || rawMethod.includes('現金')) method = 'Cash';
+        else if (rawMethod.includes('Bank') || rawMethod.includes('銀行')) method = '銀行振込';
+        else if (rawMethod.includes('Salary') || rawMethod.includes('Payroll') || rawMethod.includes('Deduction') || rawMethod.includes('給与')) method = '給与控除';
+        else if (rawMethod.includes('Card') || rawMethod.includes('法人カード')) method = '法人カード';
+        else method = rawMethod;
+      }
+      
+      const validOptions = selectedCase.advancerCategory === 'Staff' 
+        ? ['銀行振込', '給与振込', '小口現金', '小切手']
+        : ['銀行振込', '法人カード', 'Cash', '給与控除'];
+        
+      if (validOptions.includes(method)) {
         setPaymentMethod(method);
       } else {
-        let method = selectedCase.collection_method || selectedCase.collectionMethod || '';
-        setPaymentMethod(method);
+        setPaymentMethod(''); // Reset if not matching
       }
+
+      // Auto-fill destination details
+      const newDestDetails = {};
+      if (method === '銀行振込') {
+        const bankInfo = selectedCase.bankInfo || {};
+        newDestDetails.bankName = bankInfo.bankName || selectedCase.bankName || '';
+        newDestDetails.branchCode = bankInfo.branchCode || selectedCase.branchCode || '';
+        newDestDetails.accountNumber = bankInfo.accountNumber || selectedCase.accountNumber || '';
+      }
+      if (method === '給与控除' || method === '給与振込') {
+        // default to current month
+        newDestDetails.payroll期間 = new Date().toISOString().slice(0, 7);
+      }
+      set目的地Details(newDestDetails);
     }
   }, [selectedCase]);
 
@@ -158,8 +194,10 @@ export default function PaymentStatus() {
       
       const totalTerms = row.installment_count || (row.installmentPlan ? (row.installmentPlan.match(/\d+/) ? parseInt(row.installmentPlan.match(/\d+/)[0], 10) : 1) : 1);
       const paidTerms = row.paidTerms || 0;
-      const nextPaymentAmount = row.nextPaymentAmount || (row.finalTotal || row.totalExpense || 0) / totalTerms;
-      const remainingAmount = Math.max(0, (row.finalTotal || row.totalExpense || 0) - (paidTerms * nextPaymentAmount));
+      const totalAmt = row.finalTotal || row.totalExpense || 0;
+      const baseAmt = Math.round(totalAmt / totalTerms);
+      const totalPaid = (baseAmt * Math.min(paidTerms, totalTerms - 1)) + (paidTerms >= totalTerms ? (totalAmt - baseAmt * (totalTerms - 1)) : 0);
+      const remainingAmount = Math.max(0, totalAmt - totalPaid);
       
       const status = row.status || 'N/A';
       const advancerCategory = row.advancerCategory || 'N/A';
@@ -215,7 +253,11 @@ export default function PaymentStatus() {
     
     for (const currentCase of selectedBatchCases) {
       const totalTerms = currentCase.installmentPlan ? (currentCase.installmentPlan.match(/\d+/) ? parseInt(currentCase.installmentPlan.match(/\d+/)[0], 10) : 1) : 1;
-      const claimAmount = currentCase.nextPaymentAmount || Math.round((currentCase.finalTotal || currentCase.totalExpense || 0) / totalTerms);
+      const totalAmt = currentCase.finalTotal || currentCase.totalExpense || 0;
+      const baseAmt = Math.round(totalAmt / totalTerms);
+      const isLastTerm = ((currentCase.paidTerms || 0) + 1) >= totalTerms;
+      const calculatedAmt = isLastTerm ? (totalAmt - (baseAmt * (totalTerms - 1))) : baseAmt;
+      const claimAmount = currentCase.nextPaymentAmount || calculatedAmt;
       
       let caseDeduction = 0;
       if (remainingDeduction > 0) {
@@ -254,7 +296,7 @@ export default function PaymentStatus() {
           newCases = newCases.map(c => {
             if (c._id === currentCase._id) {
               const newPaidTerms = (c.paidTerms || 0) + 1;
-              const newStatus = newPaidTerms >= totalTerms ? '完了' : '処理中';
+              const newStatus = newPaidTerms >= totalTerms ? '完了' : `${newPaidTerms}/${totalTerms} 完了`;
               return { ...c, paidTerms: newPaidTerms, status: newStatus };
             }
             return c;
@@ -360,6 +402,9 @@ export default function PaymentStatus() {
     const totalTerms = c.installment_count || (c.installmentPlan ? (c.installmentPlan.match(/\d+/) ? parseInt(c.installmentPlan.match(/\d+/)[0], 10) : 1) : 1);
     if (c.paidTerms >= totalTerms && totalTerms > 0) return false;
     
+    if (c.paidTerms > 0 && c.paidTerms < totalTerms) return true;
+    if (c.status && c.status.includes('完了') && c.status !== '完了') return true;
+    
     return ['APPROVED_FOR_PAYMENT', 'Payment 保留中', '処理中', '期限切れ'].includes(c.status) || c.status === 'Approve for Payment' || c.status === '承認済 for Payment';
   });
 
@@ -380,8 +425,10 @@ export default function PaymentStatus() {
   const get残りBalance = (c) => {
     const totalTerms = c.installment_count || (c.installmentPlan ? (c.installmentPlan.match(/\d+/) ? parseInt(c.installmentPlan.match(/\d+/)[0], 10) : 1) : 1);
     const paidTerms = c.paidTerms || 0;
-    const nextPaymentAmount = c.nextPaymentAmount || (c.finalTotal || c.totalExpense || 0) / totalTerms;
-    return Math.max(0, (c.finalTotal || c.totalExpense || 0) - (paidTerms * nextPaymentAmount));
+    const totalAmt = c.finalTotal || c.totalExpense || 0;
+    const baseAmt = Math.round(totalAmt / totalTerms);
+    const totalPaid = (baseAmt * Math.min(paidTerms, totalTerms - 1)) + (paidTerms >= totalTerms ? (totalAmt - baseAmt * (totalTerms - 1)) : 0);
+    return Math.max(0, totalAmt - totalPaid);
   };
 
   const totalOfficePayment = postApprovalCases.filter(c => c.advancerCategory === 'Office').reduce((sum, c) => sum + get残りBalance(c), 0);
@@ -408,7 +455,11 @@ export default function PaymentStatus() {
 
     let batchTotalNextPayment = selectedBatchCases.reduce((total, currentCase) => {
       const totalTerms = currentCase.installment_count || (currentCase.installmentPlan ? (currentCase.installmentPlan.match(/\d+/) ? parseInt(currentCase.installmentPlan.match(/\d+/)[0], 10) : 1) : 1);
-      return total + (currentCase.nextPaymentAmount || Math.round((currentCase.finalTotal || currentCase.totalExpense || 0) / totalTerms));
+      const totalAmt = currentCase.finalTotal || currentCase.totalExpense || 0;
+      const baseAmt = Math.round(totalAmt / totalTerms);
+      const isLastTerm = ((currentCase.paidTerms || 0) + 1) >= totalTerms;
+      const calculatedAmt = isLastTerm ? (totalAmt - (baseAmt * (totalTerms - 1))) : baseAmt;
+      return total + (currentCase.nextPaymentAmount || calculatedAmt);
     }, 0);
 
     let batchTotalBaseClaim = selectedBatchCases.reduce((total, currentCase) => {
@@ -781,7 +832,7 @@ export default function PaymentStatus() {
                   <td className="py-4 px-6">
                     <span className={`px-2 py-1 rounded-full text-xs font-medium border ${
                       c.status === 'Payment 保留中' || c.status === 'APPROVED_FOR_PAYMENT' ? 'bg-yellow-100 text-yellow-700 border-yellow-200' :
-                      c.status === '処理中' ? 'bg-blue-100 text-blue-700 border-blue-200' :
+                      c.status === '処理中' || (c.status && c.status.includes('完了') && c.status !== '完了') ? 'bg-blue-100 text-blue-700 border-blue-200' :
                       c.status === '完了' ? 'bg-green-100 text-green-700 border-green-200' :
                       'bg-gray-100 text-gray-700 border-gray-200'
                     }`}>
@@ -861,7 +912,11 @@ export default function PaymentStatus() {
                 <div className="space-y-4 print:space-y-2">
                   {selectedBatchCases.map((c, idx) => {
                     const totalTerms = c.installment_count || (c.installmentPlan ? (c.installmentPlan.match(/\d+/) ? parseInt(c.installmentPlan.match(/\d+/)[0], 10) : 1) : 1);
-                    const claimAmount = c.nextPaymentAmount || Math.round((c.finalTotal || c.totalExpense || 0) / totalTerms);
+                    const totalAmt = c.finalTotal || c.totalExpense || 0;
+                    const baseAmt = Math.round(totalAmt / totalTerms);
+                    const isLastTerm = ((c.paidTerms || 0) + 1) >= totalTerms;
+                    const calculatedAmt = isLastTerm ? (totalAmt - (baseAmt * (totalTerms - 1))) : baseAmt;
+                    const claimAmount = c.nextPaymentAmount || calculatedAmt;
                     return (
                       <div key={c._id} className="grid grid-cols-12 gap-4 text-sm items-center">
                         <div className="col-span-1 font-mono text-gray-500">{String(idx + 1).padStart(2, '0')}</div>
@@ -878,29 +933,31 @@ export default function PaymentStatus() {
               </div>
 
               {/* 合意条件 (Read-Only) */}
-              <div className="border-b border-dashed border-[#162D50] pb-8 mb-8 print:pb-4 print:mb-4">
-                <div className="text-xs font-bold uppercase tracking-widest text-gray-500 mb-6 print:mb-2">合意条件</div>
-                <div className="grid grid-cols-4 gap-6">
-                  <div>
-                    <label className="block text-[10px] font-bold uppercase tracking-widest mb-1 text-gray-400">回収・精算方法</label>
-                    <div className="font-mono text-sm">{selectedCase.advancerCategory === 'Staff' ? (selectedCase.settlement_method || selectedCase.settlementMethod || 'N/A') : (selectedCase.collection_method || selectedCase.collectionMethod || 'N/A')}</div>
-                  </div>
-                  <div>
-                    <label className="block text-[10px] font-bold uppercase tracking-widest mb-1 text-gray-400">分割払いプラン</label>
-                    <div className="font-mono text-sm">{selectedCase.installment_plan || selectedCase.installmentPlan || 'N/A'}</div>
-                  </div>
-                  <div>
-                    <label className="block text-[10px] font-bold uppercase tracking-widest mb-1 text-gray-400">開始月</label>
-                    <div className="font-mono text-sm">{selectedCase.collection_start_month || selectedCase.collectionStartMonth || 'N/A'}</div>
-                  </div>
-                  <div>
-                    <label className="block text-[10px] font-bold uppercase tracking-widest mb-1 text-gray-400">現在の期間</label>
-                    <div className="font-mono text-sm">
-                      {selectedCaseTotalTerms > 1 ? `第${selectedCaseCurrentTerm}回 / 全${selectedCaseTotalTerms}回` : 'N/A'}
+              {selectedCase.advancerCategory !== 'Staff' && (
+                <div className="border-b border-dashed border-[#162D50] pb-8 mb-8 print:pb-4 print:mb-4">
+                  <div className="text-xs font-bold uppercase tracking-widest text-gray-500 mb-6 print:mb-2">合意条件</div>
+                  <div className="grid grid-cols-4 gap-6">
+                    <div>
+                      <label className="block text-[10px] font-bold uppercase tracking-widest mb-1 text-gray-400">回収・精算方法</label>
+                      <div className="font-mono text-sm">{selectedCase.advancerCategory === 'Staff' ? (selectedCase.settlement_method || selectedCase.settlementMethod || 'N/A') : (selectedCase.collection_method || selectedCase.collectionMethod || 'N/A')}</div>
+                    </div>
+                    <div>
+                      <label className="block text-[10px] font-bold uppercase tracking-widest mb-1 text-gray-400">分割払いプラン</label>
+                      <div className="font-mono text-sm">{selectedCase.installment_plan || selectedCase.installmentPlan || 'N/A'}</div>
+                    </div>
+                    <div>
+                      <label className="block text-[10px] font-bold uppercase tracking-widest mb-1 text-gray-400">開始月</label>
+                      <div className="font-mono text-sm">{selectedCase.collection_start_month || selectedCase.collectionStartMonth || 'N/A'}</div>
+                    </div>
+                    <div>
+                      <label className="block text-[10px] font-bold uppercase tracking-widest mb-1 text-gray-400">現在の期間</label>
+                      <div className="font-mono text-sm">
+                        {selectedCaseTotalTerms > 1 ? `第${selectedCaseCurrentTerm}回 / 全${selectedCaseTotalTerms}回` : 'N/A'}
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
+              )}
 
               {/* 支払方法 & Deductions Form (Interactive) */}
               <div className="mt-8 print:hidden border-t border-dashed border-[#162D50] pt-8">
@@ -949,15 +1006,15 @@ export default function PaymentStatus() {
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 bg-white/50 p-5 rounded border-2 border-dashed border-gray-300">
                       <div>
                         <label className="block text-xs font-semibold text-gray-600 uppercase mb-2">銀行名 <span className="text-red-500">*</span></label>
-                        <input type="text" onChange={(e) => set目的地Details({...destinationDetails, bankName: e.target.value})} className="w-full border border-gray-400 bg-white/70 rounded-none px-3 py-2 text-sm focus:ring-[#162D50] focus:border-[#162D50] outline-none font-mono" required />
+                        <input type="text" value={destinationDetails.bankName || ''} onChange={(e) => set目的地Details({...destinationDetails, bankName: e.target.value})} className="w-full border border-gray-400 bg-white/70 rounded-none px-3 py-2 text-sm focus:ring-[#162D50] focus:border-[#162D50] outline-none font-mono" required />
                       </div>
                       <div>
                         <label className="block text-[10px] font-bold text-gray-600 uppercase tracking-widest mb-2">支店コード <span className="text-red-500">*</span></label>
-                        <input type="text" onChange={(e) => set目的地Details({...destinationDetails, branchCode: e.target.value})} className="w-full border border-gray-400 bg-white/70 rounded-none px-3 py-2 text-sm focus:ring-[#162D50] focus:border-[#162D50] outline-none font-mono" required />
+                        <input type="text" value={destinationDetails.branchCode || ''} onChange={(e) => set目的地Details({...destinationDetails, branchCode: e.target.value})} className="w-full border border-gray-400 bg-white/70 rounded-none px-3 py-2 text-sm focus:ring-[#162D50] focus:border-[#162D50] outline-none font-mono" required />
                       </div>
                       <div>
                         <label className="block text-[10px] font-bold text-gray-600 uppercase tracking-widest mb-2">口座番号 <span className="text-red-500">*</span></label>
-                        <input type="text" onChange={(e) => set目的地Details({...destinationDetails, accountNumber: e.target.value})} className="w-full border border-gray-400 bg-white/70 rounded-none px-3 py-2 text-sm focus:ring-[#162D50] focus:border-[#162D50] outline-none font-mono" required />
+                        <input type="text" value={destinationDetails.accountNumber || ''} onChange={(e) => set目的地Details({...destinationDetails, accountNumber: e.target.value})} className="w-full border border-gray-400 bg-white/70 rounded-none px-3 py-2 text-sm focus:ring-[#162D50] focus:border-[#162D50] outline-none font-mono" required />
                       </div>
                     </div>
                   )}
@@ -966,7 +1023,7 @@ export default function PaymentStatus() {
                     <div className="space-y-4 bg-white/50 p-5 rounded border-2 border-dashed border-gray-300">
                       <div>
                         <label className="block text-[10px] font-bold uppercase tracking-widest text-gray-700 mb-2">対象給与期間 <span className="text-red-500">*</span></label>
-                        <input type="month" onChange={(e) => set目的地Details({...destinationDetails, payroll期間: e.target.value})} className="w-full border border-gray-400 bg-white/70 rounded-none px-3 py-2 text-sm focus:ring-[#162D50] focus:border-[#162D50] outline-none font-mono" required />
+                        <input type="month" value={destinationDetails.payroll期間 || ''} onChange={(e) => set目的地Details({...destinationDetails, payroll期間: e.target.value})} className="w-full border border-gray-400 bg-white/70 rounded-none px-3 py-2 text-sm focus:ring-[#162D50] focus:border-[#162D50] outline-none font-mono" required />
                       </div>
                     </div>
                   )}
@@ -975,11 +1032,11 @@ export default function PaymentStatus() {
                     <div className="grid grid-cols-2 gap-6 bg-white/50 p-5 rounded border-2 border-dashed border-gray-300">
                       <div>
                         <label className="block text-[10px] font-bold uppercase tracking-widest text-gray-600 mb-2">小切手番号 <span className="text-red-500">*</span></label>
-                        <input type="text" onChange={(e) => set目的地Details({...destinationDetails, checkNumber: e.target.value})} className="w-full border border-gray-400 bg-white/70 rounded-none px-3 py-2 text-sm focus:ring-[#162D50] focus:border-[#162D50] outline-none font-mono" required />
+                        <input type="text" value={destinationDetails.checkNumber || ''} onChange={(e) => set目的地Details({...destinationDetails, checkNumber: e.target.value})} className="w-full border border-gray-400 bg-white/70 rounded-none px-3 py-2 text-sm focus:ring-[#162D50] focus:border-[#162D50] outline-none font-mono" required />
                       </div>
                       <div>
                         <label className="block text-[10px] font-bold uppercase tracking-widest text-gray-600 mb-2">送付先 <span className="text-red-500">*</span></label>
-                        <input type="text" onChange={(e) => set目的地Details({...destinationDetails, checkDelivery: e.target.value})} className="w-full border border-gray-400 bg-white/70 rounded-none px-3 py-2 text-sm focus:ring-[#162D50] focus:border-[#162D50] outline-none font-mono" required />
+                        <input type="text" value={destinationDetails.checkDelivery || ''} onChange={(e) => set目的地Details({...destinationDetails, checkDelivery: e.target.value})} className="w-full border border-gray-400 bg-white/70 rounded-none px-3 py-2 text-sm focus:ring-[#162D50] focus:border-[#162D50] outline-none font-mono" required />
                       </div>
                     </div>
                   )}
@@ -988,11 +1045,11 @@ export default function PaymentStatus() {
                     <div className="grid grid-cols-2 gap-6 bg-white/50 p-5 rounded border-2 border-dashed border-gray-300">
                       <div>
                         <label className="block text-[10px] font-bold uppercase tracking-widest text-gray-600 mb-2">使用カード (下4桁) <span className="text-red-500">*</span></label>
-                        <input type="text" maxLength={4} pattern="\d{4}" onChange={(e) => set目的地Details({...destinationDetails, cardLast4: e.target.value})} className="w-full border border-gray-400 bg-white/70 rounded-none px-3 py-2 text-sm focus:ring-[#162D50] focus:border-[#162D50] outline-none font-mono" required />
+                        <input type="text" maxLength={4} pattern="\d{4}" value={destinationDetails.cardLast4 || ''} onChange={(e) => set目的地Details({...destinationDetails, cardLast4: e.target.value})} className="w-full border border-gray-400 bg-white/70 rounded-none px-3 py-2 text-sm focus:ring-[#162D50] focus:border-[#162D50] outline-none font-mono" required />
                       </div>
                       <div>
                         <label className="block text-[10px] font-bold uppercase tracking-widest text-gray-600 mb-2">カード名義 <span className="text-red-500">*</span></label>
-                        <input type="text" onChange={(e) => set目的地Details({...destinationDetails, cardholderName: e.target.value})} className="w-full border border-gray-400 bg-white/70 rounded-none px-3 py-2 text-sm focus:ring-[#162D50] focus:border-[#162D50] outline-none font-mono" required />
+                        <input type="text" value={destinationDetails.cardholderName || ''} onChange={(e) => set目的地Details({...destinationDetails, cardholderName: e.target.value})} className="w-full border border-gray-400 bg-white/70 rounded-none px-3 py-2 text-sm focus:ring-[#162D50] focus:border-[#162D50] outline-none font-mono" required />
                       </div>
                     </div>
                   )}
@@ -1000,7 +1057,7 @@ export default function PaymentStatus() {
                   {(paymentMethod === 'Cash' || paymentMethod === '小口現金') && (
                     <div className="bg-white/50 p-5 rounded border-2 border-dashed border-gray-300">
                       <label className="block text-[10px] font-bold uppercase tracking-widest text-gray-600 mb-2">受取人名 <span className="text-red-500">*</span></label>
-                      <input type="text" onChange={(e) => set目的地Details({...destinationDetails, receiverName: e.target.value})} className="w-full border border-gray-400 bg-white/70 rounded-none px-3 py-2 text-sm focus:ring-[#162D50] focus:border-[#162D50] outline-none font-mono" required />
+                      <input type="text" value={destinationDetails.receiverName || ''} onChange={(e) => set目的地Details({...destinationDetails, receiverName: e.target.value})} className="w-full border border-gray-400 bg-white/70 rounded-none px-3 py-2 text-sm focus:ring-[#162D50] focus:border-[#162D50] outline-none font-mono" required />
                     </div>
                   )}
 
@@ -1260,7 +1317,7 @@ export default function PaymentStatus() {
                     <td className="py-3 px-4 text-center">
                       <span className={`px-3 py-1 rounded-full text-xs font-medium border ${
                         c.status === 'Payment 保留中' ? 'bg-yellow-100 text-yellow-700 border-yellow-200' :
-                        c.status === '処理中' ? 'bg-blue-100 text-blue-700 border-blue-200' :
+                        c.status === '処理中' || (c.status && c.status.includes('完了') && c.status !== '完了') ? 'bg-blue-100 text-blue-700 border-blue-200' :
                         c.status === '完了' ? 'bg-green-100 text-green-700 border-green-200' :
                         c.status === '期限切れ' ? 'bg-red-100 text-red-700 border-red-200' :
                         'bg-gray-100 text-gray-700 border-gray-200'
