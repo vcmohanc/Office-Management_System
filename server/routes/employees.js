@@ -7,7 +7,7 @@ const router = express.Router();
 
 const employeeSchemaZod = z.object({
   staffId: z.string().optional(),
-  department: z.array(z.string()).min(1),
+  department: z.array(z.string()).optional(),
   location: z.string().optional(),
   joinDate: z.coerce.date(),
   katakanaName: z.string().min(1),
@@ -55,7 +55,8 @@ const employeeSchemaZod = z.object({
   staffType: z.string().optional(),
   workingDays: z.array(z.coerce.date()).optional(),
   visaAppStatus: z.string().optional(),
-  visaExpiryHistory: z.array(z.coerce.date().optional().nullable().or(z.literal(''))).optional()
+  visaExpiryHistory: z.array(z.coerce.date().optional().nullable().or(z.literal(''))).optional(),
+  pledgeDocument: z.string().optional()
 });
 
 

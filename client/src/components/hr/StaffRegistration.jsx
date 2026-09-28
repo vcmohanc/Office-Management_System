@@ -7,14 +7,44 @@ import MultiDatePicker from '../common/MultiDatePicker';
 export default function StaffRegistration({ setActiveTab }) {
   const [loading, setLoading] = useState(false);
   const [staffId, setStaffId] = useState('');
+  
+  // File state
   const [photoPreview, setPhotoPreview] = useState(null);
+  const [photoFile, setPhotoFile] = useState(null);
   const [pledgeFileName, setPledgeFileName] = useState(null);
+  const [pledgeFile, setPledgeFile] = useState(null);
+  
+  // Options state
+  const [options, setOptions] = useState({
+    Gender: [],
+    VisaStatus: [],
+    JoiningType: [],
+    Qualification: [],
+    EnglishLevel: [],
+    JapaneseLevel: [],
+    ClothingSize: [],
+    OnboardingStatus: []
+  });
+
   const [qualifications, setQualifications] = useState([{ passingYear: '', qualification: '', university: '' }]);
   
-  // Generate random スタッフID on component mount
+  // Generate random スタッフID on component mount and fetch options
   useEffect(() => {
     const randomHex = Math.floor(Math.random() * 16777215).toString(16).padStart(6, '0').toUpperCase();
     setStaffId(`STF${randomHex}`);
+
+    apiFetch('/api/options').then(res => res.json()).then(data => {
+      const newOptions = {
+        Gender: [], VisaStatus: [], JoiningType: [], Qualification: [],
+        EnglishLevel: [], JapaneseLevel: [], ClothingSize: [], OnboardingStatus: []
+      };
+      data.forEach(opt => {
+        if (newOptions[opt.type]) {
+          newOptions[opt.type].push(opt);
+        }
+      });
+      setOptions(newOptions);
+    }).catch(err => console.error('Failed to fetch options', err));
   }, []);
   const [workExperiences, setWorkExperiences] = useState([{ companyName: '', workPeriod: '', jobDescription: '' }]);
   const [departments, setDepartments] = useState([]);
@@ -72,6 +102,7 @@ export default function StaffRegistration({ setActiveTab }) {
     const file = e.target.files[0];
     if (file) {
       setPhotoPreview(URL.createObjectURL(file));
+      setPhotoFile(file);
     }
   };
 
@@ -79,14 +110,41 @@ export default function StaffRegistration({ setActiveTab }) {
     const file = e.target.files[0];
     if (file) {
       setPledgeFileName(file.name);
+      setPledgeFile(file);
     }
   };
+
+  const uploadFile = async (file) => {
+    const fd = new FormData();
+    fd.append('files', file);
+    const res = await apiFetch('/api/upload', {
+      method: 'POST',
+      body: fd,
+    });
+    if (!res.ok) throw new Error('File upload failed');
+    const data = await res.json();
+    return data.urls[0];
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     const formData = new FormData(e.target);
     const data = Object.fromEntries(formData.entries());
     
+    try {
+      if (photoFile) {
+        data.photo = await uploadFile(photoFile);
+      }
+      if (pledgeFile) {
+        data.pledgeDocument = await uploadFile(pledgeFile);
+      }
+    } catch (err) {
+      console.error('Error uploading files', err);
+      setLoading(false);
+      return;
+    }
+
     // Add dynamic arrays
     data.educationalQualifications = qualifications.map(q => ({
       passingYear: q.passingYear,
@@ -94,10 +152,6 @@ export default function StaffRegistration({ setActiveTab }) {
       institution: q.university
     }));
     data.workExperience = workExperiences;
-    if (photoPreview) {
-      data.photo = photoPreview;
-    }
-    
     data.workingDays = workingDays;
 
     console.log("Submitting Data:", data);
@@ -210,9 +264,15 @@ export default function StaffRegistration({ setActiveTab }) {
                 <label className="block text-xs font-bold text-gray-600 mb-1 uppercase tracking-wider">性別 <span className="text-red-500">*</span></label>
                 <select required name="gender" className="w-full px-4 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-[#162D50] text-gray-700 bg-white">
                   <option value="">性別を選択</option>
-                  <option value="Male">男性</option>
-                  <option value="Female">女性</option>
-                  <option value="Other">その他</option>
+                  {options.Gender?.length > 0 ? options.Gender.map(opt => (
+                    <option key={opt._id} value={opt.value}>{opt.label}</option>
+                  )) : (
+                    <>
+                      <option value="Male">男性</option>
+                      <option value="Female">女性</option>
+                      <option value="Other">その他</option>
+                    </>
+                  )}
                 </select>
               </div>
             </div>
@@ -246,18 +306,30 @@ export default function StaffRegistration({ setActiveTab }) {
               <label className="block text-xs font-bold text-gray-600 mb-1 uppercase tracking-wider">現在のビザステータス</label>
               <select name="currentVisaステータス" className="w-full px-4 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-[#162D50] text-gray-700 bg-white">
                 <option value="">ビザステータスを選択</option>
-                <option value="Working Visa">就労ビザ</option>
-                <option value="Student Visa">学生ビザ</option>
-                <option value="Permanent Resident">永住者</option>
+                {options.VisaStatus?.length > 0 ? options.VisaStatus.map(opt => (
+                  <option key={opt._id} value={opt.value}>{opt.label}</option>
+                )) : (
+                  <>
+                    <option value="Working Visa">就労ビザ</option>
+                    <option value="Student Visa">学生ビザ</option>
+                    <option value="Permanent Resident">永住者</option>
+                  </>
+                )}
               </select>
             </div>
             <div>
               <label className="block text-xs font-bold text-gray-600 mb-1 uppercase tracking-wider">雇用形態</label>
               <select name="joiningType" className="w-full px-4 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-[#162D50] text-gray-700 bg-white">
                 <option value="">雇用形態を選択</option>
-                <option value="Full-time">正社員</option>
-                <option value="Part-time">アルバイト・パート</option>
-                <option value="Contract">契約社員</option>
+                {options.JoiningType?.length > 0 ? options.JoiningType.map(opt => (
+                  <option key={opt._id} value={opt.value}>{opt.label}</option>
+                )) : (
+                  <>
+                    <option value="Full-time">正社員</option>
+                    <option value="Part-time">アルバイト・パート</option>
+                    <option value="Contract">契約社員</option>
+                  </>
+                )}
               </select>
             </div>
           </div>
@@ -299,9 +371,15 @@ export default function StaffRegistration({ setActiveTab }) {
                   <label className="block text-xs font-bold text-gray-600 mb-1 uppercase tracking-wider">学位・資格</label>
                   <select className="w-full px-4 py-2 border border-gray-300 rounded-md text-sm bg-white text-gray-700" value={q.qualification} onChange={(e) => handleQualificationChange(index, 'qualification', e.target.value)}>
                     <option value="">学位・資格を選択</option>
-                    <option value="Bachelor's Degree">学士</option>
-                    <option value="Master's Degree">修士</option>
-                    <option value="PhD">博士</option>
+                    {options.Qualification?.length > 0 ? options.Qualification.map(opt => (
+                      <option key={opt._id} value={opt.value}>{opt.label}</option>
+                    )) : (
+                      <>
+                        <option value="Bachelor's Degree">学士</option>
+                        <option value="Master's Degree">修士</option>
+                        <option value="PhD">博士</option>
+                      </>
+                    )}
                   </select>
                 </div>
                 <div className="flex-1">
@@ -365,22 +443,34 @@ export default function StaffRegistration({ setActiveTab }) {
                 <label className="block text-xs font-bold text-gray-600 mb-1 uppercase tracking-wider">英語</label>
                 <select name="englishLevel" className="w-full px-4 py-2 border border-gray-300 rounded-md text-sm bg-white text-gray-700">
                   <option value="">レベルを選択</option>
-                  <option value="Native">ネイティブ</option>
-                  <option value="Fluent">流暢</option>
-                  <option value="Conversational">日常会話</option>
-                  <option value="Basic">基礎</option>
+                  {options.EnglishLevel?.length > 0 ? options.EnglishLevel.map(opt => (
+                    <option key={opt._id} value={opt.value}>{opt.label}</option>
+                  )) : (
+                    <>
+                      <option value="Native">ネイティブ</option>
+                      <option value="Fluent">流暢</option>
+                      <option value="Conversational">日常会話</option>
+                      <option value="Basic">基礎</option>
+                    </>
+                  )}
                 </select>
               </div>
               <div>
                 <label className="block text-xs font-bold text-gray-600 mb-1 uppercase tracking-wider">日本語</label>
                 <select name="japaneseLevel" className="w-full px-4 py-2 border border-gray-300 rounded-md text-sm bg-white text-gray-700">
                   <option value="">レベルを選択</option>
-                  <option value="Native">ネイティブ</option>
-                  <option value="N1">N1</option>
-                  <option value="N2">N2</option>
-                  <option value="N3">N3</option>
-                  <option value="N4">N4</option>
-                  <option value="N5">N5</option>
+                  {options.JapaneseLevel?.length > 0 ? options.JapaneseLevel.map(opt => (
+                    <option key={opt._id} value={opt.value}>{opt.label}</option>
+                  )) : (
+                    <>
+                      <option value="Native">ネイティブ</option>
+                      <option value="N1">N1</option>
+                      <option value="N2">N2</option>
+                      <option value="N3">N3</option>
+                      <option value="N4">N4</option>
+                      <option value="N5">N5</option>
+                    </>
+                  )}
                 </select>
               </div>
               <div>
@@ -414,10 +504,16 @@ export default function StaffRegistration({ setActiveTab }) {
               <label className="block text-xs font-bold text-gray-600 mb-1 uppercase tracking-wider">服のサイズ</label>
               <select name="clothingSize" className="w-full px-4 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-[#162D50] text-gray-700 bg-white">
                 <option value="">サイズを選択</option>
-                <option value="S">S</option>
-                <option value="M">M</option>
-                <option value="L">L</option>
-                <option value="XL">XL</option>
+                {options.ClothingSize?.length > 0 ? options.ClothingSize.map(opt => (
+                  <option key={opt._id} value={opt.value}>{opt.label}</option>
+                )) : (
+                  <>
+                    <option value="S">S</option>
+                    <option value="M">M</option>
+                    <option value="L">L</option>
+                    <option value="XL">XL</option>
+                  </>
+                )}
               </select>
             </div>
             <div>
@@ -431,9 +527,15 @@ export default function StaffRegistration({ setActiveTab }) {
             <div>
               <label className="block text-xs font-bold text-gray-600 mb-2 uppercase tracking-wider">オンボーディング状況</label>
               <select name="onboardingステータス" className="w-full px-4 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-[#162D50] text-gray-700 bg-white">
-                <option value="Verification 保留中">確認保留中</option>
-                <option value="Active">アクティブ</option>
-                <option value="Missing Documents">書類未提出</option>
+                {options.OnboardingStatus?.length > 0 ? options.OnboardingStatus.map(opt => (
+                  <option key={opt._id} value={opt.value}>{opt.label}</option>
+                )) : (
+                  <>
+                    <option value="Verification 保留中">確認保留中</option>
+                    <option value="Active">アクティブ</option>
+                    <option value="Missing Documents">書類未提出</option>
+                  </>
+                )}
               </select>
             </div>
 
