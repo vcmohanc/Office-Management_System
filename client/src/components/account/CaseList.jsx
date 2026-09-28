@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+﻿import { useState, useEffect } from 'react';
 import { Search, ChevronDown, Calendar, FileText, AlertTriangle, Image, Edit, X, Download } from 'lucide-react';
 import { fileUrl } from '../../utils/fileUrl.js';
 import { apiFetch } from '../../utils/apiFetch.js';
@@ -50,7 +50,7 @@ export default function CaseList() {
     return 'Office';
   });
 
-  const [statusFilter, setステータスFilter] = useState('All ステータスes');
+  const [statusFilter, setStatusFilter] = useState('All ステータスes');
   const [expenseTypeFilter, setExpenseTypeFilter] = useState('すべての種類');
   const [expenseTypeOptions, setExpenseTypeOptions] = useState([]);
   const [selectedCase, setSelectedCase] = useState(null);
@@ -317,11 +317,11 @@ export default function CaseList() {
     }
   };
 
-  const handleUpdateステータス = async (newステータス) => {
+  const handleUpdateStatus = async (newStatus) => {
     if (!selectedCase) return;
     
-    if (newステータス === 'REJECTED' || newステータス === 'RETURNED_FOR_CORRECTION') {
-      const actionName = newステータス === 'REJECTED' ? 'Reject' : 'Return for Correction';
+    if (newStatus === 'REJECTED' || newStatus === 'RETURNED_FOR_CORRECTION') {
+      const actionName = newStatus === 'REJECTED' ? 'Reject' : 'Return for Correction';
       const confirmed = await toastConfirm(`Are you sure you want to ${actionName} ${selectedCase.displayId}?`);
       if (!confirmed) return;
     }
@@ -336,7 +336,7 @@ export default function CaseList() {
       if (c._id === selectedCase._id) {
         const updatedMessages = c.messages ? [...c.messages] : [];
         if (newMessage) updatedMessages.push(newMessage);
-        return { ...c, status: newステータス, messages: updatedMessages, supportUpdatedFields: [] };
+        return { ...c, status: newStatus, messages: updatedMessages, supportUpdatedFields: [] };
       }
       return c;
     };
@@ -351,13 +351,13 @@ export default function CaseList() {
     setSelectedCase(prev => {
       const updatedMessages = prev.messages ? [...prev.messages] : [];
       if (newMessage) updatedMessages.push(newMessage);
-      return { ...prev, status: newステータス, messages: updatedMessages, supportUpdatedFields: [] };
+      return { ...prev, status: newStatus, messages: updatedMessages, supportUpdatedFields: [] };
     });
 
     // Update the backend
     apiFetch(`${endpoint}`, {
       method: 'PATCH',
-      body: JSON.stringify({ status: newステータス, newMessage, clearSupportUpdatedFields: true, hasSupportNotification: true })
+      body: JSON.stringify({ status: newStatus, newMessage, clearSupportUpdatedFields: true, hasSupportNotification: true })
     }).catch(err => console.error('Failed to update status', err));
   };
 
@@ -433,7 +433,12 @@ export default function CaseList() {
     expense_type: c.expenseType || c.expense_type || 'N/A',
   }));
 
-  const allRecords = [...mappedCases, ...mappedClaims];
+  const allRecords = [...mappedCases, ...mappedClaims].filter(c => 
+    c.status !== 'APPROVED_FOR_PAYMENT' && 
+    c.status !== '支払承認' && 
+    c.status !== '完了' && 
+    c.status !== '処理中'
+  );
 
   const officeCasesCount = allRecords.filter(c => c.type === 'Office Case').length;
   const staffCasesCount = allRecords.filter(c => c.type === 'Staff Case').length;
@@ -461,10 +466,10 @@ export default function CaseList() {
   const filteredRecords = allRecords.filter(c => {
     const activeCaseType = activeTab + ' Case';
     const matchesTab = c.type === activeCaseType || (activeTab === 'Host Company' && false);
-    const matchesステータス = statusFilter === 'All ステータスes' || c.status === statusFilter;
+    const matchesStatus = statusFilter === 'All ステータスes' || c.status === statusFilter;
     const matchesType = expenseTypeFilter === 'すべての種類' || c.expense_type === expenseTypeFilter;
     
-    return matchesTab && matchesステータス && matchesType;
+    return matchesTab && matchesStatus && matchesType;
   });
 
   useEffect(() => {
@@ -536,7 +541,7 @@ export default function CaseList() {
         <div className="w-48">
           <label className="block text-xs font-bold text-gray-600 mb-1">ステータス</label>
           <div className="relative">
-            <select value={statusFilter} onChange={e => setステータスFilter(e.target.value)} className="w-full pl-4 pr-10 py-2 border border-gray-300 rounded-md text-sm appearance-none focus:outline-none focus:ring-1 focus:ring-[#162D50] text-gray-600">
+            <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)} className="w-full pl-4 pr-10 py-2 border border-gray-300 rounded-md text-sm appearance-none focus:outline-none focus:ring-1 focus:ring-[#162D50] text-gray-600">
               <option value="All ステータスes">All ステータスes</option>
               {[...new Set(cases.map(c => c.status))].filter(Boolean).map(status => (
                 <option key={status} value={status}>{status === '保留中' ? 'New-Case' : status}</option>
@@ -899,27 +904,27 @@ export default function CaseList() {
               <>
                 {(selectedCase.status === '拒否' || selectedCase.status === 'REJECTED' || selectedCase.status === '保留中 Correction' || selectedCase.status === 'RETURNED_FOR_CORRECTION') && (
                   <button 
-                    onClick={() => handleUpdateステータス('保留中')}
+                    onClick={() => handleUpdateStatus('保留中')}
                     className="text-blue-600 font-medium px-4 hover:underline mr-auto"
                   >
                     保留中に戻す
                   </button>
                 )}
                 <button 
-                  onClick={() => handleUpdateステータス('REJECTED')}
+                  onClick={() => handleUpdateStatus('REJECTED')}
                   className="text-red-500 font-medium px-4 hover:underline"
                 >
                   拒否
                 </button>
                 <button 
-                  onClick={() => handleUpdateステータス('RETURNED_FOR_CORRECTION')}
+                  onClick={() => handleUpdateStatus('RETURNED_FOR_CORRECTION')}
                   className="border border-gray-300 bg-white text-gray-600 px-6 py-2 rounded-md font-medium hover:bg-gray-50"
                 >
                   修正依頼
                 </button>
                 <button 
                   onClick={() => {
-                    handleUpdateステータス('APPROVED_FOR_PAYMENT');
+                    handleUpdateStatus('APPROVED_FOR_PAYMENT');
                     // Additional toast or local UI feedback can go here
                   }}
                   className="bg-[#0A192F] text-white px-6 py-2 rounded-md font-bold hover:bg-[#162D50] shadow-sm"
