@@ -62,7 +62,7 @@ export default function Dashboard({ setToken }) {
           {activeTab === '経理部門' && <AccountDashboard />}
           {activeTab === '人事部門' && <HRDashboard />}
           {activeTab === 'New Case' && <NewCase setActiveTab={setActiveTab} />}
-          {activeTab === 'Case List' && <CaseList />}
+          {activeTab === 'Case List' && <CaseList setActiveTab={setActiveTab} />}
           {activeTab === 'Payment Entry' && <PaymentEntry />}
           {activeTab === 'Paid Status' && <PaymentStatus />}
           {activeTab === 'Staff Registration' && <StaffRegistration setActiveTab={setActiveTab} />}

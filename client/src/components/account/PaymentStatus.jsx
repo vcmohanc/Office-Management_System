@@ -653,14 +653,16 @@ export default function PaymentStatus() {
           doc.text('TRANSACTION DETAILS', 10, curY);
 
           let txHead = [];
-          if (paymentMethod === 'Pay in Salary' || paymentMethod === 'Payroll Deduction') {
-            txHead = ['日付', '支払方法', 'Payroll 期間', 'Ref いいえ.', 'Net Payable'];
-          } else if (paymentMethod === 'Company Check') {
-            txHead = ['日付', '支払方法', 'Check いいえ', 'Delivery Address', 'Ref いいえ.', 'Net Payable'];
-          } else if (paymentMethod === 'Corporate Card') {
-            txHead = ['日付', '支払方法', 'Card Last 4', 'Cardholder Name', 'Ref いいえ.', 'Net Payable'];
+          if (paymentMethod === '給与振込' || paymentMethod === '給与控除' || paymentMethod === 'Pay in Salary' || paymentMethod === 'Payroll Deduction') {
+            txHead = ['日付', '支払方法', '給与期間', 'Ref いいえ.', 'Net Payable'];
+          } else if (paymentMethod === '小切手' || paymentMethod === 'Company Check') {
+            txHead = ['日付', '支払方法', '小切手番号', '送付先', 'Ref いいえ.', 'Net Payable'];
+          } else if (paymentMethod === '法人カード' || paymentMethod === 'Corporate Card') {
+            txHead = ['日付', '支払方法', 'カード末4桁', 'カード名義', 'Ref いいえ.', 'Net Payable'];
+          } else if (paymentMethod === 'Cash' || paymentMethod === '小口現金') {
+            txHead = ['日付', '支払方法', '受取人名', 'Ref いいえ.', 'Net Payable'];
           } else {
-            txHead = ['日付', '支払方法', 'Bank', 'Branch', 'Account', 'Ref いいえ.', 'Net Payable'];
+            txHead = ['日付', '支払方法', '銀行', '支店', '口座番号', 'Ref いいえ.', 'Net Payable'];
           }
 
           let txRow = [
@@ -671,14 +673,16 @@ export default function PaymentStatus() {
           const dest = destinationDetails || {};
           const refいいえ = transactionRefId || '—';
 
-          if (paymentMethod === 'Pay in Salary' || paymentMethod === 'Payroll Deduction') {
+          if (paymentMethod === '給与振込' || paymentMethod === '給与控除' || paymentMethod === 'Pay in Salary' || paymentMethod === 'Payroll Deduction') {
             txRow.push(dest.payroll期間 || '—', refいいえ);
-          } else if (paymentMethod === 'Company Check') {
+          } else if (paymentMethod === '小切手' || paymentMethod === 'Company Check') {
             txRow.push(dest.checkNumber || '—', dest.checkDelivery || '—', refいいえ);
-          } else if (paymentMethod === 'Corporate Card') {
+          } else if (paymentMethod === '法人カード' || paymentMethod === 'Corporate Card') {
             txRow.push(dest.cardLast4 || '—', dest.cardholderName || '—', refいいえ);
+          } else if (paymentMethod === 'Cash' || paymentMethod === '小口現金') {
+            txRow.push(dest.receiverName || dest.receiver_name || '—', refいいえ);
           } else {
-            txRow.push(dest.bankName || '—', dest.branchCode || '—', dest.accountNumber || '—', refいいえ);
+            txRow.push(dest.bankName || dest.bank_name || '—', dest.branchCode || dest.branch_code || '—', dest.accountNumber || dest.account_number || '—', refいいえ);
           }
 
           txRow.push(`JPY ${batchTotalNextPayment.toLocaleString()}`);
