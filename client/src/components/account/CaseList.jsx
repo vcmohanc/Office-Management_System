@@ -1,4 +1,4 @@
-﻿import { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Search, ChevronDown, Calendar, FileText, AlertTriangle, Image, Edit, X, Download } from 'lucide-react';
 import { fileUrl } from '../../utils/fileUrl.js';
 import { apiFetch } from '../../utils/apiFetch.js';
@@ -50,7 +50,7 @@ export default function CaseList() {
     return 'Office';
   });
 
-  const [statusFilter, setStatusFilter] = useState('All ステータスes');
+  const [statusFilter, setStatusFilter] = useState('すべてのステータス');
   const [expenseTypeFilter, setExpenseTypeFilter] = useState('すべての種類');
   const [expenseTypeOptions, setExpenseTypeOptions] = useState([]);
   const [selectedCase, setSelectedCase] = useState(null);
@@ -317,11 +317,11 @@ export default function CaseList() {
     }
   };
 
-  const handleUpdateStatus = async (newStatus) => {
+  const handleUpdateStatus = async (newステータス) => {
     if (!selectedCase) return;
     
-    if (newStatus === 'REJECTED' || newStatus === 'RETURNED_FOR_CORRECTION') {
-      const actionName = newStatus === 'REJECTED' ? 'Reject' : 'Return for Correction';
+    if (newステータス === 'REJECTED' || newステータス === 'RETURNED_FOR_CORRECTION') {
+      const actionName = newステータス === 'REJECTED' ? 'Reject' : 'Return for Correction';
       const confirmed = await toastConfirm(`Are you sure you want to ${actionName} ${selectedCase.displayId}?`);
       if (!confirmed) return;
     }
@@ -336,7 +336,7 @@ export default function CaseList() {
       if (c._id === selectedCase._id) {
         const updatedMessages = c.messages ? [...c.messages] : [];
         if (newMessage) updatedMessages.push(newMessage);
-        return { ...c, status: newStatus, messages: updatedMessages, supportUpdatedFields: [] };
+        return { ...c, status: newステータス, messages: updatedMessages, supportUpdatedFields: [] };
       }
       return c;
     };
@@ -351,13 +351,13 @@ export default function CaseList() {
     setSelectedCase(prev => {
       const updatedMessages = prev.messages ? [...prev.messages] : [];
       if (newMessage) updatedMessages.push(newMessage);
-      return { ...prev, status: newStatus, messages: updatedMessages, supportUpdatedFields: [] };
+      return { ...prev, status: newステータス, messages: updatedMessages, supportUpdatedFields: [] };
     });
 
     // Update the backend
     apiFetch(`${endpoint}`, {
       method: 'PATCH',
-      body: JSON.stringify({ status: newStatus, newMessage, clearSupportUpdatedFields: true, hasSupportNotification: true })
+      body: JSON.stringify({ status: newステータス, newMessage, clearSupportUpdatedFields: true, hasSupportNotification: true })
     }).catch(err => console.error('Failed to update status', err));
   };
 
@@ -433,12 +433,16 @@ export default function CaseList() {
     expense_type: c.expenseType || c.expense_type || 'N/A',
   }));
 
-  const allRecords = [...mappedCases, ...mappedClaims].filter(c => 
-    c.status !== 'APPROVED_FOR_PAYMENT' && 
-    c.status !== '支払承認' && 
-    c.status !== '完了' && 
-    c.status !== '処理中'
-  );
+  const getDisplayStatus = (status) => {
+    if (['Pending', 'New', 'Registered', '保留中'].includes(status)) return '新た';
+    if (['REJECTED', '拒否'].includes(status)) return '拒否';
+    if (['RETURNED_FOR_CORRECTION', '保留中 Correction'].includes(status)) return '修正依頼';
+    return status;
+  };
+
+  const allRecords = [...mappedCases, ...mappedClaims]
+    .filter(c => !['APPROVED_FOR_PAYMENT', 'Approve for Payment', '支払承認', '承認済 for Payment', 'Payment 保留中', '処理中', '完了'].includes(c.status))
+    .map(c => ({ ...c, displayStatus: getDisplayStatus(c.status) }));
 
   const officeCasesCount = allRecords.filter(c => c.type === 'Office Case').length;
   const staffCasesCount = allRecords.filter(c => c.type === 'Staff Case').length;
@@ -466,7 +470,7 @@ export default function CaseList() {
   const filteredRecords = allRecords.filter(c => {
     const activeCaseType = activeTab + ' Case';
     const matchesTab = c.type === activeCaseType || (activeTab === 'Host Company' && false);
-    const matchesStatus = statusFilter === 'All ステータスes' || c.status === statusFilter;
+    const matchesStatus = statusFilter === 'すべてのステータス' || c.displayStatus === statusFilter;
     const matchesType = expenseTypeFilter === 'すべての種類' || c.expense_type === expenseTypeFilter;
     
     return matchesTab && matchesStatus && matchesType;
@@ -542,9 +546,9 @@ export default function CaseList() {
           <label className="block text-xs font-bold text-gray-600 mb-1">ステータス</label>
           <div className="relative">
             <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)} className="w-full pl-4 pr-10 py-2 border border-gray-300 rounded-md text-sm appearance-none focus:outline-none focus:ring-1 focus:ring-[#162D50] text-gray-600">
-              <option value="All ステータスes">All ステータスes</option>
-              {[...new Set(cases.map(c => c.status))].filter(Boolean).map(status => (
-                <option key={status} value={status}>{status === '保留中' ? 'New-Case' : status}</option>
+              <option value="すべてのステータス">すべてのステータス</option>
+              {['新た', '拒否', '修正依頼'].map(status => (
+                <option key={status} value={status}>{status}</option>
               ))}
             </select>
             <ChevronDown className="w-4 h-4 absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none" />
@@ -611,13 +615,12 @@ export default function CaseList() {
                   </td>
                   <td className="py-4 px-6">
                     <span className={`px-3 py-1 rounded-full text-xs font-medium border ${
-                      c.status === '保留中 Correction' || c.status === 'RETURNED_FOR_CORRECTION' ? 'bg-orange-100 text-orange-700 border-orange-200' :
-                      c.status === '拒否' || c.status === 'REJECTED' ? 'bg-red-100 text-red-700 border-red-200' :
-                      c.status === 'New' || c.status === 'Registered' ? 'bg-blue-100 text-blue-700 border-blue-200' :
-                      c.status === '保留中' ? 'bg-yellow-100 text-yellow-700 border-yellow-200' :
+                      c.displayStatus === '修正依頼' ? 'bg-orange-100 text-orange-700 border-orange-200' :
+                      c.displayStatus === '拒否' ? 'bg-red-100 text-red-700 border-red-200' :
+                      c.displayStatus === '新た' ? 'bg-blue-100 text-blue-700 border-blue-200' :
                       'bg-gray-100 text-gray-700 border-gray-200'
                     }`}>
-                      {c.status === '保留中' ? 'New-Case' : c.status}
+                      {c.displayStatus}
                     </span>
                   </td>
                   <td className="py-4 px-6">
