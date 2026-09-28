@@ -405,8 +405,49 @@ export default function PaymentStatus() {
     if (c.paidTerms > 0 && c.paidTerms < totalTerms) return true;
     if (c.status && c.status.includes('完了') && c.status !== '完了') return true;
     
-    return ['支払承認済', 'Payment 保留中', '処理中', '期限切れ'].includes(c.status) || c.status === 'Approve for Payment' || c.status === '承認済 for Payment';
+    return ['APPROVED_FOR_PAYMENT', 'Payment 保留中', '処理中', '期限切れ'].includes(c.status) || c.status === 'Approve for Payment' || c.status === '承認済 for Payment';
   });
+
+  const getStatusJapanese = (status) => {
+    switch (status) {
+      case 'APPROVED_FOR_PAYMENT':
+      case 'Approve for Payment':
+      case '承認済 for Payment': return '支払承認済';
+      case 'Payment 保留中':
+      case 'Pending': return '保留中';
+      case '処理中':
+      case 'Processing':
+      case 'processing': return '処理中';
+      case '完了':
+      case 'Completed':
+      case 'completed': return '完了';
+      case 'RETURNED_FOR_CORRECTION': return '修正依頼';
+      case 'REJECTED': return '却下';
+      case '期限切れ':
+      case 'Overdue': return '期限切れ';
+      default: return status;
+    }
+  };
+
+  const getExpenseTypeJapanese = (type) => {
+    switch (type) {
+      case 'Postage': return '郵送費';
+      case 'Transportation Expenses / Flight Fare': return '交通費 / 航空券代';
+      case 'Visa application fee': return 'ビザ申請費用';
+      case 'Waiting Dormitory Fee': return '待機寮費';
+      case 'Hospital Fee': return '病院代';
+      case 'Equipment/Supplies': return '備品/消耗品代';
+      case 'WIFI': return 'WIFI';
+      case 'Travel': return '交通費';
+      case 'Advances': return '立替金';
+      case 'Others':
+      case 'others': return 'その他';
+      default:
+        const option = expenseTypeOptions.find(opt => opt.value === type);
+        if (option && option.label !== option.value) return option.label;
+        return type;
+    }
+  };
 
   const officeCasesCount = postApprovalCases.filter(c => c.advancerCategory === 'Office').length;
   const staffCasesCount = postApprovalCases.filter(c => c.advancerCategory === 'Staff').length;
@@ -433,7 +474,7 @@ export default function PaymentStatus() {
 
   const totalOfficePayment = postApprovalCases.filter(c => c.advancerCategory === 'Office').reduce((sum, c) => sum + get残りBalance(c), 0);
   const totalStaffPayment = postApprovalCases.filter(c => c.advancerCategory === 'Staff').reduce((sum, c) => sum + get残りBalance(c), 0);
-  const pendingCount = postApprovalCases.filter(c => c.status === 'Payment 保留中' || c.status === '支払承認済').length;
+  const pendingCount = postApprovalCases.filter(c => c.status === 'Payment 保留中' || c.status === 'APPROVED_FOR_PAYMENT').length;
   const processingCount = postApprovalCases.filter(c => c.status === '処理中').length;
   const completedCount = postApprovalCases.filter(c => c.status === '完了').length;
   const overdueCount = postApprovalCases.filter(c => c.status === '期限切れ').length;
@@ -442,7 +483,7 @@ export default function PaymentStatus() {
     const personCases = postApprovalCases.filter(c => c.staffId === selectedCase.staffId && (c.advancerCategory === activePaymentTab || (!c.advancerCategory && activePaymentTab === 'Office')));
     const personTotalOfficePayment = personCases.filter(c => c.advancerCategory === 'Office').reduce((sum, c) => sum + get残りBalance(c), 0);
     const personTotalStaffPayment = personCases.filter(c => c.advancerCategory === 'Staff').reduce((sum, c) => sum + get残りBalance(c), 0);
-    const person保留中Count = personCases.filter(c => c.status === 'Payment 保留中' || c.status === '支払承認済').length;
+    const person保留中Count = personCases.filter(c => c.status === 'Payment 保留中' || c.status === 'APPROVED_FOR_PAYMENT').length;
     const person処理中Count = personCases.filter(c => c.status === '処理中').length;
     
     const filteredPersonCases = personCases.filter(c => {
@@ -751,7 +792,7 @@ export default function PaymentStatus() {
                 <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)} className="w-full pl-4 pr-10 py-2 border border-gray-300 rounded-md text-sm appearance-none focus:outline-none focus:ring-1 focus:ring-[#162D50] text-gray-600">
                   <option value="すべてのステータス">すべてのステータス</option>
                   {[...new Set(personCases.map(c => c.status))].filter(Boolean).map(status => (
-                    <option key={status} value={status}>{status}</option>
+                    <option key={status} value={status}>{getStatusJapanese(status)}</option>
                   ))}
                 </select>
                 <ChevronDown className="w-4 h-4 absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none" />
@@ -763,7 +804,7 @@ export default function PaymentStatus() {
                 <select value={expenseTypeFilter} onChange={e => setExpenseTypeFilter(e.target.value)} className="w-full pl-4 pr-10 py-2 border border-gray-300 rounded-md text-sm appearance-none focus:outline-none focus:ring-1 focus:ring-[#162D50] text-gray-600">
                   <option value="すべての種類">すべての種類</option>
                   {expenseTypeOptions.map(opt => (
-                    <option key={opt._id || opt.value} value={opt.value}>{opt.label}</option>
+                    <option key={opt._id || opt.value} value={opt.value}>{getExpenseTypeJapanese(opt.value)}</option>
                   ))}
                 </select>
                 <ChevronDown className="w-4 h-4 absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none" />
@@ -831,16 +872,16 @@ export default function PaymentStatus() {
                   </td>
                   <td className="py-4 px-6 font-medium text-[#162D50]">#CAS-{c._id.slice(-6).toUpperCase()}</td>
                   <td className="py-4 px-6 text-gray-600">{c.expense期間Start ? new Date(c.expense期間Start).toLocaleDateString() : 'N/A'} - {c.expense期間End ? new Date(c.expense期間End).toLocaleDateString() : 'N/A'}</td>
-                  <td className="py-4 px-6 text-gray-600">{c.expenseType}</td>
+                  <td className="py-4 px-6 text-gray-600">{getExpenseTypeJapanese(c.expenseType)}</td>
                   <td className="py-4 px-6 font-bold text-[#162D50]">{c.currency === 'JPY' ? '¥' : '$'}{Math.round(get残りBalance(c)).toLocaleString()}</td>
                   <td className="py-4 px-6">
                     <span className={`px-2 py-1 rounded-full text-xs font-medium border ${
-                      c.status === 'Payment 保留中' || c.status === '支払承認済' ? 'bg-yellow-100 text-yellow-700 border-yellow-200' :
+                      c.status === 'Payment 保留中' || c.status === 'APPROVED_FOR_PAYMENT' ? 'bg-yellow-100 text-yellow-700 border-yellow-200' :
                       c.status === '処理中' || (c.status && c.status.includes('完了') && c.status !== '完了') ? 'bg-blue-100 text-blue-700 border-blue-200' :
                       c.status === '完了' ? 'bg-green-100 text-green-700 border-green-200' :
                       'bg-gray-100 text-gray-700 border-gray-200'
                     }`}>
-                      {c.status}
+                      {getStatusJapanese(c.status)}
                     </span>
                   </td>
                   <td className="py-4 px-6 text-right">
@@ -925,7 +966,7 @@ export default function PaymentStatus() {
                       <div key={c._id} className="grid grid-cols-12 gap-4 text-sm items-center">
                         <div className="col-span-1 font-mono text-gray-500">{String(idx + 1).padStart(2, '0')}</div>
                         <div className="col-span-3 font-mono">#{c._id.slice(-6).toUpperCase()}</div>
-                        <div className="col-span-4 truncate font-medium">{c.expenseType || 'General Expense'}</div>
+                        <div className="col-span-4 truncate font-medium">{getExpenseTypeJapanese(c.expenseType) || 'General Expense'}</div>
                         <div className="col-span-2 font-mono text-gray-500 text-xs">
                           {new Date(c.expense期間Start || c.createdAt).toLocaleDateString()}
                         </div>
@@ -1446,7 +1487,7 @@ export default function PaymentStatus() {
             <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)} className="w-full pl-4 pr-10 py-2 border border-gray-300 rounded-md text-sm appearance-none focus:outline-none focus:ring-1 focus:ring-[#162D50] text-gray-600">
               <option value="すべてのステータス">すべてのステータス</option>
               {[...new Set(cases.map(c => c.status))].filter(Boolean).map(status => (
-                <option key={status} value={status}>{status}</option>
+                <option key={status} value={status}>{getStatusJapanese(status)}</option>
               ))}
             </select>
             <ChevronDown className="w-4 h-4 absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none" />
@@ -1458,7 +1499,7 @@ export default function PaymentStatus() {
             <select value={expenseTypeFilter} onChange={e => setExpenseTypeFilter(e.target.value)} className="w-full pl-4 pr-10 py-2 border border-gray-300 rounded-md text-sm appearance-none focus:outline-none focus:ring-1 focus:ring-[#162D50] text-gray-600">
               <option value="すべての種類">すべての種類</option>
               {expenseTypeOptions.map(opt => (
-                <option key={opt._id || opt.value} value={opt.value}>{opt.label}</option>
+                <option key={opt._id || opt.value} value={opt.value}>{getExpenseTypeJapanese(opt.value)}</option>
               ))}
             </select>
             <ChevronDown className="w-4 h-4 absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none" />
@@ -1525,7 +1566,7 @@ export default function PaymentStatus() {
                       {new Date(c.expense期間Start).toLocaleDateString('en-US')}
                     </td>
                     <td className="py-4 px-6 text-gray-800">{c.staffName}</td>
-                    <td className="py-4 px-6 text-gray-600">{c.expenseType}</td>
+                    <td className="py-4 px-6 text-gray-600">{getExpenseTypeJapanese(c.expenseType)}</td>
                     <td className="py-4 px-6 font-bold text-gray-800">
                       {c.currency === 'JPY' ? '¥' : '$'}{Math.round(get残りBalance(c)).toLocaleString()}
                     </td>
@@ -1545,11 +1586,11 @@ export default function PaymentStatus() {
                     <td className="py-4 px-6">
                       <span className={`px-3 py-1 rounded-full text-xs font-medium border ${
                         displayStatus === '保留中' ? 'bg-yellow-100 text-yellow-700 border-yellow-200' :
-                        (displayStatus === '処理中' || displayStatus === '支払承認済') ? 'bg-blue-100 text-blue-700 border-blue-200' :
+                        (displayStatus === '処理中' || displayStatus === 'APPROVED_FOR_PAYMENT') ? 'bg-blue-100 text-blue-700 border-blue-200' :
                         displayStatus === '完了' ? 'bg-green-100 text-green-700 border-green-200' :
                         'bg-gray-100 text-gray-700 border-gray-200'
                       }`}>
-                        {totalTerms > 1 ? `${Math.min(paidTerms, totalTerms)}/${totalTerms} 完了` : (displayStatus === '処理中' ? '支払承認済' : displayStatus)}
+                        {totalTerms > 1 ? `${Math.min(paidTerms, totalTerms)}/${totalTerms} 完了` : getStatusJapanese(displayStatus)}
                       </span>
                     </td>
                     <td className="py-4 px-6 text-right whitespace-nowrap">
