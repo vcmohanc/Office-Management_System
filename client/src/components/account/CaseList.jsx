@@ -6,7 +6,7 @@ import toast from 'react-hot-toast';
 import { toastConfirm } from '../../utils/toastConfirm.jsx';
 
 
-export default function CaseList() {
+export default function CaseList({ setActiveTab: onNavigate }) {
   const user = JSON.parse(localStorage.getItem('user')) || { role: 'admin', username: 'admin' };
   
   const [cases, setCases] = useState([]);
@@ -47,7 +47,7 @@ export default function CaseList() {
       sessionStorage.removeItem('caseListTab');
       return savedTab;
     }
-    return 'Office';
+    return user.role === 'support' ? 'Staff' : 'Office';
   });
 
   const [statusFilter, setStatusFilter] = useState('すべてのステータス');
@@ -443,7 +443,7 @@ export default function CaseList() {
   const allRecords = [...mappedCases, ...mappedClaims]
     .filter(c => {
       if (c.status && c.status.includes('完了')) return false;
-      return !['APPROVED_FOR_PAYMENT', 'Approve for Payment', '支払承認', '承認済 for Payment', 'Payment 保留中', '処理中', 'Processing', 'processing'].includes(c.status);
+      return !['APPROVED_FOR_PAYMENT', 'Approve for Payment', '支払承認', '承認済 for Payment', 'Payment 保留中', '処理中', 'Processing', 'processing', 'Completed', 'completed'].includes(c.status);
     })
     .map(c => ({ ...c, displayStatus: getDisplayStatus(c.status) }));
 
@@ -501,17 +501,19 @@ export default function CaseList() {
       
       {/* Top Tabs */}
       <div className="bg-[#F2F4F7] p-1 rounded-md flex space-x-1 mb-4 border border-gray-200">
-        <button 
-          onClick={() => setActiveTab('Office')}
-          className={`relative flex-1 py-2 text-sm font-bold rounded-md transition-colors ${activeTab === 'Office' ? 'text-white bg-[#0A192F] shadow-sm' : 'text-gray-500 hover:bg-gray-200'}`}>
-          オフィス案件 <span className={`ml-2 px-2 py-0.5 rounded-full text-xs ${activeTab === 'Office' ? 'bg-white text-[#0A192F]' : 'bg-gray-200 text-gray-600'}`}>{officeCasesCount}</span>
-          {hasOfficeNotification && (
-            <span className="absolute top-2 right-4 flex h-3 w-3" title="New updates available">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
-            </span>
-          )}
-        </button>
+        {user.role !== 'support' && (
+          <button 
+            onClick={() => setActiveTab('Office')}
+            className={`relative flex-1 py-2 text-sm font-bold rounded-md transition-colors ${activeTab === 'Office' ? 'text-white bg-[#0A192F] shadow-sm' : 'text-gray-500 hover:bg-gray-200'}`}>
+            オフィス案件 <span className={`ml-2 px-2 py-0.5 rounded-full text-xs ${activeTab === 'Office' ? 'bg-white text-[#0A192F]' : 'bg-gray-200 text-gray-600'}`}>{officeCasesCount}</span>
+            {hasOfficeNotification && (
+              <span className="absolute top-2 right-4 flex h-3 w-3" title="New updates available">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
+              </span>
+            )}
+          </button>
+        )}
         <button 
           onClick={() => setActiveTab('Staff')}
           className={`relative flex-1 py-2 text-sm font-bold rounded-md transition-colors ${activeTab === 'Staff' ? 'text-white bg-[#0A192F] shadow-sm' : 'text-gray-500 hover:bg-gray-200'}`}>
@@ -523,17 +525,19 @@ export default function CaseList() {
             </span>
           )}
         </button>
-        <button 
-          onClick={() => setActiveTab('Host Company')}
-          className={`relative flex-1 py-2 text-sm font-bold rounded-md transition-colors ${activeTab === 'Host Company' ? 'text-white bg-[#0A192F] shadow-sm' : 'text-gray-500 hover:bg-gray-200'}`}>
-          ホスト会社案件 <span className={`ml-2 px-2 py-0.5 rounded-full text-xs ${activeTab === 'Host Company' ? 'bg-white text-[#0A192F]' : 'bg-gray-200 text-gray-600'}`}>{hostCompanyCasesCount}</span>
-          {hasHostCompanyNotification && (
-            <span className="absolute top-2 right-4 flex h-3 w-3" title="New updates available">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
-            </span>
-          )}
-        </button>
+        {user.role !== 'support' && (
+          <button 
+            onClick={() => setActiveTab('Host Company')}
+            className={`relative flex-1 py-2 text-sm font-bold rounded-md transition-colors ${activeTab === 'Host Company' ? 'text-white bg-[#0A192F] shadow-sm' : 'text-gray-500 hover:bg-gray-200'}`}>
+            ホスト会社案件 <span className={`ml-2 px-2 py-0.5 rounded-full text-xs ${activeTab === 'Host Company' ? 'bg-white text-[#0A192F]' : 'bg-gray-200 text-gray-600'}`}>{hostCompanyCasesCount}</span>
+            {hasHostCompanyNotification && (
+              <span className="absolute top-2 right-4 flex h-3 w-3" title="New updates available">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
+              </span>
+            )}
+          </button>
+        )}
       </div>
 
       {/* Filter Bar */}
@@ -931,7 +935,9 @@ export default function CaseList() {
                 <button 
                   onClick={() => {
                     handleUpdateStatus('APPROVED_FOR_PAYMENT');
-                    // Additional toast or local UI feedback can go here
+                    if (typeof onNavigate === 'function') {
+                      onNavigate('Paid Status');
+                    }
                   }}
                   className="bg-[#0A192F] text-white px-6 py-2 rounded-md font-bold hover:bg-[#162D50] shadow-sm"
                 >

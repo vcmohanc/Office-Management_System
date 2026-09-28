@@ -544,12 +544,14 @@ export default function PaymentEntry() {
         }
 
         let txHead = [];
-        if (pMethod === 'Pay in Salary' || pMethod === 'Payroll Deduction') {
+        if (pMethod === '給与振込' || pMethod === '給与控除' || pMethod === 'Pay in Salary' || pMethod === 'Payroll Deduction') {
           txHead = ['回次', '日付', '支払金額', 'ステータス', '給与期間', '参照番号'];
-        } else if (pMethod === 'Company Check') {
-          txHead = ['回次', '日付', '支払金額', 'ステータス', '小切手番号', '配送', '参照番号'];
-        } else if (pMethod === 'Corporate Card') {
-          txHead = ['回次', '日付', '支払金額', 'ステータス', 'カード末4桁', 'カード名義人', '参照番号'];
+        } else if (pMethod === '小切手' || pMethod === 'Company Check') {
+          txHead = ['回次', '日付', '支払金額', 'ステータス', '小切手番号', '送付先', '参照番号'];
+        } else if (pMethod === '法人カード' || pMethod === 'Corporate Card') {
+          txHead = ['回次', '日付', '支払金額', 'ステータス', 'カード末4桁', 'カード名義', '参照番号'];
+        } else if (pMethod === 'Cash' || pMethod === '小口現金') {
+          txHead = ['回次', '日付', '支払金額', 'ステータス', '受取人名', '参照番号'];
         } else {
           txHead = ['回次', '日付', '支払金額', 'ステータス', '銀行', '支店', '口座番号', '参照番号'];
         }
@@ -596,12 +598,14 @@ export default function PaymentEntry() {
             status
           ];
 
-          if (pMethod === 'Pay in Salary' || pMethod === 'Payroll Deduction') {
+          if (pMethod === '給与振込' || pMethod === '給与控除' || pMethod === 'Pay in Salary' || pMethod === 'Payroll Deduction') {
             txRow.push(dest.payroll期間 || '—', refいいえ);
-          } else if (pMethod === 'Company Check') {
+          } else if (pMethod === '小切手' || pMethod === 'Company Check') {
             txRow.push(dest.checkNumber || '—', dest.checkDelivery || '—', refいいえ);
-          } else if (pMethod === 'Corporate Card') {
+          } else if (pMethod === '法人カード' || pMethod === 'Corporate Card') {
             txRow.push(dest.cardLast4 || '—', dest.cardholderName || '—', refいいえ);
+          } else if (pMethod === 'Cash' || pMethod === '小口現金') {
+            txRow.push(dest.receiverName || dest.receiver_name || '—', refいいえ);
           } else {
             txRow.push(dest.bankName || dest.bank_name || '—', dest.branchCode || dest.branch_code || '—', dest.accountNumber || dest.account_number || '—', refいいえ);
           }
