@@ -102,7 +102,7 @@ export default function NewCase() {
     if (field === 'expenseType') {
       switch (value) {
         case 'Postage':
-        case 'Transportation Expenses / 飛行機 Fare':
+        case 'Transportation Expenses / Flight Fare':
           newCases[index].advancerCategory = 'Service staff';
           newCases[index].bearingParty = 'VC';
           newCases[index].advancerName = 'Transfer to the person concerned';
@@ -152,7 +152,7 @@ export default function NewCase() {
       }
     }
 
-    if (currentExpenseType === 'Transportation Expenses / 飛行機 Fare' && (field === 'departure' || field === 'destination' || field === 'expenseType' || field === 'transportMethod')) {
+    if (currentExpenseType === 'Transportation Expenses / Flight Fare' && (field === 'departure' || field === 'destination' || field === 'expenseType' || field === 'transportMethod')) {
       const departureName = field === 'departure' ? value : newCases[index].departure;
       const destinationName = field === 'destination' ? value : newCases[index].destination;
       const method = field === 'transportMethod' ? value : newCases[index].transportMethod;
@@ -365,7 +365,7 @@ export default function NewCase() {
             </div>
           </div>
         );
-      case 'Transportation Expenses / 飛行機 Fare':
+      case 'Transportation Expenses / Flight Fare':
         return (
           <div className="grid grid-cols-2 gap-6 mb-8 bg-blue-50 p-6 rounded-md">
             <div>
