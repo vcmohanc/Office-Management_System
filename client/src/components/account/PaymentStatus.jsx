@@ -102,7 +102,7 @@ export default function PaymentStatus() {
       const claimAmount = selectedCase.nextPaymentAmount || Math.round((selectedCase.finalTotal || selectedCase.totalExpense || 0) / totalTerms);
       const advanceToRecover = selectedCase.previousBalance || 0;
       
-      if (paymentMethod === '給与控除' || paymentMethod === '給与振込') {
+      if (paymentMethod === 'Payroll Deduction') {
         setDeductions(claimAmount);
       } else if (advanceToRecover > 0) {
         setDeductions(Math.round(advanceToRecover / totalTerms));
@@ -115,25 +115,13 @@ export default function PaymentStatus() {
   useEffect(() => {
     if (selectedCase) {
       // Auto-populate 支払方法 based on agreed terms
-      let method = '';
       if (selectedCase.advancerCategory === 'Staff') {
-        method = selectedCase.settlement_method || selectedCase.settlementMethod || '';
-        if (method === 'Cash' || method === 'Petty Cash') method = '小口現金';
-        if (method === 'Payroll') method = '給与振込';
-        if (method === 'Bank Transfer') method = '銀行振込';
-        if (method === 'Check') method = '小切手';
+        let method = selectedCase.settlement_method || selectedCase.settlementMethod || '';
+        if (method === 'Cash') method = 'Petty Cash';
+        setPaymentMethod(method);
       } else {
-        method = selectedCase.collection_method || selectedCase.collectionMethod || '';
-        if (method === 'Corporate Card') method = '法人カード';
-        if (method === 'Payroll Deduction') method = '給与控除';
-        if (method === 'Bank Transfer') method = '銀行振込';
-      }
-      setPaymentMethod(method);
-
-      if (selectedCase.expectedSettlementDate) {
-        setPaymentDate(new Date(selectedCase.expectedSettlementDate).toISOString().split('T')[0]);
-      } else {
-        setPaymentDate(new Date().toISOString().split('T')[0]);
+        let method = selectedCase.collection_method || selectedCase.collectionMethod || '';
+        setPaymentMethod(method);
       }
     }
   }, [selectedCase]);
@@ -890,31 +878,29 @@ export default function PaymentStatus() {
               </div>
 
               {/* 合意条件 (Read-Only) */}
-              {selectedCase.advancerCategory !== 'Staff' && (
-                <div className="border-b border-dashed border-[#162D50] pb-8 mb-8 print:pb-4 print:mb-4">
-                  <div className="text-xs font-bold uppercase tracking-widest text-gray-500 mb-6 print:mb-2">合意条件</div>
-                  <div className="grid grid-cols-4 gap-6">
-                    <div>
-                      <label className="block text-[10px] font-bold uppercase tracking-widest mb-1 text-gray-400">回収・精算方法</label>
-                      <div className="font-mono text-sm">{selectedCase.advancerCategory === 'Staff' ? (selectedCase.settlement_method || selectedCase.settlementMethod || 'N/A') : (selectedCase.collection_method || selectedCase.collectionMethod || 'N/A')}</div>
-                    </div>
-                    <div>
-                      <label className="block text-[10px] font-bold uppercase tracking-widest mb-1 text-gray-400">分割払いプラン</label>
-                      <div className="font-mono text-sm">{selectedCase.installment_plan || selectedCase.installmentPlan || 'N/A'}</div>
-                    </div>
-                    <div>
-                      <label className="block text-[10px] font-bold uppercase tracking-widest mb-1 text-gray-400">開始月</label>
-                      <div className="font-mono text-sm">{selectedCase.collection_start_month || selectedCase.collectionStartMonth || 'N/A'}</div>
-                    </div>
-                    <div>
-                      <label className="block text-[10px] font-bold uppercase tracking-widest mb-1 text-gray-400">現在の期間</label>
-                      <div className="font-mono text-sm">
-                        {selectedCaseTotalTerms > 1 ? `第${selectedCaseCurrentTerm}回 / 全${selectedCaseTotalTerms}回` : 'N/A'}
-                      </div>
+              <div className="border-b border-dashed border-[#162D50] pb-8 mb-8 print:pb-4 print:mb-4">
+                <div className="text-xs font-bold uppercase tracking-widest text-gray-500 mb-6 print:mb-2">合意条件</div>
+                <div className="grid grid-cols-4 gap-6">
+                  <div>
+                    <label className="block text-[10px] font-bold uppercase tracking-widest mb-1 text-gray-400">回収・精算方法</label>
+                    <div className="font-mono text-sm">{selectedCase.advancerCategory === 'Staff' ? (selectedCase.settlement_method || selectedCase.settlementMethod || 'N/A') : (selectedCase.collection_method || selectedCase.collectionMethod || 'N/A')}</div>
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-bold uppercase tracking-widest mb-1 text-gray-400">分割払いプラン</label>
+                    <div className="font-mono text-sm">{selectedCase.installment_plan || selectedCase.installmentPlan || 'N/A'}</div>
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-bold uppercase tracking-widest mb-1 text-gray-400">開始月</label>
+                    <div className="font-mono text-sm">{selectedCase.collection_start_month || selectedCase.collectionStartMonth || 'N/A'}</div>
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-bold uppercase tracking-widest mb-1 text-gray-400">現在の期間</label>
+                    <div className="font-mono text-sm">
+                      {selectedCaseTotalTerms > 1 ? `第${selectedCaseCurrentTerm}回 / 全${selectedCaseTotalTerms}回` : 'N/A'}
                     </div>
                   </div>
                 </div>
-              )}
+              </div>
 
               {/* 支払方法 & Deductions Form (Interactive) */}
               <div className="mt-8 print:hidden border-t border-dashed border-[#162D50] pt-8">
