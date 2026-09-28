@@ -21,7 +21,7 @@ router.get('/', verifyToken, async (req, res) => {
     // Account Stats
     const cases = await Case.find();
     const openCases = cases.filter(c => c.status !== 'Completed').length;
-    const pendingSettlements = cases.filter(c => c.status === 'Pending' || c.status === 'APPROVED_FOR_PAYMENT').length;
+    const pendingSettlements = cases.filter(c => c.status === 'Pending' || c.status === '支払承認済').length;
     
     const startOfDay = new Date();
     startOfDay.setHours(0,0,0,0);
@@ -73,7 +73,7 @@ router.get('/account', verifyToken, async (req, res) => {
     const totalActiveAdvances = activeCases.reduce((sum, c) => sum + (c.final_total_amount || 0), 0);
     
     // Calculate Pending Settlements
-    const pendingSettlements = cases.filter(c => c.status === 'Pending' || c.status === 'APPROVED_FOR_PAYMENT').length;
+    const pendingSettlements = cases.filter(c => c.status === 'Pending' || c.status === '支払承認済').length;
     
     // Calculate Recovered This Period (Current Month)
     const startOfMonth = new Date();
