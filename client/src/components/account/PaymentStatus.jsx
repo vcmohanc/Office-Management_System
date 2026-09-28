@@ -1090,7 +1090,9 @@ export default function PaymentStatus() {
           <div className="flex items-center space-x-3">
             <div className="flex items-center border border-gray-300 rounded-md px-3 py-2 bg-white text-sm text-gray-700">
               <Calendar className="w-4 h-4 mr-2 text-gray-500" />
-              <span>Oct 1 - Oct 31, 2023</span>
+              <span>
+                {new Date(new Date().getFullYear(), new Date().getMonth(), 1).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - {new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+              </span>
             </div>
             <button onClick={() => handleエクスポート(cases)} className="flex items-center bg-[#162D50] text-white px-4 py-2 rounded-md text-sm font-bold hover:bg-[#0f1f38] transition-colors shadow-sm">
               <Download className="w-4 h-4 mr-2" />
