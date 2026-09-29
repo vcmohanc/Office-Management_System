@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { Search, Calendar, Filter, Eye, Edit2, MoreVertical } from 'lucide-react';
 import StaffSkillSheetModal from './StaffSkillSheetModal';
 import StaffEditModal from './StaffEditModal';
+import OnboardingActionModal from './OnboardingActionModal';
 import { apiFetch } from '../../utils/apiFetch.js';
 
 
@@ -10,6 +11,7 @@ export default function StaffList({ setActiveTab }) {
   const [loading, setLoading] = useState(true);
   const [selectedStaffToView, setSelectedStaffToView] = useState(null);
   const [selectedStaffToEdit, setSelectedStaffToEdit] = useState(null);
+  const [actionModalStaff, setActionModalStaff] = useState(null);
   const [activeTab, setLocalActiveTab] = useState('New Reg. Staff');
   
   const [searchQuery, setSearchQuery] = useState('');
@@ -57,8 +59,13 @@ export default function StaffList({ setActiveTab }) {
     setSelectedStaffToEdit(null);
   };
 
+  const getPendingItems = (employee) => {
+    if (!employee || !employee.onboardingStatus || employee.onboardingStatus === 'Active' || employee.onboardingStatus === 'Completed') return [];
+    return employee.onboardingStatus.split(',').map(s => s.trim()).filter(Boolean);
+  };
+
   const getPrimaryAction = (employee) => {
-    if (employee.onboardingStatus === 'Active') {
+    if (employee.onboardingStatus === 'Active' || employee.onboardingStatus === 'Completed') {
       return { 
         label: 'View', 
         type: 'default', 
@@ -67,12 +74,15 @@ export default function StaffList({ setActiveTab }) {
       };
     }
 
-    if (employee.onboardingStatus === 'Missing Documents') {
+    const pendingItems = getPendingItems(employee);
+    if (pendingItems.length > 0 && pendingItems.some(i => i === 'Missing Documents' || i.includes('Verification'))) {
       return { 
         label: 'アクション Required', 
         type: 'urgent', 
-        className: 'bg-[#E30A17] text-white hover:bg-red-700',
-        onClick: () => { setSelectedStaffToEdit(employee); setEditModalTab('Basic'); } 
+        className: 'bg-[#E30A17] text-white hover:bg-red-700 relative group',
+        onClick: () => setActionModalStaff(employee),
+        badge: pendingItems.length,
+        tooltip: pendingItems.join(', ')
       };
     }
     
@@ -106,7 +116,7 @@ export default function StaffList({ setActiveTab }) {
     } else if (activeTab === 'Office Staff') {
       matchesTab = isEmpOffice(employee);
     } else if (activeTab === 'New Reg. Staff') {
-      matchesTab = employee.onboardingStatus && employee.onboardingStatus !== 'Active';
+      matchesTab = employee.onboardingStatus && employee.onboardingStatus !== 'Active' && employee.onboardingStatus !== 'Completed';
     }
 
     // 2. Search Query Filtering
@@ -149,7 +159,7 @@ export default function StaffList({ setActiveTab }) {
         <div className="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
           <p className="text-sm text-gray-500 mb-2">新規登録スタッフ</p>
           <p className="text-3xl font-bold text-yellow-500">
-            {employees.filter(e => e.onboardingStatus && e.onboardingStatus !== 'Active').length}
+            {employees.filter(e => e.onboardingStatus && e.onboardingStatus !== 'Active' && e.onboardingStatus !== 'Completed').length}
           </p>
         </div>
       </div>
@@ -241,15 +251,14 @@ export default function StaffList({ setActiveTab }) {
                       {employee.joinDate ? new Date(employee.joinDate).toLocaleDateString('ja-JP', { year: 'numeric', month: 'short', day: 'numeric' }) : 'N/A'}
                     </td>
                     <td className="py-4 px-6">
-                      <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-                        employee.onboardingStatus === 'Active' ? 'bg-green-100 text-green-700' :
-                        employee.onboardingStatus === 'Verification 保留中' ? 'bg-blue-100 text-blue-700' :
+                      <span className={`px-3 py-1 rounded-full text-xs font-bold ${
+                        employee.onboardingStatus === 'Active' || employee.onboardingStatus === 'Completed' ? 'bg-green-100 text-green-700' :
+                        employee.onboardingStatus?.includes('Missing') ? 'bg-red-100 text-red-700' :
+                        employee.onboardingStatus?.includes('Verification') ? 'bg-yellow-100 text-yellow-700' :
                         'bg-gray-100 text-gray-700'
                       }`}>
                         {employee.onboardingStatus === 'Active' ? 'アクティブ' : 
-                         employee.onboardingStatus === 'Verification 保留中' ? '確認保留中' : 
-                         employee.onboardingStatus === 'Missing Pledges' ? '誓約書未提出' : 
-                         employee.onboardingStatus === '拒否' ? '拒否' : 
+                         employee.onboardingStatus === 'Completed' ? '完了' : 
                          (employee.onboardingStatus || 'アクティブ')}
                       </span>
                     </td>
@@ -258,12 +267,25 @@ export default function StaffList({ setActiveTab }) {
                         {(() => {
                           const action = getPrimaryAction(employee);
                           return (
-                            <button 
-                              onClick={action.onClick}
-                              className={`px-4 py-1.5 rounded-md text-sm font-medium transition-colors border ${action.type === 'default' ? 'border-transparent' : 'border-transparent'} ${action.className}`}
-                            >
-                              {action.label}
-                            </button>
+                            <div className="relative group flex items-center">
+                              <button 
+                                onClick={action.onClick}
+                                className={`px-4 py-1.5 rounded-md text-sm font-medium transition-colors border relative ${action.type === 'default' ? 'border-transparent' : 'border-transparent'} ${action.className}`}
+                              >
+                                {action.label}
+                                {action.badge > 0 && (
+                                  <span className="absolute -top-2 -right-2 bg-yellow-400 text-xs text-gray-900 font-bold w-5 h-5 flex items-center justify-center rounded-full shadow">
+                                    {action.badge}
+                                  </span>
+                                )}
+                              </button>
+                              {action.tooltip && (
+                                <div className="absolute bottom-full right-0 mb-2 hidden group-hover:block w-max max-w-xs bg-gray-800 text-white text-xs rounded p-2 shadow-lg z-10">
+                                  {action.tooltip}
+                                  <svg className="absolute text-gray-800 h-2 w-full left-0 top-full" x="0px" y="0px" viewBox="0 0 255 255"><polygon className="fill-current" points="0,0 127.5,127.5 255,0"/></svg>
+                                </div>
+                              )}
+                            </div>
                           );
                         })()}
                         
@@ -315,6 +337,14 @@ export default function StaffList({ setActiveTab }) {
           onClose={() => setSelectedStaffToEdit(null)}
           onEditComplete={handleEditComplete}
           initialTab={editModalTab}
+        />
+      )}
+
+      {actionModalStaff && (
+        <OnboardingActionModal 
+          employee={actionModalStaff}
+          onClose={() => setActionModalStaff(null)}
+          onComplete={handleEditComplete}
         />
       )}
     </div>

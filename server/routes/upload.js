@@ -59,7 +59,7 @@ const upload = multer({
   storage,
   fileFilter,
   limits: {
-    fileSize: 2 * 1024 * 1024, // 2 MB per file
+    fileSize: 5 * 1024 * 1024, // 5 MB per file
     files: 10,                   // max 10 files per request
   },
 });
@@ -71,7 +71,7 @@ router.post('/', (req, res) => {
     // Handle multer-level errors inline (file size, type, count limits)
     if (err) {
       if (err.code === 'LIMIT_FILE_SIZE') {
-        return res.status(400).json({ message: 'File too large. Maximum size is 2 MB per file.' });
+        return res.status(400).json({ message: 'File too large. Maximum size is 5 MB per file.' });
       }
       if (err.code === 'INVALID_FILE_TYPE') {
         return res.status(400).json({ message: err.message });

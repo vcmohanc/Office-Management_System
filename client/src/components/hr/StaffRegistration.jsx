@@ -1,5 +1,6 @@
-import { Calendar, Trash2, Plus, UploadCloud, AlertCircle } from 'lucide-react';
+import { Calendar, Trash2, Plus, UploadCloud, AlertCircle, ChevronDown } from 'lucide-react';
 import { useState, useEffect } from 'react';
+import toast from 'react-hot-toast';
 import { apiFetch } from '../../utils/apiFetch.js';
 import { ALL_DEPARTMENTS } from '../../constants';
 import MultiDatePicker from '../common/MultiDatePicker';
@@ -28,10 +29,13 @@ export default function StaffRegistration({ setActiveTab }) {
 
   const [qualifications, setQualifications] = useState([{ passingYear: '', qualification: '', university: '' }]);
   
-  // Generate random スタッフID on component mount and fetch options
-  useEffect(() => {
+  const generateStaffId = () => {
     const randomHex = Math.floor(Math.random() * 16777215).toString(16).padStart(6, '0').toUpperCase();
     setStaffId(`STF${randomHex}`);
+  };
+
+  // Fetch options
+  useEffect(() => {
 
     apiFetch('/api/options').then(res => res.json()).then(data => {
       const newOptions = {
@@ -47,7 +51,7 @@ export default function StaffRegistration({ setActiveTab }) {
     }).catch(err => console.error('Failed to fetch options', err));
   }, []);
   const [workExperiences, setWorkExperiences] = useState([{ companyName: '', workPeriod: '', jobDescription: '' }]);
-  const [departments, setDepartments] = useState([]);
+  const [department, setDepartment] = useState('');
   const [workingDays, setWorkingDays] = useState([]);
 
   const [dob, setDob] = useState('');
@@ -121,13 +125,31 @@ export default function StaffRegistration({ setActiveTab }) {
       method: 'POST',
       body: fd,
     });
-    if (!res.ok) throw new Error('File upload failed');
     const data = await res.json();
-    return data.urls[0];
+    if (!res.ok) {
+      throw new Error(data.message || 'File upload failed');
+    }
+    return data.fileNames[0];
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    if (age === '' || parseInt(age) < 18) {
+      toast.error("スタッフは18歳以上である必要があります。 (Staff must be at least 18 years old.)");
+      return;
+    }
+
+    if (!staffId) {
+      toast.error("スタッフIDを生成してください。 (Please generate a Staff ID.)");
+      return;
+    }
+
+    if (!department) {
+      toast.error("従業員タイプを選択してください。 (Please select an employee type.)");
+      return;
+    }
+    
     setLoading(true);
     const formData = new FormData(e.target);
     const data = Object.fromEntries(formData.entries());
@@ -141,6 +163,7 @@ export default function StaffRegistration({ setActiveTab }) {
       }
     } catch (err) {
       console.error('Error uploading files', err);
+      toast.error('ファイルのアップロードに失敗しました。');
       setLoading(false);
       return;
     }
@@ -154,9 +177,17 @@ export default function StaffRegistration({ setActiveTab }) {
     data.workExperience = workExperiences;
     data.workingDays = workingDays;
 
+    // Combine first and last names
+    data.katakanaName = `${data.katakanaLastName} ${data.katakanaFirstName}`;
+    data.romajiName = `${data.romajiLastName} ${data.romajiFirstName}`;
+    delete data.katakanaLastName;
+    delete data.katakanaFirstName;
+    delete data.romajiLastName;
+    delete data.romajiFirstName;
+
     console.log("Submitting Data:", data);
     data.dob = data.dateOfBirth;
-    data.visaステータス = data.currentVisaステータス;
+    data.visaStatus = data.currentVisaステータス;
     
     // Map nested objects
     data.languageFluency = {
@@ -175,8 +206,8 @@ export default function StaffRegistration({ setActiveTab }) {
       shoeSize: data.shoeSize
     };
     
-    // Use selected departments array
-    data.department = departments;
+    // Use selected department (must be sent as array)
+    data.department = [department];
     data.staffId = staffId;
     
     try {
@@ -186,13 +217,22 @@ export default function StaffRegistration({ setActiveTab }) {
       });
       
       if (res.ok) {
+        toast.success('スタッフが正常に登録されました。');
         if (setActiveTab) {
             setActiveTab('Staff List');
         }
       } else {
-        console.error('Failed to register staff');
+        let errMessage = '不明なエラー';
+        try {
+          const errData = await res.json();
+          errMessage = errData.error || errData.message || '不明なエラー';
+        } catch (e) {
+          console.error('Failed to parse error response', e);
+        }
+        toast.error(`スタッフの登録に失敗しました: ${errMessage}`);
       }
     } catch (err) {
+      toast.error('エラーが発生しました。');
       console.error(err);
     } finally {
       setLoading(false);
@@ -205,8 +245,24 @@ export default function StaffRegistration({ setActiveTab }) {
         
         <div className="p-6 border-b border-gray-200 flex justify-between items-center bg-[#F8F9FA]">
           <h2 className="text-xl font-bold text-[#162D50]">新規スタッフ登録とオンボーディング</h2>
-          <div className="bg-gray-100 border border-gray-200 text-gray-700 px-3 py-1.5 rounded-md text-sm font-medium">
-            スタッフID: <span className="font-bold text-[#162D50]">{staffId}</span>
+          <div className="flex items-center space-x-3">
+            <label className="text-sm font-bold text-gray-600">スタッフID <span className="text-red-500">*</span></label>
+            <input 
+              required
+              name="staffId"
+              type="text" 
+              readOnly 
+              value={staffId} 
+              placeholder="未生成"
+              className="w-32 px-3 py-1.5 border border-gray-300 rounded-md text-sm font-bold text-[#162D50] bg-gray-50 focus:outline-none"
+            />
+            <button 
+              type="button" 
+              onClick={generateStaffId}
+              className="px-3 py-1.5 bg-[#162D50] text-white text-sm font-bold rounded-md hover:bg-[#0f1f38] transition-colors"
+            >
+              生成する
+            </button>
           </div>
         </div>
 
@@ -217,65 +273,47 @@ export default function StaffRegistration({ setActiveTab }) {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
 
             <div>
+              <label className="block text-xs font-bold text-gray-600 mb-1 uppercase tracking-wider">従業員タイプ <span className="text-red-500">*</span></label>
+              <select required className="w-full px-4 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-[#162D50] text-gray-700 bg-white" value={department} onChange={(e) => setDepartment(e.target.value)}>
+                <option value="">従業員タイプを選択</option>
+                <option value="派遣スタッフ">派遣スタッフ</option>
+                <option value="内勤スタッフ">内勤スタッフ</option>
+              </select>
+            </div>
+
+            <div>
               <label className="block text-xs font-bold text-gray-600 mb-1 uppercase tracking-wider">入社日 <span className="text-red-500">*</span></label>
               <div className="relative">
                 <input required name="joinDate" type="date" className="w-full px-4 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-[#162D50]" />
               </div>
             </div>
 
-            <div>
-              <label className="block text-xs font-bold text-gray-600 mb-1 uppercase tracking-wider">カタカナ氏名 <span className="text-red-500">*</span></label>
-              <input required name="katakanaName" type="text" placeholder="例: ヤマダ タロウ" className="w-full px-4 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-[#162D50]" />
-            </div>
-            <div>
-              <label className="block text-xs font-bold text-gray-600 mb-1 uppercase tracking-wider">ローマ字氏名 <span className="text-red-500">*</span></label>
-              <input required name="romajiName" type="text" placeholder="例: YAMADA TARO" className="w-full px-4 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-[#162D50]" />
-            </div>
-
-            <div>
-              <label className="block text-xs font-bold text-gray-600 mb-1 uppercase tracking-wider">国籍 <span className="text-red-500">*</span></label>
-              <input required name="nationality" type="text" placeholder="国籍を入力" className="w-full px-4 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-[#162D50]" />
-            </div>
-
-            <div>
-              <label className="block text-xs font-bold text-gray-600 mb-1 uppercase tracking-wider">電話番号 <span className="text-red-500">*</span></label>
-              <input required name="phone" type="tel" placeholder="例: 090-1234-5678" className="w-full px-4 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-[#162D50]" />
-            </div>
-            <div>
-              <label className="block text-xs font-bold text-gray-600 mb-1 uppercase tracking-wider">メールアドレス <span className="text-red-500">*</span></label>
-              <input required name="email" type="email" placeholder="例: staff@example.com" className="w-full px-4 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-[#162D50]" />
-            </div>
-
-
-            <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div>
-                <label className="block text-xs font-bold text-gray-600 mb-1 uppercase tracking-wider">生年月日 <span className="text-red-500">*</span></label>
-                <div className="relative">
-                  <input required name="dateOfBirth" type="date" className="w-full px-4 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-[#162D50]" value={dob} onChange={handleDobChange} />
+            <div className="md:col-span-2 grid grid-cols-1 gap-6">
+              <div className="space-y-2">
+                <label className="block text-xs font-bold text-gray-600 uppercase tracking-wider">カタカナ氏名 <span className="text-red-500">*</span></label>
+                <div className="flex gap-4">
+                  <div className="flex-1">
+                    <input required name="katakanaLastName" type="text" placeholder="姓 (例: ヤマダ)" className="w-full px-4 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-[#162D50]" />
+                  </div>
+                  <div className="flex-1">
+                    <input required name="katakanaFirstName" type="text" placeholder="名 (例: タロウ)" className="w-full px-4 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-[#162D50]" />
+                  </div>
                 </div>
               </div>
-
-              <div>
-                <label className="block text-xs font-bold text-gray-600 mb-1 uppercase tracking-wider">年齢</label>
-                <input name="age" type="text" placeholder="年齢" readOnly className="w-full px-4 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-[#162D50] bg-gray-50 text-gray-500 cursor-not-allowed" value={age} />
-              </div>
-              
-              <div>
-                <label className="block text-xs font-bold text-gray-600 mb-1 uppercase tracking-wider">性別 <span className="text-red-500">*</span></label>
-                <select required name="gender" className="w-full px-4 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-[#162D50] text-gray-700 bg-white">
-                  <option value="">性別を選択</option>
-                  {options.Gender?.length > 0 ? options.Gender.map(opt => (
-                    <option key={opt._id} value={opt.value}>{opt.label}</option>
-                  )) : (
-                    <>
-                      <option value="Male">男性</option>
-                      <option value="Female">女性</option>
-                      <option value="Other">その他</option>
-                    </>
-                  )}
-                </select>
+              <div className="space-y-2">
+                <label className="block text-xs font-bold text-gray-600 uppercase tracking-wider">ローマ字氏名 <span className="text-red-500">*</span></label>
+                <div className="flex gap-4">
+                  <div className="flex-1">
+                    <input required name="romajiLastName" type="text" placeholder="Surname (例: YAMADA)" className="w-full px-4 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-[#162D50]" />
+                  </div>
+                  <div className="flex-1">
+                    <input required name="romajiFirstName" type="text" placeholder="Given Name (例: TARO)" className="w-full px-4 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-[#162D50]" />
+                  </div>
+                </div>
               </div>
             </div>
+
+
           </div>
             </div>
 
@@ -297,14 +335,59 @@ export default function StaffRegistration({ setActiveTab }) {
             </div>
           </div>
 
+          <div className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div>
+                <label className="block text-xs font-bold text-gray-600 mb-1 uppercase tracking-wider">国籍 <span className="text-red-500">*</span></label>
+                <input required name="nationality" type="text" placeholder="国籍を入力" className="w-full px-4 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-[#162D50]" />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-gray-600 mb-1 uppercase tracking-wider">電話番号 <span className="text-red-500">*</span></label>
+                <input required name="phone" type="tel" placeholder="例: 090-1234-5678" className="w-full px-4 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-[#162D50]" />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-gray-600 mb-1 uppercase tracking-wider">メールアドレス <span className="text-red-500">*</span></label>
+                <input required name="email" type="email" placeholder="例: staff@example.com" className="w-full px-4 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-[#162D50]" />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div>
+                <label className="block text-xs font-bold text-gray-600 mb-1 uppercase tracking-wider">生年月日 <span className="text-red-500">*</span></label>
+                <div className="relative">
+                  <input required name="dateOfBirth" type="date" className="w-full px-4 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-[#162D50]" value={dob} onChange={handleDobChange} />
+                </div>
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-gray-600 mb-1 uppercase tracking-wider">年齢</label>
+                <input name="age" type="text" placeholder="年齢" readOnly className="w-full px-4 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-[#162D50] bg-gray-50 text-gray-500 cursor-not-allowed" value={age} />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-gray-600 mb-1 uppercase tracking-wider">性別 <span className="text-red-500">*</span></label>
+                <select required name="gender" className="w-full px-4 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-[#162D50] text-gray-700 bg-white">
+                  <option value="">性別を選択</option>
+                  {options.Gender?.length > 0 ? options.Gender.map(opt => (
+                    <option key={opt._id} value={opt.value}>{opt.label}</option>
+                  )) : (
+                    <>
+                      <option value="Male">男性</option>
+                      <option value="Female">女性</option>
+                      <option value="Other">その他</option>
+                    </>
+                  )}
+                </select>
+              </div>
+            </div>
+          </div>
+
           <hr className="border-gray-200" />
 
           {/* Visa and Employment ステータス */}
           <h3 className="text-sm font-bold text-[#162D50] uppercase tracking-wider mb-4">ビザと雇用ステータス</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
-              <label className="block text-xs font-bold text-gray-600 mb-1 uppercase tracking-wider">現在のビザステータス</label>
-              <select name="currentVisaステータス" className="w-full px-4 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-[#162D50] text-gray-700 bg-white">
+              <label className="block text-xs font-bold text-gray-600 mb-1 uppercase tracking-wider">現在のビザステータス <span className="text-red-500">*</span></label>
+              <select required name="currentVisaステータス" className="w-full px-4 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-[#162D50] text-gray-700 bg-white">
                 <option value="">ビザステータスを選択</option>
                 {options.VisaStatus?.length > 0 ? options.VisaStatus.map(opt => (
                   <option key={opt._id} value={opt.value}>{opt.label}</option>
@@ -318,8 +401,8 @@ export default function StaffRegistration({ setActiveTab }) {
               </select>
             </div>
             <div>
-              <label className="block text-xs font-bold text-gray-600 mb-1 uppercase tracking-wider">雇用形態</label>
-              <select name="joiningType" className="w-full px-4 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-[#162D50] text-gray-700 bg-white">
+              <label className="block text-xs font-bold text-gray-600 mb-1 uppercase tracking-wider">雇用形態 <span className="text-red-500">*</span></label>
+              <select required name="joiningType" className="w-full px-4 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-[#162D50] text-gray-700 bg-white">
                 <option value="">雇用形態を選択</option>
                 {options.JoiningType?.length > 0 ? options.JoiningType.map(opt => (
                   <option key={opt._id} value={opt.value}>{opt.label}</option>
@@ -431,8 +514,8 @@ export default function StaffRegistration({ setActiveTab }) {
 
           {/* Personality */}
           <div>
-            <h3 className="text-sm font-bold text-[#162D50] uppercase tracking-wider mb-4">Personality</h3>
-            <input name="personality" type="text" placeholder="Key traits" className="w-full px-4 py-2 border border-gray-300 rounded-md text-sm bg-[#F8F9FA] focus:bg-white focus:outline-none focus:ring-1 focus:ring-[#162D50]" />
+            <h3 className="text-sm font-bold text-[#162D50] uppercase tracking-wider mb-4">性格・特徴</h3>
+            <input name="personality" type="text" placeholder="主な特徴" className="w-full px-4 py-2 border border-gray-300 rounded-md text-sm bg-[#F8F9FA] focus:bg-white focus:outline-none focus:ring-1 focus:ring-[#162D50]" />
           </div>
 
           {/* Language Fluency */}
@@ -441,7 +524,7 @@ export default function StaffRegistration({ setActiveTab }) {
             <div className="bg-[#F8F9FA] border border-gray-200 p-4 rounded-md grid grid-cols-1 md:grid-cols-3 gap-6">
               <div>
                 <label className="block text-xs font-bold text-gray-600 mb-1 uppercase tracking-wider">英語</label>
-                <select name="englishLevel" className="w-full px-4 py-2 border border-gray-300 rounded-md text-sm bg-white text-gray-700">
+                <select name="englishLevel" className="w-full px-4 py-2 border border-gray-300 rounded-md text-sm bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-[#162D50]">
                   <option value="">レベルを選択</option>
                   {options.EnglishLevel?.length > 0 ? options.EnglishLevel.map(opt => (
                     <option key={opt._id} value={opt.value}>{opt.label}</option>
@@ -457,7 +540,7 @@ export default function StaffRegistration({ setActiveTab }) {
               </div>
               <div>
                 <label className="block text-xs font-bold text-gray-600 mb-1 uppercase tracking-wider">日本語</label>
-                <select name="japaneseLevel" className="w-full px-4 py-2 border border-gray-300 rounded-md text-sm bg-white text-gray-700">
+                <select name="japaneseLevel" className="w-full px-4 py-2 border border-gray-300 rounded-md text-sm bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-[#162D50]">
                   <option value="">レベルを選択</option>
                   {options.JapaneseLevel?.length > 0 ? options.JapaneseLevel.map(opt => (
                     <option key={opt._id} value={opt.value}>{opt.label}</option>
@@ -475,9 +558,9 @@ export default function StaffRegistration({ setActiveTab }) {
               </div>
               <div>
                 <label className="block text-xs font-bold text-gray-600 mb-1 uppercase tracking-wider">その他の言語</label>
-                <div className="flex space-x-2">
-                  <input name="otherLanguageName" type="text" placeholder="言語名" className="flex-1 px-4 py-2 border border-gray-300 rounded-md text-sm bg-white" />
-                  <select name="otherLanguageLevel" className="w-24 px-2 py-2 border border-gray-300 rounded-md text-sm bg-white text-gray-700">
+                <div className="flex gap-2">
+                  <input name="otherLanguageName" type="text" placeholder="言語名" className="w-2/3 px-4 py-2 border border-gray-300 rounded-md text-sm bg-white focus:outline-none focus:ring-1 focus:ring-[#162D50]" />
+                  <select name="otherLanguageLevel" className="w-1/3 px-2 py-2 border border-gray-300 rounded-md text-sm bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-[#162D50]">
                     <option value="">レベル</option>
                     <option value="Native">ネイティブ</option>
                     <option value="Fluent">流暢</option>
@@ -491,42 +574,52 @@ export default function StaffRegistration({ setActiveTab }) {
           <hr className="border-gray-200" />
 
           {/* Physical Attributes */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <label className="block text-xs font-bold text-gray-600 mb-1 uppercase tracking-wider">身長 (cm)</label>
-              <input name="height" type="text" placeholder="cm" className="w-full px-4 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-[#162D50]" />
+          <details className="group border border-gray-200 rounded-md bg-white mb-6">
+            <summary className="flex cursor-pointer items-center justify-between p-4 font-bold text-gray-700 hover:bg-gray-50 uppercase tracking-wider text-sm">
+             農業スタッフ専用
+              <span className="transition-transform duration-200 group-open:-rotate-180">
+                <ChevronDown className="h-5 w-5 text-gray-500" />
+              </span>
+            </summary>
+            <div className="p-4 border-t border-gray-200">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <label className="block text-xs font-bold text-gray-600 mb-1 uppercase tracking-wider">身長 (cm)</label>
+                  <input name="height" type="text" placeholder="cm" className="w-full px-4 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-[#162D50]" />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-gray-600 mb-1 uppercase tracking-wider">体重 (kg)</label>
+                  <input name="weight" type="text" placeholder="kg" className="w-full px-4 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-[#162D50]" />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-gray-600 mb-1 uppercase tracking-wider">服のサイズ</label>
+                  <select name="clothingSize" className="w-full px-4 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-[#162D50] text-gray-700 bg-white">
+                    <option value="">サイズを選択</option>
+                    {options.ClothingSize?.length > 0 ? options.ClothingSize.map(opt => (
+                      <option key={opt._id} value={opt.value}>{opt.label}</option>
+                    )) : (
+                      <>
+                        <option value="S">S</option>
+                        <option value="M">M</option>
+                        <option value="L">L</option>
+                        <option value="XL">XL</option>
+                      </>
+                    )}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-gray-600 mb-1 uppercase tracking-wider">靴のサイズ (cm)</label>
+                  <input name="shoeSize" type="text" placeholder="例: 26.5" className="w-full px-4 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-[#162D50]" />
+                </div>
+              </div>
             </div>
-            <div>
-              <label className="block text-xs font-bold text-gray-600 mb-1 uppercase tracking-wider">体重 (kg)</label>
-              <input name="weight" type="text" placeholder="kg" className="w-full px-4 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-[#162D50]" />
-            </div>
-            <div>
-              <label className="block text-xs font-bold text-gray-600 mb-1 uppercase tracking-wider">服のサイズ</label>
-              <select name="clothingSize" className="w-full px-4 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-[#162D50] text-gray-700 bg-white">
-                <option value="">サイズを選択</option>
-                {options.ClothingSize?.length > 0 ? options.ClothingSize.map(opt => (
-                  <option key={opt._id} value={opt.value}>{opt.label}</option>
-                )) : (
-                  <>
-                    <option value="S">S</option>
-                    <option value="M">M</option>
-                    <option value="L">L</option>
-                    <option value="XL">XL</option>
-                  </>
-                )}
-              </select>
-            </div>
-            <div>
-              <label className="block text-xs font-bold text-gray-600 mb-1 uppercase tracking-wider">靴のサイズ (cm)</label>
-              <input name="shoeSize" type="text" placeholder="例: 26.5" className="w-full px-4 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-[#162D50]" />
-            </div>
-          </div>
+          </details>
 
           {/* Uploads */}
           <div className="space-y-6">
             <div>
               <label className="block text-xs font-bold text-gray-600 mb-2 uppercase tracking-wider">オンボーディング状況</label>
-              <select name="onboardingステータス" className="w-full px-4 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-[#162D50] text-gray-700 bg-white">
+              <select name="onboardingStatus" className="w-full px-4 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-[#162D50] text-gray-700 bg-white">
                 {options.OnboardingStatus?.length > 0 ? options.OnboardingStatus.map(opt => (
                   <option key={opt._id} value={opt.value}>{opt.label}</option>
                 )) : (
