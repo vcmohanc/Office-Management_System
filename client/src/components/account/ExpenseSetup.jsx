@@ -355,8 +355,8 @@ export default function ExpenseSetup() {
                     {activeTab === 'postal' ? '送信者 / 受信者' : '出発地 / 到着地'}
                   </th>
                   {regions.map(region => (
-                    <th key={region._id} className="p-3 border border-gray-200 bg-gray-50 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider w-24">
-                      {region.name2}
+                    <th key={region._id} className="p-2 border border-gray-200 bg-gray-50 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider" style={{ minWidth: '80px', maxWidth: '100px' }}>
+                      <span className="block leading-tight">{region.name2}</span>
                     </th>
                   ))}
                 </tr>
@@ -380,28 +380,34 @@ export default function ExpenseSetup() {
                           {isDiagonal && activeTab === 'postal' ? (
                             <span className="text-red-500 font-bold text-sm">なし</span>
                           ) : activeTab === 'travel' ? (
-                            <div className="flex flex-col space-y-1">
-                              <div className="flex items-center">
-                                <span className="text-gray-500 text-xs w-8 text-left">バス</span>
-                                <span className="text-gray-500 mx-1">¥</span>
-                                <input
-                                  type="text"
-                                  value={value?.bus || ''}
-                                  onChange={(e) => handleChargeChange(departure._id, destination._id, e.target.value, 'bus')}
-                                  className="w-full text-center p-1 border border-gray-200 rounded text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
-                                />
-                              </div>
-                              {!isDiagonal && (
-                                <div className={`flex items-center ${!isFlightEligible(departure, destination) ? 'opacity-50' : ''}`}>
-                                  <span className="text-gray-500 text-xs w-8 text-left">フライト</span>
-                                  <span className="text-gray-500 mx-1">¥</span>
+                            <div className="flex flex-col space-y-2">
+                              {/* Bus row */}
+                              <div className="flex flex-col items-center">
+                                <span className="text-gray-500 text-xs font-medium whitespace-nowrap mb-0.5">バス</span>
+                                <div className="flex items-center w-full">
+                                  <span className="text-gray-500 text-xs mr-0.5">¥</span>
                                   <input
                                     type="text"
-                                    value={value?.flight || ''}
-                                    onChange={(e) => handleChargeChange(departure._id, destination._id, e.target.value, 'flight')}
-                                    disabled={!isFlightEligible(departure, destination)}
-                                    className="w-full text-center p-1 border border-gray-200 rounded text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100"
+                                    value={value?.bus || ''}
+                                    onChange={(e) => handleChargeChange(departure._id, destination._id, e.target.value, 'bus')}
+                                    className="w-full text-center p-1 border border-gray-200 rounded text-xs focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
                                   />
+                                </div>
+                              </div>
+                              {/* Flight row */}
+                              {!isDiagonal && (
+                                <div className={`flex flex-col items-center ${!isFlightEligible(departure, destination) ? 'opacity-50' : ''}`}>
+                                  <span className="text-gray-500 text-xs font-medium whitespace-nowrap mb-0.5">フライト</span>
+                                  <div className="flex items-center w-full">
+                                    <span className="text-gray-500 text-xs mr-0.5">¥</span>
+                                    <input
+                                      type="text"
+                                      value={value?.flight || ''}
+                                      onChange={(e) => handleChargeChange(departure._id, destination._id, e.target.value, 'flight')}
+                                      disabled={!isFlightEligible(departure, destination)}
+                                      className="w-full text-center p-1 border border-gray-200 rounded text-xs focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100"
+                                    />
+                                  </div>
                                 </div>
                               )}
                             </div>
