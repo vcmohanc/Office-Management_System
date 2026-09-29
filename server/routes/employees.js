@@ -17,7 +17,7 @@ const employeeSchemaZod = z.object({
   email: z.string().optional(),
   photo: z.string().optional(),
   dob: z.coerce.date(),
-  age: z.number().min(0),
+  age: z.coerce.number().min(0),
   gender: z.string().min(1),
   visaStatus: z.string().min(1),
   joiningType: z.string().min(1),
@@ -44,8 +44,8 @@ const employeeSchemaZod = z.object({
     }).optional()
   }).optional(),
   physicalAttributes: z.object({
-    height: z.number().optional(),
-    weight: z.number().optional(),
+    height: z.union([z.coerce.number(), z.string().length(0)]).optional(),
+    weight: z.union([z.coerce.number(), z.string().length(0)]).optional(),
     clothingSize: z.string().optional(),
     shoeSize: z.string().optional()
   }).optional(),

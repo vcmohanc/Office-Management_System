@@ -127,12 +127,12 @@ export default function AssignWorkPlace() {
     try {
       const res = await apiFetch(`/api/employees/${selectedStaff._id}`, {
         method: 'PUT',
-        body: JSON.stringify({ ...selectedStaff, assignedWorkPlace: draftWorkPlaces, department: draftDepartments, office: draftOffices, staffType: draftStaffType, onboardingステータス: 'Active' }),
+        body: JSON.stringify({ ...selectedStaff, assignedWorkPlace: draftWorkPlaces, department: draftDepartments, office: draftOffices, staffType: draftStaffType, onboardingStatus: 'Active' }),
       });
       
       if (res.ok) {
         setEmployees(prev => prev.map(emp => 
-          emp._id === selectedStaff._id ? { ...emp, assignedWorkPlace: draftWorkPlaces, department: draftDepartments, office: draftOffices, staffType: draftStaffType, onboardingステータス: 'Active' } : emp
+          emp._id === selectedStaff._id ? { ...emp, assignedWorkPlace: draftWorkPlaces, department: draftDepartments, office: draftOffices, staffType: draftStaffType, onboardingStatus: 'Active' } : emp
         ));
         setIsModalOpen(false);
         setSelectedStaff(null);
@@ -150,6 +150,9 @@ export default function AssignWorkPlace() {
   ].includes(dept);
 
   const filteredEmployees = employees.filter(emp => {
+    const isComplete = emp.onboardingStatus === 'Active' || emp.onboardingStatus === 'Completed';
+    if (!isComplete) return false;
+
     const searchString = searchQuery.toLowerCase();
     const nameStr = `${emp.romajiName || ''} ${emp.katakanaName || ''}`.toLowerCase();
     const matchesSearch = nameStr.includes(searchString) || (emp._id && emp._id.toLowerCase().includes(searchString));
@@ -159,11 +162,13 @@ export default function AssignWorkPlace() {
     if (mainCategory === 'Haken') matchesMainCategory = !isEmpOffice;
     if (mainCategory === 'Office') matchesMainCategory = isEmpOffice;
     
-    const isUnassigned = (!emp.assignedWorkPlace || emp.assignedWorkPlace.length === 0) && (!emp.department || emp.department.length === 0) || emp.onboardingステータス !== 'Active';
+    const isUnassigned = mainCategory === 'Haken' 
+      ? (!emp.assignedWorkPlace || emp.assignedWorkPlace.length === 0) 
+      : (!emp.office || emp.office.length === 0);
 
     let matchesFilter = false;
     if (filterWorkPlace === 'All') {
-      matchesFilter = true;
+      matchesFilter = !isUnassigned;
     } else if (filterWorkPlace === 'Unassigned') {
       matchesFilter = isUnassigned;
     } else {
@@ -185,25 +190,37 @@ export default function AssignWorkPlace() {
   });
 
   const getStat = (filterVal) => {
-    let baseEmps = employees;
+    let baseEmps = employees.filter(e => e.onboardingStatus === 'Active' || e.onboardingStatus === 'Completed');
     const isEmpOffice = (e) => e.staffType ? e.staffType === 'Office Staff' : (Array.isArray(e.department) ? e.department.some(isOffice) : isOffice(e.department));
-    if (mainCategory === 'Haken') baseEmps = employees.filter(e => !isEmpOffice(e));
-    if (mainCategory === 'Office') baseEmps = employees.filter(e => isEmpOffice(e));
-    
-    if (filterVal === 'All') return baseEmps.length;
-    if (filterVal === 'Unassigned') return baseEmps.filter(e => (!e.assignedWorkPlace || e.assignedWorkPlace.length === 0) && (!e.department || e.department.length === 0) || e.onboardingStatus !== 'Active').length;
+    if (mainCategory === 'Haken') baseEmps = baseEmps.filter(e => !isEmpOffice(e));
+    if (mainCategory === 'Office') baseEmps = baseEmps.filter(e => isEmpOffice(e));
+    if (filterVal === 'All') {
+      return baseEmps.filter(e => {
+        const unassigned = mainCategory === 'Haken' 
+          ? (!e.assignedWorkPlace || e.assignedWorkPlace.length === 0)
+          : (!e.office || e.office.length === 0);
+        return !unassigned;
+      }).length;
+    }
+    if (filterVal === 'Unassigned') {
+      return baseEmps.filter(e => 
+        mainCategory === 'Haken' 
+          ? (!e.assignedWorkPlace || e.assignedWorkPlace.length === 0)
+          : (!e.office || e.office.length === 0)
+      ).length;
+    }
     
     if (mainCategory === 'Haken') {
-      return baseEmps.filter(e => includesValue(e.assignedWorkPlace, filterVal) && e.onboardingStatus === 'Active').length;
+      return baseEmps.filter(e => includesValue(e.assignedWorkPlace, filterVal)).length;
     } else if (mainCategory === 'Office') {
       const isDepartmentFilter = OFFICE_DEPARTMENTS.includes(filterVal);
       if (isDepartmentFilter) {
-        return baseEmps.filter(e => includesValue(e.department, filterVal) && e.onboardingStatus === 'Active').length;
+        return baseEmps.filter(e => includesValue(e.department, filterVal)).length;
       } else {
-        return baseEmps.filter(e => includesValue(e.office, filterVal) && e.onboardingStatus === 'Active').length;
+        return baseEmps.filter(e => includesValue(e.office, filterVal)).length;
       }
     } else {
-      return baseEmps.filter(e => (includesValue(e.assignedWorkPlace, filterVal) || includesValue(e.department, filterVal) || includesValue(e.office, filterVal)) && e.onboardingStatus === 'Active').length;
+      return baseEmps.filter(e => includesValue(e.assignedWorkPlace, filterVal) || includesValue(e.department, filterVal) || includesValue(e.office, filterVal)).length;
     }
   };
 
@@ -221,7 +238,7 @@ export default function AssignWorkPlace() {
 
   const baseCards = [
     { name: '未配属', id: 'Unassigned', icon: MapPin, color: 'text-amber-500', bgColor: 'bg-white', borderColor: 'border-gray-200' },
-    { name: '全スタッフ', id: 'All', icon: Users, color: 'text-blue-600', bgColor: 'bg-white', borderColor: 'border-gray-200' },
+    { name: '配属済み', id: 'All', icon: Users, color: 'text-blue-600', bgColor: 'bg-white', borderColor: 'border-gray-200' },
   ];
 
   const translateWorkPlace = (wp) => {
@@ -418,6 +435,7 @@ export default function AssignWorkPlace() {
                 <th className="py-4 px-6">No.</th>
                 <th className="py-4 px-6">スタッフID</th>
                 <th className="py-4 px-6">氏名</th>
+                <th className="py-4 px-6">従業員タイプ</th>
                 <th className="py-4 px-6">部署</th>
                 <th className="py-4 px-6">{mainCategory === 'Office' ? 'オフィス' : '配属先'}</th>
                 <th className="py-4 px-6">入社日</th>
@@ -439,20 +457,17 @@ export default function AssignWorkPlace() {
                     <td className="py-4 px-6 font-medium text-gray-500">{index + 1}</td>
                     <td className="py-4 px-6 font-medium text-[#162D50]">#{employee._id?.slice(-6).toUpperCase() || 'NEW'}</td>
                     <td className="py-4 px-6 font-bold text-gray-900">{employee.romajiName || 'N/A'}</td>
+                    <td className="py-4 px-6 text-gray-600">{employee.joiningType || employee.staffType || '派遣スタッフ'}</td>
                     <td className="py-4 px-6 text-gray-600">{Array.isArray(employee.department) ? employee.department.map(translateDepartment).join(', ') : translateDepartment(employee.department) || 'N/A'}</td>
                     <td className="py-4 px-6">
-                      {employee.onboardingStatus !== 'Active' ? (
-                        <span className="px-3 py-1 bg-red-100 text-red-800 rounded-full text-xs font-semibold whitespace-nowrap">
-                          {employee.onboardingStatus || '非アクティブ'}
-                        </span>
-                      ) : mainCategory === 'Office' ? (
+                      {mainCategory === 'Office' ? (
                         employee.office && employee.office.length > 0 ? (
                           <span className="px-3 py-1 bg-indigo-100 text-indigo-800 rounded-full text-xs font-semibold whitespace-nowrap">
                             {Array.isArray(employee.office) ? employee.office.map(translateOfficeLocation).join(', ') : translateOfficeLocation(employee.office)}
                           </span>
                         ) : (
                           <span className="px-3 py-1 bg-amber-100 text-amber-800 rounded-full text-xs font-semibold whitespace-nowrap">
-                            配属待ち
+                            未配属
                           </span>
                         )
                       ) : employee.assignedWorkPlace && employee.assignedWorkPlace.length > 0 ? (
@@ -461,15 +476,25 @@ export default function AssignWorkPlace() {
                         </span>
                       ) : (
                         <span className="px-3 py-1 bg-amber-100 text-amber-800 rounded-full text-xs font-semibold whitespace-nowrap">
-                          配属待ち
+                          未配属
                         </span>
                       )}
                     </td>
                     <td className="py-4 px-6 text-gray-600">
                       {employee.joinDate ? new Date(employee.joinDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'N/A'}
                     </td>
-                    <td className="py-4 px-6 text-center">
+                    <td className="py-4 px-6 text-center space-x-2">
                       <button 
+                        onClick={() => {
+                          // TODO View logic or expand view
+                        }}
+                        className="p-1.5 text-gray-400 hover:text-[#162D50] hover:bg-blue-50 rounded-md transition-colors"
+                        title="View Details"
+                      >
+                        <Eye className="w-5 h-5" />
+                      </button>
+                      <button 
+                        className="px-3 py-1.5 bg-[#162D50] text-white hover:bg-[#0f1f3a] rounded-md text-xs font-bold transition-colors"
                         onClick={() => {
                           const handleOpenModal = (staff) => {
                             setSelectedStaff(staff);
@@ -491,10 +516,8 @@ export default function AssignWorkPlace() {
                           };
                           handleOpenModal(employee);
                         }}
-                        className="inline-flex items-center justify-center p-2 text-gray-500 hover:text-[#162D50] hover:bg-gray-200 rounded-full transition-colors"
-                        title="表示して配属"
                       >
-                        <Eye className="w-5 h-5" />
+                        配属する
                       </button>
                     </td>
                   </tr>
