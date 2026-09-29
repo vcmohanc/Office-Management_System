@@ -199,7 +199,7 @@ export default function ExpenseSetup() {
   const currentCharges = activeTab === 'postal' ? postalCharges : travelCharges;
 
   return (
-    <div className="flex flex-col h-full bg-[#F8F9FA]">
+    <div className="flex flex-col h-full bg-[#F8F9FA]" translate="no">
       
       {/* Top Tabs */}
       <div className="flex space-x-2 mb-6">
@@ -211,7 +211,7 @@ export default function ExpenseSetup() {
               : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-200'
           }`}
         >
-          郵便料金
+          <span>郵便料金</span>
         </button>
         <button
           onClick={() => setActiveTab('travel')}
@@ -221,7 +221,7 @@ export default function ExpenseSetup() {
               : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-200'
           }`}
         >
-          交通費
+          <span>交通費</span>
         </button>
         <button
           onClick={() => setActiveTab('regions')}
@@ -231,7 +231,7 @@ export default function ExpenseSetup() {
               : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-200'
           }`}
         >
-          地域管理
+          <span>地域管理</span>
         </button>
       </div>
 
