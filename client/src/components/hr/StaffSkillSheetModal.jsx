@@ -35,7 +35,8 @@ export default function StaffSkillSheetModal({ employee, onClose }) {
         <div className="p-10 print:p-0 text-gray-800">
           
           {/* Header Title */}
-          <div className="text-center mb-8 border-b-2 border-gray-800 pb-4">
+          <div className="text-center mb-8 border-b-2 border-gray-800 pb-4 relative">
+            <img src="/vegeicon.png" alt="Vegecoop Logo" className="absolute left-0 top-0 h-10 w-auto hidden print:block" />
             <h1 className="text-2xl font-bold uppercase tracking-widest text-gray-900">スタッフスキルシート</h1>
           </div>
 
