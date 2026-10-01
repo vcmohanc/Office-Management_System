@@ -134,21 +134,32 @@ export default function VisaManagement() {
         status === 'Expired' ? '#dc2626' :
         status === 'Expiring Soon' ? '#d97706' :
         status === 'Renewal In Progress' ? '#2563eb' : '#16a34a';
+      let jpStatus = '有効';
+      if (status === 'Expired') jpStatus = '期限切れ';
+      else if (status === 'Expiring Soon') jpStatus = '期限切れ間近';
+      else if (status === 'Renewal In Progress') jpStatus = '更新申請中';
+
+      let jpAppStatus = '未申請';
+      if (emp.visaAppステータス === 'Applied') jpAppStatus = '申請済';
+      else if (emp.visaAppステータス === 'Waiting for Visa') jpAppStatus = 'ビザ待ち';
+      else if (emp.visaAppステータス === '承認済') jpAppStatus = '承認済';
+      else if (emp.visaAppステータス === '拒否') jpAppStatus = '拒否';
+
       const expiry = emp.visaEndDate
-        ? new Date(emp.visaEndDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
-        : 'N/A';
+        ? new Date(emp.visaEndDate).toLocaleDateString('ja-JP', { year: 'numeric', month: 'long', day: 'numeric' })
+        : '未設定';
       return `
         <tr>
           <td style="text-align:center;color:#64748b;width:36px">${idx + 1}</td>
           <td>#${(emp._id?.slice(-6) || '').toUpperCase()}</td>
-          <td>${emp.romajiName || 'N/A'}</td>
-          <td>${emp.staffType || 'N/A'}</td>
-          <td>${Array.isArray(emp.assignedWorkPlace) ? emp.assignedWorkPlace.join(', ') : (emp.assignedWorkPlace || 'N/A')}</td>
-          <td>${emp.nationality || 'N/A'}</td>
-          <td>${emp.visaStatus || 'Employment Visa'}</td>
+          <td>${emp.romajiName || '未設定'}</td>
+          <td>${emp.staffType || '未設定'}</td>
+          <td>${Array.isArray(emp.assignedWorkPlace) ? emp.assignedWorkPlace.join(', ') : (emp.assignedWorkPlace || '未設定')}</td>
+          <td>${emp.nationality || '未設定'}</td>
+          <td>${emp.visaStatus || '就労ビザ'}</td>
           <td>${expiry}</td>
-          <td>${emp.visaAppステータス || 'Not Applied'}</td>
-          <td><span style="color:${statusColor};font-weight:700">${status}</span></td>
+          <td>${jpAppStatus}</td>
+          <td><span style="color:${statusColor};font-weight:700">${jpStatus}</span></td>
         </tr>`;
     }).join('');
 
@@ -170,13 +181,21 @@ export default function VisaManagement() {
   </style>
 </head>
 <body>
-  <h1>ビザ管理レポート (Visa Management Report)</h1>
-  <p class="sub">出力日 (Export Date): ${new Date().toLocaleDateString()}</p>
+  <h1>ビザ管理レポート</h1>
+  <p class="sub">出力日: ${new Date().toLocaleDateString('ja-JP', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
   <table>
     <thead>
       <tr>
-        <th style="text-align:center;width:36px">S.No</th><th>STAFF ID</th><th>STAFF NAME</th><th>EMP TYPE</th><th>WORKPLACE</th><th>NATIONALITY</th>
-        <th>VISA TYPE</th><th>EXPIRY DATE</th><th>APP STATUS</th><th>STATUS</th>
+        <th style="text-align:center;width:36px">番号</th>
+        <th>スタッフID</th>
+        <th>氏名</th>
+        <th>従業員タイプ</th>
+        <th>配属先</th>
+        <th>国籍</th>
+        <th>ビザ種別</th>
+        <th>有効期限</th>
+        <th>申請状況</th>
+        <th>ステータス</th>
       </tr>
     </thead>
     <tbody>${rows}</tbody>

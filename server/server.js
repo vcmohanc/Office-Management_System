@@ -15,6 +15,7 @@ import regionRoutes from './routes/regions.js';
 import uploadRoutes from './routes/upload.js';
 import settlementRoutes from './routes/settlements.js';
 import staffRoutes from './routes/staff.js';
+import resignationRoutes from './routes/resignations.js';
 import { verifyToken, verifyFileToken } from './middleware/auth.js';
 import { sseHandler } from './events.js';
 import fs from 'fs';
@@ -88,6 +89,7 @@ app.use('/api/expenses', verifyToken, expenseRoutes);
 app.use('/api/regions', verifyToken, regionRoutes);
 app.use('/api/upload', verifyToken, uploadRoutes);
 app.use('/api/settlements', verifyToken, settlementRoutes);
+app.use('/api/resignations', verifyToken, resignationRoutes);
 
 // SSE endpoint for real-time synchronization
 app.get('/api/events', verifyFileToken, sseHandler);
