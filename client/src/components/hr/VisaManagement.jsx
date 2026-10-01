@@ -1,13 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { Search, Filter, Download, MoreVertical, Printer } from 'lucide-react';
 import { apiFetch } from '../../utils/apiFetch.js';
-import { jsPDF } from 'jspdf';
-import autoTable from 'jspdf-autotable';
+
 
 export default function VisaManagement() {
   const [employees, setEmployees] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
+  const [typeFilter, setTypeFilter] = useState('');
+  const [workPlaceFilter, setWorkPlaceFilter] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedStaff, setSelectedStaff] = useState(null);
   const [newExpiryDate, setNewExpiryDate] = useState('');
@@ -73,41 +74,37 @@ export default function VisaManagement() {
     if (!selectedStaff || !newExpiryDate) return;
     setIsSubmitting(true);
     try {
-      const history = selectedStaff.visaExpiryHistory ? [...selectedStaff.visaExpiryHistory] : [];
-      // Only push the old date if it exists and is different from the new date
-      const currentDateString = selectedStaff.visaEndDate ? new Date(selectedStaff.visaEndDate).toISOString().split('T')[0] : null;
-      if (currentDateString && currentDateString !== newExpiryDate) {
-        history.push(selectedStaff.visaEndDate);
+      // Create separate VisaRenewal record
+      const renewalRes = await apiFetch(`/api/employees/${selectedStaff._id}/visa-renewals`, {
+        method: 'POST',
+        body: JSON.stringify({
+          startDate: newStartDate || null,
+          endDate: newExpiryDate,
+          status: newVisaステータス,
+          appStatus: newVisaAppステータス
+        }),
+      });
+
+      if (!renewalRes.ok) {
+        throw new Error('Failed to save visa renewal record');
       }
 
-      const res = await apiFetch(`/api/employees/${selectedStaff._id}`, {
-        method: 'PUT',
-        body: JSON.stringify({ 
-          ...selectedStaff, 
+      // Also update the local state to reflect the new primary visa info
+      setEmployees(prev => prev.map(emp => 
+        emp._id === selectedStaff._id ? { 
+          ...emp, 
           visaEndDate: newExpiryDate, 
           visaStartDate: newStartDate,
           visaステータス: newVisaステータス, 
-          visaAppステータス: newVisaAppステータス,
-          visaExpiryHistory: history
-        }),
-      });
+          visaAppステータス: newVisaAppステータス
+        } : emp
+      ));
       
-      if (res.ok) {
-        setEmployees(prev => prev.map(emp => 
-          emp._id === selectedStaff._id ? { 
-            ...emp, 
-            visaEndDate: newExpiryDate, 
-            visaStartDate: newStartDate,
-            visaステータス: newVisaステータス, 
-            visaAppステータス: newVisaAppステータス,
-            visaExpiryHistory: history
-          } : emp
-        ));
-        setIsModalOpen(false);
-        setSelectedStaff(null);
-      }
+      setIsModalOpen(false);
+      setSelectedStaff(null);
     } catch (err) {
       console.error('Failed to update visa:', err);
+      alert('ビザ情報の更新に失敗しました。\n' + err.message);
     } finally {
       setIsSubmitting(false);
     }
@@ -118,7 +115,10 @@ export default function VisaManagement() {
     const nameStr = `${emp.romajiName || ''} ${emp.katakanaName || ''}`.toLowerCase();
     const matchesSearch = nameStr.includes(searchString) || (emp._id && emp._id.toLowerCase().includes(searchString));
     const status = getVisaステータス(emp);
-    return matchesSearch && status !== 'Active';
+    const matchesType = typeFilter === '' || emp.staffType === typeFilter;
+    const matchesWorkPlace = workPlaceFilter === '' || (Array.isArray(emp.assignedWorkPlace) ? emp.assignedWorkPlace.includes(workPlaceFilter) : emp.assignedWorkPlace === workPlaceFilter);
+
+    return matchesSearch && matchesType && matchesWorkPlace && (status === 'Expired' || status === 'Expiring Soon') && emp.visaAppステータス !== '承認済';
   });
 
   // Calculate Metrics
@@ -142,6 +142,8 @@ export default function VisaManagement() {
           <td style="text-align:center;color:#64748b;width:36px">${idx + 1}</td>
           <td>#${(emp._id?.slice(-6) || '').toUpperCase()}</td>
           <td>${emp.romajiName || 'N/A'}</td>
+          <td>${emp.staffType || 'N/A'}</td>
+          <td>${Array.isArray(emp.assignedWorkPlace) ? emp.assignedWorkPlace.join(', ') : (emp.assignedWorkPlace || 'N/A')}</td>
           <td>${emp.nationality || 'N/A'}</td>
           <td>${emp.visaStatus || 'Employment Visa'}</td>
           <td>${expiry}</td>
@@ -173,7 +175,7 @@ export default function VisaManagement() {
   <table>
     <thead>
       <tr>
-        <th style="text-align:center;width:36px">S.No</th><th>STAFF ID</th><th>STAFF NAME</th><th>NATIONALITY</th>
+        <th style="text-align:center;width:36px">S.No</th><th>STAFF ID</th><th>STAFF NAME</th><th>EMP TYPE</th><th>WORKPLACE</th><th>NATIONALITY</th>
         <th>VISA TYPE</th><th>EXPIRY DATE</th><th>APP STATUS</th><th>STATUS</th>
       </tr>
     </thead>
@@ -195,68 +197,35 @@ export default function VisaManagement() {
     }, 400);
   };
 
-  const handleExportPDF = async () => {
+  const handleExportCSV = () => {
     try {
       setIsSubmitting(true);
-
-      const pdf = new jsPDF('p', 'pt', 'a4');
-      pdf.addFileToVFS('Kosugi-Regular.ttf', fontBase64);
-      pdf.addFont('Kosugi-Regular.ttf', 'Kosugi', 'normal');
-
-      pdf.setFont('Kosugi');
-
-      // Add a premium header
-      pdf.setFontSize(22);
-      pdf.setTextColor(22, 45, 80); // Slate-800
-      pdf.text('ビザ管理レポート (Visa Management Report)', 40, 50);
-      
-      pdf.setFontSize(10);
-      pdf.setTextColor(100, 116, 139);
-      pdf.text(`出力日 (Export Date): ${new Date().toLocaleDateString()}`, 40, 70);
-
-      // Prepare Table Data
-      const tableColumn = ["S.No", "STAFF ID", "STAFF NAME", "NATIONALITY", "VISA TYPE", "EXPIRY DATE", "APP STATUS", "STATUS"];
-      const tableRows = [];
-
-      filteredEmployees.forEach((employee, idx) => {
+      const headers = ["番号", "スタッフID", "氏名", "従業員タイプ", "配属先", "国籍", "ビザ種別", "有効期限", "申請状況", "ステータス"];
+      const rows = filteredEmployees.map((employee, idx) => {
         const status = getVisaステータス(employee);
-        const rowData = [
+        return [
           idx + 1,
-          "#" + (employee._id?.slice(-6).toUpperCase() || ''),
-          employee.romajiName || 'N/A',
-          employee.nationality || 'N/A',
-          employee.visaStatus || 'Employment Visa',
+          `"#${employee._id?.slice(-6).toUpperCase() || ''}"`,
+          `"${employee.romajiName || 'N/A'}"`,
+          `"${employee.staffType || 'N/A'}"`,
+          `"${Array.isArray(employee.assignedWorkPlace) ? employee.assignedWorkPlace.join(', ') : (employee.assignedWorkPlace || 'N/A')}"`,
+          `"${employee.nationality || 'N/A'}"`,
+          `"${employee.visaStatus || 'Employment Visa'}"`,
           employee.visaEndDate ? new Date(employee.visaEndDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'N/A',
-          employee.visaAppStatus || 'Not Applied',
-          status
+          `"${employee.visaAppStatus || 'Not Applied'}"`,
+          `"${status}"`
         ];
-        tableRows.push(rowData);
       });
 
-      autoTable(pdf, {
-        head: [tableColumn],
-        body: tableRows,
-        startY: 90,
-        styles: { 
-          font: 'Kosugi',
-          fontSize: 9,
-          cellPadding: 6,
-          textColor: [51, 65, 85]
-        },
-        headStyles: {
-          fillColor: [30, 41, 59], // Slate 800
-          textColor: [255, 255, 255],
-          fontStyle: 'normal'
-        },
-        alternateRowStyles: {
-          fillColor: [248, 250, 252] // Slate 50
-        }
-      });
-
-      pdf.save('Visa_Management_Report.pdf');
+      const csvContent = "\uFEFF" + [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = `Visa_Management_Report_${new Date().toISOString().split('T')[0]}.csv`;
+      link.click();
     } catch (err) {
-      console.error('Error generating PDF:', err);
-      alert('PDFのエクスポートに失敗しました。\n' + err.message);
+      console.error('Error generating CSV:', err);
+      alert('CSVのエクスポートに失敗しました。\n' + err.message);
     } finally {
       setIsSubmitting(false);
     }
@@ -267,8 +236,8 @@ export default function VisaManagement() {
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
         <div className="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
-          <p className="text-xs font-bold text-gray-500 mb-2 uppercase tracking-wider">有効ビザ数</p>
-          <p className="text-3xl font-bold text-[#162D50]">{loading ? '...' : activeVisas}</p>
+          <p className="text-xs font-bold text-gray-500 mb-2 uppercase tracking-wider">要注意</p>
+          <p className="text-3xl font-bold text-[#162D50]">{loading ? '...' : filteredEmployees.length}</p>
         </div>
         <div className="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
           <p className="text-xs font-bold text-gray-500 mb-2 uppercase tracking-wider">期限切れ間近（90日以内）</p>
@@ -285,18 +254,40 @@ export default function VisaManagement() {
       </div>
 
       {/* Controls */}
-      <div className="bg-[#F8F9FA] p-3 border border-gray-200 rounded-t-md flex justify-between items-center">
-        <div className="relative w-80">
-          <Search className="w-5 h-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-          <input 
-            type="text" 
-            placeholder="スタッフ名またはIDで検索..." 
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-[#162D50] bg-white"
-          />
+      <div className="bg-[#F8F9FA] p-3 border border-gray-200 rounded-t-md flex flex-col md:flex-row justify-between items-start md:items-center gap-3">
+        <div className="flex flex-wrap gap-3 flex-1">
+          <div className="relative w-full md:w-80">
+            <Search className="w-5 h-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+            <input 
+              type="text" 
+              placeholder="スタッフ名またはIDで検索..." 
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-[#162D50] bg-white"
+            />
+          </div>
+          <select 
+            value={typeFilter} 
+            onChange={(e) => setTypeFilter(e.target.value)}
+            className="py-2 px-3 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-[#162D50] bg-white text-gray-600"
+          >
+            <option value="">全ての従業員タイプ</option>
+            {[...new Set(employees.map(e => e.staffType).filter(Boolean))].map(type => (
+              <option key={type} value={type}>{type}</option>
+            ))}
+          </select>
+          <select 
+            value={workPlaceFilter} 
+            onChange={(e) => setWorkPlaceFilter(e.target.value)}
+            className="py-2 px-3 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-[#162D50] bg-white text-gray-600"
+          >
+            <option value="">全ての配属先</option>
+            {[...new Set(employees.flatMap(e => e.assignedWorkPlace).filter(Boolean))].map(wp => (
+              <option key={wp} value={wp}>{wp}</option>
+            ))}
+          </select>
         </div>
-        <div className="flex space-x-3">
+        <div className="flex space-x-3 w-full md:w-auto justify-end">
           <button 
             onClick={handlePrint}
             className="flex items-center justify-center bg-white border border-gray-300 text-gray-700 px-4 py-2 rounded-md text-sm font-medium hover:bg-gray-50 transition-colors shadow-sm"
@@ -305,7 +296,7 @@ export default function VisaManagement() {
             印刷
           </button>
           <button 
-            onClick={handleExportPDF}
+            onClick={handleExportCSV}
             disabled={isSubmitting}
             className="flex items-center justify-center bg-white border border-gray-300 text-gray-700 px-4 py-2 rounded-md text-sm font-medium hover:bg-gray-50 transition-colors shadow-sm disabled:opacity-50"
           >
@@ -324,6 +315,8 @@ export default function VisaManagement() {
                 <th className="py-4 px-4 text-center w-10">番号</th>
                 <th className="py-4 px-6">スタッフID</th>
                 <th className="py-4 px-6">氏名</th>
+                <th className="py-4 px-6">従業員タイプ</th>
+                <th className="py-4 px-6">配属先</th>
                 <th className="py-4 px-6">国籍</th>
                 <th className="py-4 px-6">ビザ種別</th>
                 <th className="py-4 px-6">有効期限</th>
@@ -339,7 +332,7 @@ export default function VisaManagement() {
                 </tr>
               ) : filteredEmployees.length === 0 ? (
                 <tr>
-                  <td colSpan="9" className="py-8 px-6 text-center text-gray-500">検索条件に一致するスタッフが見つかりません。</td>
+                  <td colSpan="11" className="py-8 px-6 text-center text-gray-500">検索条件に一致するスタッフが見つかりません。</td>
                 </tr>
               ) : (
                 filteredEmployees.map((employee, idx) => {
@@ -366,6 +359,8 @@ export default function VisaManagement() {
                       <td className="py-4 px-4 text-center text-gray-400 text-sm">{idx + 1}</td>
                       <td className="py-4 px-6 text-gray-800 font-medium">#{employee._id?.slice(-6).toUpperCase()}</td>
                       <td className="py-4 px-6 font-bold text-[#162D50]">{employee.romajiName || 'N/A'}</td>
+                      <td className="py-4 px-6 text-gray-600">{employee.staffType || 'N/A'}</td>
+                      <td className="py-4 px-6 text-gray-600">{Array.isArray(employee.assignedWorkPlace) ? employee.assignedWorkPlace.join(', ') : (employee.assignedWorkPlace || 'N/A')}</td>
                       <td className="py-4 px-6 text-gray-600">{employee.nationality || 'N/A'}</td>
                       <td className="py-4 px-6 text-gray-600">{employee.visaステータス || 'Employment Visa'}</td>
                       <td className="py-4 px-6 text-gray-600">

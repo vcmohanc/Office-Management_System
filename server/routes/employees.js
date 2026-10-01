@@ -1,6 +1,7 @@
 import express from 'express';
 import { z } from 'zod';
 import Employee from '../models/Employee.js';
+import VisaRenewal from '../models/VisaRenewal.js';
 import { requireRole } from '../middleware/auth.js';
 
 const router = express.Router();
@@ -56,6 +57,13 @@ const employeeSchemaZod = z.object({
   workingDays: z.array(z.coerce.date()).optional(),
   visaAppStatus: z.string().optional(),
   visaExpiryHistory: z.array(z.coerce.date().optional().nullable().or(z.literal(''))).optional(),
+  visaRenewalHistory: z.array(z.object({
+    startDate: z.coerce.date().optional().nullable().or(z.literal('')),
+    endDate: z.coerce.date().optional().nullable().or(z.literal('')),
+    status: z.string().optional(),
+    appStatus: z.string().optional(),
+    updatedAt: z.coerce.date().optional().nullable().or(z.string()).or(z.literal(''))
+  })).optional(),
   pledgeDocument: z.string().optional()
 });
 
@@ -97,6 +105,35 @@ router.put('/:id', requireRole('admin', 'hr'), async (req, res) => {
   } catch (error) {
     console.error('Error updating employee:', error);
     res.status(500).json({ message: 'Server error updating employee' });
+  }
+});
+
+router.post('/:id/visa-renewals', requireRole('admin', 'hr'), async (req, res) => {
+  try {
+    const { startDate, endDate, status, appStatus } = req.body;
+    
+    // Create the separate VisaRenewal document
+    const newRenewal = new VisaRenewal({
+      employeeId: req.params.id,
+      startDate: startDate || null,
+      endDate,
+      status,
+      appStatus
+    });
+    const savedRenewal = await newRenewal.save();
+    
+    // Also optionally update the main Employee record for easy filtering
+    await Employee.findByIdAndUpdate(req.params.id, {
+      visaStartDate: startDate || null,
+      visaEndDate: endDate,
+      visaステータス: status,
+      visaAppステータス: appStatus
+    });
+
+    res.status(201).json(savedRenewal);
+  } catch (error) {
+    console.error('Error saving visa renewal:', error);
+    res.status(500).json({ message: 'Server error saving visa renewal', error: error.message });
   }
 });
 

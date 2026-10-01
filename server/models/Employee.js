@@ -51,6 +51,13 @@ const employeeSchema = new mongoose.Schema({
   workingDays: { type: [Date], default: [] },
   visaAppStatus: { type: String, default: 'Not Applied' },
   visaExpiryHistory: { type: [Date], default: [] },
+  visaRenewalHistory: [{
+    startDate: Date,
+    endDate: Date,
+    status: String,
+    appStatus: String,
+    updatedAt: { type: Date, default: Date.now }
+  }],
   pledgeDocument: { type: String }
 }, { timestamps: true });
 
