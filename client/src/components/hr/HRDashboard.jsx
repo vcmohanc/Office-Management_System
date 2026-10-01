@@ -86,7 +86,9 @@ export default function HRDashboard() {
           <title>Staff Directory Report</title>
           <style>
             body { font-family: 'Times New Roman', serif; color: #000; margin: 40px; line-height: 1.5; }
-            h1 { text-align: center; border-bottom: 2px solid #000; padding-bottom: 10px; margin-bottom: 30px; text-transform: uppercase; font-size: 24px; }
+            .header-wrapper { display: flex; align-items: center; justify-content: center; position: relative; border-bottom: 2px solid #000; padding-bottom: 10px; margin-bottom: 30px; }
+            .header-logo { position: absolute; left: 0; top: 0; height: 50px; }
+            h1 { text-align: center; margin: 0; border: none; padding: 0; text-transform: uppercase; font-size: 24px; }
             table { width: 100%; border-collapse: collapse; margin-bottom: 20px; font-size: 14px; }
             th, td { border: 1px solid #000; padding: 8px 12px; text-align: left; }
             th { background-color: #f9f9f9; font-weight: bold; text-transform: uppercase; }
@@ -95,7 +97,10 @@ export default function HRDashboard() {
           </style>
         </head>
         <body>
-          <h1>Staff Directory Report</h1>
+          <div class="header-wrapper">
+             <img src="${window.location.origin}/vegeicon.png" class="header-logo" alt="Logo" />
+             <h1>Staff Directory Report</h1>
+          </div>
           <div class="meta">
             <span>Category: <strong>${activeTab}</strong></span>
             <span>Generated 日付: <strong>${new Date().toLocaleDateString()}</strong></span>

@@ -4,6 +4,7 @@ import { apiFetch } from '../../utils/apiFetch.js';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { fontBase64 } from '../../fonts/Kosugi-Regular.js';
+import { vegeiconBase64 } from '../../assets/vegeiconBase64.js';
 
 import { Search, ChevronDown, Calendar, Download, Building, Landmark, AlertCircle, AlertTriangle, ArrowRight, ArrowLeft, Printer, Trash2 } from 'lucide-react';
 import toast from 'react-hot-toast';
@@ -549,17 +550,21 @@ export default function PaymentStatus() {
         doc.rect(0, 0, pageWidth, headerH, 'F');
         doc.setFillColor(59, 130, 246);
         doc.rect(0, 0, 3.5, headerH, 'F');
+        
+        try {
+          doc.addImage(vegeiconBase64, 'PNG', 11, headerH * 0.15, Math.round(headerH * 0.7), Math.round(headerH * 0.7));
+        } catch(e) {}
 
         doc.setFont('Kosugi', 'normal');
         doc.setFontSize(fs(13));
         doc.setTextColor(255, 255, 255);
-        doc.text('OFFICE MANAGEMENT SYSTEM', 11, headerH * 0.42);
+        doc.text('OFFICE MANAGEMENT SYSTEM', 11 + Math.round(headerH * 0.7) + 3, headerH * 0.42);
 
         const title = selectedCase.advancerCategory === 'Staff' ? 'Reimbursement Receipt' : 'Settlement Ledger';
         doc.setFont('Kosugi', 'normal');
         doc.setFontSize(fs(8));
         doc.setTextColor(180, 200, 230);
-        doc.text(title, 11, headerH * 0.78);
+        doc.text(title, 11 + Math.round(headerH * 0.7) + 3, headerH * 0.78);
 
         doc.setFontSize(fs(7));
         doc.setTextColor(200, 215, 240);

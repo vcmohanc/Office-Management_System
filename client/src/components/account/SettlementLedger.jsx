@@ -255,10 +255,11 @@ const SettlementLedger = ({ caseId }) => {
     <div className="max-w-5xl mx-auto bg-[#f8f5f0] p-8 min-h-screen font-mono text-sm shadow-xl">
       <div className="flex justify-between items-start mb-8">
         <div>
+          <img src="/vegeicon.png" alt="Logo" className="hidden print:block h-10 mb-2" />
           <h1 className="text-2xl font-bold tracking-widest text-[#1a3622]">決済元帳</h1>
           <p className="text-xs tracking-widest text-gray-500 uppercase mt-1">1 CASE SELECTED</p>
         </div>
-        <button className="border-2 border-[#1a3622] px-6 py-2 font-bold tracking-widest text-[#1a3622] flex items-center gap-2 hover:bg-[#1a3622] hover:text-white transition-colors">
+        <button onClick={() => window.print()} className="border-2 border-[#1a3622] px-6 py-2 font-bold tracking-widest text-[#1a3622] flex items-center gap-2 hover:bg-[#1a3622] hover:text-white transition-colors print:hidden">
           <span>🖨️</span> PRINT
         </button>
       </div>

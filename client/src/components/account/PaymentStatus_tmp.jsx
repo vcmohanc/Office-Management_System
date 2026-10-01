@@ -517,6 +517,7 @@ export default function PaymentStatus() {
           
           <div className="bg-[#F5F1E6] p-8 md:p-12 text-[#20301F] rounded-b-md shadow-sm print:bg-white print:shadow-none print:p-4">
             <div className="border-b-2 border-dashed border-[#20301F] pb-6 mb-8 print:pb-2 print:mb-4 relative text-center">
+              <img src="/vegeicon.png" alt="Vegecoop Logo" className="absolute left-0 top-0 h-10 w-auto hidden print:block" />
               <div className="absolute right-0 top-0 print:hidden">
                 <button 
                   type="button"

@@ -181,7 +181,10 @@ export default function VisaManagement() {
   </style>
 </head>
 <body>
-  <h1>ビザ管理レポート</h1>
+  <div style="display:flex; align-items:center; border-bottom:2px solid #162d50; padding-bottom:10px; margin-bottom:20px;">
+    <img src="${window.location.origin}/vegeicon.png" alt="Logo" style="height:40px; margin-right:15px;" />
+    <h1 style="margin:0; border:none; font-size:24px; color:#162d50;">ビザ管理レポート</h1>
+  </div>
   <p class="sub">出力日: ${new Date().toLocaleDateString('ja-JP', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
   <table>
     <thead>
