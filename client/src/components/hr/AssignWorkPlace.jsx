@@ -150,8 +150,8 @@ export default function AssignWorkPlace() {
   ].includes(dept);
 
   const filteredEmployees = employees.filter(emp => {
-    const isComplete = emp.onboardingStatus === 'Active' || emp.onboardingStatus === 'Completed';
-    if (!isComplete) return false;
+    const excluded = ['Missing Documents', 'Verification Pending'];
+    if (excluded.includes(emp.onboardingStatus)) return false;
 
     const searchString = searchQuery.toLowerCase();
     const nameStr = `${emp.romajiName || ''} ${emp.katakanaName || ''}`.toLowerCase();
@@ -173,16 +173,16 @@ export default function AssignWorkPlace() {
       matchesFilter = isUnassigned;
     } else {
       if (mainCategory === 'Haken') {
-        matchesFilter = includesValue(emp.assignedWorkPlace, filterWorkPlace) && emp.onboardingStatus === 'Active';
+        matchesFilter = includesValue(emp.assignedWorkPlace, filterWorkPlace);
       } else if (mainCategory === 'Office') {
         const isDepartmentFilter = OFFICE_DEPARTMENTS.includes(filterWorkPlace);
         if (isDepartmentFilter) {
-          matchesFilter = includesValue(emp.department, filterWorkPlace) && emp.onboardingStatus === 'Active';
+          matchesFilter = includesValue(emp.department, filterWorkPlace);
         } else {
-          matchesFilter = includesValue(emp.office, filterWorkPlace) && emp.onboardingStatus === 'Active';
+          matchesFilter = includesValue(emp.office, filterWorkPlace);
         }
       } else {
-        matchesFilter = (includesValue(emp.assignedWorkPlace, filterWorkPlace) || includesValue(emp.department, filterWorkPlace) || includesValue(emp.office, filterWorkPlace)) && emp.onboardingStatus === 'Active';
+        matchesFilter = (includesValue(emp.assignedWorkPlace, filterWorkPlace) || includesValue(emp.department, filterWorkPlace) || includesValue(emp.office, filterWorkPlace));
       }
     }
                           
@@ -190,7 +190,8 @@ export default function AssignWorkPlace() {
   });
 
   const getStat = (filterVal) => {
-    let baseEmps = employees.filter(e => e.onboardingStatus === 'Active' || e.onboardingStatus === 'Completed');
+    const excluded = ['Missing Documents', 'Verification Pending'];
+    let baseEmps = employees.filter(e => !excluded.includes(e.onboardingStatus));
     const isEmpOffice = (e) => e.staffType ? e.staffType === 'Office Staff' : (Array.isArray(e.department) ? e.department.some(isOffice) : isOffice(e.department));
     if (mainCategory === 'Haken') baseEmps = baseEmps.filter(e => !isEmpOffice(e));
     if (mainCategory === 'Office') baseEmps = baseEmps.filter(e => isEmpOffice(e));
@@ -225,12 +226,14 @@ export default function AssignWorkPlace() {
   };
 
   const getSummaryStat = (type) => {
+    const excluded = ['Missing Documents', 'Verification Pending'];
+    const validEmps = employees.filter(e => !excluded.includes(e.onboardingStatus));
     const isEmpOffice = (e) => e.staffType ? e.staffType === 'Office Staff' : (Array.isArray(e.department) ? e.department.some(isOffice) : isOffice(e.department));
     switch (type) {
       case 'Haken':
-        return employees.filter(e => !isEmpOffice(e)).length;
+        return validEmps.filter(e => !isEmpOffice(e)).length;
       case 'Office':
-        return employees.filter(e => isEmpOffice(e)).length;
+        return validEmps.filter(e => isEmpOffice(e)).length;
       default:
         return 0;
     }
