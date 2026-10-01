@@ -180,7 +180,7 @@ export default function StaffEditModal({ employee, onClose, onEditComplete, init
             </div>
           )}
 
-          <form id="editStaffForm" onSubmit={handleSubmit} className="space-y-6">
+          <form id="editStaffForm" onSubmit={handleSubmit} className="space-y-6" noValidate>
             
             {/* TAB: Basic Info */}
             <div className={activeTab === '基本情報' ? 'block' : 'hidden'}>
@@ -272,9 +272,9 @@ export default function StaffEditModal({ employee, onClose, onEditComplete, init
                 </div>
                 <div>
                   <label className="block text-xs font-bold text-gray-600 mb-1 uppercase">オンボーディング状況</label>
-                  <select name="onboardingステータス" value={formData.onboardingステータス} onChange={handleChange} className="w-full px-4 py-2 border rounded-md text-sm focus:ring-1 focus:ring-[#162D50]" required>
+                  <select name="onboardingStatus" value={formData.onboardingStatus || 'Active'} onChange={handleChange} className="w-full px-4 py-2 border rounded-md text-sm focus:ring-1 focus:ring-[#162D50]">
                     <option value="Active">アクティブ</option>
-                    <option value="Verification 保留中">確認保留中</option>
+                    <option value="Verification Pending">確認保留中</option>
                     <option value="Missing Documents">書類未提出</option>
                   </select>
                 </div>
@@ -295,7 +295,7 @@ export default function StaffEditModal({ employee, onClose, onEditComplete, init
                 </div>
                 <div>
                   <label className="block text-xs font-bold text-gray-600 mb-1 uppercase">ビザステータス</label>
-                  <select name="visaステータス" value={formData.visaステータス} onChange={handleChange} className="w-full px-4 py-2 border rounded-md text-sm focus:ring-1 focus:ring-[#162D50]" required>
+                  <select name="visaStatus" value={formData.visaStatus || ''} onChange={handleChange} className="w-full px-4 py-2 border rounded-md text-sm focus:ring-1 focus:ring-[#162D50]">
                     <option value="">ビザステータスを選択</option>
                     <option value="Working Visa">就労ビザ</option>
                     <option value="Student Visa">学生ビザ</option>
