@@ -113,8 +113,12 @@ export default function NewCase() {
           newCases[index].advancerName = 'Salary deduction';
           break;
         case 'Waiting Dormitory Fee':
-        case 'Hospital Fee':
           newCases[index].advancerCategory = 'Service staff';
+          newCases[index].bearingParty = 'Service staff';
+          newCases[index].advancerName = 'Salary deduction';
+          break;
+        case 'Hospital Fee':
+          newCases[index].advancerCategory = 'Dispatch destination: Farm';
           newCases[index].bearingParty = 'Service staff';
           newCases[index].advancerName = 'Salary deduction';
           break;
@@ -125,7 +129,7 @@ export default function NewCase() {
           newCases[index].advancerName = '';
           break;
         case 'WIFI':
-          newCases[index].advancerCategory = 'Dispatch destination: Farm';
+          newCases[index].advancerCategory = 'VC';
           newCases[index].bearingParty = 'Dispatch destination: Farm';
           newCases[index].advancerName = 'Invoice from the client company';
           break;
@@ -519,8 +523,161 @@ export default function NewCase() {
 
       {newCaseStep === 1 && (
         <>
-          {/* スタッフ情報 Section */}
-      <div className="bg-white border border-gray-200 rounded-md">
+      {/* 案件カテゴリ Section */}
+      {cases.map((caseItem, index) => (
+      <div key={index} className="bg-white border border-gray-200 rounded-md mb-6">
+        <div className="p-6">
+          <div className="flex justify-between items-center mb-4">
+            <div className="flex items-center text-[#162D50] font-bold">
+              <Box className="w-4 h-4 mr-2" />
+              案件カテゴリ {cases.length > 1 && `#${index + 1}`}
+            </div>
+            {cases.length > 1 && (
+              <button 
+                onClick={() => removeCase(index)}
+                className="text-red-500 hover:text-red-700 text-sm font-medium flex items-center transition-colors">
+                カテゴリを削除
+              </button>
+            )}
+          </div>
+          
+          <div className="grid grid-cols-3 gap-6 mb-6">
+            <div>
+              <label className="block text-sm font-bold text-gray-700 mb-2">経費の種類 <span className="text-red-500">*</span></label>
+              <div className="relative">
+                <select 
+                  value={caseItem.expenseType}
+                  onChange={(e) => updateCase(index, 'expenseType', e.target.value)}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-md appearance-none focus:outline-none focus:ring-1 focus:ring-[#162D50] text-gray-600">
+                  <option value="">種類を選択</option>
+                  {options.ExpenseType.map((opt) => (
+                    <option key={opt._id} value={opt.value}>{toJP(opt.label)}</option>
+                  ))}
+                </select>
+                <ChevronDown className="w-4 h-4 absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 pointer-events-none" />
+              </div>
+            </div>
+            <div>
+              <label className="block text-sm font-bold text-gray-700 mb-2">立替者カテゴリ <span className="text-red-500">*</span></label>
+              <div className="relative">
+                <select 
+                  value={caseItem.advancerCategory}
+                  onChange={(e) => updateCase(index, 'advancerCategory', e.target.value)}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-md appearance-none focus:outline-none focus:ring-1 focus:ring-[#162D50] text-gray-600">
+                  <option value="">カテゴリを選択</option>
+                  {options.AdvancerCategory.map((opt) => (
+                    <option key={opt._id} value={opt.value}>{toJP(opt.label)}</option>
+                  ))}
+                </select>
+                <ChevronDown className="w-4 h-4 absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 pointer-events-none" />
+              </div>
+            </div>
+            <div>
+              <label className="block text-sm font-bold text-gray-700 mb-2">負担先 <span className="text-red-500">*</span></label>
+              <div className="relative">
+                <select 
+                  value={caseItem.bearingParty}
+                  onChange={(e) => updateCase(index, 'bearingParty', e.target.value)}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-md appearance-none focus:outline-none focus:ring-1 focus:ring-[#162D50] text-gray-600">
+                  <option value="">負担先を選択</option>
+                  {options.BearingParty.map((opt) => (
+                    <option key={opt._id} value={opt.value}>{toJP(opt.label)}</option>
+                  ))}
+                </select>
+                <ChevronDown className="w-4 h-4 absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 pointer-events-none" />
+              </div>
+            </div>
+          </div>
+          
+          <div className="grid grid-cols-3 gap-6 mb-8">
+            <div>
+              <label className="block text-sm font-bold text-gray-700 mb-2">支払処理タイプ <span className="text-red-500">*</span></label>
+              <input 
+                type="text" 
+                placeholder="名前を入力" 
+                value={caseItem.advancerName}
+                onChange={(e) => updateCase(index, 'advancerName', e.target.value)}
+                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50]" 
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-bold text-gray-700 mb-2">経費金額 (¥) <span className="text-red-500">*</span></label>
+              <input 
+                type="number" 
+                value={caseItem.expense金額} 
+                onChange={(e) => updateCase(index, 'expense金額', e.target.value)} 
+                placeholder="金額を入力"
+                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50] text-gray-900 font-medium" 
+              />
+              {(() => {
+                const validation = validateExpenseAmount(caseItem.expense金額, caseItem.suggested金額);
+                if (!validation.isValid) {
+                  return (
+                    <div 
+                      onClick={() => updateCase(index, 'expense金額', caseItem.suggested金額)}
+                      className="mt-2 text-xs text-red-600 font-medium flex items-center bg-red-50 px-3 py-1.5 rounded border border-red-200 cursor-pointer hover:bg-red-100 transition-colors">
+                      {validation.message} （クリックして適用）
+                    </div>
+                  );
+                }
+                return null;
+              })()}
+            </div>
+            <div>
+              <label className="block text-sm font-bold text-gray-700 mb-2">経費対象期間</label>
+              <div className="flex items-center space-x-2">
+                <div className="relative flex-1">
+                  <input type="date" value={caseItem.expense期間Start || ''} onChange={(e) => updateCase(index, 'expense期間Start', e.target.value)} className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50] text-gray-600" />
+                </div>
+                <span className="text-gray-500">-</span>
+                <div className="relative flex-1">
+                  <input type="date" value={caseItem.expense期間End || ''} onChange={(e) => updateCase(index, 'expense期間End', e.target.value)} className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50] text-gray-600" />
+                </div>
+              </div>
+              <p className="text-xs text-gray-400 mt-2 leading-tight">注: 経費精算は通常、その月の11日から27日の間に処理されます。</p>
+            </div>
+          </div>
+
+          {renderDynamicFields(caseItem.expenseType, index, caseItem)}
+
+          {/* Bill/Receipt Upload and Remark for this case */}
+          <div className="border-t border-gray-200 mt-6 pt-6">
+            <div className="grid grid-cols-2 gap-6">
+              <div>
+                <label className="block text-sm font-bold text-gray-700 mb-2">請求書/領収書のアップロード</label>
+                <div className="border-2 border-dashed border-gray-300 rounded-md p-4 text-center hover:bg-gray-50 transition-colors cursor-pointer relative">
+                  <input type="file" multiple accept=".jpg,.jpeg,.png,.pdf,image/jpeg,image/png,application/pdf" className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" onChange={(e) => handleFileUpload(e, index)} />
+                  <FileText className="w-6 h-6 mx-auto text-gray-400 mb-2" />
+                  <p className="text-sm text-gray-600">ファイルをドラッグ＆ドロップするか、クリックしてアップロード</p>
+                </div>
+                {caseItem.receipts && caseItem.receipts.length > 0 && (
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    {caseItem.receipts.map((file, i) => (
+                      <div key={i} className="text-xs bg-gray-100 text-gray-700 px-2 py-1 rounded flex items-center">
+                        <FileText className="w-3 h-3 mr-1" /> {typeof file === 'string' ? (file.includes('-') ? file.split('-').slice(1).join('-') : file) : file.name}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+              <div>
+                <label className="block text-sm font-bold text-gray-700 mb-2">備考</label>
+                <textarea 
+                  value={caseItem.remark || ''} 
+                  onChange={(e) => updateCase(index, 'remark', e.target.value)}
+                  placeholder="この案件に関する追加の詳細や備考を入力してください..." 
+                  className="w-full h-[120px] px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50] resize-none"
+                ></textarea>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      ))}
+
+      {/* スタッフ情報 Section */}
+      {cases.some(c => c.advancerCategory === 'Service staff' || c.bearingParty === 'Service staff' || c.advancerCategory === 'Staff' || c.bearingParty === 'Staff') && (
+      <div className="bg-white border border-gray-200 rounded-md mb-8">
         <div className="p-6">
           <div className="flex items-center text-[#162D50] font-bold mb-4">
             <User className="w-4 h-4 mr-2" />
@@ -603,173 +760,11 @@ export default function NewCase() {
                 <ChevronDown className="w-4 h-4 absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 pointer-events-none" />
               </div>
             </div>
-            <div>
-              <label className="block text-sm font-bold text-gray-700 mb-2">支店・農場名</label>
-              <input type="text" placeholder="支店/農場" value={staffInfo.branchAndFarmName} onChange={e => setStaffInfo({...staffInfo, branchAndFarmName: e.target.value})} className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50]" />
-            </div>
-            <div>
-              <label className="block text-sm font-bold text-gray-700 mb-2">ビザステータス</label>
-              <input type="text" placeholder="ビザステータス" value={staffInfo.visaステータス} onChange={e => setStaffInfo({...staffInfo, visaステータス: e.target.value})} className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50]" />
-            </div>
-            <div>
-              <label className="block text-sm font-bold text-gray-700 mb-2">ビザ有効期限</label>
-              <input type="date" value={staffInfo.visaAvailableTime} onChange={e => setStaffInfo({...staffInfo, visaAvailableTime: e.target.value})} className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50] text-gray-600" />
-            </div>
+
           </div>
         </div>
       </div>
-
-      {/* 案件カテゴリ Section */}
-      {cases.map((caseItem, index) => (
-      <div key={index} className="bg-white border border-gray-200 rounded-md mb-6">
-        <div className="p-6">
-          <div className="flex justify-between items-center mb-4">
-            <div className="flex items-center text-[#162D50] font-bold">
-              <Box className="w-4 h-4 mr-2" />
-              案件カテゴリ {cases.length > 1 && `#${index + 1}`}
-            </div>
-            {cases.length > 1 && (
-              <button 
-                onClick={() => removeCase(index)}
-                className="text-red-500 hover:text-red-700 text-sm font-medium flex items-center transition-colors">
-                カテゴリを削除
-              </button>
-            )}
-          </div>
-          
-          <div className="grid grid-cols-3 gap-6 mb-6">
-            <div>
-              <label className="block text-sm font-bold text-gray-700 mb-2">経費の種類 <span className="text-red-500">*</span></label>
-              <div className="relative">
-                <select 
-                  value={caseItem.expenseType}
-                  onChange={(e) => updateCase(index, 'expenseType', e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-md appearance-none focus:outline-none focus:ring-1 focus:ring-[#162D50] text-gray-600">
-                  <option value="">種類を選択</option>
-                  {options.ExpenseType.map((opt) => (
-                    <option key={opt._id} value={opt.value}>{toJP(opt.label)}</option>
-                  ))}
-                </select>
-                <ChevronDown className="w-4 h-4 absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 pointer-events-none" />
-              </div>
-            </div>
-            <div>
-              <label className="block text-sm font-bold text-gray-700 mb-2">立替者カテゴリ <span className="text-red-500">*</span></label>
-              <div className="relative">
-                <select 
-                  value={caseItem.advancerCategory}
-                  onChange={(e) => updateCase(index, 'advancerCategory', e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-md appearance-none focus:outline-none focus:ring-1 focus:ring-[#162D50] text-gray-600">
-                  <option value="">カテゴリを選択</option>
-                  {options.AdvancerCategory.map((opt) => (
-                    <option key={opt._id} value={opt.value}>{toJP(opt.label)}</option>
-                  ))}
-                </select>
-                <ChevronDown className="w-4 h-4 absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 pointer-events-none" />
-              </div>
-            </div>
-            <div>
-              <label className="block text-sm font-bold text-gray-700 mb-2">支払処理タイプ <span className="text-red-500">*</span></label>
-              <input 
-                type="text" 
-                placeholder="名前を入力" 
-                value={caseItem.advancerName}
-                onChange={(e) => updateCase(index, 'advancerName', e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50]" 
-              />
-            </div>
-          </div>
-          
-          <div className="grid grid-cols-3 gap-6 mb-8">
-            <div>
-              <label className="block text-sm font-bold text-gray-700 mb-2">負担先 <span className="text-red-500">*</span></label>
-              <div className="relative">
-                <select 
-                  value={caseItem.bearingParty}
-                  onChange={(e) => updateCase(index, 'bearingParty', e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-md appearance-none focus:outline-none focus:ring-1 focus:ring-[#162D50] text-gray-600">
-                  <option value="">負担先を選択</option>
-                  {options.BearingParty.map((opt) => (
-                    <option key={opt._id} value={opt.value}>{toJP(opt.label)}</option>
-                  ))}
-                </select>
-                <ChevronDown className="w-4 h-4 absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 pointer-events-none" />
-              </div>
-            </div>
-            <div>
-              <label className="block text-sm font-bold text-gray-700 mb-2">経費金額 (¥) <span className="text-red-500">*</span></label>
-              <input 
-                type="number" 
-                value={caseItem.expense金額} 
-                onChange={(e) => updateCase(index, 'expense金額', e.target.value)} 
-                placeholder="金額を入力"
-                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50] text-gray-900 font-medium" 
-              />
-              {(() => {
-                const validation = validateExpenseAmount(caseItem.expense金額, caseItem.suggested金額);
-                if (!validation.isValid) {
-                  return (
-                    <div 
-                      onClick={() => updateCase(index, 'expense金額', caseItem.suggested金額)}
-                      className="mt-2 text-xs text-red-600 font-medium flex items-center bg-red-50 px-3 py-1.5 rounded border border-red-200 cursor-pointer hover:bg-red-100 transition-colors">
-                      {validation.message} （クリックして適用）
-                    </div>
-                  );
-                }
-                return null;
-              })()}
-            </div>
-            <div>
-              <label className="block text-sm font-bold text-gray-700 mb-2">経費対象期間</label>
-              <div className="flex items-center space-x-2">
-                <div className="relative flex-1">
-                  <input type="date" value={caseItem.expense期間Start || ''} onChange={(e) => updateCase(index, 'expense期間Start', e.target.value)} className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50] text-gray-600" />
-                </div>
-                <span className="text-gray-500">-</span>
-                <div className="relative flex-1">
-                  <input type="date" value={caseItem.expense期間End || ''} onChange={(e) => updateCase(index, 'expense期間End', e.target.value)} className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50] text-gray-600" />
-                </div>
-              </div>
-              <p className="text-xs text-gray-400 mt-2 leading-tight">注: 経費精算は通常、その月の11日から27日の間に処理されます。</p>
-            </div>
-          </div>
-
-          {renderDynamicFields(caseItem.expenseType, index, caseItem)}
-
-          {/* Bill/Receipt Upload and Remark for this case */}
-          <div className="border-t border-gray-200 mt-6 pt-6">
-            <div className="grid grid-cols-2 gap-6">
-              <div>
-                <label className="block text-sm font-bold text-gray-700 mb-2">請求書/領収書のアップロード</label>
-                <div className="border-2 border-dashed border-gray-300 rounded-md p-4 text-center hover:bg-gray-50 transition-colors cursor-pointer relative">
-                  <input type="file" multiple accept=".jpg,.jpeg,.png,.pdf,image/jpeg,image/png,application/pdf" className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" onChange={(e) => handleFileUpload(e, index)} />
-                  <FileText className="w-6 h-6 mx-auto text-gray-400 mb-2" />
-                  <p className="text-sm text-gray-600">ファイルをドラッグ＆ドロップするか、クリックしてアップロード</p>
-                </div>
-                {caseItem.receipts && caseItem.receipts.length > 0 && (
-                  <div className="mt-3 flex flex-wrap gap-2">
-                    {caseItem.receipts.map((file, i) => (
-                      <div key={i} className="text-xs bg-gray-100 text-gray-700 px-2 py-1 rounded flex items-center">
-                        <FileText className="w-3 h-3 mr-1" /> {typeof file === 'string' ? (file.includes('-') ? file.split('-').slice(1).join('-') : file) : file.name}
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-              <div>
-                <label className="block text-sm font-bold text-gray-700 mb-2">備考</label>
-                <textarea 
-                  value={caseItem.remark || ''} 
-                  onChange={(e) => updateCase(index, 'remark', e.target.value)}
-                  placeholder="この案件に関する追加の詳細や備考を入力してください..." 
-                  className="w-full h-[120px] px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50] resize-none"
-                ></textarea>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-      ))}
+      )}
 
       {/* Summary Box & Add Case */}
       <div className="bg-white border border-gray-200 rounded-md mb-8">
@@ -793,6 +788,8 @@ export default function NewCase() {
           </button>
         </div>
       </div>
+
+
 
 
       {/* Next Button */}
