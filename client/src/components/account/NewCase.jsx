@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { apiFetch } from '../../utils/apiFetch.js';
 import { validateExpenseAmount } from '../../utils/amountHelper.js';
-import { User, ChevronDown, Box, Calendar, UploadCloud, ArrowRight, Wallet, Landmark, FileText, ArrowLeft, Image } from 'lucide-react';
+import { getDirection, calculateInstallments } from '../../utils/paymentUtils.js';
+import { User, ChevronDown, Box, Calendar, UploadCloud, ArrowRight, Wallet, Landmark, FileText, ArrowLeft, Image, AlertTriangle } from 'lucide-react';
 import toast from 'react-hot-toast';
 // Japanese translation map for dropdown option labels
 const optionLabelJP = {
@@ -46,7 +47,7 @@ export default function NewCase() {
     advancerName: ''
   }]);
   
-  const [staffInfo, setStaffInfo] = useState({ fullName: '', id: '', location: '', branchAndFarmName: '', visaステータス: '', visaAvailableTime: '' });
+  const [staffInfo, setStaffInfo] = useState({ fullName: '', id: '', location: '', branchAndFarmName: '', visaステータス: '', visaAvailableTime: '', availableWorkPlaces: [] });
   const [employees, setEmployees] = useState([]);
   const [regions, setRegions] = useState([]);
   const [postalMatrix, setPostalMatrix] = useState({});
@@ -58,7 +59,12 @@ export default function NewCase() {
   const [expectedSettlementDate, setExpectedSettlementDate] = useState('');
   const [collectionMethod, setCollectionMethod] = useState('方法を選択');
   const [collectionStartMonth, setCollectionStartMonth] = useState('');
-
+  
+  // New payment states
+  const [payrollMonth, setPayrollMonth] = useState('');
+  const [settlementNote, setSettlementNote] = useState('');
+  const [installmentCount, setInstallmentCount] = useState(1);
+  const [laborConsent, setLaborConsent] = useState(false);
   useEffect(() => {
     const fetchOptions = async () => {
       try {
@@ -261,10 +267,13 @@ export default function NewCase() {
   const totalExpense金額 = cases.reduce((sum, c) => sum + Number(c.expense金額 || 0), 0);
   const finalTotal金額 = totalExpense金額 + (includeBalance ? unsettledBalance : 0);
 
-  let installments = 1;
-  if (recoveryPlan.includes('3') || recoveryPlan.includes('3ヶ月')) installments = 3;
-  else if (recoveryPlan.includes('6') || recoveryPlan.includes('6ヶ月')) installments = 6;
-  const monthlyDeduction = finalTotal金額 / installments;
+  const direction = getDirection(cases[0].bearingParty || '');
+
+  // Calculate installments for preview
+  const maxDeduction = 50000; // Mock setting
+  const installmentSchedule = direction === 'DEDUCT' ? calculateInstallments(finalTotal金額, installmentCount, collectionStartMonth || '2026-10') : [];
+  const exceedsMax = installmentSchedule.some(inst => inst.amount > maxDeduction);
+  const minInstallments = Math.ceil(finalTotal金額 / maxDeduction);
 
   const handle送信 = async () => {
     try {
@@ -296,13 +305,16 @@ export default function NewCase() {
           previous_unsettled_balance: unsettledBalance,
           includeBalance: includeBalance,
           final_total_amount: finalTotal金額,
-          settlement_method: settlementMethod,
+          direction: direction,
+          settlement_method: direction === 'ADD' ? '給与に加算' : settlementMethod,
           expected_settlement_date: expectedSettlementDate || new Date().toISOString(),
-          collection_method: collectionMethod,
-          installment_plan: recoveryPlan,
-          installment_count: installments,
+          payroll_month: payrollMonth,
+          settlement_note: settlementNote,
+          collection_method: direction === 'DEDUCT' ? '給与控除' : collectionMethod,
+          installment_count: installmentCount,
           collection_start_month: collectionStartMonth || "TBD",
-          monthly_deduction: monthlyDeduction,
+          installment_schedule: installmentSchedule,
+          labor_consent: laborConsent,
           status: '保留中'
         };
 
@@ -676,7 +688,13 @@ export default function NewCase() {
       ))}
 
       {/* スタッフ情報 Section */}
-      {cases.some(c => c.advancerCategory === 'Service staff' || c.bearingParty === 'Service staff' || c.advancerCategory === 'Staff' || c.bearingParty === 'Staff') && (
+      {cases.some(c => c.advancerCategory === 'Service staff' || c.bearingParty === 'Service staff' || c.advancerCategory === 'Staff' || c.bearingParty === 'Staff') && (() => {
+        const validEmployees = employees.filter(emp => {
+          const hasValidVisa = emp.visaEndDate && new Date(emp.visaEndDate) >= new Date();
+          const hasWorkPlace = emp.assignedWorkPlace && emp.assignedWorkPlace.length > 0;
+          return hasValidVisa && hasWorkPlace;
+        });
+        return (
       <div className="bg-white border border-gray-200 rounded-md mb-8">
         <div className="p-6">
           <div className="flex items-center text-[#162D50] font-bold mb-4">
@@ -689,20 +707,21 @@ export default function NewCase() {
               <input type="text" placeholder="氏名を入力" list="employeeNames" value={staffInfo.fullName} onChange={e => {
                 const val = e.target.value;
                 setStaffInfo({...staffInfo, fullName: val});
-                const match = employees.find(emp => (emp.romajiName && emp.romajiName.toLowerCase() === val.toLowerCase()) || (emp.katakanaName && emp.katakanaName === val));
+                const match = validEmployees.find(emp => (emp.romajiName && emp.romajiName.toLowerCase() === val.toLowerCase()) || (emp.katakanaName && emp.katakanaName === val));
                 if (match) {
                   setStaffInfo({...staffInfo, 
                     fullName: val, 
                     id: 'ID-' + match._id.slice(-6).toUpperCase(), 
                     location: match.location || staffInfo.location,
-                    branchAndFarmName: (match.assignedWorkPlace && match.assignedWorkPlace.length > 0) ? match.assignedWorkPlace.join(', ') : (match.location || ''),
+                    branchAndFarmName: (match.assignedWorkPlace && match.assignedWorkPlace.length > 0) ? match.assignedWorkPlace[0] : '',
+                    availableWorkPlaces: match.assignedWorkPlace || [],
                     visaステータス: match.visaStatus || '',
                     visaAvailableTime: match.visaEndDate ? new Date(match.visaEndDate).toISOString().split('T')[0] : ''
                   });
                 }
               }} onBlur={() => {
                 if (staffInfo.fullName) {
-                  const match = employees.find(emp => (emp.romajiName && emp.romajiName.toLowerCase() === staffInfo.fullName.toLowerCase()) || (emp.katakanaName && emp.katakanaName === staffInfo.fullName));
+                  const match = validEmployees.find(emp => (emp.romajiName && emp.romajiName.toLowerCase() === staffInfo.fullName.toLowerCase()) || (emp.katakanaName && emp.katakanaName === staffInfo.fullName));
                   if (!match) {
                     setStaffInfo({...staffInfo, fullName: '', id: '', location: '', branchAndFarmName: '', visaステータス: '', visaAvailableTime: ''});
                     toast.error('リストから有効なスタッフを選択してください。');
@@ -710,7 +729,7 @@ export default function NewCase() {
                 }
               }} className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50]" />
               <datalist id="employeeNames">
-                {employees.map(emp => (
+                {validEmployees.map(emp => (
                   <option key={emp._id} value={emp.romajiName || emp.katakanaName} />
                 ))}
               </datalist>
@@ -721,13 +740,14 @@ export default function NewCase() {
                 const val = e.target.value;
                 setStaffInfo({...staffInfo, id: val});
                 const searchId = val.replace('ID-', '').toLowerCase();
-                const match = employees.find(emp => emp._id.slice(-6) === searchId);
+                const match = validEmployees.find(emp => emp._id.slice(-6) === searchId);
                 if (match) {
                   setStaffInfo({...staffInfo, 
                     id: val, 
                     fullName: match.romajiName || match.katakanaName || staffInfo.fullName, 
                     location: match.location || staffInfo.location,
-                    branchAndFarmName: (match.assignedWorkPlace && match.assignedWorkPlace.length > 0) ? match.assignedWorkPlace.join(', ') : (match.location || ''),
+                    branchAndFarmName: (match.assignedWorkPlace && match.assignedWorkPlace.length > 0) ? match.assignedWorkPlace[0] : '',
+                    availableWorkPlaces: match.assignedWorkPlace || [],
                     visaステータス: match.visaStatus || '',
                     visaAvailableTime: match.visaEndDate ? new Date(match.visaEndDate).toISOString().split('T')[0] : ''
                   });
@@ -735,7 +755,7 @@ export default function NewCase() {
               }} onBlur={() => {
                 if (staffInfo.id) {
                   const searchId = staffInfo.id.replace('ID-', '').toLowerCase();
-                  const match = employees.find(emp => emp._id.slice(-6) === searchId);
+                  const match = validEmployees.find(emp => emp._id.slice(-6) === searchId);
                   if (!match) {
                     setStaffInfo({...staffInfo, fullName: '', id: '', location: '', branchAndFarmName: '', visaステータス: '', visaAvailableTime: ''});
                     toast.error('リストから有効なスタッフIDを選択してください。');
@@ -743,18 +763,18 @@ export default function NewCase() {
                 }
               }} className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50]" />
               <datalist id="employeeIds">
-                {employees.map(emp => (
+                {validEmployees.map(emp => (
                   <option key={emp._id} value={'ID-' + emp._id.slice(-6).toUpperCase()} />
                 ))}
               </datalist>
             </div>
             <div>
-              <label className="block text-sm font-bold text-gray-700 mb-2">拠点 <span className="text-red-500">*</span></label>
+              <label className="block text-sm font-bold text-gray-700 mb-2">配属先 <span className="text-red-500">*</span></label>
               <div className="relative">
-                <select value={staffInfo.location} onChange={e => setStaffInfo({...staffInfo, location: e.target.value})} className="w-full px-4 py-2 border border-gray-300 rounded-md appearance-none focus:outline-none focus:ring-1 focus:ring-[#162D50] text-gray-600">
-                  <option value="">拠点を選択</option>
-                  {options.拠点.map((opt) => (
-                    <option key={opt._id} value={opt.value}>{toJP(opt.label)}</option>
+                <select value={staffInfo.branchAndFarmName} onChange={e => setStaffInfo({...staffInfo, branchAndFarmName: e.target.value})} className="w-full px-4 py-2 border border-gray-300 rounded-md appearance-none focus:outline-none focus:ring-1 focus:ring-[#162D50] text-gray-600">
+                  <option value="">配属先を選択</option>
+                  {staffInfo.availableWorkPlaces?.map((wp, idx) => (
+                    <option key={idx} value={wp}>{wp}</option>
                   ))}
                 </select>
                 <ChevronDown className="w-4 h-4 absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 pointer-events-none" />
@@ -764,7 +784,7 @@ export default function NewCase() {
           </div>
         </div>
       </div>
-      )}
+      ); })()}
 
       {/* Summary Box & Add Case */}
       <div className="bg-white border border-gray-200 rounded-md mb-8">
@@ -796,7 +816,7 @@ export default function NewCase() {
       <div className="flex justify-end pt-4">
         <button 
           onClick={() => {
-            if (!staffInfo.fullName || !staffInfo.id || !staffInfo.location || staffInfo.location === '拠点を選択') {
+            if (!staffInfo.fullName || !staffInfo.id || !staffInfo.branchAndFarmName || staffInfo.branchAndFarmName === '配属先を選択') {
               toast.error('必要なスタッフ情報をすべて入力してください。');
               return;
             }
@@ -874,121 +894,191 @@ export default function NewCase() {
             </div>
           </div>
 
-          {/* Settlement Section */}
-          <div className="bg-white border border-gray-200 rounded-md">
-            <div className="p-6">
-              <div className="flex items-center text-[#162D50] font-bold mb-4">
-                <Landmark className="w-4 h-4 mr-2" />
-                立替者への精算
-              </div>
-              <div className="grid grid-cols-2 gap-6">
-                <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-2">精算方法 <span className="text-red-500">*</span></label>
-                  <div className="relative">
-                    <select value={settlementMethod} onChange={e => setSettlementMethod(e.target.value)} className="w-full px-4 py-2 border border-gray-300 rounded-md appearance-none focus:outline-none focus:ring-1 focus:ring-[#162D50] text-gray-600">
-                      <option>銀行振込</option>
-                      <option>現金</option>
-                    </select>
-                    <ChevronDown className="w-4 h-4 absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 pointer-events-none" />
+          {/* Conditional Sections Based on Direction */}
+          {direction === 'ADD' && (
+            <div className="bg-white border border-gray-200 rounded-md">
+              <div className="p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center text-[#162D50] font-bold">
+                    <Landmark className="w-4 h-4 mr-2" />
+                    立替者への精算 (Settlement to the person who made the payment)
                   </div>
+                  <span className="bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded border border-blue-400">
+                    Company-borne (負担先: {cases[0].bearingParty}) → added to salary
+                  </span>
                 </div>
-                <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-2">精算予定日 <span className="text-red-500">*</span></label>
-                  <div className="relative">
-                    <input type="date" value={expectedSettlementDate} onChange={e => setExpectedSettlementDate(e.target.value)} className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50] text-gray-600" />
-
+                <div className="grid grid-cols-2 gap-6">
+                  <div>
+                    <label className="block text-sm font-bold text-gray-700 mb-2">精算方法 <span className="text-red-500">*</span></label>
+                    <div className="relative">
+                      <select disabled value="給与に加算" className="w-full px-4 py-2 border border-gray-300 rounded-md bg-gray-100 text-gray-600 appearance-none">
+                        <option value="給与に加算">給与に加算 (Addition to salary)</option>
+                      </select>
+                      <ChevronDown className="w-4 h-4 absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 pointer-events-none" />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-bold text-gray-700 mb-2">給与反映月 (Payroll Month) <span className="text-red-500">*</span></label>
+                    <div className="relative">
+                      <input type="month" value={payrollMonth} onChange={e => setPayrollMonth(e.target.value)} min={new Date().toISOString().slice(0, 7)} className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50] text-gray-600" />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-bold text-gray-700 mb-2">精算予定日 <span className="text-red-500">*</span></label>
+                    <div className="relative">
+                      <input type="date" value={expectedSettlementDate} onChange={e => setExpectedSettlementDate(e.target.value)} className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50] text-gray-600" />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-bold text-gray-700 mb-2">備考 (Note)</label>
+                    <div className="relative">
+                      <input type="text" value={settlementNote} onChange={e => setSettlementNote(e.target.value)} placeholder="任意のメモを入力" className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50] text-gray-600" />
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
-          </div>
+          )}
 
-          {/* Collection Section */}
-          <div className="bg-white border border-gray-200 rounded-md">
-            <div className="p-6">
-              <div className="flex items-center text-[#162D50] font-bold mb-4">
-                <FileText className="w-4 h-4 mr-2" />
-                負担先からの回収
-              </div>
-              <div className="grid grid-cols-3 gap-6 mb-8">
-                <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-2">回収方法 <span className="text-red-500">*</span></label>
-                  <div className="relative">
-                    <select value={collectionMethod} onChange={e => setCollectionMethod(e.target.value)} className="w-full px-4 py-2 border border-gray-300 rounded-md appearance-none focus:outline-none focus:ring-1 focus:ring-[#162D50] text-gray-600">
-                      <option>方法を選択</option>
-                      <option>銀行振込</option>
-                      <option>現金</option>
-                    </select>
-                    <ChevronDown className="w-4 h-4 absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 pointer-events-none" />
+          {direction === 'DEDUCT' && (
+            <div className="bg-white border border-gray-200 rounded-md">
+              <div className="p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center text-[#162D50] font-bold">
+                    <FileText className="w-4 h-4 mr-2" />
+                    負担先からの回収 (Collection from the party responsible)
+                  </div>
+                  <span className="bg-red-100 text-red-800 text-xs font-medium px-2.5 py-0.5 rounded border border-red-400">
+                    Employee-borne (負担先: {cases[0].bearingParty}) → deducted from salary
+                  </span>
+                </div>
+                <div className="grid grid-cols-3 gap-6 mb-8">
+                  <div>
+                    <label className="block text-sm font-bold text-gray-700 mb-2">回収方法 <span className="text-red-500">*</span></label>
+                    <div className="relative">
+                      <select disabled value="給与控除" className="w-full px-4 py-2 border border-gray-300 rounded-md bg-gray-100 text-gray-600 appearance-none">
+                        <option value="給与控除">給与控除 (Deduction from salary)</option>
+                      </select>
+                      <ChevronDown className="w-4 h-4 absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 pointer-events-none" />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-bold text-gray-700 mb-2">分割回数 (Installments) <span className="text-red-500">*</span></label>
+                    <div className="relative">
+                      <select value={installmentCount} onChange={e => setInstallmentCount(Number(e.target.value))} className="w-full px-4 py-2 border border-gray-300 rounded-md appearance-none focus:outline-none focus:ring-1 focus:ring-[#162D50] text-gray-600">
+                        <option value={1}>一括払い (Lump-sum)</option>
+                        {[...Array(23)].map((_, i) => (
+                          <option key={i+2} value={i+2}>{i+2}回払い</option>
+                        ))}
+                      </select>
+                      <ChevronDown className="w-4 h-4 absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 pointer-events-none" />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-bold text-gray-700 mb-2">回収開始月 <span className="text-red-500">*</span></label>
+                    <div className="relative">
+                      <input type="month" value={collectionStartMonth} onChange={e => setCollectionStartMonth(e.target.value)} min={new Date().toISOString().slice(0, 7)} className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50] text-gray-600" />
+                    </div>
                   </div>
                 </div>
-                <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-2">分割払いプラン</label>
-                  <div className="relative">
-                    <select value={recoveryPlan} onChange={e => setRecoveryPlan(e.target.value)} className="w-full px-4 py-2 border border-gray-300 rounded-md appearance-none focus:outline-none focus:ring-1 focus:ring-[#162D50] text-gray-600">
-                      <option>一括払い</option>
-                      <option>給与控除（3ヶ月）</option>
-                      <option>給与控除（6ヶ月）</option>
-                    </select>
-                    <ChevronDown className="w-4 h-4 absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 pointer-events-none" />
+
+                {collectionStartMonth && finalTotal金額 > 0 && (
+                  <div className="mb-6">
+                    <label className="block text-sm font-bold text-gray-700 mb-2">控除スケジュールプレビュー (Deduction Schedule Preview)</label>
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-sm text-left text-gray-500 border border-gray-200">
+                        <thead className="text-xs text-gray-700 uppercase bg-gray-50">
+                          <tr>
+                            <th className="px-4 py-3 border-b">No.</th>
+                            <th className="px-4 py-3 border-b">Month</th>
+                            <th className="px-4 py-3 border-b">Amount</th>
+                            <th className="px-4 py-3 border-b">Remaining</th>
+                            <th className="px-4 py-3 border-b">Status</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {installmentSchedule.map((inst) => (
+                            <tr key={inst.no} className={`bg-white border-b ${inst.amount > maxDeduction ? 'bg-red-50' : ''}`}>
+                              <td className="px-4 py-3">{inst.no}</td>
+                              <td className="px-4 py-3">{inst.month}</td>
+                              <td className="px-4 py-3 text-red-600 font-semibold">¥{inst.amount.toLocaleString()}</td>
+                              <td className="px-4 py-3">¥{inst.remaining.toLocaleString()}</td>
+                              <td className="px-4 py-3"><span className="bg-gray-100 text-gray-800 text-xs px-2 py-1 rounded">SCHEDULED</span></td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                    {exceedsMax && (
+                      <div className="mt-2 text-red-600 text-sm flex items-center">
+                        <AlertTriangle className="w-4 h-4 mr-1" />
+                        毎月の控除額が上限（¥{maxDeduction.toLocaleString()}）を超えています。少なくとも {minInstallments} 回以上の分割払いを推奨します。
+                      </div>
+                    )}
                   </div>
+                )}
+                
+                <div className="flex items-center mt-4">
+                  <input type="checkbox" id="laborConsent" checked={laborConsent} onChange={e => setLaborConsent(e.target.checked)} className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500" />
+                  <label htmlFor="laborConsent" className="ml-2 text-sm font-medium text-gray-900">労使協定の確認（従業員の同意済み）/ Employee consent confirmed (Labor Standards Act Art. 24) <span className="text-red-500">*</span></label>
                 </div>
-                <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-2">回収開始月 <span className="text-red-500">*</span></label>
-                  <div className="relative">
-                    <input type="month" value={collectionStartMonth} onChange={e => setCollectionStartMonth(e.target.value)} className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50] text-gray-600" />
-
-                  </div>
-                </div>
-              </div>
-
-              {/* Navigation Buttons for Step 2 */}
-              <div className="flex justify-end space-x-4 pt-4">
-                <button 
-                  onClick={() => setNewCaseStep(1)}
-                  className="px-8 py-2 border border-gray-300 text-gray-700 rounded-md font-bold text-sm flex items-center hover:bg-gray-50 transition-colors shadow-sm">
-                  <ArrowLeft className="w-4 h-4 mr-2" /> 戻る
-                </button>
-                <button 
-                  onClick={() => {
-                    if (!settlementMethod || !expectedSettlementDate || collectionMethod === '方法を選択' || !collectionStartMonth) {
-                      toast.error('決済および回収の必須項目をすべて入力してください。');
-                      return;
-                    }
-
-                    if (staffInfo.visaAvailableTime) {
-                      const visaDate = new Date(staffInfo.visaAvailableTime);
-                      let isVisaInvalid = false;
-                      
-                      const expectedDate = new Date(expectedSettlementDate);
-                      if (visaDate < expectedDate) {
-                        isVisaInvalid = true;
-                      }
-                      
-                      let finalPlanDate = new Date(collectionStartMonth + '-01');
-                      if (installments > 1) {
-                        finalPlanDate.setMonth(finalPlanDate.getMonth() + installments - 1);
-                      }
-                      // Set to the end of the final plan month
-                      finalPlanDate = new Date(finalPlanDate.getFullYear(), finalPlanDate.getMonth() + 1, 0);
-                      
-                      if (visaDate < finalPlanDate) {
-                        isVisaInvalid = true;
-                      }
-
-                      if (isVisaInvalid) {
-                        toast.error('ビザの有効期限が精算予定日または分割払いの完了月より前です。期間を見直してください。');
-                        return;
-                      }
-                    }
-
-                    setNewCaseStep(3);
-                  }}
-                  className="bg-[#0A192F] text-white px-8 py-3 rounded-md font-bold text-sm flex items-center hover:bg-[#162D50] transition-colors shadow-sm">
-                  次へ <ArrowRight className="w-4 h-4 ml-2" />
-                </button>
               </div>
             </div>
+          )}
+
+          {/* Navigation Buttons for Step 2 */}
+          <div className="flex justify-end space-x-4 mt-6">
+            <button 
+              onClick={() => setNewCaseStep(1)}
+              className="px-8 py-2 border border-gray-300 text-gray-700 rounded-md font-bold text-sm flex items-center hover:bg-gray-50 transition-colors shadow-sm">
+              <ArrowLeft className="w-4 h-4 mr-2" /> 戻る
+            </button>
+            <button 
+              onClick={() => {
+                if (direction === 'ADD') {
+                  if (!payrollMonth || !expectedSettlementDate) {
+                    toast.error('必須項目をすべて入力してください。');
+                    return;
+                  }
+                } else {
+                  if (!collectionStartMonth) {
+                    toast.error('回収開始月を入力してください。');
+                    return;
+                  }
+                  if (!laborConsent) {
+                    toast.error('労使協定の確認（同意）にチェックを入れてください。');
+                    return;
+                  }
+                }
+
+                if (staffInfo.visaAvailableTime) {
+                  const visaDate = new Date(staffInfo.visaAvailableTime);
+                  let isVisaInvalid = false;
+                  
+                  if (direction === 'ADD') {
+                    const expectedDate = new Date(expectedSettlementDate);
+                    if (visaDate < expectedDate) isVisaInvalid = true;
+                  } else {
+                    let finalPlanDate = new Date(collectionStartMonth + '-01');
+                    if (installmentCount > 1) {
+                      finalPlanDate.setMonth(finalPlanDate.getMonth() + installmentCount - 1);
+                    }
+                    finalPlanDate = new Date(finalPlanDate.getFullYear(), finalPlanDate.getMonth() + 1, 0);
+                    if (visaDate < finalPlanDate) isVisaInvalid = true;
+                  }
+
+                  if (isVisaInvalid) {
+                    toast.error('ビザの有効期限が精算予定日または分割払いの完了月より前です。期間を見直してください。');
+                    return;
+                  }
+                }
+
+                setNewCaseStep(3);
+              }}
+              className={`px-8 py-3 rounded-md font-bold text-sm flex items-center transition-colors shadow-sm ${((direction === 'ADD' && (!payrollMonth || !expectedSettlementDate)) || (direction === 'DEDUCT' && (!collectionStartMonth || !laborConsent))) ? 'bg-gray-300 text-gray-500 cursor-not-allowed' : 'bg-[#0A192F] text-white hover:bg-[#162D50]'}`}
+            >
+              次へ <ArrowRight className="w-4 h-4 ml-2" />
+            </button>
           </div>
         </>
       )}
@@ -1044,26 +1134,37 @@ export default function NewCase() {
                 </div>
                 <div className="border-t border-blue-800/50 my-2 pt-4 space-y-3 text-sm">
                   <div className="flex justify-between">
-                    <span className="text-blue-200">精算方法</span>
-                    <span className="font-medium">{settlementMethod}</span>
+                    <span className="text-blue-200">支払い方向</span>
+                    <span className="font-medium">{direction === 'ADD' ? '給与に加算 (Addition)' : '給与から控除 (Deduction)'}</span>
                   </div>
-                  <div className="flex justify-between">
-                    <span className="text-blue-200">回収方法</span>
-                    <span className="font-medium">{collectionMethod}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-blue-200">回収プラン</span>
-                    <span className="font-medium">{recoveryPlan}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-blue-200">開始月</span>
-                    <span className="font-medium">{collectionStartMonth || "TBD"}</span>
-                  </div>
-                  {installments > 1 && (
-                    <div className="flex justify-between items-center border-t border-blue-800/50 pt-3 mt-3">
-                      <span className="text-blue-200">月次控除額（{installments}回）</span>
-                      <span className="font-bold text-white text-lg">¥ {Math.ceil(monthlyDeduction).toLocaleString()}</span>
-                    </div>
+                  {direction === 'ADD' ? (
+                    <>
+                      <div className="flex justify-between">
+                        <span className="text-blue-200">給与反映月</span>
+                        <span className="font-medium">{payrollMonth}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-blue-200">精算予定日</span>
+                        <span className="font-medium">{expectedSettlementDate}</span>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <div className="flex justify-between">
+                        <span className="text-blue-200">分割回数</span>
+                        <span className="font-medium">{installmentCount}回払い</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-blue-200">回収開始月</span>
+                        <span className="font-medium">{collectionStartMonth}</span>
+                      </div>
+                      {installmentCount > 1 && (
+                        <div className="flex justify-between items-center border-t border-blue-800/50 pt-3 mt-3">
+                          <span className="text-blue-200">初回控除額</span>
+                          <span className="font-bold text-white text-lg">¥ {installmentSchedule[0]?.amount.toLocaleString()}</span>
+                        </div>
+                      )}
+                    </>
                   )}
                 </div>
               </div>
