@@ -8,7 +8,6 @@
 export const applyUIRestrictions = () => {
   if (process.env.NODE_ENV === 'development') {
     // Optionally disable these restrictions in development for easier debugging
-    console.warn('UI Restrictions are disabled in development mode.');
     return;
   }
 
