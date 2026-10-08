@@ -46,7 +46,7 @@ export default function PaymentStatus() {
         setCases(prev => [{
           ...c,
           advancerCategory: 'Staff',
-          finalTotal: c.totalExpenseAmount || c.total_expense_amount || 0,
+          finalTotal: c.expenseAmount || c.expense_amount || c.totalExpenseAmount || c.total_expense_amount || 0,
           staffId: c.staffId || c.staff_id || 'N/A',
           staffName: c.fullName || c.full_name || 'N/A',
           expenseType: c.expenseType || c.expense_type || 'Claim',
@@ -73,7 +73,7 @@ export default function PaymentStatus() {
         setCases(prev => prev.map(item => item._id === c._id ? {
           ...c,
           advancerCategory: 'Staff',
-          finalTotal: c.totalExpenseAmount || c.total_expense_amount || 0,
+          finalTotal: c.expenseAmount || c.expense_amount || c.totalExpenseAmount || c.total_expense_amount || 0,
           staffId: c.staffId || c.staff_id || 'N/A',
           staffName: c.fullName || c.full_name || 'N/A',
           expenseType: c.expenseType || c.expense_type || 'Claim',
@@ -101,16 +101,23 @@ export default function PaymentStatus() {
     if (selectedCase) {
       const totalTerms = selectedCase.installment_count || (selectedCase.installmentPlan ? (selectedCase.installmentPlan.match(/\d+/) ? parseInt(selectedCase.installmentPlan.match(/\d+/)[0], 10) : 1) : 1);
       const totalAmt = selectedCase.finalTotal || selectedCase.totalExpense || 0;
-      const baseAmt = Math.round(totalAmt / totalTerms);
+      const baseAmt = Math.floor(totalAmt / totalTerms);
       const isLastTerm = ((selectedCase.paidTerms || 0) + 1) >= totalTerms;
       const calculatedAmt = isLastTerm ? (totalAmt - (baseAmt * (totalTerms - 1))) : baseAmt;
-      const claimAmount = selectedCase.nextPaymentAmount || calculatedAmt;
+      
+      const paidTerms = selectedCase.paidTerms || 0;
+      let claimAmount = selectedCase.nextPaymentAmount || calculatedAmt;
+      
+      if (selectedCase.installment_schedule && selectedCase.installment_schedule.length > paidTerms) {
+        claimAmount = selectedCase.installment_schedule[paidTerms].amount;
+      }
+      
       const advanceToRecover = selectedCase.previousBalance || 0;
       
       if (paymentMethod === '給与控除' || paymentMethod === '給与振込') {
         setDeductions(claimAmount);
       } else if (advanceToRecover > 0) {
-        setDeductions(Math.round(advanceToRecover / totalTerms));
+        setDeductions(Math.floor(advanceToRecover / totalTerms));
       } else {
         setDeductions(0);
       }
@@ -123,7 +130,10 @@ export default function PaymentStatus() {
       let method = '';
       if (selectedCase.advancerCategory === 'Staff') {
         const rawMethod = selectedCase.settlement_method || selectedCase.settlementMethod || '';
-        if (rawMethod === 'Cash' || rawMethod === 'Petty Cash' || rawMethod === '小口現金') method = '小口現金';
+        const collectionMethod = selectedCase.collection_method || selectedCase.collectionMethod || '';
+        
+        if (collectionMethod.includes('給与控除') || collectionMethod.includes('Deduction')) method = '給与控除';
+        else if (rawMethod === 'Cash' || rawMethod === 'Petty Cash' || rawMethod === '小口現金') method = '小口現金';
         else if (rawMethod.includes('Bank') || rawMethod.includes('銀行')) method = '銀行振込';
         else if (rawMethod.includes('Salary') || rawMethod.includes('Payroll') || rawMethod.includes('給与')) method = '給与振込';
         else if (rawMethod.includes('Check') || rawMethod.includes('小切手')) method = '小切手';
@@ -138,7 +148,7 @@ export default function PaymentStatus() {
       }
       
       const validOptions = selectedCase.advancerCategory === 'Staff' 
-        ? ['銀行振込', '給与振込', '小口現金', '小切手']
+        ? ['銀行振込', '給与振込', '小口現金', '小切手', '給与控除']
         : ['銀行振込', '法人カード', 'Cash', '給与控除'];
         
       if (validOptions.includes(method)) {
@@ -156,8 +166,14 @@ export default function PaymentStatus() {
         newDestDetails.accountNumber = bankInfo.accountNumber || selectedCase.accountNumber || '';
       }
       if (method === '給与控除' || method === '給与振込') {
-        // default to current month
-        newDestDetails.payroll期間 = new Date().toISOString().slice(0, 7);
+        const paidTerms = selectedCase.paidTerms || 0;
+        let targetMonth = new Date().toISOString().slice(0, 7);
+        if (selectedCase.installment_schedule && selectedCase.installment_schedule.length > paidTerms) {
+           targetMonth = selectedCase.installment_schedule[paidTerms].month;
+        } else if (selectedCase.collection_start_month || selectedCase.collectionStartMonth) {
+           targetMonth = selectedCase.collection_start_month || selectedCase.collectionStartMonth;
+        }
+        newDestDetails.payroll期間 = targetMonth;
       }
       set目的地Details(newDestDetails);
     }
@@ -371,7 +387,7 @@ export default function PaymentStatus() {
       const mappedClaims = claimsData.map(c => ({
         ...c,
         advancerCategory: 'Staff',
-        finalTotal: c.totalExpenseAmount || c.total_expense_amount || 0,
+        finalTotal: c.expenseAmount || c.expense_amount || c.totalExpenseAmount || c.total_expense_amount || 0,
         staffId: c.staffId || c.staff_id || 'N/A',
         staffName: c.fullName || c.full_name || 'N/A',
         expenseType: c.expenseType || c.expense_type || 'Claim',
@@ -1031,6 +1047,7 @@ export default function PaymentStatus() {
                             <option value="給与振込">給与振込</option>
                             <option value="小口現金">小口現金</option>
                             <option value="小切手">小切手</option>
+                            <option value="給与控除">給与控除</option>
                           </>
                         ) : (
                           <>
@@ -1140,11 +1157,17 @@ export default function PaymentStatus() {
 
                   <div className="bg-white/50 p-6 rounded border-2 border-dashed border-[#162D50] mt-6 flex flex-col sm:flex-row justify-between items-center">
                     <div>
-                      <p className="text-xs font-bold uppercase tracking-widest text-gray-500 mb-1">差引支払額</p>
-                      <div className="font-mono text-xs text-gray-500 mt-1">残り残高: ¥ {batchTotal残りBalance.toLocaleString()}</div>
+                      <p className="text-xs font-bold uppercase tracking-widest text-gray-500 mb-1">
+                        {paymentMethod === '給与控除' ? '今回控除額' : '差引支払額'}
+                      </p>
+                      <div className="font-mono text-xs text-gray-500 mt-1">残り残高: ¥ {
+                        (paymentMethod === '給与控除' && selectedBatchCases[0]?.installment_schedule && selectedBatchCases[0].installment_schedule.length > (selectedBatchCases[0].paidTerms || 0))
+                        ? selectedBatchCases[0].installment_schedule[selectedBatchCases[0].paidTerms || 0].remaining.toLocaleString()
+                        : Math.max(0, batchTotal残りBalance - deductions).toLocaleString()
+                      }</div>
                     </div>
                     <div className="font-mono text-3xl font-bold text-[#162D50] mt-4 sm:mt-0">
-                      ¥{Math.max(0, batchTotalNextPayment - deductions).toLocaleString()}
+                      ¥{paymentMethod === '給与控除' ? deductions.toLocaleString() : Math.max(0, batchTotalNextPayment - deductions).toLocaleString()}
                     </div>
                   </div>
 

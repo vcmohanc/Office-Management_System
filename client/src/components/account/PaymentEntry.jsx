@@ -727,13 +727,32 @@ export default function PaymentEntry() {
         workPlace: getWorkPlace(c.staffId || c.staff_id, c.fullName || c.full_name)
       }));
 
-      setCases([...mappedCases, ...mappedClaims]);
+      // Only include cases that have completed the claim/approval process
+      const validPaymentStatuses = ['APPROVED', 'APPROVED_FOR_PAYMENT', '処理中', '支払済', '完了', 'Payment 保留中', '支払い待ち'];
+      
+      const filteredCases = mappedCases.filter(c => c.status && validPaymentStatuses.includes(c.status));
+      const filteredClaims = mappedClaims.filter(c => c.status && validPaymentStatuses.includes(c.status));
+
+      setCases([...filteredCases, ...filteredClaims]);
       setLoading(false);
     }).catch(err => {
       console.error('Error fetching data:', err);
       setLoading(false);
     });
   }, []);
+
+  const formatCurrency = (amount) => {
+    return new Intl.NumberFormat('ja-JP', { style: 'currency', currency: 'JPY' }).format(amount);
+  };
+
+  const getWidths = (advanced, recovered) => {
+    const total = advanced + recovered;
+    if (total === 0) return { advancedWidth: '50%', recoveredWidth: '50%' };
+    return {
+      advancedWidth: `${(advanced / total) * 100}%`,
+      recoveredWidth: `${(recovered / total) * 100}%`
+    };
+  };
 
   const paymentOptions = [
     {
@@ -743,7 +762,23 @@ export default function PaymentEntry() {
       icon: Users,
       color: 'bg-blue-100 text-blue-700',
       borderColor: 'border-blue-200 hover:border-blue-500',
-      categoryMatch: 'Office' // Map to Office for now
+      categoryMatch: 'Office',
+      flowTitle: 'クライアント → オフィス 入金',
+      sourceName: 'クライアント',
+      sourceIcon: Users,
+      targetName: 'オフィス',
+      targetIcon: Building2,
+      arrowText: '入金',
+      arrowSubText: '(流入)',
+      arrowColor: 'text-green-400',
+      lineColor: 'bg-green-400',
+      textLabel1: '入金予定合計',
+      textLabel2: '回収済合計',
+      netLabel: '未回収残高',
+      amountColor1: 'text-red-500',
+      amountColor2: 'text-green-500',
+      barColor1: 'bg-red-500',
+      barColor2: 'bg-green-500'
     },
     {
       id: 'staff',
@@ -752,7 +787,23 @@ export default function PaymentEntry() {
       icon: Briefcase,
       color: 'bg-green-100 text-green-700',
       borderColor: 'border-green-200 hover:border-green-500',
-      categoryMatch: 'Staff'
+      categoryMatch: 'Staff',
+      flowTitle: 'オフィス → スタッフ 支払',
+      sourceName: 'オフィス',
+      sourceIcon: Building2,
+      targetName: 'スタッフ',
+      targetIcon: Briefcase,
+      arrowText: '支払',
+      arrowSubText: '(流出)',
+      arrowColor: 'text-blue-400',
+      lineColor: 'bg-blue-400',
+      textLabel1: '支払予定合計',
+      textLabel2: '支払済合計',
+      netLabel: '未払残高',
+      amountColor1: 'text-red-500',
+      amountColor2: 'text-green-500',
+      barColor1: 'bg-red-500',
+      barColor2: 'bg-green-500'
     },
     {
       id: 'vc_fund',
@@ -761,7 +812,23 @@ export default function PaymentEntry() {
       icon: Landmark,
       color: 'bg-purple-100 text-purple-700',
       borderColor: 'border-purple-200 hover:border-purple-500',
-      categoryMatch: 'VC Fund' // Specific type mapping if available
+      categoryMatch: 'VC Fund',
+      flowTitle: 'オフィス ↔ VCファンド 振替',
+      sourceName: 'オフィス',
+      sourceIcon: Building2,
+      targetName: 'VCファンド',
+      targetIcon: Landmark,
+      arrowText: '振替',
+      arrowSubText: '(移動)',
+      arrowColor: 'text-purple-400',
+      lineColor: 'bg-purple-400',
+      textLabel1: '振替予定合計',
+      textLabel2: '振替済合計',
+      netLabel: '未振替残高',
+      amountColor1: 'text-purple-500',
+      amountColor2: 'text-green-500',
+      barColor1: 'bg-purple-500',
+      barColor2: 'bg-green-500'
     },
     {
       id: 'vendor',
@@ -770,7 +837,23 @@ export default function PaymentEntry() {
       icon: Building,
       color: 'bg-orange-100 text-orange-700',
       borderColor: 'border-orange-200 hover:border-orange-500',
-      categoryMatch: 'Host Company'
+      categoryMatch: 'Host Company',
+      flowTitle: 'オフィス → ベンダー 支払',
+      sourceName: 'オフィス',
+      sourceIcon: Building2,
+      targetName: 'ベンダー',
+      targetIcon: Building,
+      arrowText: '支払',
+      arrowSubText: '(流出)',
+      arrowColor: 'text-orange-400',
+      lineColor: 'bg-orange-400',
+      textLabel1: '支払予定合計',
+      textLabel2: '支払済合計',
+      netLabel: '未払残高',
+      amountColor1: 'text-red-500',
+      amountColor2: 'text-green-500',
+      barColor1: 'bg-red-500',
+      barColor2: 'bg-green-500'
     }
   ];
 
@@ -1171,34 +1254,86 @@ export default function PaymentEntry() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {paymentOptions.map((option) => {
-          const Icon = option.icon;
-          
-          const relatedCount = cases.filter(c => 
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+        {paymentOptions.map((option, index) => {
+          const relatedCases = cases.filter(c => 
             c.advancerCategory === option.categoryMatch || 
             (!c.advancerCategory && option.categoryMatch === 'Office')
-          ).length;
+          );
+          
+          const relatedCount = relatedCases.length;
+          
+          let totalAmount = 0;
+          let paidAmount = 0;
+          
+          relatedCases.forEach(c => {
+            const totalTerms = c.installment_count || (c.installmentPlan ? (c.installmentPlan.match(/\d+/) ? parseInt(c.installmentPlan.match(/\d+/)[0], 10) : 1) : 1);
+            const paidTerms = c.paidTerms || 0;
+            const amt = c.finalTotal || c.totalExpense || 0;
+            const nextPayment = c.nextPayment金額 || amt / totalTerms;
+            const remaining = Math.max(0, amt - (paidTerms * nextPayment));
+            totalAmount += amt;
+            paidAmount += (amt - remaining);
+          });
+          
+          const netExposure = Math.max(0, totalAmount - paidAmount);
 
           return (
             <div 
               key={option.id}
               onClick={() => setSelectedEntryType(option.id)}
-              className={`bg-white rounded-xl border ${option.borderColor} p-6 cursor-pointer shadow-sm hover:shadow-md transition-all group flex flex-col relative`}
+              className="bg-white rounded-xl border border-gray-200 shadow-sm flex flex-col cursor-pointer hover:shadow-md transition-all"
             >
-              <div className="flex items-start justify-between mb-4 mt-2">
-                <div className={`w-14 h-14 rounded-xl flex items-center justify-center ${option.color} group-hover:scale-110 transition-transform`}>
-                  <Icon className="w-7 h-7" />
+              <div className="bg-[#F8F9FA] border-b border-gray-100 p-3 flex justify-between items-center rounded-t-xl">
+                <div className="flex items-center space-x-3">
+                  <span className="bg-[#E2E8F0] text-[#4A5568] px-2 py-0.5 rounded text-xs font-bold">OPT-{index + 1}</span>
+                  <span className="font-bold text-[#162D50] text-sm">{option.flowTitle}</span>
                 </div>
-                <div className="w-8 h-8 rounded-full bg-gray-50 flex items-center justify-center group-hover:bg-[#162D50] transition-colors">
-                  <ArrowRight className="w-4 h-4 text-gray-400 group-hover:text-white transition-colors" />
+                <span className="text-xs text-blue-600 bg-blue-50 px-2 py-1 rounded-full font-medium">Active: {relatedCount}</span>
+              </div>
+              <div className="p-6 flex-1 flex flex-col">
+                <div className="flex justify-between items-center mb-10 px-8 mt-4">
+                  <div className="flex flex-col items-center">
+                    <div className="w-14 h-14 bg-[#F2F4F7] rounded-xl flex items-center justify-center mb-2 shadow-sm">
+                      <option.sourceIcon className="w-7 h-7 text-[#162D50]" />
+                    </div>
+                    <span className="font-bold text-sm text-[#162D50]">{option.sourceName}</span>
+                  </div>
+                  <div className="flex-1 px-4 flex flex-col items-center relative">
+                    <div className={`w-full h-px ${option.lineColor} absolute top-1/2`}></div>
+                    <ArrowRight className={`${option.arrowColor} absolute top-1/2 right-4 transform -translate-y-1/2 w-4 h-4`} />
+                    <div className="bg-white px-2 z-10 flex flex-col items-center">
+                      <span className={`text-xs font-bold ${option.arrowColor}`}>{option.arrowText}</span>
+                      <span className={`text-xs ${option.arrowColor}`}>{option.arrowSubText}</span>
+                    </div>
+                  </div>
+                  <div className="flex flex-col items-center">
+                    <div className="w-14 h-14 bg-[#F2F4F7] rounded-xl flex items-center justify-center mb-2 shadow-sm">
+                      <option.targetIcon className="w-7 h-7 text-[#162D50]" />
+                    </div>
+                    <span className="font-bold text-sm text-[#162D50]">{option.targetName}</span>
+                  </div>
+                </div>
+                <div className="mt-auto bg-[#F8F9FA] rounded-lg p-4 border border-gray-100">
+                  <div className="flex justify-between mb-2">
+                    <div>
+                      <p className="text-xs text-gray-500 font-medium">{option.textLabel1}</p>
+                      <p className={`text-lg font-bold ${option.amountColor1}`}>{formatCurrency(totalAmount)}</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-xs text-gray-500 font-medium">{option.textLabel2}</p>
+                      <p className={`text-lg font-bold ${option.amountColor2}`}>{formatCurrency(paidAmount)}</p>
+                    </div>
+                  </div>
+                  <div className="w-full h-2 flex rounded-full overflow-hidden mb-3">
+                    <div className={`${option.barColor2}`} style={{ width: getWidths(totalAmount - paidAmount, paidAmount).recoveredWidth }}></div>
+                    <div className={`${option.barColor1}`} style={{ width: getWidths(totalAmount - paidAmount, paidAmount).advancedWidth }}></div>
+                  </div>
+                  <div className="text-right border-t border-gray-200 pt-2">
+                    <p className="text-xs font-bold text-gray-800">{option.netLabel}: {formatCurrency(netExposure)}</p>
+                  </div>
                 </div>
               </div>
-              
-              <h3 className="text-lg font-bold text-[#162D50] mb-2">{option.title}</h3>
-              <p className="text-sm text-gray-500 leading-relaxed">
-                {option.description}
-              </p>
             </div>
           );
         })}
