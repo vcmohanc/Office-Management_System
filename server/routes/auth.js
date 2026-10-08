@@ -8,12 +8,6 @@ import { verifyToken, requireRole } from '../middleware/auth.js';
 
 const router = express.Router();
 
-const authLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 10, // Limit each IP to 10 requests per windowMs
-  message: { error: 'Too many authentication attempts from this IP, please try again after 15 minutes.' }
-});
-
 // Register (admin-only — requires a valid admin JWT)
 router.post('/register', verifyToken, requireRole('admin'), async (req, res) => {
   try {
@@ -41,7 +35,7 @@ router.post('/register', verifyToken, requireRole('admin'), async (req, res) => 
 });
 
 // Login
-router.post('/login', authLimiter, async (req, res) => {
+router.post('/login', async (req, res) => {
   try {
     const { username, password } = req.body;
     const user = await User.findOne({ username });

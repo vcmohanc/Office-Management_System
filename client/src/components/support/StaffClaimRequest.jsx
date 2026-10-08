@@ -10,42 +10,51 @@ const optionLabelJP = {
   'Postage': '郵便料金',
   'Transportation Expenses / Flight Fare': '交通費 / 航空運賃',
   'Visa application fee': 'ビザ申請料',
+  'Hostel Fee': '宿泊費',
+  'Language Class Fee': '語学講習費',
   'Waiting Dormitory Fee': '待機寮費',
-  'Hospital Fee': '病院費',
+  'Hospital/ Drugs Expenses': '病院費/薬代',
   'Equipment/Supplies': '備品・消耗品',
   'WIFI': 'WIFI',
   'others': 'その他',
-  'Service staff': 'サービススタッフ',
+  'Service Staff': 'サービススタッフ',
   'VC': 'VC',
-  'Dispatch destination: Farm': '派遣先：農園',
+  'Farme': '派遣先：農園',
   'Select for each project': 'プロジェクト毎に選択',
   'Office': 'オフィス',
   'Staff': 'スタッフ',
   'Host Company': 'ホスト企業',
-  'Transfer to the person concerned': '本人への振込',
-  'Salary deduction': '給与控除',
-  'Invoice from the client company': 'クライアント会社からの請求書',
+  'direct_transfer': '本人への振込',
+  'salary_deduction': '給与控除',
+  'client_invoice': 'クライアント会社からの請求書',
+  'Support staff': 'サポートスタッフ',
 };
 
 const toJP = (label) => optionLabelJP[label] ?? label;
 
 const PAYMENT_PROCESS_OPTIONS = [
-  { value: 'Transfer to the person concerned', label: '本人への振込' },
-  { value: 'Salary deduction', label: '給与控除' },
-  { value: 'Invoice from the client company', label: 'クライアント会社からの請求書' },
+  { value: 'direct_transfer', label: '本人への振込' },
+  { value: 'salary_deduction', label: '給与控除' },
+  { value: 'client_invoice', label: 'クライアント会社からの請求書' },
+  { value: 'asset_transfer_agreement', label: 'Farm and VC Asset Transfer Agreement' },
 ];
 
 const getDefaultPaymentProcess = (expenseType) => {
   switch (expenseType) {
     case 'Postage':
     case 'Transportation Expenses / Flight Fare':
-      return 'Transfer to the person concerned';
+      return 'direct_transfer';
     case 'Visa application fee':
+    case 'Hostel Fee':
+    case 'Language Class Fee':
+    case 'Hospital/ Drugs Expenses':
+      return 'salary_deduction';
     case 'Waiting Dormitory Fee':
-    case 'Hospital Fee':
-      return 'Salary deduction';
+      return 'add_in_salary';
     case 'WIFI':
-      return 'Invoice from the client company';
+      return 'client_invoice';
+    case 'Equipment/Supplies':
+      return 'asset_transfer_agreement';
     default:
       return '';
   }
@@ -55,17 +64,21 @@ const getDefaultsForExpenseType = (expenseType) => {
   switch (expenseType) {
     case 'Postage':
     case 'Transportation Expenses / Flight Fare':
-      return { advancerCategory: 'Service staff', bearingParty: 'VC' };
+      return { advancerCategory: 'Service Staff', bearingParty: 'VC' };
     case 'Visa application fee':
-      return { advancerCategory: 'Service staff', bearingParty: 'VC' };
+    case 'Hostel Fee':
+    case 'Language Class Fee':
+      return { advancerCategory: 'VC', bearingParty: 'Service Staff' };
     case 'Waiting Dormitory Fee':
-    case 'Hospital Fee':
-      return { advancerCategory: 'Service staff', bearingParty: 'Service staff' };
+      return { advancerCategory: 'Service Staff', bearingParty: 'VC' };
+    case 'Hospital/ Drugs Expenses':
+      return { advancerCategory: 'Service Staff', bearingParty: 'Service Staff' };
     case 'Equipment/Supplies':
+      return { advancerCategory: 'VC', bearingParty: 'Farm' };
     case 'others':
       return { advancerCategory: 'Select for each project', bearingParty: 'Select for each project' };
     case 'WIFI':
-      return { advancerCategory: 'Dispatch destination: Farm', bearingParty: 'Dispatch destination: Farm' };
+      return { advancerCategory: 'Farme', bearingParty: 'Farme' };
     default:
       return { advancerCategory: '', bearingParty: '' };
   }
@@ -342,7 +355,7 @@ export default function StaffClaimRequest() {
             </div>
           </div>
         );
-      case 'Hospital Fee':
+      case 'Hospital/ Drugs Expenses':
         return (
           <div className="grid grid-cols-3 gap-6 mb-6 bg-blue-50 p-6 rounded-md border border-blue-100">
             <div>
@@ -617,7 +630,7 @@ export default function StaffClaimRequest() {
                 <div className="relative">
                   <select value={c.expenseType} onChange={e => updateClaim(index, 'expenseType', e.target.value)} className="w-full px-4 py-2 border border-gray-300 rounded-md appearance-none focus:outline-none focus:ring-1 focus:ring-[#162D50] text-gray-700">
                     <option value="">種類を選択</option>
-                    {options.ExpenseType.map(opt => <option key={opt._id} value={opt.value}>{toJP(opt.label)}</option>)}
+                    {options.ExpenseType.filter(opt => !['Drugs'].includes(opt.value)).map(opt => <option key={opt._id} value={opt.value}>{toJP(opt.label)}</option>)}
                   </select>
                   <ChevronDown className="w-4 h-4 absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
                 </div>
@@ -630,7 +643,7 @@ export default function StaffClaimRequest() {
                     <option value="">カテゴリを選択</option>
                     {options.AdvancerCategory.length > 0
                       ? options.AdvancerCategory.map(opt => <option key={opt._id} value={opt.value}>{toJP(opt.label)}</option>)
-                      : Object.entries(optionLabelJP).filter(([k]) => ['Service staff','VC','Dispatch destination: Farm','Select for each project'].includes(k)).map(([v, l]) => <option key={v} value={v}>{l}</option>)
+                      : Object.entries(optionLabelJP).filter(([k]) => ['Service Staff','VC','Farme','Select for each project'].includes(k)).map(([v, l]) => <option key={v} value={v}>{l}</option>)
                     }
                   </select>
                   <ChevronDown className="w-4 h-4 absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
@@ -658,7 +671,7 @@ export default function StaffClaimRequest() {
                     <option value="">負担者を選択</option>
                     {options.BearingParty.length > 0
                       ? options.BearingParty.map(opt => <option key={opt._id} value={opt.value}>{toJP(opt.label)}</option>)
-                      : Object.entries(optionLabelJP).filter(([k]) => ['Office','Staff','Host Company','VC','Service staff','Dispatch destination: Farm','Select for each project'].includes(k)).map(([v, l]) => <option key={v} value={v}>{l}</option>)
+                      : Object.entries(optionLabelJP).filter(([k]) => ['Office','Staff','Host Company','VC','Service Staff','Support staff','Farme','Select for each project'].includes(k)).map(([v, l]) => <option key={v} value={v}>{l}</option>)
                     }
                   </select>
                   <ChevronDown className="w-4 h-4 absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />

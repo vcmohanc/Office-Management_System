@@ -5,6 +5,7 @@ import Case from '../models/Case.js';
 import Settlement from '../models/Settlement.js';
 import { requireRole } from '../middleware/auth.js';
 import { validateBackendExpenseAmount } from '../utils/amountHelper.js';
+import { expenseRules } from '../utils/expenseRules.js';
 import { caseEvents } from '../events.js';
 import * as ledgerController from '../controllers/settlementLedgerController.js';
 import { generateLedgerForCase } from '../utils/calc_settlement.js';
@@ -27,7 +28,7 @@ const caseSchemaZod = z.object({
   visa_available_time: z.coerce.date().optional().nullable().or(z.literal('')),
   expense_type: z.string().min(1),
   advancer_category: z.string().min(1),
-  payment_process_type: z.string().min(1),
+  payment_process_type: z.enum(['salary_addition', 'salary_deduction', 'client_invoice', 'direct_transfer']),
   bearing_party: z.string().min(1),
   expense_amount: z.number().min(0),
   expense_period_start: z.coerce.date(),
@@ -69,6 +70,13 @@ router.post('/', requireRole('admin', 'account'), async (req, res) => {
     // Validate request
     const validatedData = caseSchemaZod.parse(req.body);
     
+
+    if (validatedData.expense_type === 'others') {
+      if (!validatedData.advancer_category || !validatedData.bearing_party || !validatedData.payment_process_type) {
+        return res.status(400).json({ message: '「その他」を選択した場合は、立替者カテゴリ、負担先、支払処理タイプをすべて指定してください。' });
+      }
+    }
+
     const validation = await validateBackendExpenseAmount(
       validatedData.expense_type, 
       validatedData.expense_amount, 
