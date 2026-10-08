@@ -6,7 +6,7 @@ import { generateLedgerForCase } from '../utils/calc_settlement.js';
 // Load environment variables
 dotenv.config();
 
-const MONGO_URI = process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/oms';
+const MONGO_URI = process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/office_manage_system';
 
 const migrate = async () => {
   try {

@@ -1,4 +1,4 @@
-﻿export const EXPENSE_RULES_MAPPING = {
+export const EXPENSE_RULES_MAPPING = {
   'Postage': {
     advancerCategory: 'Service Staff',
     bearingParty: 'VC',
@@ -23,10 +23,7 @@
     advancerCategory: 'Service Staff',
     bearingParty: 'VC',
   },
-  'Accommodation cost': {
-    advancerCategory: 'VC',
-    bearingParty: 'Service Staff',
-  },
+
   'Equipment / Consumable Items': {
     advancerCategory: 'VC',
     bearingParty: 'Farm',

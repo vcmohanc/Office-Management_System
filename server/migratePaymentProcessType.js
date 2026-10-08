@@ -19,7 +19,7 @@ const reverseMapping = {
 
 async function migrate() {
   try {
-    await mongoose.connect(process.env.MONGO_URI || 'mongodb://localhost:27017/oms');
+    await mongoose.connect(process.env.MONGO_URI || 'mongodb://localhost:27017/office_manage_system');
     console.log('Connected to MongoDB');
 
     const args = process.argv.slice(2);

@@ -693,8 +693,8 @@ export default function NewCase() {
                             fullName: val, 
                             id: 'ID-' + match._id.slice(-6).toUpperCase(), 
                             location: match.location || staffInfo.location,
-                            branchAndFarmName: (match.assignedWorkPlace && match.assignedWorkPlace.length > 0) ? match.assignedWorkPlace[0] : '',
-                            availableWorkPlaces: match.assignedWorkPlace || [],
+                            branchAndFarmName: Array.isArray(match.assignedWorkPlace) ? (match.assignedWorkPlace.length > 0 ? match.assignedWorkPlace[0] : '') : (match.assignedWorkPlace || ''),
+                            availableWorkPlaces: Array.isArray(match.assignedWorkPlace) ? match.assignedWorkPlace : (match.assignedWorkPlace ? [match.assignedWorkPlace] : []),
                             visaステータス: match.visaStatus || '',
                             visaAvailableTime: match.visaEndDate ? new Date(match.visaEndDate).toISOString().split('T')[0] : ''
                           });
@@ -726,8 +726,8 @@ export default function NewCase() {
                             id: val, 
                             fullName: match.romajiName || match.katakanaName || staffInfo.fullName, 
                             location: match.location || staffInfo.location,
-                            branchAndFarmName: (match.assignedWorkPlace && match.assignedWorkPlace.length > 0) ? match.assignedWorkPlace[0] : '',
-                            availableWorkPlaces: match.assignedWorkPlace || [],
+                            branchAndFarmName: Array.isArray(match.assignedWorkPlace) ? (match.assignedWorkPlace.length > 0 ? match.assignedWorkPlace[0] : '') : (match.assignedWorkPlace || ''),
+                            availableWorkPlaces: Array.isArray(match.assignedWorkPlace) ? match.assignedWorkPlace : (match.assignedWorkPlace ? [match.assignedWorkPlace] : []),
                             visaステータス: match.visaStatus || '',
                             visaAvailableTime: match.visaEndDate ? new Date(match.visaEndDate).toISOString().split('T')[0] : ''
                           });
