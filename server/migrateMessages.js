@@ -5,7 +5,7 @@ import Claim from './models/Claim.js';
 
 dotenv.config();
 
-const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/oms';
+const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/office_manage_system';
 
 async function migrate() {
   try {
