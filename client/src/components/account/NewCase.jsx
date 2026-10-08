@@ -264,7 +264,7 @@ export default function NewCase() {
       const submissions = cases.map(caseItem => {
         const payload = {
           case_type: 'Office Case',
-          staff_name: staffInfo.fullName || "N/A",
+          full_name: staffInfo.fullName || "N/A",
           staff_id: staffInfo.id || "N/A",
           location: staffInfo.location || "N/A",
           branch_farm_name: staffInfo.branchAndFarmName || "",
@@ -272,7 +272,7 @@ export default function NewCase() {
           visa_available_time: staffInfo.visaAvailableTime || null,
           expense_type: caseItem.expenseType,
           advancer_category: caseItem.advancerCategory,
-          payment_process_type: caseItem.advancerName || "N/A",
+          payment_process_types: caseItem.advancerName || "direct_transfer",
           bearing_party: caseItem.bearingParty,
           expense_amount: parseFloat(caseItem.expense金額) || 0,
           expense_period_start: caseItem.expense期間Start || caseItem.dateUsed || caseItem.dormitoryStartDate || caseItem.consultationDate || caseItem.purchaseDate || caseItem.wifiStartDate || new Date().toISOString(),
@@ -282,9 +282,9 @@ export default function NewCase() {
           departure: caseItem.departure || '',
           destination: caseItem.destination || '',
           transport_method: caseItem.transportMethod || '',
-          receipts: caseItem.receipts || [],
-          remark: caseItem.remark || caseItem.damageReason || "",
-          total_expense: totalExpense金額,
+          bill_receipt_url: caseItem.receipts || [],
+          remarks: caseItem.remark || caseItem.damageReason || "",
+          total_expense_amount: totalExpense金額,
           currency: 'JPY',
           previous_unsettled_balance: unsettledBalance,
           includeBalance: includeBalance,
@@ -296,6 +296,7 @@ export default function NewCase() {
           settlement_note: settlementNote,
           collection_method: direction === 'DEDUCT' ? '給与控除' : collectionMethod,
           installment_count: installmentCount,
+            monthly_deduction: 0,
           collection_start_month: collectionStartMonth || "TBD",
           installment_schedule: installmentSchedule,
           labor_consent: laborConsent,
@@ -336,7 +337,7 @@ export default function NewCase() {
       setCollectionStartMonth('');
     } catch (error) {
       console.error("Error submitting cases:", error);
-      toast.error("案件の送信に失敗しました。詳細はコンソールを確認してください。");
+      toast.error("案件の送信に失敗しました。詳細はコンソールを確認してください。: " + (error.message || error));
     }
   };
 
@@ -669,7 +670,7 @@ export default function NewCase() {
           {/* スタッフ情報 Section */}
           {cases.some(c => ['Service Staff', 'Service staff', 'Staff', 'Support staff', 'Support Staff'].includes(c.advancerCategory) || ['Service Staff', 'Service staff', 'Staff', 'Support staff', 'Support Staff'].includes(c.bearingParty)) && (() => {
             const validEmployees = employees.filter(emp => {
-              const hasValidVisa = emp.visaEndDate && new Date(emp.visaEndDate) >= new Date();
+              const hasValidVisa = !emp.visaEndDate || new Date(emp.visaEndDate) >= new Date();
               const hasWorkPlace = emp.assignedWorkPlace && emp.assignedWorkPlace.length > 0;
               return hasValidVisa && hasWorkPlace;
             });
@@ -748,7 +749,7 @@ export default function NewCase() {
                       </datalist>
                     </div>
                     <div className="sm:col-span-2 lg:col-span-1">
-                      <label className="block text-sm font-bold text-gray-700 mb-1.5 sm:mb-2">配属先 <span className="text-red-500">*</span></label>
+                      <label className="block text-sm font-bold text-gray-700 mb-1.5 sm:mb-2">配属先</label>
                       <div className="relative">
                         <select value={staffInfo.branchAndFarmName} onChange={e => setStaffInfo({...staffInfo, branchAndFarmName: e.target.value})} className="w-full px-3 sm:px-4 py-2 border border-gray-300 rounded-md appearance-none focus:outline-none focus:ring-1 focus:ring-[#162D50] text-gray-700 text-sm">
                           <option value="">配属先を選択</option>

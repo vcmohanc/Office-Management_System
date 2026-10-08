@@ -709,6 +709,10 @@ export default function CaseList({ setActiveTab: onNavigate }) {
                   <span className="text-gray-500">スタッフ名</span>
                   <span className="font-bold text-gray-800">{selectedCase.displayName}</span>
                 </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-500">日付</span>
+                  <span className="font-bold text-gray-800">{selectedCase.displayDate}</span>
+                </div>
                 <div className="flex justify-between items-center">
                   <span className="text-gray-500">経費の種類</span>
                   {isEditing ? (

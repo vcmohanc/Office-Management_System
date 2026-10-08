@@ -1,4 +1,4 @@
-export const EXPENSE_RULES_MAPPING = {
+﻿export const EXPENSE_RULES_MAPPING = {
   'Postage': {
     advancerCategory: 'Service Staff',
     bearingParty: 'VC',
@@ -53,7 +53,7 @@ export const EXPENSE_RULES_MAPPING = {
  */
 export function getPaymentMethod(payer, bearer) {
   if (payer === 'VC' && bearer === 'Farm') {
-    return 'Farm and VC Asset Transfer Agreement';
+    return 'direct_transfer';
   }
   if (bearer === 'Service Staff') {
     return 'salary_deduction';
@@ -81,3 +81,5 @@ export function getAutoFill(expenseKey) {
   }
   return null;
 }
+
+
