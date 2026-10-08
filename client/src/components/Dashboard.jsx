@@ -32,6 +32,7 @@ export default function Dashboard({ setToken }) {
     return 'B2B部門';
   });
   const [openMenus, setOpenMenus] = useState({});
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const toggleMenu = (menuName) => {
     setOpenMenus(prev => ({
@@ -41,7 +42,7 @@ export default function Dashboard({ setToken }) {
   };
 
   return (
-    <div className="flex h-screen bg-[#F8F9FA] text-[#333333] font-sans">
+    <div className="flex h-screen bg-[#F8F9FA] text-[#333333] font-sans overflow-hidden">
       {/* Sidebar */}
       <Sidebar 
         activeTab={activeTab} 
@@ -50,14 +51,16 @@ export default function Dashboard({ setToken }) {
         toggleMenu={toggleMenu} 
         setToken={setToken} 
         user={user}
+        mobileMenuOpen={mobileMenuOpen}
+        setMobileMenuOpen={setMobileMenuOpen}
       />
 
       {/* Main Content */}
-      <main className="flex-1 flex flex-col overflow-hidden">
+      <main className="flex-1 flex flex-col overflow-hidden min-w-0">
         {/* Header */}
-        <Header activeTab={activeTab} user={user} setActiveTab={setActiveTab} />
+        <Header activeTab={activeTab} user={user} setActiveTab={setActiveTab} setMobileMenuOpen={setMobileMenuOpen} />
 
-        <div className="flex-1 overflow-auto p-8">
+        <div className="flex-1 overflow-auto p-2.5 sm:p-4 md:p-6 lg:p-8">
           {activeTab === 'Dashboard' && <DashboardHome setActiveTab={setActiveTab} />}
           {activeTab === '経理部門' && <AccountDashboard />}
           {activeTab === '人事部門' && <HRDashboard />}

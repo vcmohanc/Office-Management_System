@@ -3,6 +3,7 @@ import { z } from 'zod';
 import Claim from '../models/Claim.js';
 import { requireRole } from '../middleware/auth.js';
 import { validateBackendExpenseAmount } from '../utils/amountHelper.js';
+import { expenseRules } from '../utils/expenseRules.js';
 import { caseEvents } from '../events.js';
 import Settlement from '../models/Settlement.js';
 
@@ -28,7 +29,7 @@ const claimSchemaZod = z.object({
 
   expense_type: z.string().min(1, 'Expense type is required'),
   advancer_category: z.string().min(1, 'Advancer category is required'),
-  payment_process_types: z.string().optional().nullable(),
+  payment_process_types: z.enum(['salary_addition', 'salary_deduction', 'client_invoice', 'direct_transfer']),
   bearing_party: z.string().min(1, 'Bearing party is required'),
   expense_amount: z.number().min(0),
   expense_period_start: z.string().optional().nullable(),
@@ -57,6 +58,13 @@ const claimSchemaZod = z.object({
 router.post('/', requireRole('admin', 'support'), async (req, res) => {
   try {
     const validatedData = claimSchemaZod.parse(req.body);
+
+
+    if (validatedData.expense_type === 'others') {
+      if (!validatedData.advancer_category || !validatedData.bearing_party || !validatedData.payment_process_types) {
+        return res.status(400).json({ message: '「その他」を選択した場合は、立替者カテゴリ、負担先、支払処理タイプをすべて指定してください。' });
+      }
+    }
 
     const validation = await validateBackendExpenseAmount(
       validatedData.expense_type, 

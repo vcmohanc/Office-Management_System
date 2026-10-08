@@ -23,12 +23,13 @@ import {
   Calendar,
   MapPin,
   Menu,
-  Wallet
+  Wallet,
+  X
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useState } from 'react';
 
-export default function Sidebar({ activeTab, setActiveTab, openMenus, toggleMenu, setToken, user }) {
+export default function Sidebar({ activeTab, setActiveTab, openMenus, toggleMenu, setToken, user, mobileMenuOpen, setMobileMenuOpen }) {
   const navigate = useNavigate();
   const [isCollapsed, setIsCollapsed] = useState(false);
 
@@ -101,87 +102,115 @@ export default function Sidebar({ activeTab, setActiveTab, openMenus, toggleMenu
   };
 
   return (
-    <aside className={`${isCollapsed ? 'w-20' : 'w-64'} transition-all duration-300 bg-[#F2F4F7] flex flex-col justify-between border-r border-gray-200 relative z-10`}>
-      <div className="overflow-hidden">
-        <div className={`p-4 flex items-center ${isCollapsed ? 'justify-center flex-col space-y-4' : 'justify-between'} mb-2`}>
-          <div className="flex items-center">
-            <div className={`w-10 h-10 bg-[#162D50] rounded flex items-center justify-center text-white font-bold uppercase shrink-0 ${isCollapsed ? '' : 'mr-3'}`}>
-              {user?.username ? user.username[0] : 'A'}
+    <>
+      {/* Mobile Backdrop */}
+      {mobileMenuOpen && (
+        <div 
+          className="fixed inset-0 bg-black/40 z-40 md:hidden backdrop-blur-xs transition-opacity"
+          onClick={() => setMobileMenuOpen?.(false)}
+        />
+      )}
+
+      <aside className={`fixed md:static inset-y-0 left-0 z-50 transform md:transform-none transition-transform duration-300 ease-in-out ${
+        mobileMenuOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'
+      } ${isCollapsed ? 'md:w-20' : 'md:w-64'} w-64 bg-[#F2F4F7] flex flex-col justify-between border-r border-gray-200 shadow-xl md:shadow-none shrink-0`}>
+        <div className="overflow-hidden">
+          <div className={`p-4 flex items-center ${isCollapsed ? 'md:justify-center md:flex-col md:space-y-4' : 'justify-between'} justify-between mb-2`}>
+            <div className="flex items-center">
+              <div className={`w-10 h-10 bg-[#162D50] rounded flex items-center justify-center text-white font-bold uppercase shrink-0 ${isCollapsed ? 'md:mr-0 mr-3' : 'mr-3'}`}>
+                {user?.username ? user.username[0] : 'A'}
+              </div>
+              {(!isCollapsed || mobileMenuOpen) && (
+                <div className={`whitespace-nowrap ${isCollapsed ? 'md:hidden' : ''}`}>
+                  <h2 className="text-[#162D50] font-bold text-lg leading-tight capitalize truncate w-32">{user?.username || '管理者'}</h2>
+                  <p className="text-xs text-gray-500 capitalize truncate w-32">{user?.role === 'admin' ? 'システム管理者' : `${user?.role} 部門`}</p>
+                </div>
+              )}
             </div>
-            {!isCollapsed && (
-              <div className="whitespace-nowrap">
-                <h2 className="text-[#162D50] font-bold text-lg leading-tight capitalize truncate w-32">{user?.username || '管理者'}</h2>
-                <p className="text-xs text-gray-500 capitalize truncate w-32">{user?.role === 'admin' ? 'システム管理者' : `${user?.role} 部門`}</p>
-              </div>
-            )}
+            
+            <div className="flex items-center">
+              {/* Desktop collapse toggle */}
+              <button 
+                onClick={() => setIsCollapsed(!isCollapsed)} 
+                className="hidden md:block text-[#162D50] hover:bg-gray-200 p-1 rounded-md transition-colors cursor-pointer"
+                aria-label="折りたたみ"
+              >
+                {isCollapsed ? <ChevronsRight className="w-5 h-5" strokeWidth={3} /> : <ChevronsLeft className="w-5 h-5" strokeWidth={3} />}
+              </button>
+              
+              {/* Mobile close button */}
+              <button
+                onClick={() => setMobileMenuOpen?.(false)}
+                className="md:hidden text-[#162D50] hover:bg-gray-200 p-1.5 rounded-md transition-colors cursor-pointer"
+                aria-label="閉じる"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
           </div>
-          <button 
-            onClick={() => setIsCollapsed(!isCollapsed)} 
-            className="text-[#162D50] hover:bg-gray-200 p-1 rounded-md transition-colors"
-          >
-            {isCollapsed ? <ChevronsRight className="w-5 h-5" strokeWidth={3} /> : <ChevronsLeft className="w-5 h-5" strokeWidth={3} />}
-          </button>
+
+          <nav className="space-y-1 px-3">
+            {navItems.map((item) => {
+              const Icon = item.icon;
+              const isActive = activeTab === item.name;
+              const hasSubItems = !!item.subItems;
+
+              return (
+                <div key={item.name} className="flex flex-col">
+                  <button
+                    onClick={() => {
+                      setActiveTab(item.name);
+                      setMobileMenuOpen?.(false);
+                    }}
+                    className={`w-full flex items-center ${isCollapsed ? 'md:justify-center' : 'justify-between'} justify-between px-4 py-2.5 rounded-md transition-colors cursor-pointer ${
+                      isActive
+                        ? 'bg-[#162D50] text-white font-bold'
+                        : 'text-[#4A5568] hover:bg-gray-100'
+                    }`}
+                    title={isCollapsed ? item.name : undefined}
+                  >
+                    <div className="flex items-center">
+                      <Icon className={`w-5 h-5 ${isCollapsed ? 'md:mr-0 mr-3' : 'mr-3'} ${isActive ? 'text-white' : 'text-gray-500'}`} />
+                      {(!isCollapsed || mobileMenuOpen) && <span className={`text-sm whitespace-nowrap ${isCollapsed ? 'md:hidden' : ''}`}>{item.label || item.name}</span>}
+                    </div>
+                  </button>
+                  
+                  {/* Sub items static */}
+                  {hasSubItems && (!isCollapsed || mobileMenuOpen) && (
+                    <div className={`mt-1 ml-4 pl-4 border-l border-gray-200 space-y-1 ${isCollapsed ? 'md:hidden' : ''}`}>
+                      {item.subItems.map(subItem => {
+                        const SubIcon = subItem.icon;
+                        const isSubActive = activeTab === subItem.name;
+                        return (
+                          <button
+                            key={subItem.name}
+                            onClick={() => {
+                              if (subItem.name === 'Case List' && item.name === 'サポート部門') {
+                                sessionStorage.setItem('caseListTab', 'Staff');
+                              } else if (subItem.name === 'Case List' && item.name === '経理部門') {
+                                sessionStorage.setItem('caseListTab', 'Office');
+                              }
+                              setActiveTab(subItem.name);
+                              setMobileMenuOpen?.(false);
+                            }}
+                            className={`w-full flex items-center px-4 py-2 rounded-md transition-colors text-sm cursor-pointer ${
+                              isSubActive 
+                                ? 'bg-[#162D50] text-white font-bold' 
+                                : 'text-gray-500 hover:bg-gray-50 hover:text-gray-800'
+                            }`}
+                          >
+                            <SubIcon className={`w-4 h-4 mr-3 ${isSubActive ? 'text-white' : 'text-gray-400'}`} />
+                            {subItem.label || subItem.name}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </nav>
         </div>
-
-        <nav className="space-y-1 px-3">
-          {navItems.map((item) => {
-            const Icon = item.icon;
-            const isActive = activeTab === item.name;
-            const hasSubItems = !!item.subItems;
-            const isOpen = openMenus[item.name];
-
-            return (
-              <div key={item.name} className="flex flex-col">
-                <button
-                  onClick={() => setActiveTab(item.name)}
-                  className={`w-full flex items-center ${isCollapsed ? 'justify-center' : 'justify-between'} px-4 py-2.5 rounded-md transition-colors ${
-                    isActive
-                      ? 'bg-[#162D50] text-white font-bold'
-                      : 'text-[#4A5568] hover:bg-gray-100'
-                  }`}
-                  title={isCollapsed ? item.name : undefined}
-                >
-                  <div className="flex items-center">
-                    <Icon className={`w-5 h-5 ${isCollapsed ? '' : 'mr-3'} ${isActive ? 'text-white' : 'text-gray-500'}`} />
-                    {!isCollapsed && <span className="text-sm whitespace-nowrap">{item.label || item.name}</span>}
-                  </div>
-                </button>
-                
-                {/* Sub items static */}
-                {hasSubItems && !isCollapsed && (
-                  <div className="mt-1 ml-4 pl-4 border-l border-gray-200 space-y-1">
-                    {item.subItems.map(subItem => {
-                      const SubIcon = subItem.icon;
-                      const isSubActive = activeTab === subItem.name;
-                      return (
-                        <button
-                          key={subItem.name}
-                          onClick={() => {
-                            if (subItem.name === 'Case List' && item.name === 'サポート部門') {
-                              sessionStorage.setItem('caseListTab', 'Staff');
-                            } else if (subItem.name === 'Case List' && item.name === '経理部門') {
-                              sessionStorage.setItem('caseListTab', 'Office');
-                            }
-                            setActiveTab(subItem.name);
-                          }}
-                          className={`w-full flex items-center px-4 py-2 rounded-md transition-colors text-sm ${
-                            isSubActive 
-                              ? 'bg-[#162D50] text-white font-bold' 
-                              : 'text-gray-500 hover:bg-gray-50 hover:text-gray-800'
-                          }`}
-                        >
-                          <SubIcon className={`w-4 h-4 mr-3 ${isSubActive ? 'text-white' : 'text-gray-400'}`} />
-                          {subItem.label || subItem.name}
-                        </button>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
-            );
-          })}
-        </nav>
-      </div>
 
       <div className="p-3 space-y-1 mb-2">
         <a href="#" className={`flex items-center ${isCollapsed ? 'justify-center' : ''} px-4 py-2 text-[#4A5568] hover:bg-gray-200 rounded-md transition-colors`} title={isCollapsed ? 'Support' : undefined}>
@@ -198,5 +227,6 @@ export default function Sidebar({ activeTab, setActiveTab, openMenus, toggleMenu
         </button>
       </div>
     </aside>
+    </>
   );
 }

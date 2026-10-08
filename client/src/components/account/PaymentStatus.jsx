@@ -434,11 +434,13 @@ export default function PaymentStatus() {
     switch (type) {
       case 'Postage': return '郵送費';
       case 'Transportation Expenses / Flight Fare': return '交通費 / 航空券代';
-      case 'Visa application fee': return 'ビザ申請費用';
+      case 'Visa Application Fee': return 'ビザ申請費用';
+      case 'Accommodation cost': return '宿泊費';
+      case 'Language Course Fee': return '語学講習費';
       case 'Waiting Dormitory Fee': return '待機寮費';
-      case 'Hospital Fee': return '病院代';
-      case 'Equipment/Supplies': return '備品/消耗品代';
-      case 'WIFI': return 'WIFI';
+      case 'Hospital/ Drugs Expenses': return '病院費/薬代';
+      case 'Equipment / Consumable Items': return '備品/消耗品代';
+      case 'Wifi': return 'WIFI';
       case 'Travel': return '交通費';
       case 'Advances': return '立替金';
       case 'Others':
