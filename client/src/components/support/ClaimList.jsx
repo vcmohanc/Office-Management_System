@@ -943,7 +943,7 @@ export default function ClaimList() {
                     <div className="relative">
                       <select value={installmentCount} onChange={e => setInstallmentCount(Number(e.target.value))} className="w-full px-4 py-2 border border-gray-300 rounded-md appearance-none focus:outline-none focus:ring-1 focus:ring-[#162D50] text-gray-600">
                         <option value={1}>一括払い (Lump-sum)</option>
-                        {[...Array(23)].map((_, i) => (
+                        {[...Array(5)].map((_, i) => (
                           <option key={i+2} value={i+2}>{i+2}回払い</option>
                         ))}
                       </select>

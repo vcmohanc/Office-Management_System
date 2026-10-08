@@ -428,7 +428,7 @@ export default function CaseList({ setActiveTab: onNavigate }) {
     displayId: c.claim_id || c.claimId || `#CLM-${(c._id || '').slice(-6).toUpperCase()}`,
     displayDate: new Date(c.expensePeriodStart || c.expense_period_start || c.createdAt).toLocaleDateString('en-US'),
     displayName: c.fullName || c.full_name || 'N/A',
-    displayTotal: c.totalExpense金額 || c.total_expense_amount || 0,
+    displayTotal: c.expenseAmount || c.expense_amount || c.totalExpense金額 || c.total_expense_amount || 0,
     currencySymbol: c.currency === 'JPY' ? '¥' : '$',
     expense_type: c.expenseType || c.expense_type || 'N/A',
   }));

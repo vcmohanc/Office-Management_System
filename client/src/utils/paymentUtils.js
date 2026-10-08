@@ -30,7 +30,6 @@ export const calculateInstallments = (totalAmount, count, startMonth) => {
   }
 
   const baseAmount = Math.floor(totalAmount / count);
-  const remainder = totalAmount % count;
   
   const schedule = [];
   let remaining = totalAmount;
@@ -40,8 +39,13 @@ export const calculateInstallments = (totalAmount, count, startMonth) => {
   let currentMonth = parseInt(monthStr, 10);
 
   for (let i = 1; i <= count; i++) {
-    const amount = (i === 1) ? baseAmount + remainder : baseAmount;
-    remaining -= amount;
+    const isFinal = (i === count);
+    const amount = isFinal 
+      ? totalAmount - (baseAmount * (count - 1)) 
+      : baseAmount;
+      
+    // Handle floating point precision errors by strictly enforcing 0 on the last step
+    remaining = isFinal ? 0 : remaining - amount;
     
     const formattedMonth = `${currentYear}-${currentMonth.toString().padStart(2, '0')}`;
     
