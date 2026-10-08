@@ -443,6 +443,7 @@ export default function CaseList({ setActiveTab: onNavigate }) {
   const allRecords = [...mappedCases, ...mappedClaims]
     .filter(c => {
       if (c.status && c.status.includes('完了')) return false;
+      if (user.role === 'support') return true;
       return !['APPROVED_FOR_PAYMENT', 'Approve for Payment', '支払承認', '承認済 for Payment', 'Payment 保留中', '処理中', 'Processing', 'processing', 'Completed', 'completed'].includes(c.status);
     })
     .map(c => ({ ...c, displayStatus: getDisplayStatus(c.status) }));
