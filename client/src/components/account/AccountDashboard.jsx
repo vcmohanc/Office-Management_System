@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Wallet, TrendingUp, Clipboard, CheckCircle, Landmark, User, Tractor, ArrowRight, Briefcase, Users, Building, Building2 } from 'lucide-react';
 import { apiFetch } from '../../utils/apiFetch.js';
+import { PATTERN_CONFIG, getPatternForExpense, getPatternByParties, calculateSettlementMetrics } from '../../utils/settlementPatterns.js';
 
 export default function AccountDashboard() {
   const [data, setData] = useState({
@@ -60,196 +61,50 @@ export default function AccountDashboard() {
     fetchDashboardData();
   }, []);
 
-  const getEntityDetails = (name) => {
-    const n = (name || '').toLowerCase();
-    if (n.includes('farm') || n.includes('農家')) {
-      return { name: '農家', icon: Tractor, colorName: 'green', arrowColor: 'text-blue-500', lineColor: 'bg-blue-500' };
-    }
-    if (n.includes('support') || n.includes('サポート')) {
-      return { name: 'サポートスタッフ', icon: User, colorName: 'green', arrowColor: 'text-blue-500', lineColor: 'bg-blue-500' };
-    }
-    if (n.includes('staff') || n.includes('サービス') || n.includes('スタッフ')) {
-      return { name: 'サービススタッフ', icon: User, colorName: 'green', arrowColor: 'text-blue-500', lineColor: 'bg-blue-500' };
-    }
-    if (n.includes('vc') || n.includes('fund') || n.includes('ファンド')) {
-      return { name: 'VCファンド', icon: Landmark, colorName: 'purple', arrowColor: 'text-purple-400', lineColor: 'bg-purple-400' };
-    }
-    if (n.includes('client') || n.includes('クライアント')) {
-      return { name, icon: Users, colorName: 'blue', arrowColor: 'text-green-400', lineColor: 'bg-green-400' };
-    }
-    if (n.includes('vendor') || n.includes('host') || n.includes('ベンダー') || n.includes('企業')) {
-      return { name, icon: Building, colorName: 'orange', arrowColor: 'text-orange-400', lineColor: 'bg-orange-400' };
-    }
-    return { name, icon: Building2, colorName: 'gray', arrowColor: 'text-gray-400', lineColor: 'bg-gray-400' };
+  const getEntityIcon = (name) => {
+    if (name.includes('VC')) return Landmark;
+    if (name.includes('Staff')) return User;
+    if (name.includes('Farm')) return Building2;
+    return Building;
+  };
+
+  const getFlowColors = (flowType) => {
+    if (flowType === 'Reimburse') return { text: 'text-blue-500', bg: 'bg-blue-500' };
+    if (flowType === 'Collect') return { text: 'text-green-500', bg: 'bg-green-500' };
+    return { text: 'text-gray-500', bg: 'bg-gray-500' }; // Transfer
   };
 
   const paymentOptions = useMemo(() => {
-    const dynamicGroups = {
-      'VCファンド-サービススタッフ': {
-        id: 'VCファンド-サービススタッフ',
-        flowTitle: 'VCfund → サービススタッフ',
-        sourceName: 'VCファンド',
-        sourceIcon: Landmark,
-        targetName: 'サービススタッフ',
-        targetIcon: User,
-        arrowText: '前払い',
-        arrowSubText: '(流出)',
-        arrowColor: 'text-blue-500',
-        lineColor: 'bg-blue-500',
-        textLabel1: '前払金合計',
-        textLabel2: '回収金合計',
-        netLabel: '正味エクスポージャー',
-        amountColor1: 'text-red-500',
-        amountColor2: 'text-green-500',
-        barColor1: 'bg-green-500',
-        barColor2: 'bg-red-500',
-        relatedCases: [],
-        expenseTypes: new Set(['ビザ申請料', '宿泊費', '語学講習費'])
-      },
-      'サービススタッフ-VCファンド': {
-        id: 'サービススタッフ-VCファンド',
-        flowTitle: 'サービススタッフ → VCfund 回収',
-        sourceName: 'サービススタッフ',
-        sourceIcon: User,
-        targetName: 'VCファンド',
-        targetIcon: Landmark,
-        arrowText: '回収',
-        arrowSubText: '(流入)',
-        arrowColor: 'text-green-500',
-        lineColor: 'bg-green-500',
-        textLabel1: '前払金合計',
-        textLabel2: '回収金合計',
-        netLabel: '正味エクスポージャー',
-        amountColor1: 'text-green-500',
-        amountColor2: 'text-red-500',
-        barColor1: 'bg-red-500',
-        barColor2: 'bg-green-500',
-        relatedCases: [],
-        expenseTypes: new Set(['郵便料金', '交通費 / 航空運賃', '待機寮費'])
-      },
-      '農家-VCファンド': {
-        id: '農家-VCファンド',
-        flowTitle: '農家 → VCfund 回収',
-        sourceName: '農家',
-        sourceIcon: Tractor,
-        targetName: 'VCファンド',
-        targetIcon: Landmark,
-        arrowText: '回収',
-        arrowSubText: '(流入)',
-        arrowColor: 'text-green-500',
-        lineColor: 'bg-green-500',
-        textLabel1: '前払金合計',
-        textLabel2: '回収金合計',
-        netLabel: '正味エクスポージャー',
-        amountColor1: 'text-green-500',
-        amountColor2: 'text-red-500',
-        barColor1: 'bg-red-500',
-        barColor2: 'bg-green-500',
-        relatedCases: [],
-        expenseTypes: new Set(['返金', '過払い回収'])
-      },
-      'VCファンド-サポートスタッフ': {
-        id: 'VCファンド-サポートスタッフ',
-        flowTitle: 'VCfund → サポートスタッフ',
-        sourceName: 'VCファンド',
-        sourceIcon: Landmark,
-        targetName: 'サポートスタッフ',
-        targetIcon: User,
-        arrowText: '前払い',
-        arrowSubText: '(流出)',
-        arrowColor: 'text-blue-500',
-        lineColor: 'bg-blue-500',
-        textLabel1: '前払金合計',
-        textLabel2: '回収金合計',
-        netLabel: '正味エクスポージャー',
-        amountColor1: 'text-red-500',
-        amountColor2: 'text-green-500',
-        barColor1: 'bg-green-500',
-        barColor2: 'bg-red-500',
-        relatedCases: [],
-        expenseTypes: new Set(['機材費', '出張費'])
-      }
-    };
+    // Group records by pattern
+    const patternGroups = {};
+    PATTERN_CONFIG.forEach(p => {
+      patternGroups[p.id] = { ...p, records: [] };
+    });
+
     cases.forEach(c => {
-      let advancer = c.advancerCategory || 'Office';
-      let bearing = c.bearingParty || c.bearing_party || 'Office';
-
-      if (advancer === 'Staff' || advancer === 'スタッフ') advancer = (c.workPlace && c.workPlace !== 'N/A') ? c.workPlace : 'スタッフ';
-      if (bearing === 'Staff' || bearing === '自己負担' || bearing === 'Employee' || bearing === 'スタッフ') bearing = (c.workPlace && c.workPlace !== 'N/A') ? c.workPlace : 'スタッフ';
-
-      let source = bearing;
-      let target = advancer;
-
-      if (source === target) {
-        if (source === 'Office' || source === 'VC' || source === 'VC Fund') {
-          target = 'ベンダー';
+      const expType = c.expenseType || 'Other';
+      
+      let pattern = getPatternForExpense(expType);
+      
+      if (pattern.id === 'PTN-4' && expType !== 'Other' && expType !== '出張費' && expType !== 'その他') {
+        const partyPattern = getPatternByParties(c.advancerCategory, c.bearing_party || c.bearer);
+        if (partyPattern) {
+          pattern = partyPattern;
         }
       }
-      
-      const formatName = (n) => {
-        if (!n) return 'VCファンド';
-        if (n.toLowerCase().includes('farm') || n.includes('農家')) return '農家';
-        if (n.toLowerCase().includes('support') || n.includes('サポート')) return 'サポートスタッフ';
-        if (n.toLowerCase().includes('staff') || n.includes('サービス') || n.includes('スタッフ')) return 'サービススタッフ';
-        if (n.toLowerCase().includes('client')) return 'クライアント';
-        if (n.toLowerCase().includes('vendor')) return 'ベンダー';
-        if (n === 'VC' || n.toLowerCase().includes('vc') || n.includes('ファンド')) return 'VCファンド';
-        return n;
-      };
 
-      source = formatName(source);
-      target = formatName(target);
-
-      const sourceDetails = getEntityDetails(source);
-      const targetDetails = getEntityDetails(target);
-      
-      const key = `${sourceDetails.name}-${targetDetails.name}`;
-      
-      if (!dynamicGroups[key]) {
-        const isIncoming = targetDetails.name === 'Office' || targetDetails.name === 'VCファンド';
-        dynamicGroups[key] = {
-          id: key,
-          flowTitle: `${sourceDetails.name} → ${targetDetails.name}`,
-          sourceName: sourceDetails.name,
-          sourceIcon: sourceDetails.icon,
-          targetName: targetDetails.name,
-          targetIcon: targetDetails.icon,
-          arrowText: isIncoming ? '入金' : '支払',
-          arrowSubText: isIncoming ? '(流入)' : '(流出)',
-          arrowColor: targetDetails.arrowColor,
-          lineColor: targetDetails.lineColor,
-          textLabel1: isIncoming ? '入金予定合計' : '支払予定合計',
-          textLabel2: isIncoming ? '回収済合計' : '支払済合計',
-          netLabel: isIncoming ? '未回収残高' : '未払残高',
-          amountColor1: 'text-red-500',
-          amountColor2: 'text-green-500',
-          barColor1: 'bg-green-500',
-          barColor2: 'bg-red-500',
-          relatedCases: [],
-          expenseTypes: new Set()
-        };
+      if (pattern && patternGroups[pattern.id]) {
+        patternGroups[pattern.id].records.push(c);
       }
-      dynamicGroups[key].relatedCases.push(c);
-      dynamicGroups[key].expenseTypes.add(c.expenseType || 'その他');
     });
-    
-    const order = [
-      'VCファンド-サービススタッフ',
-      'サービススタッフ-VCファンド',
-      '農家-VCファンド',
-      'VCファンド-サポートスタッフ'
-    ];
-    
-    return Object.values(dynamicGroups).map(g => ({
-      ...g,
-      expenseTypes: Array.from(g.expenseTypes)
-    })).sort((a, b) => {
-      const indexA = order.indexOf(a.id);
-      const indexB = order.indexOf(b.id);
-      if (indexA !== -1 && indexB !== -1) return indexA - indexB;
-      if (indexA !== -1) return -1;
-      if (indexB !== -1) return 1;
-      return b.relatedCases.length - a.relatedCases.length;
+
+    return PATTERN_CONFIG.map(p => {
+      const group = patternGroups[p.id];
+      const metrics = calculateSettlementMetrics(group.records);
+      return {
+        ...p,
+        ...metrics
+      };
     });
   }, [cases]);
 
@@ -257,16 +112,7 @@ export default function AccountDashboard() {
     return new Intl.NumberFormat('ja-JP', { style: 'currency', currency: 'JPY' }).format(amount);
   };
 
-  const getWidths = (advanced, recovered) => {
-    const total = advanced + recovered;
-    if (total === 0) return { advancedWidth: '50%', recoveredWidth: '50%' };
-    return {
-      advancedWidth: `${(advanced / total) * 100}%`,
-      recoveredWidth: `${(recovered / total) * 100}%`
-    };
-  };
-
-  return (
+    return (
     <>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
         {/* Card 1 */}
@@ -312,32 +158,27 @@ export default function AccountDashboard() {
         </div>
       </div>
 
-      <h2 className="text-xl font-bold text-[#162D50] mb-6">資金の流れ</h2>
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {paymentOptions.map((option, index) => {
-          const relatedCases = option.relatedCases || [];
-          const relatedCount = relatedCases.length;
-          
-          let totalAmount = 0;
-          let paidAmount = 0;
-          
-          relatedCases.forEach(c => {
-            const totalTerms = c.installment_count || (c.installmentPlan ? (c.installmentPlan.match(/\d+/) ? parseInt(c.installmentPlan.match(/\d+/)[0], 10) : 1) : 1);
-            const paidTerms = c.paidTerms || 0;
-            const amt = c.finalTotal || c.totalExpense || 0;
-            const nextPayment = c.nextPayment金額 || amt / totalTerms;
-            const remaining = Math.max(0, amt - (paidTerms * nextPayment));
-            totalAmount += amt;
-            paidAmount += (amt - remaining);
-          });
-          
-          const netExposure = Math.max(0, totalAmount - paidAmount);
+      <div className="mb-4 text-sm text-gray-600 bg-gray-50 p-3 rounded-lg border border-gray-200">
+        <p className="font-bold mb-1 text-gray-700">Flow Types Legend:</p>
+        <div className="flex gap-4">
+          <span className="flex items-center"><div className="w-3 h-3 bg-blue-500 rounded-full mr-1"></div> Reimburse (Outflow from fund)</span>
+          <span className="flex items-center"><div className="w-3 h-3 bg-green-500 rounded-full mr-1"></div> Collect (Inflow to fund)</span>
+          <span className="flex items-center"><div className="w-3 h-3 bg-gray-500 rounded-full mr-1"></div> Transfer (Outside fund)</span>
+        </div>
+      </div>
 
+      <h2 className="text-xl font-bold text-[#162D50] mb-6">Expense Settlement Patterns</h2>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {paymentOptions.map((option) => {
+          const SourceIcon = getEntityIcon(option.advancer);
+          const TargetIcon = getEntityIcon(option.bearer);
+          const flowColors = getFlowColors(option.flowType);
+          
           return (
             <div key={option.id} className="bg-white rounded-xl border border-gray-200 shadow-sm flex flex-col p-4 pb-0">
               <div className="flex justify-between items-center mb-2">
-                <span className="font-bold text-[#162D50] text-[16px]">PTN-{index + 1}: {option.flowTitle}</span>
-                <span className="text-[13px] text-gray-800">(Active: {relatedCount})</span>
+                <h3 className="font-bold text-[#162D50] text-[16px]">{option.id} : {option.flowTitle}</h3>
+                <span className="text-[13px] text-gray-800 font-medium">Active: {option.active}</span>
               </div>
               
               <div className="flex flex-wrap gap-2 mb-6">
@@ -352,37 +193,41 @@ export default function AccountDashboard() {
                 <div className="flex justify-between items-center mb-8 px-4">
                   <div className="flex flex-col items-center">
                     <div className="w-12 h-12 bg-white flex items-center justify-center mb-1">
-                      <option.sourceIcon className="w-8 h-8 text-[#162D50]" />
+                      <SourceIcon className="w-8 h-8 text-[#162D50]" aria-hidden="true" />
                     </div>
-                    <span className="font-bold text-[13px] text-[#162D50]">{option.sourceName}</span>
+                    <span className="font-bold text-[13px] text-[#162D50]">{option.advancer}</span>
                   </div>
                   <div className="flex-1 px-4 flex flex-col items-center relative -mt-3">
-                    <div className={`w-full h-[2px] ${option.lineColor} absolute top-1/2`}></div>
-                    <ArrowRight className={`${option.arrowColor} absolute top-1/2 -right-1 transform -translate-y-1/2 w-5 h-5`} />
+                    <div className={`w-full h-[2px] ${flowColors.bg} absolute top-1/2`}></div>
+                    <ArrowRight className={`${flowColors.text} absolute top-1/2 -right-1 transform -translate-y-1/2 w-5 h-5`} aria-hidden="true" />
                     <div className="bg-white px-2 z-10 flex flex-col items-center -mt-3">
-                      <span className={`text-[12px] font-bold ${option.arrowColor}`}>{option.arrowText}</span>
-                      <span className={`text-[12px] ${option.arrowColor}`}>{option.arrowSubText}</span>
+                      <span className={`text-[12px] font-bold ${flowColors.text}`}>{option.flowType}</span>
                     </div>
                   </div>
                   <div className="flex flex-col items-center">
                     <div className="w-12 h-12 bg-white flex items-center justify-center mb-1">
-                      <option.targetIcon className="w-8 h-8 text-[#162D50]" />
+                      <TargetIcon className="w-8 h-8 text-[#162D50]" aria-hidden="true" />
                     </div>
-                    <span className="font-bold text-[13px] text-[#162D50]">{option.targetName}</span>
+                    <span className="font-bold text-[13px] text-[#162D50]">{option.bearer}</span>
                   </div>
                 </div>
                 
                 <div className="mt-auto bg-[#E9EDF1] rounded-b-xl p-4 -mx-4 border-t border-gray-200">
                   <div className="flex justify-between items-center mb-2">
-                    <p className="text-[12px] text-gray-700 font-bold">{option.textLabel1.replace('予定', '').replace('合計', '金合計')} <span className={`text-[13px] font-bold ${option.amountColor1}`}>{formatCurrency(totalAmount)}</span></p>
-                    <p className="text-[12px] text-gray-700 font-bold">{option.textLabel2.replace('済', '').replace('合計', '金合計')} <span className={`text-[13px] font-bold ${option.amountColor2}`}>{formatCurrency(paidAmount)}</span></p>
+                    <p className="text-[12px] text-gray-700 font-bold">
+                      Total advanced ({option.advancer}): <span className="text-[13px] font-bold text-red-500">{formatCurrency(option.totalAdvanced)}</span>
+                    </p>
+                    <p className="text-[12px] text-gray-700 font-bold">
+                      Total recovered ({option.bearer}): <span className="text-[13px] font-bold text-green-500">{formatCurrency(option.totalRecovered)}</span>
+                    </p>
                   </div>
                   <div className="w-full h-[6px] flex rounded-full overflow-hidden mb-2 bg-gray-200">
-                    <div className={`${option.barColor2}`} style={{ width: getWidths(totalAmount - paidAmount, paidAmount).recoveredWidth }}></div>
-                    <div className={`${option.barColor1}`} style={{ width: getWidths(totalAmount - paidAmount, paidAmount).advancedWidth }}></div>
+                    <div className={`${flowColors.bg}`} style={{ width: `${option.progress}%` }}></div>
                   </div>
                   <div className="text-right">
-                    <p className="text-[12px] font-bold text-gray-800">正味エクスポージャー: {formatCurrency(netExposure)}</p>
+                    <p className={`text-[12px] font-bold ${option.netExposure > 0 ? 'text-red-600' : 'text-gray-800'}`}>
+                      Net exposure: {formatCurrency(option.netExposure)}
+                    </p>
                   </div>
                 </div>
               </div>

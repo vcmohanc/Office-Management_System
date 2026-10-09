@@ -373,7 +373,8 @@ export default function PaymentStatus() {
       apiFetch('/api/claims').then(res => res.json()).catch(() => []),
       apiFetch('/api/options').then(res => res.json()).catch(() => [])
     ]).then(([casesData, claimsData, optionsData]) => {
-      const mappedCases = casesData.map(c => ({
+      const toArr = (d) => Array.isArray(d) ? d : (Array.isArray(d?.data) ? d.data : []);
+      const mappedCases = toArr(casesData).map(c => ({
         ...c,
         advancerCategory: c.advancerCategory || 'Office',
         finalTotal: c.finalTotal || c.totalExpense || c.final_total_amount || 0,
@@ -384,7 +385,7 @@ export default function PaymentStatus() {
         expense期間End: c.expense期間End || c.expense_period_end || c.createdAt
       }));
 
-      const mappedClaims = claimsData.map(c => ({
+      const mappedClaims = toArr(claimsData).map(c => ({
         ...c,
         advancerCategory: 'Staff',
         finalTotal: c.expenseAmount || c.expense_amount || c.totalExpenseAmount || c.total_expense_amount || 0,
@@ -405,7 +406,7 @@ export default function PaymentStatus() {
         }
       }
       
-      const types = optionsData.filter(opt => opt.type === 'ExpenseType');
+      const types = toArr(optionsData).filter(opt => opt.type === 'ExpenseType');
       setExpenseTypeOptions(types);
       setLoading(false);
     }).catch(err => {
@@ -414,16 +415,8 @@ export default function PaymentStatus() {
     });
   }, []);
 
-  const postApprovalCases = cases.filter(c => {
-    if (c.status === '完了') return false;
-    const totalTerms = c.installment_count || (c.installmentPlan ? (c.installmentPlan.match(/\d+/) ? parseInt(c.installmentPlan.match(/\d+/)[0], 10) : 1) : 1);
-    if (c.paidTerms >= totalTerms && totalTerms > 0) return false;
-    
-    if (c.paidTerms > 0 && c.paidTerms < totalTerms) return true;
-    if (c.status && c.status.includes('完了') && c.status !== '完了') return true;
-    
-    return ['APPROVED_FOR_PAYMENT', 'Payment 保留中', '処理中', '期限切れ'].includes(c.status) || c.status === 'Approve for Payment' || c.status === '承認済 for Payment';
-  });
+  // Show the full list of cases/claims (all statuses). Use the status filter to narrow down.
+  const postApprovalCases = cases.filter(c => c && !c.isDeleted);
 
   const getStatusJapanese = (status) => {
     switch (status) {
@@ -1048,12 +1041,14 @@ export default function PaymentStatus() {
                             <option value="小口現金">小口現金</option>
                             <option value="小切手">小切手</option>
                             <option value="給与控除">給与控除</option>
+                            <option value="給与に加算">給与に加算</option>
                           </>
                         ) : (
                           <>
                             <option value="法人カード">法人カード</option>
                             <option value="Cash">Cash</option>
                             <option value="給与控除">給与控除</option>
+                            <option value="給与に加算">給与に加算</option>
                           </>
                         )}
                       </select>
