@@ -448,10 +448,15 @@ export default function CaseList({ setActiveTab: onNavigate }) {
     })
     .map(c => ({ ...c, displayStatus: getDisplayStatus(c.status) }));
 
-  const officeCasesCount = allRecords.filter(c => c.type === 'Office Case').length;
-  const staffCasesCount = allRecords.filter(c => c.type === 'Staff Case').length;
-  const hostCompanyCasesCount = allRecords.filter(c => c.type === 'Host Company Case').length;
+  const baseFiltered = allRecords.filter(c => {
+    const matchesStatus = statusFilter === 'すべてのステータス' || c.displayStatus === statusFilter;
+    const matchesType = expenseTypeFilter === 'すべての種類' || c.expense_type === expenseTypeFilter;
+    return matchesStatus && matchesType;
+  });
 
+  const officeCasesCount = baseFiltered.filter(c => c.type === 'Office Case').length;
+  const staffCasesCount = baseFiltered.filter(c => c.type === 'Staff Case').length;
+  const hostCompanyCasesCount = baseFiltered.filter(c => c.type === 'Host Company Case').length;
   const hasOfficeNotification = mappedCases.some(c => 
     c.type === 'Office Case' && (
       (user.role === 'support' && (c.hasSupportNotification || (c.messages && c.messages.some(m => !m.readBySupport)))) ||
@@ -471,13 +476,10 @@ export default function CaseList({ setActiveTab: onNavigate }) {
     )
   );
 
-  const filteredRecords = allRecords.filter(c => {
+  const filteredRecords = baseFiltered.filter(c => {
     const activeCaseType = activeTab + ' Case';
-    const matchesTab = c.type === activeCaseType || (activeTab === 'Host Company' && false);
-    const matchesStatus = statusFilter === 'すべてのステータス' || c.displayStatus === statusFilter;
-    const matchesType = expenseTypeFilter === 'すべての種類' || c.expense_type === expenseTypeFilter;
-    
-    return matchesTab && matchesStatus && matchesType;
+    const matchesTab = c.type === activeCaseType || (activeTab === 'Host Company' && c.type === 'Host Company Case');
+    return matchesTab;
   });
 
   useEffect(() => {

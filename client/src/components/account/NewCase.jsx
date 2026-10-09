@@ -5,6 +5,7 @@ import { getAutoFill, getPaymentMethod } from '../../utils/expenseRules.js';
 import { getDirection, calculateInstallments } from '../../utils/paymentUtils.js';
 import { User, ChevronDown, Box, Calendar, UploadCloud, ArrowRight, Wallet, Landmark, FileText, ArrowLeft, Image, AlertTriangle } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { PAYMENT_METHODS } from '../../utils/paymentMethodMapping.js';
 // Japanese translation map for dropdown option labels
 const optionLabelJP = {
   'Postage': '郵便料金',
@@ -60,7 +61,7 @@ export default function NewCase() {
   const [travelMatrix, setTravelMatrix] = useState({});
   const [unsettledBalance, setUnsettledBalance] = useState(0);
   const [includeBalance, setIncludeBalance] = useState(false);
-  const [settlementMethod, setSettlementMethod] = useState('銀行振込');
+  const [settlementMethod, setSettlementMethod] = useState('給与に加算');
   const [recoveryPlan, setRecoveryPlan] = useState('給与控除（3ヶ月）');
   const [expectedSettlementDate, setExpectedSettlementDate] = useState('');
   const [collectionMethod, setCollectionMethod] = useState('方法を選択');
@@ -290,7 +291,7 @@ export default function NewCase() {
           includeBalance: includeBalance,
           final_total_amount: finalTotal金額,
           direction: direction,
-          settlement_method: direction === 'ADD' ? '給与に加算' : settlementMethod,
+          settlement_method: settlementMethod,
           expected_settlement_date: expectedSettlementDate || new Date().toISOString(),
           payroll_month: payrollMonth,
           settlement_note: settlementNote,
@@ -890,8 +891,10 @@ export default function NewCase() {
                   <div>
                     <label className="block text-sm font-bold text-gray-700 mb-1.5 sm:mb-2">精算方法 <span className="text-red-500">*</span></label>
                     <div className="relative">
-                      <select disabled value="給与に加算" className="w-full px-3 sm:px-4 py-2 border border-gray-300 rounded-md bg-gray-100 text-gray-600 appearance-none text-sm">
-                        <option value="給与に加算">給与に加算 (Addition to salary)</option>
+                      <select value={settlementMethod} onChange={e => setSettlementMethod(e.target.value)} className="w-full px-3 sm:px-4 py-2 border border-gray-300 rounded-md bg-white text-gray-600 appearance-none text-sm">
+                        {PAYMENT_METHODS.map(m => (
+                          <option key={m.value} value={m.value}>{m.label}</option>
+                        ))}
                       </select>
                       <ChevronDown className="w-4 h-4 absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 pointer-events-none" />
                     </div>
