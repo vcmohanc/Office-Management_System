@@ -8,6 +8,7 @@ import { vegeiconBase64 } from '../../assets/vegeiconBase64.js';
 
 import { Search, ChevronDown, Calendar, Download, Building, Landmark, AlertCircle, AlertTriangle, ArrowRight, ArrowLeft, Printer, Trash2 } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { PAYMENT_METHODS } from '../../utils/paymentMethodMapping.js';
 import { toastConfirm } from '../../utils/toastConfirm.jsx';
 
 export default function PaymentStatus() {
@@ -135,21 +136,25 @@ export default function PaymentStatus() {
         if (collectionMethod.includes('給与控除') || collectionMethod.includes('Deduction')) method = '給与控除';
         else if (rawMethod === 'Cash' || rawMethod === 'Petty Cash' || rawMethod === '小口現金') method = '小口現金';
         else if (rawMethod.includes('Bank') || rawMethod.includes('銀行')) method = '銀行振込';
-        else if (rawMethod.includes('Salary') || rawMethod.includes('Payroll') || rawMethod.includes('給与')) method = '給与振込';
+        else if (rawMethod.includes('Salary') || rawMethod.includes('Payroll') || rawMethod.includes('給与')) {
+          if (rawMethod.includes('加算')) method = '給与に加算';
+          else method = '給与振込';
+        }
         else if (rawMethod.includes('Check') || rawMethod.includes('小切手')) method = '小切手';
         else method = rawMethod;
       } else {
-        const rawMethod = selectedCase.collection_method || selectedCase.collectionMethod || '';
+        const rawMethod = selectedCase.settlement_method || selectedCase.settlementMethod || '';
         if (rawMethod === 'Cash' || rawMethod.includes('現金')) method = 'Cash';
         else if (rawMethod.includes('Bank') || rawMethod.includes('銀行')) method = '銀行振込';
-        else if (rawMethod.includes('Salary') || rawMethod.includes('Payroll') || rawMethod.includes('Deduction') || rawMethod.includes('給与')) method = '給与控除';
+        else if (rawMethod.includes('Salary') || rawMethod.includes('Payroll') || rawMethod.includes('給与')) {
+          if (rawMethod.includes('加算') || rawMethod.includes('Addition')) method = '給与に加算';
+          else method = '給与控除';
+        }
         else if (rawMethod.includes('Card') || rawMethod.includes('法人カード')) method = '法人カード';
         else method = rawMethod;
       }
       
-      const validOptions = selectedCase.advancerCategory === 'Staff' 
-        ? ['銀行振込', '給与振込', '小口現金', '小切手', '給与控除']
-        : ['銀行振込', '法人カード', 'Cash', '給与控除'];
+      const validOptions = PAYMENT_METHODS.map(m => m.value);
         
       if (validOptions.includes(method)) {
         setPaymentMethod(method);
@@ -165,13 +170,15 @@ export default function PaymentStatus() {
         newDestDetails.branchCode = bankInfo.branchCode || selectedCase.branchCode || '';
         newDestDetails.accountNumber = bankInfo.accountNumber || selectedCase.accountNumber || '';
       }
-      if (method === '給与控除' || method === '給与振込') {
+      if (method === '給与控除' || method === '給与振込' || method === '給与に加算') {
         const paidTerms = selectedCase.paidTerms || 0;
         let targetMonth = new Date().toISOString().slice(0, 7);
         if (selectedCase.installment_schedule && selectedCase.installment_schedule.length > paidTerms) {
            targetMonth = selectedCase.installment_schedule[paidTerms].month;
         } else if (selectedCase.collection_start_month || selectedCase.collectionStartMonth) {
            targetMonth = selectedCase.collection_start_month || selectedCase.collectionStartMonth;
+        } else if (selectedCase.payroll_month || selectedCase.payrollMonth) {
+           targetMonth = selectedCase.payroll_month || selectedCase.payrollMonth;
         }
         newDestDetails.payroll期間 = targetMonth;
       }
@@ -415,8 +422,14 @@ export default function PaymentStatus() {
     });
   }, []);
 
-  // Show the full list of cases/claims (all statuses). Use the status filter to narrow down.
-  const postApprovalCases = cases.filter(c => c && !c.isDeleted);
+  // Exclude cases that are 'Pending', 'New', 'Rejected', etc.
+  const excludedStatuses = [
+    'Pending', 'Payment 保留中', '保留中', 
+    'New', 'Registered', '新た',
+    'REJECTED', '拒否', 
+    'RETURNED_FOR_CORRECTION', '保留中 Correction'
+  ];
+  const postApprovalCases = cases.filter(c => c && !c.isDeleted && !excludedStatuses.includes(c.status));
 
   const getStatusJapanese = (status) => {
     switch (status) {
@@ -994,8 +1007,7 @@ export default function PaymentStatus() {
               </div>
 
               {/* 合意条件 (Read-Only) */}
-              {selectedCase.advancerCategory !== 'Staff' && (
-                <div className="border-b border-dashed border-[#162D50] pb-8 mb-8 print:pb-4 print:mb-4">
+              <div className="border-b border-dashed border-[#162D50] pb-8 mb-8 print:pb-4 print:mb-4">
                   <div className="text-xs font-bold uppercase tracking-widest text-gray-500 mb-6 print:mb-2">合意条件</div>
                   <div className="grid grid-cols-4 gap-6">
                     <div>
@@ -1004,21 +1016,20 @@ export default function PaymentStatus() {
                     </div>
                     <div>
                       <label className="block text-[10px] font-bold uppercase tracking-widest mb-1 text-gray-400">分割払いプラン</label>
-                      <div className="font-mono text-sm">{selectedCase.installment_plan || selectedCase.installmentPlan || 'N/A'}</div>
+                      <div className="font-mono text-sm">{selectedCase.advancerCategory === 'Staff' ? '一括払い' : (selectedCase.installment_plan || selectedCase.installmentPlan || 'N/A')}</div>
                     </div>
                     <div>
                       <label className="block text-[10px] font-bold uppercase tracking-widest mb-1 text-gray-400">開始月</label>
-                      <div className="font-mono text-sm">{selectedCase.collection_start_month || selectedCase.collectionStartMonth || 'N/A'}</div>
+                      <div className="font-mono text-sm">{selectedCase.advancerCategory === 'Staff' ? (((selectedCase.settlement_method || selectedCase.settlementMethod) === '給与に加算') ? (selectedCase.payroll_month || selectedCase.payrollMonth || 'TBD') : 'N/A') : (selectedCase.collection_start_month || selectedCase.collectionStartMonth || 'N/A')}</div>
                     </div>
                     <div>
                       <label className="block text-[10px] font-bold uppercase tracking-widest mb-1 text-gray-400">現在の期間</label>
                       <div className="font-mono text-sm">
-                        {selectedCaseTotalTerms > 1 ? `第${selectedCaseCurrentTerm}回 / 全${selectedCaseTotalTerms}回` : 'N/A'}
+                        {selectedCase.advancerCategory === 'Staff' ? '1 / 1' : (selectedCaseTotalTerms > 1 ? `第${selectedCaseCurrentTerm}回 / 全${selectedCaseTotalTerms}回` : 'N/A')}
                       </div>
                     </div>
                   </div>
                 </div>
-              )}
 
               {/* 支払方法 & Deductions Form (Interactive) */}
               <div className="mt-8 print:hidden border-t border-dashed border-[#162D50] pt-8">
@@ -1034,23 +1045,9 @@ export default function PaymentStatus() {
                         required
                       >
                         <option value="" disabled>支払い方法を選択</option>
-                        <option value="銀行振込">銀行振込</option>
-                        {selectedCase.advancerCategory === 'Staff' ? (
-                          <>
-                            <option value="給与振込">給与振込</option>
-                            <option value="小口現金">小口現金</option>
-                            <option value="小切手">小切手</option>
-                            <option value="給与控除">給与控除</option>
-                            <option value="給与に加算">給与に加算</option>
-                          </>
-                        ) : (
-                          <>
-                            <option value="法人カード">法人カード</option>
-                            <option value="Cash">Cash</option>
-                            <option value="給与控除">給与控除</option>
-                            <option value="給与に加算">給与に加算</option>
-                          </>
-                        )}
+                        {PAYMENT_METHODS.map(m => (
+                          <option key={m.value} value={m.value}>{m.label}</option>
+                        ))}
                       </select>
                     </div>
                     

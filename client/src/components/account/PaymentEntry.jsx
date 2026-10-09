@@ -262,7 +262,7 @@ export default function PaymentEntry() {
         setCases(cases.map(c => {
           if (c._id === selectedCaseToProcess._id) {
             const new支払済Terms = (c.paidTerms || 0) + 1;
-            const totalTerms = c.installmentPlan ? (c.installmentPlan.match(/\d+/) ? parseInt(c.installmentPlan.match(/\d+/)[0], 10) : 1) : 1;
+            const totalTerms = c.installmentPlan ? (String(c.installmentPlan).match(/\d+/) ? parseInt(String(c.installmentPlan).match(/\d+/)[0], 10) : 1) : 1;
             const newステータス = new支払済Terms >= totalTerms ? '完了' : '処理中';
             return { ...c, paidTerms: new支払済Terms, status: newステータス };
           }
@@ -767,7 +767,7 @@ const getEntityIcon = (name) => {
 
     const paymentOptions = useMemo(() => {
     const postApprovalCases = cases.filter(c => {
-      const totalTerms = c.installment_count || (c.installmentPlan ? (c.installmentPlan.match(/\d+/) ? parseInt(c.installmentPlan.match(/\d+/)[0], 10) : 1) : 1);
+      const totalTerms = c.installment_count || (c.installmentPlan ? (String(c.installmentPlan).match(/\d+/) ? parseInt(String(c.installmentPlan).match(/\d+/)[0], 10) : 1) : 1);
       
       if (c.status === '完了') return true;
       if (c.paidTerms >= totalTerms && totalTerms > 0) return true;
@@ -837,7 +837,7 @@ const getEntityIcon = (name) => {
     const relatedCases = selectedOption.relatedCases || [];
 
     const mappedRecords = relatedCases.map(c => {
-      const totalTerms = c.installment_count || (c.installmentPlan ? (c.installmentPlan.match(/\d+/) ? parseInt(c.installmentPlan.match(/\d+/)[0], 10) : 1) : 1);
+      const totalTerms = c.installment_count || (c.installmentPlan ? (String(c.installmentPlan).match(/\d+/) ? parseInt(String(c.installmentPlan).match(/\d+/)[0], 10) : 1) : 1);
       const paidTerms = c.paidTerms || 0;
       const nextPayment金額 = c.nextPayment金額 || (c.finalTotal || c.totalExpense || 0) / totalTerms;
       const remainingBalance = (c.finalTotal || c.totalExpense || 0) - (paidTerms * nextPayment金額);
@@ -861,7 +861,7 @@ const getEntityIcon = (name) => {
       const endDate = lastInstallmentDate;
 
       return {
-        id: `${c.advancerCategory === 'Staff' ? '#CLM-' : '#CAS-'}${c._id.slice(-6).toUpperCase()}`,
+        id: `${c.advancerCategory === 'Staff' ? '#CLM-' : '#CAS-'}${String(c._id || c.id || 'XXXXXX').slice(-6).toUpperCase()}`,
         rawId: c._id,
         staffId: c.staffId || 'N/A',
         name: c.staffName || c.advancerName || '不明',
@@ -883,13 +883,13 @@ const getEntityIcon = (name) => {
     const filteredRecords = mappedRecords.filter(r => {
       const searchLower = searchTerm.toLowerCase();
       const matchesSearch = !searchTerm || 
-        r.id.toLowerCase().includes(searchLower) || 
-        r.staffId.toLowerCase().includes(searchLower) || 
-        r.name.toLowerCase().includes(searchLower);
+        String(r.id).toLowerCase().includes(searchLower) || 
+        String(r.staffId).toLowerCase().includes(searchLower) || 
+        String(r.name).toLowerCase().includes(searchLower);
       
       const matchesExpense = expenseTypeFilter === 'All' || r.expenseType === expenseTypeFilter;
       const matchesステータス = statusFilter === 'All' || r.status === statusFilter;
-      const matchesDate = !dateFilter || r.nextPaymentDate === new Date(dateFilter).toLocaleDateString() || new Date(r.originalCase.nextPaymentDate).toISOString().split('T')[0] === dateFilter;
+      const matchesDate = !dateFilter || r.nextPaymentDate === new Date(dateFilter).toLocaleDateString() || (r.originalCase.nextPaymentDate && new Date(r.originalCase.nextPaymentDate).toString() !== 'Invalid Date' && new Date(r.originalCase.nextPaymentDate).toISOString().split('T')[0] === dateFilter);
 
       return matchesSearch && matchesExpense && matchesステータス && matchesDate;
     });
@@ -983,7 +983,7 @@ const getEntityIcon = (name) => {
                     className="appearance-none pl-3 pr-8 py-2 border border-gray-300 rounded-lg text-sm text-gray-700 bg-white focus:ring-blue-500 focus:border-blue-500 cursor-pointer"
                   >
                     <option value="All">全ての経費の種類</option>
-                    {option.expenseTypes.map((type, idx) => (
+                    {selectedOption.expenseTypes.map((type, idx) => (
                       <option key={idx} value={type}>{type}</option>
                     ))}
                   </select>
