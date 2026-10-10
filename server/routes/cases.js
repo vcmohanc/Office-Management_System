@@ -12,11 +12,11 @@ import { generateLedgerForCase } from '../utils/calc_settlement.js';
 
 const router = express.Router();
 
-router.get('/:caseId/ledger', ledgerController.getLedger);
-router.put('/:caseId/terms/:termNo/pay', ledgerController.payTerm);
-router.put('/:caseId/terms/:termNo/amount', ledgerController.updateTermAmount);
-router.get('/:caseId/payments', ledgerController.getPayments);
-router.put('/:caseId/pay-remaining', ledgerController.payRemainingBalance);
+router.get('/:caseId/ledger', requireRole('admin', 'account'), ledgerController.getLedger);
+router.put('/:caseId/terms/:termNo/pay', requireRole('admin', 'account'), ledgerController.payTerm);
+router.put('/:caseId/terms/:termNo/amount', requireRole('admin', 'account'), ledgerController.updateTermAmount);
+router.get('/:caseId/payments', requireRole('admin', 'account'), ledgerController.getPayments);
+router.put('/:caseId/pay-remaining', requireRole('admin', 'account'), ledgerController.payRemainingBalance);
 
 const caseSchemaZod = z.object({
   case_type: z.string().min(1),
@@ -130,7 +130,7 @@ router.post('/', requireRole('admin', 'account'), async (req, res) => {
     if (error?.name === 'ZodError') {
       return res.status(400).json({ message: 'Validation error: ' + error.errors.map(e => `${e.path.join('.')}: ${e.message}`).join(', '), errors: error.errors });
     }
-    res.status(400).json({ message: 'Error creating case: ' + error.message, error: error.message });
+    res.status(400).json({ message: 'Error creating case' });
   }
 });
 router.put('/:id', requireRole('admin', 'account', 'support'), async (req, res) => {
@@ -147,7 +147,7 @@ router.put('/:id', requireRole('admin', 'account', 'support'), async (req, res) 
     res.json(updatedCase);
   } catch (error) {
     console.error('Error updating case:', error);
-    res.status(500).json({ message: 'Server error updating case', error: error.message });
+    res.status(500).json({ message: 'Server error updating case' });
   }
 });
 
@@ -270,7 +270,7 @@ router.post('/:id/settle', requireRole('admin', 'account'), async (req, res) => 
     res.status(201).json({ message: 'Settlement processed successfully', settlement });
   } catch (error) {
     console.error('Error processing settlement:', error);
-    res.status(500).json({ message: 'Server error processing settlement', error: error.message });
+    res.status(500).json({ message: 'Server error processing settlement' });
   }
 });
 router.delete('/:id', requireRole('admin', 'account'), async (req, res) => {
@@ -283,7 +283,7 @@ router.delete('/:id', requireRole('admin', 'account'), async (req, res) => {
     res.json({ message: 'Case deleted successfully', deletedCase });
   } catch (error) {
     console.error('Error deleting case:', error);
-    res.status(500).json({ message: 'Server error deleting case', error: error.message });
+    res.status(500).json({ message: 'Server error deleting case' });
   }
 });
 
@@ -337,7 +337,7 @@ router.post('/:id/deduct-term', requireRole('admin', 'account'), async (req, res
     res.status(200).json({ message: 'Term deducted successfully', case: existingCase });
   } catch (error) {
     console.error('Error deducting term:', error);
-    res.status(500).json({ message: 'Server error deducting term', error: error.message });
+    res.status(500).json({ message: 'Server error deducting term' });
   }
 });
 

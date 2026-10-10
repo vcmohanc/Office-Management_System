@@ -68,9 +68,27 @@ const employeeSchemaZod = z.object({
 });
 
 
-router.get('/', async (req, res) => {
+// Only authorized staff roles can view employees.
+// Non-HR/Admin roles (account, support) receive sanitized listings without sensitive personal PII.
+router.get('/', requireRole('admin', 'hr', 'account', 'support'), async (req, res) => {
   try {
-    const employees = await Employee.find().sort({ createdAt: -1 });
+    const isHrOrAdmin = req.user && (req.user.role === 'admin' || req.user.role === 'hr');
+    const projection = isHrOrAdmin 
+      ? {} 
+      : { 
+          dob: 0, 
+          age: 0, 
+          nationality: 0, 
+          pledgeDocument: 0, 
+          educationalQualifications: 0, 
+          workExperience: 0, 
+          personality: 0, 
+          physicalAttributes: 0, 
+          phone: 0, 
+          email: 0 
+        };
+
+    const employees = await Employee.find({}, projection).sort({ createdAt: -1 });
     res.json(employees);
   } catch (error) {
     console.error('Error fetching employees:', error);
@@ -86,7 +104,10 @@ router.post('/', requireRole('admin', 'hr'), async (req, res) => {
     res.status(201).json(savedEmployee);
   } catch (error) {
     console.error('Error creating employee:', error);
-    res.status(500).json({ message: 'Server error creating employee', error: error.message });
+    if (error?.name === 'ZodError') {
+      return res.status(400).json({ message: 'Validation error', errors: error.issues || error.errors });
+    }
+    res.status(500).json({ message: 'Server error creating employee' });
   }
 });
 
@@ -104,6 +125,9 @@ router.put('/:id', requireRole('admin', 'hr'), async (req, res) => {
     res.json(updatedEmployee);
   } catch (error) {
     console.error('Error updating employee:', error);
+    if (error?.name === 'ZodError') {
+      return res.status(400).json({ message: 'Validation error', errors: error.issues || error.errors });
+    }
     res.status(500).json({ message: 'Server error updating employee' });
   }
 });
@@ -133,7 +157,7 @@ router.post('/:id/visa-renewals', requireRole('admin', 'hr'), async (req, res) =
     res.status(201).json(savedRenewal);
   } catch (error) {
     console.error('Error saving visa renewal:', error);
-    res.status(500).json({ message: 'Server error saving visa renewal', error: error.message });
+    res.status(500).json({ message: 'Server error saving visa renewal' });
   }
 });
 

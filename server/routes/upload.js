@@ -91,16 +91,20 @@ router.post('/', (req, res) => {
           const buffer = fs.readFileSync(file.path);
           const detected = await fileTypeFromBuffer(buffer);
 
-          // PDFs start with "%PDF" — file-type returns 'application/pdf'
-          // For PDFs that file-type can't detect, fall back to extension check
-          const isValidMagic =
-            (detected && ALLOWED_MIME_TYPES.has(detected.mime)) ||
-            (!detected && /\.pdf$/i.test(file.originalname)); // text-based PDFs
+          // Strict magic-byte inspection:
+          // 1. Detected MIME type must be strictly within ALLOWED_MIME_TYPES
+          // 2. If fileTypeFromBuffer is inconclusive, verify PDF magic header (%PDF-)
+          const isPdfMagic = buffer.length >= 5 && buffer.subarray(0, 5).toString('ascii') === '%PDF-';
+          const isValidMagic = detected
+            ? ALLOWED_MIME_TYPES.has(detected.mime)
+            : (/\.pdf$/i.test(file.originalname) && isPdfMagic);
 
           if (!isValidMagic) {
             // Delete the suspicious file immediately
-            fs.unlinkSync(file.path);
-            return { filename: file.originalname, error: 'File content does not match its extension.' };
+            if (fs.existsSync(file.path)) {
+              fs.unlinkSync(file.path);
+            }
+            return { filename: file.originalname, error: 'File content does not match allowed types or header signatures.' };
           }
 
           return { filename: file.filename, ok: true };

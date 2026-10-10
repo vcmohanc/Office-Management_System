@@ -113,9 +113,9 @@ router.post('/', requireRole('admin', 'support'), async (req, res) => {
   } catch (error) {
     console.error('Error saving claim:', error);
     if (error instanceof z.ZodError) {
-      return res.status(400).json({ message: 'Validation error', errors: error.errors });
+      return res.status(400).json({ message: 'Validation error', errors: error.issues || error.errors });
     }
-    res.status(500).json({ message: 'Failed to save claim', error: error.message });
+    res.status(500).json({ message: 'Failed to save claim' });
   }
 });
 router.delete('/:id', requireRole('admin', 'account'), async (req, res) => {
@@ -128,7 +128,7 @@ router.delete('/:id', requireRole('admin', 'account'), async (req, res) => {
     res.json({ message: 'Claim deleted successfully', deletedClaim });
   } catch (error) {
     console.error('Error deleting claim:', error);
-    res.status(500).json({ message: 'Server error deleting claim', error: error.message });
+    res.status(500).json({ message: 'Server error deleting claim' });
   }
 });
 router.put('/:id', requireRole('admin', 'account', 'support'), async (req, res) => {
@@ -145,7 +145,7 @@ router.put('/:id', requireRole('admin', 'account', 'support'), async (req, res) 
     res.json(updatedClaim);
   } catch (error) {
     console.error('Error updating claim:', error);
-    res.status(500).json({ message: 'Server error updating claim', error: error.message });
+    res.status(500).json({ message: 'Server error updating claim' });
   }
 });
 
@@ -280,7 +280,7 @@ router.post('/:id/deduct-term', requireRole('admin', 'account'), async (req, res
     res.status(200).json({ message: 'Term deducted successfully', claim: existingClaim });
   } catch (error) {
     console.error('Error deducting term:', error);
-    res.status(500).json({ message: 'Server error deducting term', error: error.message });
+    res.status(500).json({ message: 'Server error deducting term' });
   }
 });
 
@@ -360,7 +360,7 @@ router.post('/:id/settle', requireRole('admin', 'account'), async (req, res) => 
     res.status(201).json({ message: 'Settlement processed successfully', settlement });
   } catch (error) {
     console.error('Error processing settlement:', error);
-    res.status(500).json({ message: 'Server error processing settlement', error: error.message });
+    res.status(500).json({ message: 'Server error processing settlement' });
   }
 });
 
