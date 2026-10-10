@@ -13,6 +13,7 @@ import {
   loadPostalRateMatrix, 
   loadTravelRateMatrix 
 } from '../../utils/regionHelper.js';
+import SearchableRegionSelect from '../common/SearchableRegionSelect.jsx';
 // Japanese translation map for dropdown option labels
 const PAYMENT_PROCESS_OPTIONS = [
   { value: 'salary_addition', label: '給与に加算' },
@@ -394,33 +395,60 @@ export default function ClaimList() {
   const renderDynamicFields = (type, index, caseItem) => {
     switch (type) {
       case 'Postage':
-        return null;
+        return (
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 mb-6 sm:mb-8 bg-blue-50/70 p-4 sm:p-6 rounded-lg border border-blue-100">
+            <div>
+              <label className="block text-sm font-bold text-gray-700 mb-2">差出人</label>
+              <SearchableRegionSelect
+                id={`sender-select-${index}`}
+                value={caseItem.sender || ''}
+                onChange={(val) => updateCase(index, 'sender', val)}
+                placeholder="差出人を選択・入力"
+                regions={regions}
+                japaneseRegions={japaneseRegions}
+                nameField="name1"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-bold text-gray-700 mb-2">受取人</label>
+              <SearchableRegionSelect
+                id={`recipient-select-${index}`}
+                value={caseItem.recipient || ''}
+                onChange={(val) => updateCase(index, 'recipient', val)}
+                placeholder="受取人を選択・入力"
+                regions={regions}
+                japaneseRegions={japaneseRegions}
+                nameField="name2"
+              />
+            </div>
+          </div>
+        );
       case 'Transportation Expenses / Flight Fare':
         return (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 mb-6 sm:mb-8 bg-blue-50/70 p-4 sm:p-6 rounded-lg border border-blue-100">
             <div>
               <label className="block text-sm font-bold text-gray-700 mb-2">出発拠点</label>
-              <input type="text" list={`departure-list-${index}`} value={caseItem.departure || ''} onChange={(e) => updateCase(index, 'departure', e.target.value)} placeholder="出発地を入力" className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50]" />
-              <datalist id={`departure-list-${index}`}>
-                {regions.map(r => (
-                  <option key={r._id} value={r.name1} />
-                ))}
-                {flattenPrefectures(japaneseRegions).map(p => (
-                  <option key={p.id} value={p.name} />
-                ))}
-              </datalist>
+              <SearchableRegionSelect
+                id={`departure-select-${index}`}
+                value={caseItem.departure || ''}
+                onChange={(val) => updateCase(index, 'departure', val)}
+                placeholder="出発地を選択・入力"
+                regions={regions}
+                japaneseRegions={japaneseRegions}
+                nameField="name1"
+              />
             </div>
             <div>
               <label className="block text-sm font-bold text-gray-700 mb-2">目的地</label>
-              <input type="text" list={`destination-list-${index}`} value={caseItem.destination || ''} onChange={(e) => updateCase(index, 'destination', e.target.value)} placeholder="目的地を入力" className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50]" />
-              <datalist id={`destination-list-${index}`}>
-                {regions.map(r => (
-                  <option key={r._id} value={r.name2} />
-                ))}
-                {flattenPrefectures(japaneseRegions).map(p => (
-                  <option key={p.id} value={p.name} />
-                ))}
-              </datalist>
+              <SearchableRegionSelect
+                id={`destination-select-${index}`}
+                value={caseItem.destination || ''}
+                onChange={(val) => updateCase(index, 'destination', val)}
+                placeholder="目的地を選択・入力"
+                regions={regions}
+                japaneseRegions={japaneseRegions}
+                nameField="name2"
+              />
             </div>
             <div>
               <label className="block text-sm font-bold text-gray-700 mb-2">利用日</label>
