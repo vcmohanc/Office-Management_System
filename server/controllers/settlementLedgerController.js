@@ -69,7 +69,7 @@ export const payTerm = async (req, res) => {
     const validation = payTermSchema.safeParse(req.body);
 
     if (!validation.success) {
-      return res.status(400).json({ error: validation.error.errors });
+      return res.status(400).json({ error: validation.error.issues || validation.error.errors });
     }
 
     const data = validation.data;
@@ -129,7 +129,7 @@ export const payRemainingBalance = async (req, res) => {
     const validation = payTermSchema.safeParse(req.body);
 
     if (!validation.success) {
-      return res.status(400).json({ error: validation.error.errors });
+      return res.status(400).json({ error: validation.error.issues || validation.error.errors });
     }
 
     const data = validation.data;

@@ -8,10 +8,25 @@ import { verifyToken, requireRole } from '../middleware/auth.js';
 
 const router = express.Router();
 
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  limit: 15, // Max 15 attempts per IP per 15 mins
+  standardHeaders: 'draft-8',
+  legacyHeaders: false,
+  message: { error: 'Too many authentication attempts. Please try again after 15 minutes.' }
+});
+
 // Register (admin-only — requires a valid admin JWT)
-router.post('/register', verifyToken, requireRole('admin'), async (req, res) => {
+router.post('/register', authLimiter, verifyToken, requireRole('admin'), async (req, res) => {
   try {
     const { username, password, role } = req.body;
+    if (!username || typeof username !== 'string' || username.trim().length < 3) {
+      return res.status(400).json({ error: 'Username must be at least 3 characters' });
+    }
+    if (!password || typeof password !== 'string' || password.length < 8) {
+      return res.status(400).json({ error: 'Password must be at least 8 characters' });
+    }
+
     const existingUser = await User.findOne({ username });
     if (existingUser) {
       return res.status(400).json({ error: 'Username already exists' });
@@ -23,10 +38,11 @@ router.post('/register', verifyToken, requireRole('admin'), async (req, res) => 
     const newUser = new User({ 
       username, 
       password: hashedPassword,
-      role: role || 'admin'
+      role: role || 'employee'
     });
     await newUser.save();
 
+    console.info(`[SECURITY AUDIT] New user registered: "${username}" (role: ${newUser.role}) by admin "${req.user?.username}"`);
     res.status(201).json({ message: 'User registered successfully' });
   } catch (error) {
     console.error('Server Error:', error);
@@ -35,16 +51,22 @@ router.post('/register', verifyToken, requireRole('admin'), async (req, res) => 
 });
 
 // Login
-router.post('/login', async (req, res) => {
+router.post('/login', authLimiter, async (req, res) => {
   try {
     const { username, password } = req.body;
+    if (!username || !password) {
+      return res.status(400).json({ error: 'Username and password are required' });
+    }
+
     const user = await User.findOne({ username });
     if (!user) {
+      console.warn(`[SECURITY ALERT] Failed login attempt: unknown username "${username}" from IP: ${req.ip}`);
       return res.status(400).json({ error: 'Invalid credentials' });
     }
 
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
+      console.warn(`[SECURITY ALERT] Failed login attempt: incorrect password for user "${username}" from IP: ${req.ip}`);
       return res.status(400).json({ error: 'Invalid credentials' });
     }
 
@@ -54,6 +76,7 @@ router.post('/login', async (req, res) => {
       { expiresIn: '1d' }
     );
 
+    console.info(`[SECURITY AUDIT] Successful login: user "${user.username}" (role: ${user.role}) from IP: ${req.ip}`);
     res.json({ token, user: { username: user.username, role: user.role } });
   } catch (error) {
     console.error('Server Error:', error);
@@ -151,8 +174,8 @@ router.put('/users/:id', verifyToken, async (req, res) => {
     };
 
     if (password) {
-      if (!password || password.length < 6) {
-        return res.status(400).json({ error: 'Password must be at least 6 characters' });
+      if (!password || password.length < 8) {
+        return res.status(400).json({ error: 'Password must be at least 8 characters' });
       }
       const salt = await bcrypt.genSalt(10);
       updateFields.password = await bcrypt.hash(password, salt);

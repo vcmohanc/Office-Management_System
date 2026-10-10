@@ -39,19 +39,22 @@ router.get('/engagements', async (req, res) => {
     const { status, search, page = 1, limit = 10 } = req.query;
     const query = {};
 
-    if (status) {
+    if (status && typeof status === 'string') {
       query.status = status;
     }
 
-    if (search) {
+    if (search && typeof search === 'string') {
+      // Escape all special regex characters to prevent ReDoS
+      const sanitizedSearch = search.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
       query.$or = [
-        { partner_name: { $regex: search, $options: 'i' } },
-        { industry: { $regex: search, $options: 'i' } }
+        { partner_name: { $regex: sanitizedSearch, $options: 'i' } },
+        { industry: { $regex: sanitizedSearch, $options: 'i' } }
       ];
     }
 
-    const parsedPage = parseInt(page, 10) || 1;
-    const parsedLimit = parseInt(limit, 10) || 10;
+    const parsedPage = Math.max(parseInt(page, 10) || 1, 1);
+    // Hard ceiling of 100 on limit to prevent memory exhaustion DoS
+    const parsedLimit = Math.min(Math.max(parseInt(limit, 10) || 10, 1), 100);
     const skip = (parsedPage - 1) * parsedLimit;
 
     const [data, total] = await Promise.all([

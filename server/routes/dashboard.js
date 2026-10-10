@@ -1,5 +1,5 @@
 import express from 'express';
-import { verifyToken } from '../middleware/auth.js';
+import { verifyToken, requireRole } from '../middleware/auth.js';
 import Employee from '../models/Employee.js';
 import Case from '../models/Case.js';
 import SettlementPayment from '../models/SettlementPayment.js';
@@ -60,12 +60,13 @@ router.get('/', verifyToken, async (req, res) => {
 
     res.json({ stats, employees });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    console.error('Error fetching dashboard home data:', error);
+    res.status(500).json({ error: 'Server error fetching dashboard data' });
   }
 });
 
-// Get Account Dashboard stats
-router.get('/account', verifyToken, async (req, res) => {
+// Get Account Dashboard stats (Admin and Account roles only)
+router.get('/account', verifyToken, requireRole('admin', 'account'), async (req, res) => {
   try {
     const [rawCases, rawClaims, allSettlements, allPayments] = await Promise.all([
       Case.find().lean(),
@@ -150,12 +151,12 @@ router.get('/account', verifyToken, async (req, res) => {
     });
   } catch (error) {
     console.error('Error fetching account dashboard data:', error);
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ error: 'Server error fetching account dashboard data' });
   }
 });
 
-// Get Support Dashboard stats
-router.get('/support', verifyToken, async (req, res) => {
+// Get Support Dashboard stats (Admin and Support roles only)
+router.get('/support', verifyToken, requireRole('admin', 'support'), async (req, res) => {
   try {
     const claims = await Claim.find().sort({ createdAt: -1 });
     
@@ -191,7 +192,7 @@ router.get('/support', verifyToken, async (req, res) => {
     });
   } catch (error) {
     console.error('Error fetching support dashboard data:', error);
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ error: 'Server error fetching support dashboard data' });
   }
 });
 

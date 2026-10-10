@@ -148,7 +148,8 @@ describe('Settlement Life-Cycle Integration', () => {
         .send(payload);
 
       expect(response.status).toBe(400);
-      expect(response.body.error[0].message).toContain('Bank details are required');
+      const errs = Array.isArray(response.body.error) ? response.body.error : [];
+      expect(errs.some(e => e.message?.includes('Bank details are required'))).toBe(true);
     });
 
     it('should accept bank_transfer payment if bank details are provided', async () => {

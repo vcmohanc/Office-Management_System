@@ -4,7 +4,7 @@ import { requireRole } from '../middleware/auth.js';
 
 const router = express.Router();
 
-router.get('/case/:caseId', async (req, res) => {
+router.get('/case/:caseId', requireRole('admin', 'account'), async (req, res) => {
   try {
     const settlements = await Settlement.find({ caseId: req.params.caseId }).sort({ createdAt: -1 });
     res.json(settlements);
