@@ -41,13 +41,16 @@ export default function AccountDashboard() {
           ...c,
           advancerCategory: c.advancerCategory || 'Office',
           finalTotal: c.finalTotal || c.totalExpense || c.final_total_amount || 0,
+          expenseType: c.expenseType || c.expense_type || 'Other',
           workPlace: c.workPlace || 'N/A'
         }));
 
         const mappedClaims = claimsData.map(c => ({
           ...c,
+          isClaim: true,
           advancerCategory: c.advancer_category || c.advancerCategory || 'Staff',
           finalTotal: c.totalExpense金額 || c.total_expense_amount || 0,
+          expenseType: c.expenseType || c.expense_type || 'Claim',
           workPlace: c.workPlace || 'N/A'
         }));
 
@@ -81,7 +84,13 @@ export default function AccountDashboard() {
       patternGroups[p.id] = { ...p, records: [] };
     });
 
-    cases.forEach(c => {
+    const activeCases = cases.filter(c => {
+      if (!c || c.isDeleted) return false;
+      if (['Pending', 'New', 'Registered', '新た', 'REJECTED', '拒否', 'RETURNED_FOR_CORRECTION', '保留中 Correction', 'Payment 保留中', '保留中'].includes(c.status)) return false;
+      return true;
+    });
+
+    activeCases.forEach(c => {
       const expType = c.expenseType || 'Other';
       
       let pattern = getPatternForExpense(expType);
