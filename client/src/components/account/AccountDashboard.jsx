@@ -118,6 +118,37 @@ export default function AccountDashboard() {
     });
   }, [cases]);
 
+  const summaryMetrics = useMemo(() => {
+    let totalAdvanced = 0;
+    let totalRecovered = 0;
+    let totalNetExposure = 0;
+    let activeCount = 0;
+
+    paymentOptions.forEach(p => {
+      totalAdvanced += p.totalAdvanced || 0;
+      totalRecovered += p.totalRecovered || 0;
+      totalNetExposure += p.netExposure || 0;
+      activeCount += p.active || 0;
+    });
+
+    const pendingApprovals = cases.filter(c => {
+      if (!c || c.isDeleted) return false;
+      return ['Pending', 'New', 'Registered', '新た', '保留中', 'Payment 保留中', 'APPROVED_FOR_PAYMENT'].includes(c.status);
+    }).length;
+
+    const overallRate = totalAdvanced > 0 
+      ? Math.round((totalRecovered / totalAdvanced) * 100) 
+      : (data.overallRecoveryRate || 0);
+
+    return {
+      totalActiveAdvances: totalNetExposure > 0 ? totalNetExposure : (data.totalActiveAdvances || totalAdvanced || 0),
+      pendingSettlements: activeCount > 0 ? activeCount : (pendingApprovals || data.pendingSettlements || 0),
+      recoveredThisPeriod: data.recoveredThisPeriod || totalRecovered || 0,
+      overallRecoveryRate: overallRate || data.overallRecoveryRate || 0,
+      activeAdvancesMoM: data.activeAdvancesMoM || 0
+    };
+  }, [paymentOptions, cases, data]);
+
   const formatCurrency = (amount) => {
     return new Intl.NumberFormat('ja-JP', { style: 'currency', currency: 'JPY' }).format(amount);
   };
@@ -132,10 +163,10 @@ export default function AccountDashboard() {
             <Wallet className="text-[#162D50] w-5 h-5" />
           </div>
           <p className="text-3xl font-bold text-[#162D50] mb-2">
-            {loading ? '...' : formatCurrency(data.totalActiveAdvances)}
+            {loading ? '...' : formatCurrency(summaryMetrics.totalActiveAdvances)}
           </p>
-          <p className={`text-xs font-medium flex items-center ${data.activeAdvancesMoM >= 0 ? 'text-blue-500' : 'text-red-500'}`}>
-            <TrendingUp className="w-3 h-3 mr-1" /> 先月比 {data.activeAdvancesMoM >= 0 ? '+' : ''}{data.activeAdvancesMoM || 0}%
+          <p className={`text-xs font-medium flex items-center ${summaryMetrics.activeAdvancesMoM >= 0 ? 'text-blue-500' : 'text-red-500'}`}>
+            <TrendingUp className="w-3 h-3 mr-1" /> 先月比 {summaryMetrics.activeAdvancesMoM >= 0 ? '+' : ''}{summaryMetrics.activeAdvancesMoM || 0}%
           </p>
         </div>
         
@@ -146,7 +177,7 @@ export default function AccountDashboard() {
             <Clipboard className="text-yellow-500 w-5 h-5" />
           </div>
           <p className="text-3xl font-bold text-[#162D50] mb-2">
-            {loading ? '...' : data.pendingSettlements}
+            {loading ? '...' : summaryMetrics.pendingSettlements}
           </p>
           <p className="text-xs font-medium text-gray-500">
             承認待ちの案件
@@ -160,10 +191,10 @@ export default function AccountDashboard() {
             <CheckCircle className="text-green-500 w-5 h-5" />
           </div>
           <p className="text-3xl font-bold text-green-500 mb-2">
-            {loading ? '...' : formatCurrency(data.recoveredThisPeriod)}
+            {loading ? '...' : formatCurrency(summaryMetrics.recoveredThisPeriod)}
           </p>
           <p className="text-xs font-medium text-gray-500">
-            回収率 {data.overallRecoveryRate || 0}%
+            回収率 {summaryMetrics.overallRecoveryRate || 0}%
           </p>
         </div>
       </div>
