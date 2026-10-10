@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { apiFetch } from '../../utils/apiFetch.js';
-import { PATTERN_CONFIG, getPatternForExpense, getPatternByParties, calculateSettlementMetrics } from '../../utils/settlementPatterns.js';
+import { PATTERN_CONFIG, getPatternForExpense, getPatternByParties, calculateSettlementMetrics, toPartyJP, toFlowTypeJP } from '../../utils/settlementPatterns.js';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { fontBase64 } from '../../fonts/Kosugi-Regular.js';
@@ -794,16 +794,17 @@ export default function PaymentEntry() {
   };
 
 const getEntityIcon = (name) => {
+    if (!name) return Building;
     if (name.includes('VC')) return Landmark;
-    if (name.includes('Staff')) return User;
-    if (name.includes('Farm')) return Building2;
+    if (name.includes('Staff') || name.includes('スタッフ')) return User;
+    if (name.includes('Farm') || name.includes('ファーム')) return Building2;
     return Building;
   };
 
   const getFlowColors = (flowType) => {
-    if (flowType === 'Reimburse') return { text: 'text-blue-500', bg: 'bg-blue-500' };
-    if (flowType === 'Collect') return { text: 'text-green-500', bg: 'bg-green-500' };
-    return { text: 'text-gray-500', bg: 'bg-gray-500' }; // Transfer
+    if (flowType === 'Reimburse' || flowType === '精算') return { text: 'text-blue-500', bg: 'bg-blue-500' };
+    if (flowType === 'Collect' || flowType === '回収') return { text: 'text-green-500', bg: 'bg-green-500' };
+    return { text: 'text-gray-500', bg: 'bg-gray-500' }; // Transfer / 振替
   };
 
     const paymentOptions = useMemo(() => {
@@ -970,7 +971,7 @@ const getEntityIcon = (name) => {
                 </span>
               </div>
               <p className="text-base text-gray-500 leading-relaxed max-w-2xl">
-                Selected settlement pattern records
+                選択された精算パターンの記録一覧
               </p>
             </div>
           </div>
@@ -1042,6 +1043,7 @@ const getEntityIcon = (name) => {
                     <option value="保留中">保留中</option>
                     <option value="期限切れ">期限切れ</option>
                     <option value="On Track">順調</option>
+                    <option value="Near Completion">完了間近</option>
                   </select>
                   <ChevronDown className="w-4 h-4 text-gray-500 absolute right-2.5 top-1/2 transform -translate-y-1/2 pointer-events-none" />
                 </div>
@@ -1196,7 +1198,7 @@ const getEntityIcon = (name) => {
                           ) : (
                             <div className="inline-flex items-center px-2 py-1 bg-red-50 border border-red-100 rounded-md text-red-600 text-xs font-bold">
                               <AlertTriangle className="w-3 h-3 mr-1" />
-                              {record.bouncedCount} item(s)
+                              {record.bouncedCount} 件
                             </div>
                           )}
                         </td>
@@ -1206,7 +1208,15 @@ const getEntityIcon = (name) => {
                       </td>
                       <td className="py-4 px-6 text-center">
                         <span className={`px-3 py-1 rounded-full text-xs font-bold ${statusBadge}`}>
-                          {record.status}
+                          {{
+                            'On Track': '順調',
+                            'Near Completion': '完了間近',
+                            '期限切れ': '期限切れ',
+                            'アクション Required': '要対応',
+                            '支払済': '支払済',
+                            '保留中': '保留中',
+                            '完了': '完了'
+                          }[record.status] || record.status}
                         </span>
                       </td>
                       <td className="py-4 px-6 text-right">
@@ -1228,7 +1238,7 @@ const getEntityIcon = (name) => {
                             </button>
                             <button 
                               onClick={() => handle削除Record(record)}
-                              title="削除 Record"
+                              title="レコードを削除"
                               className="p-1.5 text-red-600 bg-red-50 hover:bg-red-100 rounded-md transition-colors"
                             >
                               <Trash2 className="w-4 h-4" />
@@ -1255,16 +1265,19 @@ const getEntityIcon = (name) => {
       </div>
 
             <div className="mb-4 text-sm text-gray-600 bg-gray-50 p-3 rounded-lg border border-gray-200">
-        <p className="font-bold mb-1 text-gray-700">Flow Types Legend:</p>
+        <p className="font-bold mb-1 text-gray-700">フロー種別の凡例:</p>
         <div className="flex gap-4">
-          <span className="flex items-center"><div className="w-3 h-3 bg-blue-500 rounded-full mr-1"></div> Reimburse (Outflow from fund)</span>
-          <span className="flex items-center"><div className="w-3 h-3 bg-green-500 rounded-full mr-1"></div> Collect (Inflow to fund)</span>
-          <span className="flex items-center"><div className="w-3 h-3 bg-gray-500 rounded-full mr-1"></div> Transfer (Outside fund)</span>
+          <span className="flex items-center"><div className="w-3 h-3 bg-blue-500 rounded-full mr-1"></div> 精算（資金流出）</span>
+          <span className="flex items-center"><div className="w-3 h-3 bg-green-500 rounded-full mr-1"></div> 回収（資金流入）</span>
+          <span className="flex items-center"><div className="w-3 h-3 bg-gray-500 rounded-full mr-1"></div> 振替（ファンド外移動）</span>
         </div>
       </div>
 
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
         {paymentOptions.map((option) => {
+          const advancerLabel = option.advancerJP || toPartyJP(option.advancer);
+          const bearerLabel = option.bearerJP || toPartyJP(option.bearer);
+          const flowTypeLabel = option.flowTypeLabel || option.flowTypeJP || toFlowTypeJP(option.flowType);
           const SourceIcon = getEntityIcon(option.advancer);
           const TargetIcon = getEntityIcon(option.bearer);
           const flowColors = getFlowColors(option.flowType);
@@ -1277,7 +1290,7 @@ const getEntityIcon = (name) => {
             >
               <div className="flex justify-between items-center mb-2">
                 <h3 className="font-bold text-[#162D50] text-[16px]">{option.id} : {option.flowTitle}</h3>
-                <span className="text-[13px] text-gray-800 font-medium">Active: {option.active}</span>
+                <span className="text-[13px] text-gray-800 font-medium">進行中: {option.active}</span>
               </div>
               
               <div className="flex flex-wrap gap-2 mb-6">
@@ -1294,30 +1307,30 @@ const getEntityIcon = (name) => {
                     <div className="w-12 h-12 bg-white flex items-center justify-center mb-1">
                       <SourceIcon className="w-8 h-8 text-[#162D50]" aria-hidden="true" />
                     </div>
-                    <span className="font-bold text-[13px] text-[#162D50]">{option.advancer}</span>
+                    <span className="font-bold text-[13px] text-[#162D50]">{advancerLabel}</span>
                   </div>
                   <div className="flex-1 px-4 flex flex-col items-center relative -mt-3">
                     <div className={`w-full h-[2px] ${flowColors.bg} absolute top-1/2`}></div>
                     <ArrowRight className={`${flowColors.text} absolute top-1/2 -right-1 transform -translate-y-1/2 w-5 h-5`} aria-hidden="true" />
                     <div className="bg-white px-2 z-10 flex flex-col items-center -mt-3">
-                      <span className={`text-[12px] font-bold ${flowColors.text}`}>{option.flowType}</span>
+                      <span className={`text-[12px] font-bold ${flowColors.text}`}>{flowTypeLabel}</span>
                     </div>
                   </div>
                   <div className="flex flex-col items-center">
                     <div className="w-12 h-12 bg-white flex items-center justify-center mb-1">
                       <TargetIcon className="w-8 h-8 text-[#162D50]" aria-hidden="true" />
                     </div>
-                    <span className="font-bold text-[13px] text-[#162D50]">{option.bearer}</span>
+                    <span className="font-bold text-[13px] text-[#162D50]">{bearerLabel}</span>
                   </div>
                 </div>
                 
                 <div className="mt-auto bg-[#E9EDF1] rounded-b-xl p-4 -mx-4 border-t border-gray-200">
                   <div className="flex justify-between items-center mb-2">
                     <p className="text-[12px] text-gray-700 font-bold">
-                      Total advanced ({option.advancer}): <span className="text-[13px] font-bold text-red-500">{formatCurrency(option.totalAdvanced)}</span>
+                      立替総額 ({advancerLabel}): <span className="text-[13px] font-bold text-red-500">{formatCurrency(option.totalAdvanced)}</span>
                     </p>
                     <p className="text-[12px] text-gray-700 font-bold">
-                      Total recovered ({option.bearer}): <span className="text-[13px] font-bold text-green-500">{formatCurrency(option.totalRecovered)}</span>
+                      回収総額 ({bearerLabel}): <span className="text-[13px] font-bold text-green-500">{formatCurrency(option.totalRecovered)}</span>
                     </p>
                   </div>
                   <div className="w-full h-[6px] flex rounded-full overflow-hidden mb-2 bg-gray-200">
@@ -1325,7 +1338,7 @@ const getEntityIcon = (name) => {
                   </div>
                   <div className="text-right">
                     <p className={`text-[12px] font-bold ${option.netExposure > 0 ? 'text-red-600' : 'text-gray-800'}`}>
-                      Net exposure: {formatCurrency(option.netExposure)}
+                      差引残額: {formatCurrency(option.netExposure)}
                     </p>
                   </div>
                 </div>

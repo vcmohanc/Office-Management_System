@@ -1,45 +1,85 @@
 export const PATTERN_CONFIG = [
   {
     id: 'PTN-1',
-    flowTitle: 'VC Fund → Service Staff',
+    flowTitle: 'VCファンド → サービススタッフ',
+    flowTitleEn: 'VC Fund → Service Staff',
     advancer: 'Service Staff',
     bearer: 'VC Fund',
+    advancerJP: 'サービススタッフ',
+    bearerJP: 'VCファンド',
     flowType: 'Reimburse', // outflow from fund
+    flowTypeLabel: '精算',
     expenseTypes: ['郵便料金', '交通費 / 航空運賃', '待機寮費']
   },
   {
     id: 'PTN-2',
-    flowTitle: 'Service Staff → VC Fund',
+    flowTitle: 'サービススタッフ → VCファンド',
+    flowTitleEn: 'Service Staff → VC Fund',
     advancer: 'VC Fund',
     bearer: 'Service Staff',
+    advancerJP: 'VCファンド',
+    bearerJP: 'サービススタッフ',
     flowType: 'Collect', // inflow to fund
+    flowTypeLabel: '回収',
     expenseTypes: ['ビザ申請料', '宿泊費', '語学講習費']
   },
   {
     id: 'PTN-3',
-    flowTitle: 'Farm → VC Fund',
+    flowTitle: 'ファーム → VCファンド',
+    flowTitleEn: 'Farm → VC Fund',
     advancer: 'VC Fund',
     bearer: 'Farm',
+    advancerJP: 'VCファンド',
+    bearerJP: 'ファーム',
     flowType: 'Collect', // inflow to fund
+    flowTypeLabel: '回収',
     expenseTypes: ['機材費', 'Wi-Fi']
   },
   {
     id: 'PTN-4',
-    flowTitle: 'VC Fund → Support Staff',
+    flowTitle: 'VCファンド → サポートスタッフ',
+    flowTitleEn: 'VC Fund → Support Staff',
     advancer: 'Support Staff',
     bearer: 'VC Fund',
+    advancerJP: 'サポートスタッフ',
+    bearerJP: 'VCファンド',
     flowType: 'Reimburse', // outflow from fund
+    flowTypeLabel: '精算',
     expenseTypes: ['その他']
   },
   {
     id: 'PTN-5',
-    flowTitle: 'Farm → Service Staff',
+    flowTitle: 'ファーム → サービススタッフ',
+    flowTitleEn: 'Farm → Service Staff',
     advancer: 'Farm',
     bearer: 'Service Staff',
+    advancerJP: 'ファーム',
+    bearerJP: 'サービススタッフ',
     flowType: 'Transfer', // outside fund
+    flowTypeLabel: '振替',
     expenseTypes: ['病院代 / 薬代']
   }
 ];
+
+export const PARTY_JP = {
+  'VC Fund': 'VCファンド',
+  'VC': 'VC',
+  'Service Staff': 'サービススタッフ',
+  'Support Staff': 'サポートスタッフ',
+  'Farm': 'ファーム',
+  'Office': 'オフィス',
+  'Staff': 'スタッフ'
+};
+
+export const toPartyJP = (name) => PARTY_JP[name] || name;
+
+export const FLOW_TYPE_JP = {
+  'Reimburse': '精算',
+  'Collect': '回収',
+  'Transfer': '振替'
+};
+
+export const toFlowTypeJP = (type) => FLOW_TYPE_JP[type] || type;
 
 export const EXPENSE_TYPE_TO_PATTERN_ID = {
   // PTN-1
@@ -82,9 +122,12 @@ export function getPatternForExpense(expenseType) {
 
 export function getPatternByParties(advancerCategory, bearingParty) {
   if (!advancerCategory || !bearingParty) return null;
-  const advancer = advancerCategory.toLowerCase();
-  const bearer = bearingParty.toLowerCase();
-  return PATTERN_CONFIG.find(p => p.advancer.toLowerCase() === advancer && p.bearer.toLowerCase() === bearer);
+  const adv = advancerCategory.toLowerCase();
+  const br = bearingParty.toLowerCase();
+  return PATTERN_CONFIG.find(p => 
+    (p.advancer.toLowerCase() === adv || (p.advancerJP && p.advancerJP.toLowerCase() === adv)) &&
+    (p.bearer.toLowerCase() === br || (p.bearerJP && p.bearerJP.toLowerCase() === br))
+  );
 }
 
 export function calculateSettlementMetrics(records) {
