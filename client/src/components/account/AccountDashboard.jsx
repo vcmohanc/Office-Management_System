@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Wallet, TrendingUp, Clipboard, CheckCircle, Landmark, User, Tractor, ArrowRight, Briefcase, Users, Building, Building2 } from 'lucide-react';
 import { apiFetch } from '../../utils/apiFetch.js';
-import { PATTERN_CONFIG, getPatternForExpense, getPatternByParties, calculateSettlementMetrics } from '../../utils/settlementPatterns.js';
+import { PATTERN_CONFIG, getPatternForExpense, getPatternByParties, calculateSettlementMetrics, toPartyJP, toFlowTypeJP } from '../../utils/settlementPatterns.js';
 
 export default function AccountDashboard() {
   const [data, setData] = useState({
@@ -65,16 +65,17 @@ export default function AccountDashboard() {
   }, []);
 
   const getEntityIcon = (name) => {
+    if (!name) return Building;
     if (name.includes('VC')) return Landmark;
-    if (name.includes('Staff')) return User;
-    if (name.includes('Farm')) return Building2;
+    if (name.includes('Staff') || name.includes('スタッフ')) return User;
+    if (name.includes('Farm') || name.includes('ファーム')) return Building2;
     return Building;
   };
 
   const getFlowColors = (flowType) => {
-    if (flowType === 'Reimburse') return { text: 'text-blue-500', bg: 'bg-blue-500' };
-    if (flowType === 'Collect') return { text: 'text-green-500', bg: 'bg-green-500' };
-    return { text: 'text-gray-500', bg: 'bg-gray-500' }; // Transfer
+    if (flowType === 'Reimburse' || flowType === '精算') return { text: 'text-blue-500', bg: 'bg-blue-500' };
+    if (flowType === 'Collect' || flowType === '回収') return { text: 'text-green-500', bg: 'bg-green-500' };
+    return { text: 'text-gray-500', bg: 'bg-gray-500' }; // Transfer / 振替
   };
 
   const paymentOptions = useMemo(() => {
@@ -168,17 +169,20 @@ export default function AccountDashboard() {
       </div>
 
       <div className="mb-4 text-sm text-gray-600 bg-gray-50 p-3 rounded-lg border border-gray-200">
-        <p className="font-bold mb-1 text-gray-700">Flow Types Legend:</p>
+        <p className="font-bold mb-1 text-gray-700">フロー種別の凡例:</p>
         <div className="flex gap-4">
-          <span className="flex items-center"><div className="w-3 h-3 bg-blue-500 rounded-full mr-1"></div> Reimburse (Outflow from fund)</span>
-          <span className="flex items-center"><div className="w-3 h-3 bg-green-500 rounded-full mr-1"></div> Collect (Inflow to fund)</span>
-          <span className="flex items-center"><div className="w-3 h-3 bg-gray-500 rounded-full mr-1"></div> Transfer (Outside fund)</span>
+          <span className="flex items-center"><div className="w-3 h-3 bg-blue-500 rounded-full mr-1"></div> 精算（資金流出）</span>
+          <span className="flex items-center"><div className="w-3 h-3 bg-green-500 rounded-full mr-1"></div> 回収（資金流入）</span>
+          <span className="flex items-center"><div className="w-3 h-3 bg-gray-500 rounded-full mr-1"></div> 振替（ファンド外移動）</span>
         </div>
       </div>
 
-      <h2 className="text-xl font-bold text-[#162D50] mb-6">Expense Settlement Patterns</h2>
+      <h2 className="text-xl font-bold text-[#162D50] mb-6">経費精算パターン</h2>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {paymentOptions.map((option) => {
+          const advancerLabel = option.advancerJP || toPartyJP(option.advancer);
+          const bearerLabel = option.bearerJP || toPartyJP(option.bearer);
+          const flowTypeLabel = option.flowTypeLabel || option.flowTypeJP || toFlowTypeJP(option.flowType);
           const SourceIcon = getEntityIcon(option.advancer);
           const TargetIcon = getEntityIcon(option.bearer);
           const flowColors = getFlowColors(option.flowType);
@@ -187,7 +191,7 @@ export default function AccountDashboard() {
             <div key={option.id} className="bg-white rounded-xl border border-gray-200 shadow-sm flex flex-col p-4 pb-0">
               <div className="flex justify-between items-center mb-2">
                 <h3 className="font-bold text-[#162D50] text-[16px]">{option.id} : {option.flowTitle}</h3>
-                <span className="text-[13px] text-gray-800 font-medium">Active: {option.active}</span>
+                <span className="text-[13px] text-gray-800 font-medium">進行中: {option.active}</span>
               </div>
               
               <div className="flex flex-wrap gap-2 mb-6">
@@ -204,30 +208,30 @@ export default function AccountDashboard() {
                     <div className="w-12 h-12 bg-white flex items-center justify-center mb-1">
                       <SourceIcon className="w-8 h-8 text-[#162D50]" aria-hidden="true" />
                     </div>
-                    <span className="font-bold text-[13px] text-[#162D50]">{option.advancer}</span>
+                    <span className="font-bold text-[13px] text-[#162D50]">{advancerLabel}</span>
                   </div>
                   <div className="flex-1 px-4 flex flex-col items-center relative -mt-3">
                     <div className={`w-full h-[2px] ${flowColors.bg} absolute top-1/2`}></div>
                     <ArrowRight className={`${flowColors.text} absolute top-1/2 -right-1 transform -translate-y-1/2 w-5 h-5`} aria-hidden="true" />
                     <div className="bg-white px-2 z-10 flex flex-col items-center -mt-3">
-                      <span className={`text-[12px] font-bold ${flowColors.text}`}>{option.flowType}</span>
+                      <span className={`text-[12px] font-bold ${flowColors.text}`}>{flowTypeLabel}</span>
                     </div>
                   </div>
                   <div className="flex flex-col items-center">
                     <div className="w-12 h-12 bg-white flex items-center justify-center mb-1">
                       <TargetIcon className="w-8 h-8 text-[#162D50]" aria-hidden="true" />
                     </div>
-                    <span className="font-bold text-[13px] text-[#162D50]">{option.bearer}</span>
+                    <span className="font-bold text-[13px] text-[#162D50]">{bearerLabel}</span>
                   </div>
                 </div>
                 
                 <div className="mt-auto bg-[#E9EDF1] rounded-b-xl p-4 -mx-4 border-t border-gray-200">
                   <div className="flex justify-between items-center mb-2">
                     <p className="text-[12px] text-gray-700 font-bold">
-                      Total advanced ({option.advancer}): <span className="text-[13px] font-bold text-red-500">{formatCurrency(option.totalAdvanced)}</span>
+                      立替総額 ({advancerLabel}): <span className="text-[13px] font-bold text-red-500">{formatCurrency(option.totalAdvanced)}</span>
                     </p>
                     <p className="text-[12px] text-gray-700 font-bold">
-                      Total recovered ({option.bearer}): <span className="text-[13px] font-bold text-green-500">{formatCurrency(option.totalRecovered)}</span>
+                      回収総額 ({bearerLabel}): <span className="text-[13px] font-bold text-green-500">{formatCurrency(option.totalRecovered)}</span>
                     </p>
                   </div>
                   <div className="w-full h-[6px] flex rounded-full overflow-hidden mb-2 bg-gray-200">
@@ -235,7 +239,7 @@ export default function AccountDashboard() {
                   </div>
                   <div className="text-right">
                     <p className={`text-[12px] font-bold ${option.netExposure > 0 ? 'text-red-600' : 'text-gray-800'}`}>
-                      Net exposure: {formatCurrency(option.netExposure)}
+                      差引残額: {formatCurrency(option.netExposure)}
                     </p>
                   </div>
                 </div>
