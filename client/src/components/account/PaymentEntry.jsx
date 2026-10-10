@@ -434,43 +434,115 @@ export default function PaymentEntry() {
 
       let curY = statusTop + statusH + gap(3);
 
-      // ── CASE DETAIL TABLE ─────────────────────────────────────
+      // ── SECTION 1: ヘッダー詳細 (Header Details) ────────────────
+      doc.setFont('Kosugi', 'normal');
+      doc.setFontSize(fs(8.5));
+      doc.setTextColor(...primaryColor);
+      doc.text('ヘッダー詳細', 10, curY);
+
+      const baseClaimAmt = record.originalCase.finalTotal || record.originalCase.totalExpense || 0;
+      const isStaff = record.originalCase?.advancerCategory === 'Staff';
+      const payeeName = record.originalCase?.staffName || record.originalCase?.advancerName || record.name || '—';
+      const payeeId   = record.originalCase?.staffId || record.staffId || '—';
+
       autoTable(doc, {
-        startY: curY,
+        startY: curY + titleGap,
         margin,
-        head: [['項目', '詳細']],
         body: [
-          ['案件ID',          record.id],
-          ['スタッフ名',       record.name],
-          ['スタッフID',         record.staffId || '—'],
-          ['配属先',       record.workPlace],
-          ['経費の種類',     record.expenseType],
-          ['支払期間',   `${record.startDate} → ${record.endDate}`],
-          ['分割払いプラン', `${record.paidTerms} / ${record.totalTerms} 回支払完了`],
-          ['残り残高',`JPY ${record.remainingBalance.toLocaleString()}`],
-          ['ステータス',           record.status],
-          ['出力日付',      new Date().toLocaleDateString('ja-JP', { year:'numeric', month:'2-digit', day:'2-digit' })],
+          [isStaff ? '従業員' : '支払先',  payeeName,  '基本請求金額', `JPY ${baseClaimAmt.toLocaleString()}`],
+          ['スタッフID', payeeId, '配属先', record.workPlace || '—'],
         ],
         theme: 'grid',
         styles: sharedStyles,
-        headStyles: headS,
         columnStyles: {
-          0: { fontStyle: 'normal', cellWidth: 46, fillColor: lightBg, textColor: [50, 70, 100] },
-          1: { cellWidth: 'auto' },
-        },
-        didParseCell: (h) => {
-          if (h.section === 'body' && h.row.index === 8) {
-            h.cell.styles.textColor = statusColor;
-            h.cell.styles.fontStyle = 'normal';
-          }
+          0: { fontStyle: 'normal', cellWidth: 30, fillColor: lightBg, textColor: [50, 70, 100] },
+          1: { cellWidth: 55 },
+          2: { fontStyle: 'normal', cellWidth: 30, fillColor: lightBg, textColor: [50, 70, 100] },
+          3: { cellWidth: 'auto' },
         },
         didDrawPage: drawFooter,
       });
 
-      // ── FINANCIAL & PROGRESS SUMMARY ──────────────────────────
-      const baseClaimAmt = record.originalCase.finalTotal || record.originalCase.totalExpense || 0;
-      const installPlanLabel = record.originalCase.installmentPlan || `${record.totalTerms} ヶ月`;
+      // ── SECTION 2: 内訳 (Itemized Claims) ────────────────────
+      curY = doc.lastAutoTable.finalY + secGap;
+      doc.setFont('Kosugi', 'normal');
+      doc.setFontSize(fs(8.5));
+      doc.setTextColor(...primaryColor);
+      doc.text('内訳', 10, curY);
 
+      const itemBody = (record.originalCase?.relatedCases || [record.originalCase]).map((c, idx) => {
+        const tTerms  = c?.installment_count || (c?.installmentPlan ? (String(c.installmentPlan).match(/\d+/) ? parseInt(String(c.installmentPlan).match(/\d+/)[0], 10) : 1) : 1);
+        const tAmt    = c?.finalTotal || c?.totalExpense || 0;
+        const bAmt    = Math.round(tAmt / tTerms);
+        const isLast  = ((c?.paidTerms || 0) + 1) >= tTerms;
+        const claimAmt = c?.nextPaymentAmount || (isLast ? tAmt - (bAmt * (tTerms - 1)) : bAmt);
+        const cId     = c?._id ? `#${String(c._id).slice(-6).toUpperCase()}` : `#${String(idx + 1).padStart(6, '0')}`;
+        const expType  = c?.expenseType || 'General Expense';
+        const cDate   = c?.expense期間Start || c?.createdAt;
+        const dateStr = cDate ? new Date(cDate).toLocaleDateString('ja-JP') : '—';
+        return [String(idx + 1).padStart(2, '0'), cId, expType, dateStr, `JPY ${claimAmt.toLocaleString()}`];
+      });
+
+      autoTable(doc, {
+        startY: curY + titleGap,
+        margin,
+        head: [['No.', '請求ID', 'タイプ', '日付', '金額']],
+        body: itemBody.length > 0 ? itemBody : [['01', record.id, record.expenseType, record.startDate, `JPY ${baseClaimAmt.toLocaleString()}`]],
+        theme: 'grid',
+        styles: { ...sharedStyles, fontSize: fs(7.5) },
+        headStyles: { ...headS, fontSize: fs(7.5) },
+        alternateRowStyles: { fillColor: lightBg },
+        columnStyles: {
+          0: { cellWidth: 12 },
+          1: { cellWidth: 28 },
+          4: { halign: 'right', fontStyle: 'normal' },
+        },
+        didDrawPage: drawFooter,
+      });
+
+      // ── SECTION 3: 合意条件 (Agreed Terms) ───────────────────
+      const installPlanLabel = record.originalCase?.installmentPlan || `${record.totalTerms} ヶ月`;
+      const termDisplay = record.totalTerms > 1
+        ? `第${record.paidTerms + 1}回 / 全${record.totalTerms}回`
+        : (isStaff ? '1 / 1' : 'N/A');
+      const startMonthDisplay = record.originalCase?.collection_start_month
+        || record.originalCase?.collectionStartMonth
+        || record.originalCase?.payroll_month
+        || record.originalCase?.payrollMonth
+        || record.startDate
+        || 'N/A';
+      const settlementMethod = (terms.length > 0 ? terms[0].paymentMethod : null)
+        || record.originalCase?.settlement_method
+        || record.originalCase?.settlementMethod
+        || record.originalCase?.collection_method
+        || record.originalCase?.collectionMethod
+        || 'N/A';
+
+      curY = doc.lastAutoTable.finalY + secGap;
+      doc.setFont('Kosugi', 'normal');
+      doc.setFontSize(fs(8.5));
+      doc.setTextColor(...primaryColor);
+      doc.text('合意条件', 10, curY);
+
+      autoTable(doc, {
+        startY: curY + titleGap,
+        margin,
+        body: [
+          ['回収・精算方法', settlementMethod, '分割払いプラン', isStaff ? '一括払い' : installPlanLabel],
+          ['開始月',         startMonthDisplay, '現在の期間',    termDisplay],
+        ],
+        theme: 'grid',
+        styles: sharedStyles,
+        columnStyles: {
+          0: { fontStyle: 'normal', cellWidth: 35, fillColor: lightBg, textColor: [50, 70, 100] },
+          1: { cellWidth: 55 },
+          2: { fontStyle: 'normal', cellWidth: 35, fillColor: lightBg, textColor: [50, 70, 100] },
+          3: { cellWidth: 'auto' },
+        },
+        didDrawPage: drawFooter,
+      });
+
+      // ── SECTION 4: 財務・進捗サマリー ─────────────────────────
       curY = doc.lastAutoTable.finalY + secGap;
       doc.setFont('Kosugi', 'normal');
       doc.setFontSize(fs(8.5));
@@ -505,125 +577,93 @@ export default function PaymentEntry() {
         didDrawPage: drawFooter,
       });
 
-      // ── SETTLEMENT DETAILS ────────────────────────────────────
-      const settlementMethod = (terms.length > 0 ? terms[0].paymentMethod : null)
-        || record.originalCase.settlement_method
-        || record.originalCase.settlementMethod
-        || 'N/A';
-      const startMonth = record.originalCase.expense期間Start
-        ? new Date(record.originalCase.expense期間Start).toLocaleDateString('en-GB', { year: 'numeric', month: '2-digit' })
-        : record.startDate || 'N/A';
+      // ── SECTION 5: 取引詳細 (Transaction Details) ────────────
+      // Fetch actual settlements
+      const stlResponse = await apiFetch(`/api/settlements/case/${record.rawId}`);
+      const settlements = stlResponse.ok ? await stlResponse.json() : [];
+      settlements.sort((a, b) => new Date(a.paymentDate) - new Date(b.paymentDate));
 
-      curY = doc.lastAutoTable.finalY + secGap;
-      doc.setFont('Kosugi', 'normal');
-      doc.setFontSize(fs(8.5));
-      doc.setTextColor(...primaryColor);
-      doc.text('精算詳細', 10, curY);
+      const txRows = [];
+      const totalTermsCount = Math.max(record.totalTerms || 1, terms.length);
 
-      autoTable(doc, {
-        startY: curY + titleGap,
-        margin,
-        body: [
-          ['精算方法:', settlementMethod],
-          ['開始月:', startMonth],
-        ],
-        theme: 'plain',
-        styles: { ...sharedStyles, cellPadding: { top: cp - 0.5, bottom: cp - 0.5, left: cp + 1, right: cp + 1 } },
-        columnStyles: {
-          0: { fontStyle: 'normal', cellWidth: 46, textColor: [50, 70, 100] },
-          1: { fontStyle: 'normal', textColor: [30, 40, 55] },
-        },
-        didDrawPage: drawFooter,
-      });
+      let pMethod = settlementMethod;
+      if (settlements && settlements.length > 0 && settlements[0].paymentMethod) {
+        pMethod = settlements[0].paymentMethod;
+      }
 
-        // Fetch actual settlements to get dynamic bank/transaction details
-        const stlResponse = await apiFetch(`/api/settlements/case/${record.rawId}`);
-        const settlements = stlResponse.ok ? await stlResponse.json() : [];
-        // sort by date ascending
-        settlements.sort((a, b) => new Date(a.paymentDate) - new Date(b.paymentDate));
+      let txHead = [];
+      if (pMethod === '給与振込' || pMethod === '給与控除' || pMethod === '給与に加算' || pMethod === 'Pay in Salary' || pMethod === 'Payroll Deduction') {
+        txHead = ['回次', '日付', '支払金額', '残額', 'ステータス', '給与期間', '参照番号'];
+      } else if (pMethod === '小切手' || pMethod === 'Company Check') {
+        txHead = ['回次', '日付', '支払金額', '残額', 'ステータス', '小切手番号', '送付先', '参照番号'];
+      } else if (pMethod === '法人カード' || pMethod === 'Corporate Card') {
+        txHead = ['回次', '日付', '支払金額', '残額', 'ステータス', 'カード末4桁', 'カード名義', '参照番号'];
+      } else if (pMethod === 'Cash' || pMethod === '小口現金') {
+        txHead = ['回次', '日付', '支払金額', '残額', 'ステータス', '受取人名', '参照番号'];
+      } else {
+        txHead = ['回次', '日付', '支払金額', '残額', 'ステータス', '銀行', '支店', '口座番号', '参照番号'];
+      }
 
-        // ── TRANSACTION DETAILS ───────────────────────────────────
-        const txRows = [];
-        const totalTermsCount = Math.max(record.totalTerms || 1, terms.length);
 
-        let pMethod = 'Bank Transfer'; // internal key, not translated
-        if (settlements && settlements.length > 0 && settlements[0].paymentMethod) {
-          pMethod = settlements[0].paymentMethod;
-        } else if (record.paymentMethod) {
-          pMethod = record.paymentMethod;
-        }
-
-        let txHead = [];
-        if (pMethod === '給与振込' || pMethod === '給与控除' || pMethod === 'Pay in Salary' || pMethod === 'Payroll Deduction') {
-          txHead = ['回次', '日付', '支払金額', '残額', 'ステータス', '給与期間', '参照番号'];
-        } else if (pMethod === '小切手' || pMethod === 'Company Check') {
-          txHead = ['回次', '日付', '支払金額', '残額', 'ステータス', '小切手番号', '送付先', '参照番号'];
-        } else if (pMethod === '法人カード' || pMethod === 'Corporate Card') {
-          txHead = ['回次', '日付', '支払金額', '残額', 'ステータス', 'カード末4桁', 'カード名義', '参照番号'];
-        } else if (pMethod === 'Cash' || pMethod === '小口現金') {
-          txHead = ['回次', '日付', '支払金額', '残額', 'ステータス', '受取人名', '参照番号'];
-        } else {
-          txHead = ['回次', '日付', '支払金額', '残額', 'ステータス', '銀行', '支店', '口座番号', '参照番号'];
-        }
-
-        const calcTotalAmt = (record.originalCase.finalTotal || record.originalCase.totalExpense || 0);
-          let remainingBalance = calcTotalAmt;
-        for (let i = 0; i < totalTermsCount; i++) {
-          const s = terms[i];
-          const actualSettlement = settlements[i];
-          const totalTerms = record.originalCase.installment_count || (record.originalCase.installmentPlan ? (record.originalCase.installmentPlan.match(/\d+/) ? parseInt(record.originalCase.installmentPlan.match(/\d+/)[0], 10) : 1) : 1);
-          const totalAmt = calcTotalAmt;
-          const baseAmt = Math.round(totalAmt / totalTerms);
-          const lastTermAmt = totalAmt - (baseAmt * (totalTerms - 1));
-          const fallbackAmt = (i === totalTerms - 1) ? lastTermAmt : baseAmt;
-          
-          let amt = fallbackAmt;
-          
-          if (actualSettlement?.financials?.netPayable) {
-            // If the saved settlement accidentally saved the full amount for a multi-term plan (due to a previous bug), ignore it.
-            if (totalTerms > 1 && actualSettlement.financials.netPayable >= totalAmt) {
-              amt = s?.scheduled金額 ?? fallbackAmt;
-            } else {
-              amt = actualSettlement.financials.netPayable;
-            }
-          } else if (s?.scheduled金額) {
-            amt = s.scheduled金額;
-          }
-          
-          let txDate = '—';
-          const dateSource = actualSettlement?.paymentDate || s?.paymentDate;
-          if (dateSource) {
-            const d = new Date(dateSource);
-            if (!isNaN(d)) {
-              txDate = d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric', timeZone: 'UTC' });
-            }
-          }
-
-          const status = actualSettlement || s?.status === 'PAID' ? '支払済' : '保留中';
-          const dest = actualSettlement?.destinationDetails || s?.bankDetails || {};
-          const refいいえ = actualSettlement?.transactionRefId || s?.transactionRef || '—';
-
-          let txRow = [
-            `第${i + 1}回 / ${record.totalTerms || totalTermsCount}回`,  
-            txDate,
-            `JPY ${amt.toLocaleString()}`,
-            status
-          ];
-
-          if (pMethod === '給与振込' || pMethod === '給与控除' || pMethod === 'Pay in Salary' || pMethod === 'Payroll Deduction') {
-            txRow.push(dest.payroll期間 || '—', refいいえ);
-          } else if (pMethod === '小切手' || pMethod === 'Company Check') {
-            txRow.push(dest.checkNumber || '—', dest.checkDelivery || '—', refいいえ);
-          } else if (pMethod === '法人カード' || pMethod === 'Corporate Card') {
-            txRow.push(dest.cardLast4 || '—', dest.cardholderName || '—', refいいえ);
-          } else if (pMethod === 'Cash' || pMethod === '小口現金') {
-            txRow.push(dest.receiverName || dest.receiver_name || '—', refいいえ);
+      const calcTotalAmt = (record.originalCase.finalTotal || record.originalCase.totalExpense || 0);
+      let remainingBalance = calcTotalAmt;
+      for (let i = 0; i < totalTermsCount; i++) {
+        const s = terms[i];
+        const actualSettlement = settlements[i];
+        const totalTerms = record.originalCase.installment_count || (record.originalCase.installmentPlan ? (String(record.originalCase.installmentPlan).match(/\d+/) ? parseInt(String(record.originalCase.installmentPlan).match(/\d+/)[0], 10) : 1) : 1);
+        const totalAmt = calcTotalAmt;
+        const baseAmt = Math.round(totalAmt / totalTerms);
+        const lastTermAmt = totalAmt - (baseAmt * (totalTerms - 1));
+        const fallbackAmt = (i === totalTerms - 1) ? lastTermAmt : baseAmt;
+        
+        let amt = fallbackAmt;
+        
+        if (actualSettlement?.financials?.netPayable) {
+          if (totalTerms > 1 && actualSettlement.financials.netPayable >= totalAmt) {
+            amt = s?.scheduled金額 ?? fallbackAmt;
           } else {
-            txRow.push(dest.bankName || dest.bank_name || '—', dest.branchCode || dest.branch_code || '—', dest.accountNumber || dest.account_number || '—', refいいえ);
+            amt = actualSettlement.financials.netPayable;
           }
-
-          txRows.push(txRow);
+        } else if (s?.scheduled金額) {
+          amt = s.scheduled金額;
         }
+        
+        let txDate = '—';
+        const dateSource = actualSettlement?.paymentDate || s?.paymentDate;
+        if (dateSource) {
+          const d = new Date(dateSource);
+          if (!isNaN(d)) {
+            txDate = d.toLocaleDateString('ja-JP', { year: 'numeric', month: '2-digit', day: '2-digit' });
+          }
+        }
+
+        const status = actualSettlement || s?.status === 'PAID' ? '支払済' : '保留中';
+        const dest = actualSettlement?.destinationDetails || s?.bankDetails || {};
+        const refいいえ = actualSettlement?.transactionRefId || s?.transactionRef || '—';
+        remainingBalance = Math.max(0, remainingBalance - amt);
+
+        let txRow = [
+          `第${i + 1}回 / ${record.totalTerms || totalTermsCount}回`,
+          txDate,
+          `JPY ${amt.toLocaleString()}`,
+          `JPY ${remainingBalance.toLocaleString()}`,
+          status
+        ];
+
+        if (pMethod === '給与振込' || pMethod === '給与控除' || pMethod === '給与に加算' || pMethod === 'Pay in Salary' || pMethod === 'Payroll Deduction') {
+          txRow.push(dest.payroll期間 || '—', refいいえ);
+        } else if (pMethod === '小切手' || pMethod === 'Company Check') {
+          txRow.push(dest.checkNumber || '—', dest.checkDelivery || '—', refいいえ);
+        } else if (pMethod === '法人カード' || pMethod === 'Corporate Card') {
+          txRow.push(dest.cardLast4 || '—', dest.cardholderName || '—', refいいえ);
+        } else if (pMethod === 'Cash' || pMethod === '小口現金') {
+          txRow.push(dest.receiverName || dest.receiver_name || '—', refいいえ);
+        } else {
+          txRow.push(dest.bankName || dest.bank_name || '—', dest.branchCode || dest.branch_code || '—', dest.accountNumber || dest.account_number || '—', refいいえ);
+        }
+
+        txRows.push(txRow);
+      }
 
       if (txRows.length === 0) {
         txRows.push(txHead.map((_, i) => i === txHead.length - 1 ? '記録された取引はありません' : '—'));
@@ -645,12 +685,13 @@ export default function PaymentEntry() {
         headStyles: { ...headS, fontSize: fs(7.5) },
         alternateRowStyles: { fillColor: lightBg },
         columnStyles: {
-          0: { fontStyle: 'normal', cellWidth: 20 },
-          2: { halign: 'right', fontStyle: 'normal' },
-          3: { halign: 'center', cellWidth: 18 },
+          0: { fontStyle: 'normal', cellWidth: 22 },
+          2: { halign: 'right', fontStyle: 'normal', cellWidth: 22 },
+          3: { halign: 'right', fontStyle: 'normal', cellWidth: 22 },
+          4: { halign: 'center', cellWidth: 18 },
         },
         didParseCell: (h) => {
-          if (h.section === 'body' && h.column.index === 3) {
+          if (h.section === 'body' && h.column.index === 4) {
             h.cell.styles.textColor = h.cell.raw === '支払済' ? [22, 163, 74] : [220, 38, 38];
             h.cell.styles.fontStyle = 'normal';
           }
@@ -1211,10 +1252,6 @@ const getEntityIcon = (name) => {
   return (
     <div className="w-full px-4 sm:px-6 lg:px-8 xl:px-12 space-y-6 pb-10">
       <div className="flex justify-between items-end mb-8">
-        <div>
-          <h2 className="text-2xl font-bold text-[#162D50] mb-2">支払済 ステータス選択</h2>
-          <p className="text-gray-500 text-sm">処理する支払済ステータスの種類を選択してください。</p>
-        </div>
       </div>
 
             <div className="mb-4 text-sm text-gray-600 bg-gray-50 p-3 rounded-lg border border-gray-200">
