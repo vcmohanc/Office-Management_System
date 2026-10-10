@@ -210,9 +210,13 @@ export function generateInitialPostalRates(regions = INITIAL_JAPAN_REGIONS) {
     kyushu: 7
   };
 
-  for (const fromPref of flattened) {
-    for (const toPref of flattened) {
+  for (let i = 0; i < flattened.length; i++) {
+    for (let j = i; j < flattened.length; j++) {
+      const fromPref = flattened[i];
+      const toPref = flattened[j];
       const key = `${fromPref.id}_${toPref.id}`;
+      const reciprocalKey = `${toPref.id}_${fromPref.id}`;
+
       if (fromPref.id === toPref.id) {
         matrix[key] = '430';
         continue;
@@ -226,21 +230,25 @@ export function generateInitialPostalRates(regions = INITIAL_JAPAN_REGIONS) {
       const toIdx = regionIndexMap[toNorm] ?? 2;
       const diff = Math.abs(fromIdx - toIdx);
 
+      let price = '10';
       if (fromNorm === 'hokkaido' || toNorm === 'hokkaido') {
-        matrix[key] = diff > 4 ? '4,630' : '4,530';
+        price = diff > 4 ? '4,630' : '4,530';
       } else if (fromNorm === toNorm) {
-        matrix[key] = '530';
+        price = '530';
       } else if (diff === 1) {
-        matrix[key] = '430';
+        price = '430';
       } else if (diff === 2) {
-        matrix[key] = '430';
+        price = '430';
       } else if (diff === 3) {
-        matrix[key] = '130';
+        price = '130';
       } else if (diff === 4) {
-        matrix[key] = '120';
+        price = '120';
       } else {
-        matrix[key] = '10';
+        price = '10';
       }
+
+      matrix[key] = price;
+      matrix[reciprocalKey] = price;
     }
   }
 
@@ -310,9 +318,12 @@ export function generateInitialTravelRates(regions = INITIAL_JAPAN_REGIONS) {
     kyushu: 7
   };
 
-  for (const fromPref of flattened) {
-    for (const toPref of flattened) {
+  for (let i = 0; i < flattened.length; i++) {
+    for (let j = i; j < flattened.length; j++) {
+      const fromPref = flattened[i];
+      const toPref = flattened[j];
       const key = `${fromPref.id}_${toPref.id}`;
+      const reciprocalKey = `${toPref.id}_${fromPref.id}`;
 
       if (fromPref.id === toPref.id) {
         matrix[key] = { bus: '430', flight: '' };
@@ -326,17 +337,21 @@ export function generateInitialTravelRates(regions = INITIAL_JAPAN_REGIONS) {
       const toIdx = regionIndexMap[toNorm] ?? 2;
       const diff = Math.abs(fromIdx - toIdx);
 
+      let cellValue;
       if (fromNorm === 'hokkaido' || toNorm === 'hokkaido' || diff >= 4) {
-        matrix[key] = { bus: '4,530', flight: '9,130' };
+        cellValue = { bus: '4,530', flight: '9,130' };
       } else if (fromNorm === toNorm) {
-        matrix[key] = { bus: '530', flight: '' };
+        cellValue = { bus: '530', flight: '' };
       } else if (diff === 1) {
-        matrix[key] = { bus: '430', flight: '' };
+        cellValue = { bus: '430', flight: '' };
       } else if (diff === 2) {
-        matrix[key] = { bus: '630', flight: '5,500' };
+        cellValue = { bus: '630', flight: '5,500' };
       } else {
-        matrix[key] = { bus: '830', flight: '7,200' };
+        cellValue = { bus: '830', flight: '7,200' };
       }
+
+      matrix[key] = { ...cellValue };
+      matrix[reciprocalKey] = { ...cellValue };
     }
   }
 
@@ -352,6 +367,18 @@ export function loadTravelRateMatrix(regions = INITIAL_JAPAN_REGIONS) {
     if (raw) {
       const parsed = JSON.parse(raw);
       if (parsed && typeof parsed === 'object' && Object.keys(parsed).length > 0) {
+        // Guarantee diagonal cells (origin === destination) have flight: ''
+        for (const key in parsed) {
+          const idx = key.indexOf('_');
+          if (idx !== -1 && key.slice(0, idx) === key.slice(idx + 1)) {
+            const item = parsed[key];
+            if (typeof item === 'object') {
+              item.flight = '';
+            } else {
+              parsed[key] = { bus: item || '', flight: '' };
+            }
+          }
+        }
         return parsed;
       }
     }
@@ -452,21 +479,106 @@ export function lookupPostalRate(fromQuery, toQuery, regions = INITIAL_JAPAN_REG
 }
 
 /**
- * Looks up travel rate between two locations (Prefecture names or IDs)
+ * Storage key for Transport Modes Availability Settings (Bus & Flight)
  */
-export function lookupTravelRate(fromQuery, toQuery, method = '', regions = INITIAL_JAPAN_REGIONS, travelMatrix = {}) {
+export const STORAGE_KEY_TRANSPORT_MODES = 'oms_transport_modes_settings';
+
+/**
+ * Generates default transport mode availability settings (all enabled by default)
+ */
+export function getDefaultTransportModeSettings(regions = INITIAL_JAPAN_REGIONS) {
+  const settings = {
+    master: {
+      bus: true,
+      flight: true
+    },
+    regions: {}
+  };
+  for (const reg of regions) {
+    settings.regions[reg.id] = {
+      bus: true,
+      flight: true
+    };
+  }
+  return settings;
+}
+
+/**
+ * Loads transport mode availability settings from localStorage
+ */
+export function loadTransportModeSettings(regions = INITIAL_JAPAN_REGIONS) {
+  try {
+    const raw = typeof localStorage !== 'undefined' ? localStorage.getItem(STORAGE_KEY_TRANSPORT_MODES) : null;
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (parsed && typeof parsed === 'object' && parsed.master) {
+        // Ensure all active regions have keys
+        const next = { ...parsed, regions: { ...parsed.regions } };
+        for (const reg of regions) {
+          if (!next.regions[reg.id]) {
+            next.regions[reg.id] = { bus: true, flight: true };
+          }
+        }
+        return next;
+      }
+    }
+  } catch (err) {
+    console.error('Failed to parse transport mode settings from localStorage:', err);
+  }
+  return getDefaultTransportModeSettings(regions);
+}
+
+/**
+ * Saves transport mode availability settings to localStorage and dispatches event
+ */
+export function saveTransportModeSettings(settings) {
+  try {
+    if (typeof localStorage !== 'undefined') {
+      localStorage.setItem(STORAGE_KEY_TRANSPORT_MODES, JSON.stringify(settings));
+    }
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('oms_transport_modes_updated', { detail: settings }));
+    }
+  } catch (err) {
+    console.error('Failed to save transport mode settings to localStorage:', err);
+  }
+}
+
+/**
+ * Checks whether a transport mode (bus or flight) is enabled for a specific route
+ */
+export function isRouteTransportEnabled(type, originRegionId, destRegionId, settings) {
+  if (!settings) return true;
+  if (settings.master && settings.master[type] === false) return false;
+  if (settings.regions) {
+    if (originRegionId && settings.regions[originRegionId]?.[type] === false) return false;
+    if (destRegionId && settings.regions[destRegionId]?.[type] === false) return false;
+  }
+  return true;
+}
+
+/**
+ * Looks up travel rate between two locations (Prefecture names or IDs), respecting transport mode availability
+ */
+export function lookupTravelRate(fromQuery, toQuery, method = '', regions = INITIAL_JAPAN_REGIONS, travelMatrix = {}, transportSettings = null) {
   if (!fromQuery || !toQuery || !travelMatrix) return 0;
   const fromPref = resolvePrefecture(fromQuery, regions);
   const toPref = resolvePrefecture(toQuery, regions);
   if (!fromPref || !toPref) return 0;
+
+  const settings = transportSettings || loadTransportModeSettings(regions);
+  const isBusActive = isRouteTransportEnabled('bus', fromPref.regionId, toPref.regionId, settings);
+  const isFlightActive = fromPref.id !== toPref.id && isRouteTransportEnabled('flight', fromPref.regionId, toPref.regionId, settings);
+
   const key = `${fromPref.id}_${toPref.id}`;
   const cell = travelMatrix[key];
   if (!cell) return 0;
   if (typeof cell === 'string' || typeof cell === 'number') {
     return Number(String(cell).replace(/[^0-9]/g, '')) || 0;
   }
-  const busVal = Number(String(cell.bus || '').replace(/[^0-9]/g, '')) || 0;
-  const flightVal = Number(String(cell.flight || '').replace(/[^0-9]/g, '')) || 0;
+  const busVal = isBusActive ? (Number(String(cell.bus || '').replace(/[^0-9]/g, '')) || 0) : 0;
+  const flightVal = isFlightActive ? (Number(String(cell.flight || '').replace(/[^0-9]/g, '')) || 0) : 0;
+
   if (method === 'バス') return busVal;
   if (method === '飛行機') return flightVal;
   return busVal > 0 ? busVal : flightVal;

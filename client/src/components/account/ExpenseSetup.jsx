@@ -9,6 +9,25 @@ import { apiFetch } from '../../utils/apiFetch.js';
 export default function ExpenseSetup() {
   const [activeTab, setActiveTab] = useState('postal');
   const [japaneseRegions, setJapaneseRegions] = useState(() => loadRegions());
+  const [visitedTabs, setVisitedTabs] = useState(() => new Set(['postal']));
+
+  // Pre-warm remaining tabs in the background after initial paint
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setVisitedTabs(new Set(['postal', 'travel', 'regions']));
+    }, 200);
+    return () => clearTimeout(timer);
+  }, []);
+
+  const handleTabChange = (tab) => {
+    setActiveTab(tab);
+    setVisitedTabs((prev) => {
+      if (prev.has(tab)) return prev;
+      const next = new Set(prev);
+      next.add(tab);
+      return next;
+    });
+  };
 
   // Fetch Japanese regions from MongoDB backend on mount
   useEffect(() => {
@@ -60,39 +79,39 @@ export default function ExpenseSetup() {
     }
   };
 
-
-
-
   return (
     <div className="flex flex-col h-full bg-[#F8F9FA]" translate="no">
       
       {/* Top Tabs */}
       <div className="flex space-x-2 mb-6">
         <button
-          onClick={() => setActiveTab('postal')}
-          className={`px-6 py-2 rounded-md font-medium transition-colors ${
+          type="button"
+          onClick={() => handleTabChange('postal')}
+          className={`px-6 py-2 rounded-md font-medium transition-colors cursor-pointer ${
             activeTab === 'postal' 
-              ? 'bg-[#162D50] text-white' 
+              ? 'bg-[#162D50] text-white shadow-sm' 
               : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-200'
           }`}
         >
           <span>郵便料金</span>
         </button>
         <button
-          onClick={() => setActiveTab('travel')}
-          className={`px-6 py-2 rounded-md font-medium transition-colors ${
+          type="button"
+          onClick={() => handleTabChange('travel')}
+          className={`px-6 py-2 rounded-md font-medium transition-colors cursor-pointer ${
             activeTab === 'travel' 
-              ? 'bg-[#162D50] text-white' 
+              ? 'bg-[#162D50] text-white shadow-sm' 
               : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-200'
           }`}
         >
           <span>交通費</span>
         </button>
         <button
-          onClick={() => setActiveTab('regions')}
-          className={`px-6 py-2 rounded-md font-medium transition-colors ${
+          type="button"
+          onClick={() => handleTabChange('regions')}
+          className={`px-6 py-2 rounded-md font-medium transition-colors cursor-pointer ${
             activeTab === 'regions' 
-              ? 'bg-[#162D50] text-white' 
+              ? 'bg-[#162D50] text-white shadow-sm' 
               : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-200'
           }`}
         >
@@ -100,13 +119,21 @@ export default function ExpenseSetup() {
         </button>
       </div>
 
-      {/* Tab Contents */}
-      {activeTab === 'postal' ? (
-        <PostageRateMatrix regions={japaneseRegions} />
-      ) : activeTab === 'travel' ? (
-        <TravelRateMatrix regions={japaneseRegions} />
-      ) : (
-        <div className="flex flex-col flex-1 bg-white rounded-lg shadow-sm border border-gray-200">
+      {/* Tab Contents - Persistent once mounted to make tab switching 0ms instantaneous */}
+      {visitedTabs.has('postal') && (
+        <div className={`flex-col flex-1 ${activeTab === 'postal' ? 'flex' : 'hidden'}`}>
+          <PostageRateMatrix regions={japaneseRegions} />
+        </div>
+      )}
+
+      {visitedTabs.has('travel') && (
+        <div className={`flex-col flex-1 ${activeTab === 'travel' ? 'flex' : 'hidden'}`}>
+          <TravelRateMatrix regions={japaneseRegions} />
+        </div>
+      )}
+
+      {visitedTabs.has('regions') && (
+        <div className={`flex-col flex-1 bg-white rounded-lg shadow-sm border border-gray-200 ${activeTab === 'regions' ? 'flex' : 'hidden'}`}>
           <div className="p-6 border-b border-gray-200">
             <h2 className="text-xl font-bold text-[#162D50]">地域管理</h2>
           </div>
