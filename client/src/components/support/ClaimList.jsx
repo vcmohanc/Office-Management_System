@@ -5,6 +5,14 @@ import { getAutoFill, getPaymentMethod } from '../../utils/expenseRules.js';
 import { getDirection, calculateInstallments } from '../../utils/paymentUtils.js';
 import { User, ChevronDown, Box, Calendar, UploadCloud, ArrowRight, Wallet, Landmark, FileText, ArrowLeft, Image, AlertTriangle } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { 
+  lookupPostalRate, 
+  lookupTravelRate, 
+  flattenPrefectures, 
+  loadRegions, 
+  loadPostalRateMatrix, 
+  loadTravelRateMatrix 
+} from '../../utils/regionHelper.js';
 // Japanese translation map for dropdown option labels
 const PAYMENT_PROCESS_OPTIONS = [
   { value: 'salary_addition', label: '給与に加算' },
@@ -70,6 +78,9 @@ export default function ClaimList() {
   const [regions, setRegions] = useState([]);
   const [postalMatrix, setPostalMatrix] = useState({});
   const [travelMatrix, setTravelMatrix] = useState({});
+  const [japaneseRegions, setJapaneseRegions] = useState(() => loadRegions());
+  const [prefPostalRates, setPrefPostalRates] = useState(() => loadPostalRateMatrix());
+  const [prefTravelRates, setPrefTravelRates] = useState(() => loadTravelRateMatrix());
   const [unsettledBalance, setUnsettledBalance] = useState(0);
   const [includeBalance, setIncludeBalance] = useState(false);
   const [settlementMethod, setSettlementMethod] = useState('銀行振込');
@@ -112,6 +123,30 @@ export default function ClaimList() {
         const travelResponse = await apiFetch('/api/expenses/travel');
         const travelData = await travelResponse.json();
         setTravelMatrix(travelData);
+
+        try {
+          const prefPostalRes = await apiFetch('/api/expenses/postal-rates');
+          if (prefPostalRes.ok) {
+            const data = await prefPostalRes.json();
+            if (data && Object.keys(data).length > 0) setPrefPostalRates(data);
+          }
+        } catch (_) {}
+
+        try {
+          const prefTravelRes = await apiFetch('/api/expenses/travel-rates');
+          if (prefTravelRes.ok) {
+            const data = await prefTravelRes.json();
+            if (data && Object.keys(data).length > 0) setPrefTravelRates(data);
+          }
+        } catch (_) {}
+
+        try {
+          const jpRegRes = await apiFetch('/api/expenses/japanese-regions');
+          if (jpRegRes.ok) {
+            const data = await jpRegRes.json();
+            if (Array.isArray(data) && data.length > 0) setJapaneseRegions(data);
+          }
+        } catch (_) {}
       } catch (error) {
         console.error('Error fetching options:', error);
       }
@@ -138,15 +173,17 @@ export default function ClaimList() {
       const senderName = field === 'sender' ? value : newCases[index].sender;
       const recipientName = field === 'recipient' ? value : newCases[index].recipient;
       if (senderName && recipientName) {
+        let numericCost = 0;
         const senderId = regions.find(r => r.name1 === senderName)?._id;
         const recipientId = regions.find(r => r.name2 === recipientName)?._id;
         if (senderId && recipientId && postalMatrix[senderId] && postalMatrix[senderId][recipientId]) {
           const rawCost = postalMatrix[senderId][recipientId];
-          const numericCost = typeof rawCost === 'string' ? Number(rawCost.replace(/,/g, '')) : rawCost;
-          newCases[index].suggested金額 = numericCost || 0;
-        } else {
-          newCases[index].suggested金額 = 0;
+          numericCost = typeof rawCost === 'string' ? Number(rawCost.replace(/,/g, '')) : rawCost;
         }
+        if (!numericCost) {
+          numericCost = lookupPostalRate(senderName, recipientName, japaneseRegions, prefPostalRates);
+        }
+        newCases[index].suggested金額 = numericCost || 0;
       } else {
         newCases[index].suggested金額 = 0;
       }
@@ -157,11 +194,11 @@ export default function ClaimList() {
       const destinationName = field === 'destination' ? value : newCases[index].destination;
       const method = field === 'transportMethod' ? value : newCases[index].transportMethod;
       if (departureName && destinationName) {
+        let numericCost = 0;
         const departureId = regions.find(r => r.name1 === departureName)?._id;
         const destinationId = regions.find(r => r.name2 === destinationName)?._id;
         if (departureId && destinationId && travelMatrix[departureId] && travelMatrix[departureId][destinationId]) {
           const rawCost = travelMatrix[departureId][destinationId];
-          let numericCost = 0;
           if (typeof rawCost === 'string' || typeof rawCost === 'number') {
             numericCost = typeof rawCost === 'string' ? Number(String(rawCost).replace(/,/g, '')) : Number(rawCost);
           } else if (rawCost && typeof rawCost === 'object') {
@@ -171,10 +208,11 @@ export default function ClaimList() {
             else if (method === '飛行機') numericCost = flightCost;
             else numericCost = Math.max(busCost, flightCost);
           }
-          newCases[index].suggested金額 = numericCost || 0;
-        } else {
-          newCases[index].suggested金額 = 0;
         }
+        if (!numericCost) {
+          numericCost = lookupTravelRate(departureName, destinationName, method, japaneseRegions, prefTravelRates);
+        }
+        newCases[index].suggested金額 = numericCost || 0;
       } else {
         newCases[index].suggested金額 = 0;
       }
@@ -367,6 +405,9 @@ export default function ClaimList() {
                 {regions.map(r => (
                   <option key={r._id} value={r.name1} />
                 ))}
+                {flattenPrefectures(japaneseRegions).map(p => (
+                  <option key={p.id} value={p.name} />
+                ))}
               </datalist>
             </div>
             <div>
@@ -375,6 +416,9 @@ export default function ClaimList() {
               <datalist id={`destination-list-${index}`}>
                 {regions.map(r => (
                   <option key={r._id} value={r.name2} />
+                ))}
+                {flattenPrefectures(japaneseRegions).map(p => (
+                  <option key={p.id} value={p.name} />
                 ))}
               </datalist>
             </div>
