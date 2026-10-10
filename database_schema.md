@@ -11,7 +11,7 @@ Used for authentication and authorization.
 
 - `username` - **String** (required, unique)
 - `password` - **String** (required)
-- `role` - **String** (default: admin)
+- `role` - **String** (default: employee)
 - `_id` - **ObjectId**
 - `createdAt` - **Date**
 - `updatedAt` - **Date**
@@ -19,12 +19,16 @@ Used for authentication and authorization.
 ### Employee
 Stores detailed staff profiles and HR information.
 
-- `department` - **String** (required)
+- `staffId` - **String** (unique)
+- `department` - **Array** (required)
 - `location` - **String** (default: Tokyo Office)
 - `joinDate` - **Date** (required)
 - `katakanaName` - **String** (required)
 - `romajiName` - **String** (required)
 - `nationality` - **String** (required)
+- `phone` - **String**
+- `email` - **String**
+- `photo` - **String**
 - `dob` - **Date** (required)
 - `age` - **Number** (required)
 - `gender` - **String** (required)
@@ -45,6 +49,14 @@ Stores detailed staff profiles and HR information.
   - `physicalAttributes.clothingSize` - **String**
   - `physicalAttributes.shoeSize` - **String**
 - `onboardingStatus` - **String** (default: Verification Pending)
+- `assignedWorkPlace` - **Array**
+- `office` - **Array**
+- `staffType` - **String**
+- `workingDays` - **Array** (default: )
+- `visaAppStatus` - **String** (default: Not Applied)
+- `visaExpiryHistory` - **Array** (default: )
+- `visaRenewalHistory` - **Array**
+- `pledgeDocument` - **String**
 - `_id` - **ObjectId**
 - `createdAt` - **Date**
 - `updatedAt` - **Date**
@@ -52,19 +64,46 @@ Stores detailed staff profiles and HR information.
 ### Claim
 Represents an expense claim submitted by an employee.
 
-  - `staffInfo.fullName` - **String** (required)
-  - `staffInfo.id` - **String** (required)
-  - `staffInfo.location` - **String** (required)
-- `expenseType` - **String** (required)
-- `advancerCategory` - **String** (required)
-- `advancerName` - **String**
-- `bearingParty` - **String** (required)
-- `expenseAmount` - **Number** (required)
-- `expensePeriodStart` - **String**
-- `expensePeriodEnd` - **String**
-- `remark` - **String**
-- `receipts` - **Array**
-- `status` - **String** (default: Submitted)
+- `claim_id` - **String** (required, unique)
+- `full_name` - **String** (required)
+- `staff_id` - **String** (required)
+- `location` - **String** (required)
+- `branch_farm_name` - **String** (default: )
+- `visa_status` - **String** (default: )
+- `visa_available_time` - **Date** (default: null)
+- `expense_type` - **String** (required)
+- `advancer_category` - **String** (required)
+- `payment_process_types` - **String** (default: )
+- `bearing_party` - **String** (required)
+- `expense_amount` - **Number** (required)
+- `expense_period_start` - **Date** (default: null)
+- `expense_period_end` - **Date** (default: null)
+- `sender` - **String** (default: )
+- `recipient` - **String** (default: )
+- `departure` - **String** (default: )
+- `destination` - **String** (default: )
+- `transport_method` - **String** (default: )
+- `bill_receipt_url` - **Array**
+- `remarks` - **String** (default: )
+- `total_expense_amount` - **Number** (required)
+- `currency` - **String** (default: JPY)
+- `settlement_method` - **String** (default: )
+- `expected_settlement_date` - **Date** (default: null)
+- `collection_method` - **String** (default: )
+- `installment_plan` - **String** (default: )
+- `installment_count` - **Number** (required)
+- `collection_start_month` - **String** (required)
+- `monthly_deduction` - **Number** (required)
+- `paidTerms` - **Number** (default: 0)
+- `installment_records` - **Array**
+- `status` - **String** (default: Pending)
+- `statusMessage` - **String** (default: )
+- `messages` - **Array**
+- `hasAccountNotification` - **Boolean** (default: false)
+- `hasSupportNotification` - **Boolean** (default: false)
+- `supportUpdatedFields` - **Array**
+- `consentRecorded` - **Boolean** (default: false)
+- `consentDate` - **Date**
 - `_id` - **ObjectId**
 - `createdAt` - **Date**
 - `updatedAt` - **Date**
@@ -72,33 +111,53 @@ Represents an expense claim submitted by an employee.
 ### Case
 Represents an approved expense or a financial case that needs to be settled or collected.
 
-- `staffName` - **String** (required)
-- `staffId` - **String** (required)
+- `case_id` - **String** (required, unique)
+- `case_type` - **String** (required)
+- `staff_name` - **String** (required)
+- `staff_id` - **String** (required)
 - `location` - **String** (required)
-- `expenseType` - **String** (required)
-- `advancerCategory` - **String** (required)
-- `advancerName` - **String** (required)
-- `bearingParty` - **String** (required)
-- `amount` - **Number** (required)
-- `expensePeriodStart` - **Date** (required)
-- `expensePeriodEnd` - **Date** (required)
+- `branch_farm_name` - **String**
+- `visa_status` - **String**
+- `visa_available_time` - **Date**
+- `expense_type` - **String** (required)
+- `advancer_category` - **String** (required)
+- `payment_process_type` - **String** (required)
+- `bearing_party` - **String** (required)
+- `expense_amount` - **Number** (required)
+- `expense_period_start` - **Date** (required)
+- `expense_period_end` - **Date** (required)
+- `sender` - **String**
+- `recipient` - **String**
+- `departure` - **String**
+- `destination` - **String**
+- `transport_method` - **String**
 - `receipts` - **Array**
 - `remark` - **String**
-- `totalExpense` - **Number** (required)
+- `total_expense` - **Number** (required)
 - `currency` - **String** (default: JPY)
-- `previousBalance` - **Number** (default: 0)
+- `previous_unsettled_balance` - **Number** (default: 0)
 - `includeBalance` - **Boolean** (default: false)
-- `finalTotal` - **Number** (required)
-- `settlementMethod` - **String** (required)
-- `expectedSettlementDate` - **Date** (required)
-- `collectionMethod` - **String** (required)
-- `installmentPlan` - **String** (required)
-- `collectionStartMonth` - **String** (required)
+- `final_total_amount` - **Number** (required)
+- `settlement_method` - **String** (required)
+- `expected_settlement_date` - **Date** (required)
+- `collection_method` - **String** (required)
+- `installment_plan` - **String** (required)
+- `installment_count` - **Number** (required)
+- `collection_start_month` - **String** (required)
+- `monthly_deduction` - **Number** (required)
 - `paidTerms` - **Number** (default: 0)
 - `bouncedCount` - **Number** (default: 0)
 - `nextPaymentDate` - **Date**
 - `nextPaymentAmount` - **Number**
-- `status` - **String** (default: New)
+- `installment_records` - **Array**
+- `status` - **String** (default: Pending)
+- `statusMessage` - **String** (default: )
+- `messages` - **Array**
+- `hasAccountNotification` - **Boolean** (default: false)
+- `hasSupportNotification` - **Boolean** (default: false)
+- `supportUpdatedFields` - **Array**
+- `consentRecorded` - **Boolean** (default: false)
+- `consentDate` - **Date**
 - `_id` - **ObjectId**
 - `createdAt` - **Date**
 - `updatedAt` - **Date**
