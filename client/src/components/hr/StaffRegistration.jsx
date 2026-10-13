@@ -163,7 +163,7 @@ export default function StaffRegistration({ setActiveTab }) {
       }
     } catch (err) {
       console.error('Error uploading files', err);
-      toast.error('ファイルのアップロードに失敗しました。');
+      toast.error(err.message || 'ファイルのアップロードに失敗しました。');
       setLoading(false);
       return;
     }
