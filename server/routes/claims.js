@@ -52,7 +52,9 @@ const claimSchemaZod = z.object({
   collection_start_month: z.string().min(1, 'Collection start month is required'),
   monthly_deduction: z.number().min(0),
   hasAccountNotification: z.boolean().optional(),
-  supportUpdatedFields: z.array(z.string()).optional()
+  supportUpdatedFields: z.array(z.string()).optional(),
+  registered_by: z.string().optional().nullable(),
+  registered_by_role: z.string().optional().nullable()
 });
 
 router.post('/', requireRole('admin', 'support'), async (req, res) => {
@@ -103,6 +105,8 @@ router.post('/', requireRole('admin', 'support'), async (req, res) => {
     const newClaim = new Claim({
       ...validatedData,
       claim_id,
+      registered_by: req.user?.username || validatedData.registered_by || 'support_user',
+      registered_by_role: req.user?.role || validatedData.registered_by_role || 'support',
       status: 'Pending',
       hasAccountNotification: true
     });

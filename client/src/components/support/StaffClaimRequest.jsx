@@ -340,7 +340,9 @@ export default function StaffClaimRequest() {
           collection_start_month: collectionStartMonth || "TBD",
           installment_schedule: installmentSchedule,
           labor_consent: laborConsent,
-          status: '保留中'
+          status: '保留中',
+          registered_by: (JSON.parse(localStorage.getItem('user')) || {}).username || 'support_user',
+          registered_by_role: (JSON.parse(localStorage.getItem('user')) || {}).role || 'support'
         };
 
         return apiFetch('/api/claims', {

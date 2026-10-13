@@ -53,7 +53,9 @@ const caseSchemaZod = z.object({
   collection_start_month: z.string().min(1),
   monthly_deduction: z.number().min(0),
   hasAccountNotification: z.boolean().optional(),
-  supportUpdatedFields: z.array(z.string()).optional()
+  supportUpdatedFields: z.array(z.string()).optional(),
+  registered_by: z.string().optional().nullable(),
+  registered_by_role: z.string().optional().nullable()
 });
 
 router.get('/', async (req, res) => {
@@ -65,7 +67,7 @@ router.get('/', async (req, res) => {
     res.status(500).json({ message: 'Server error fetching cases' });
   }
 });
-router.post('/', requireRole('admin', 'account'), async (req, res) => {
+router.post('/', requireRole('admin', 'account', 'support'), async (req, res) => {
   try {
     // Validate request
     const validatedData = caseSchemaZod.parse(req.body);
@@ -115,6 +117,8 @@ router.post('/', requireRole('admin', 'account'), async (req, res) => {
 
     const newCase = new Case({
       ...validatedData,
+      registered_by: req.user?.username || validatedData.registered_by || 'account_user',
+      registered_by_role: req.user?.role || validatedData.registered_by_role || 'account',
       hasSupportNotification: true
     });
     await newCase.save();

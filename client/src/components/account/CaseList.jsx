@@ -407,6 +407,43 @@ export default function CaseList({ setActiveTab: onNavigate }) {
     return true;
   };
 
+  const isCaseRegisteredBySupport = (caseItem) => {
+    if (!caseItem) return false;
+    
+    const regBy = caseItem.registered_by || caseItem.registeredBy || caseItem.created_by || caseItem.createdBy;
+    const regRole = caseItem.registered_by_role || caseItem.registeredByRole || caseItem.created_by_role || caseItem.createdByRole;
+    
+    if (regBy) {
+      const regByLower = String(regBy).toLowerCase();
+      if (regByLower === 'support_user' || regByLower.includes('support') || regByLower === 'サポート部門') {
+        return true;
+      }
+      if (regByLower === 'account_user' || regByLower.includes('account') || regByLower === '経理部門' || regByLower === 'admin') {
+        return false;
+      }
+    }
+    
+    if (regRole) {
+      const regRoleLower = String(regRole).toLowerCase();
+      if (regRoleLower === 'support' || regRoleLower.includes('support')) {
+        return true;
+      }
+      if (regRoleLower === 'account' || regRoleLower === 'admin') {
+        return false;
+      }
+    }
+    
+    if (caseItem._isClaim || caseItem.claim_id || caseItem.claimId) {
+      return true;
+    }
+    
+    if (caseItem.type === 'Staff Case' || caseItem.case_type === 'Staff Case') {
+      return true;
+    }
+    
+    return false;
+  };
+
   // Map Cases
   const mappedCases = cases.filter(filterOld拒否).map(c => ({
     ...c,
@@ -418,6 +455,8 @@ export default function CaseList({ setActiveTab: onNavigate }) {
     displayTotal: c.finalTotal || c.totalExpense || c.total_expense || c.final_total_amount || 0,
     currencySymbol: c.currency === 'JPY' ? '¥' : '$',
     expense_type: c.expenseType || c.expense_type || 'N/A',
+    registered_by: c.registered_by || 'account_user',
+    registered_by_role: c.registered_by_role || 'account',
   }));
 
   // Map Claims
@@ -431,6 +470,8 @@ export default function CaseList({ setActiveTab: onNavigate }) {
     displayTotal: c.expenseAmount || c.expense_amount || c.totalExpense金額 || c.total_expense_amount || 0,
     currencySymbol: c.currency === 'JPY' ? '¥' : '$',
     expense_type: c.expenseType || c.expense_type || 'N/A',
+    registered_by: c.registered_by || 'support_user',
+    registered_by_role: c.registered_by_role || 'support',
   }));
 
   const getDisplayStatus = (status) => {
@@ -838,81 +879,83 @@ export default function CaseList({ setActiveTab: onNavigate }) {
               </div>
             </div>
 
-            {/* STATUS MESSAGE & SHORT NOTE */}
-            <div className="md:col-span-3 mt-4 border-t border-gray-200 pt-6">
-              {isEditing && (
-                <div className="mb-6 w-full md:w-2/3">
-                  <h4 className="text-xs font-bold text-gray-500 mb-2 tracking-wider">短いメモを追加</h4>
-                  <textarea 
-                    value={editData.short_note || ''} 
-                    onChange={(e) => setEditData({...editData, short_note: e.target.value})}
-                    placeholder="Enter an optional note or remark to attach to this case..." 
-                    className="w-full h-[80px] px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50] resize-none text-gray-600"
-                  ></textarea>
-                </div>
-              )}
-              {selectedCase && (
-                <div className="w-full">
-                  <h4 className="text-xs font-bold text-gray-500 mb-4 tracking-wider">理由 / メッセージ履歴</h4>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {/* 経理部門 Messages */}
-                    <div>
-                      <h5 className="text-sm font-bold text-orange-700 mb-3 border-b border-orange-200 pb-1">経理部門</h5>
-                      <div className="space-y-3">
-                        {(selectedCase.messages || []).filter(m => m.author === 'account_user' || m.author === '経理部門' || !m.author).map((m, i) => (
-                          <div key={i} className="bg-orange-50 border border-orange-200 rounded-md p-3 text-sm text-gray-700">
-                            <div className="flex justify-between items-center mb-1 pb-1 border-b border-orange-200/50">
-                              <span className="text-xs font-bold text-orange-700">経理部門</span>
-                              <span className="text-xs text-orange-600">{m.date ? new Date(m.date).toLocaleString() : ''}</span>
-                            </div>
-                            <div className="whitespace-pre-wrap mt-1">{m.text}</div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-
-                    {/* サポート部門 Messages */}
-                    <div>
-                      <h5 className="text-sm font-bold text-blue-700 mb-3 border-b border-blue-200 pb-1">サポート部門</h5>
-                      <div className="space-y-3">
-                        {(selectedCase.messages || []).filter(m => !(m.author === 'account_user' || m.author === '経理部門' || !m.author)).map((m, i) => {
-                          const displayAuthor = m.author === 'support_user' ? 'サポート部門' : m.author;
-                          return (
-                            <div key={i} className="bg-blue-50 border border-blue-200 rounded-md p-3 text-sm text-gray-700">
-                              <div className="flex justify-between items-center mb-1 pb-1 border-b border-blue-200/50">
-                                <span className="text-xs font-bold text-blue-700">{displayAuthor}</span>
-                                <span className="text-xs text-blue-600">{m.date ? new Date(m.date).toLocaleString() : ''}</span>
+            {/* STATUS MESSAGE & SHORT NOTE / REASON */}
+            {(isEditing || isCaseRegisteredBySupport(selectedCase)) && (
+              <div className="md:col-span-3 mt-4 border-t border-gray-200 pt-6">
+                {isEditing && (
+                  <div className="mb-6 w-full md:w-2/3">
+                    <h4 className="text-xs font-bold text-gray-500 mb-2 tracking-wider">短いメモを追加</h4>
+                    <textarea 
+                      value={editData.short_note || ''} 
+                      onChange={(e) => setEditData({...editData, short_note: e.target.value})}
+                      placeholder="Enter an optional note or remark to attach to this case..." 
+                      className="w-full h-[80px] px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50] resize-none text-gray-600"
+                    ></textarea>
+                  </div>
+                )}
+                {isCaseRegisteredBySupport(selectedCase) && (
+                  <div className="w-full">
+                    <h4 className="text-xs font-bold text-gray-500 mb-4 tracking-wider">理由 / メッセージ履歴</h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      {/* 経理部門 Messages */}
+                      <div>
+                        <h5 className="text-sm font-bold text-orange-700 mb-3 border-b border-orange-200 pb-1">経理部門</h5>
+                        <div className="space-y-3">
+                          {(selectedCase.messages || []).filter(m => m.author === 'account_user' || m.author === '経理部門' || !m.author).map((m, i) => (
+                            <div key={i} className="bg-orange-50 border border-orange-200 rounded-md p-3 text-sm text-gray-700">
+                              <div className="flex justify-between items-center mb-1 pb-1 border-b border-orange-200/50">
+                                <span className="text-xs font-bold text-orange-700">経理部門</span>
+                                <span className="text-xs text-orange-600">{m.date ? new Date(m.date).toLocaleString() : ''}</span>
                               </div>
                               <div className="whitespace-pre-wrap mt-1">{m.text}</div>
                             </div>
-                          );
-                        })}
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* サポート部門 Messages */}
+                      <div>
+                        <h5 className="text-sm font-bold text-blue-700 mb-3 border-b border-blue-200 pb-1">サポート部門</h5>
+                        <div className="space-y-3">
+                          {(selectedCase.messages || []).filter(m => !(m.author === 'account_user' || m.author === '経理部門' || !m.author)).map((m, i) => {
+                            const displayAuthor = m.author === 'support_user' ? 'サポート部門' : m.author;
+                            return (
+                              <div key={i} className="bg-blue-50 border border-blue-200 rounded-md p-3 text-sm text-gray-700">
+                                <div className="flex justify-between items-center mb-1 pb-1 border-b border-blue-200/50">
+                                  <span className="text-xs font-bold text-blue-700">{displayAuthor}</span>
+                                  <span className="text-xs text-blue-600">{m.date ? new Date(m.date).toLocaleString() : ''}</span>
+                                </div>
+                                <div className="whitespace-pre-wrap mt-1">{m.text}</div>
+                              </div>
+                            );
+                          })}
+                        </div>
                       </div>
                     </div>
-                  </div>
-                  
-                  {/* New Message Input */}
-                  <div className="mt-6 flex flex-col md:flex-row gap-4 items-end">
-                    <div className="flex-1 w-full">
-                      <label className="block text-xs font-bold text-gray-500 mb-2 uppercase tracking-wider">新規メッセージ</label>
-                      <textarea 
-                        value={newMessageInput}
-                        onChange={(e) => setNewMessageInput(e.target.value)}
-                        placeholder="他の部署へのメッセージを入力..."
-                        className="w-full min-h-[60px] p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#162D50] text-sm resize-y"
-                      ></textarea>
+                    
+                    {/* New Message Input */}
+                    <div className="mt-6 flex flex-col md:flex-row gap-4 items-end">
+                      <div className="flex-1 w-full">
+                        <label className="block text-xs font-bold text-gray-500 mb-2 uppercase tracking-wider">新規メッセージ</label>
+                        <textarea 
+                          value={newMessageInput}
+                          onChange={(e) => setNewMessageInput(e.target.value)}
+                          placeholder="他の部署へのメッセージを入力..."
+                          className="w-full min-h-[60px] p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#162D50] text-sm resize-y"
+                        ></textarea>
+                      </div>
+                      <button 
+                        onClick={handleSendMessage}
+                        disabled={!newMessageInput.trim()}
+                        className="whitespace-nowrap bg-[#162D50] hover:bg-[#0f1f3d] text-white px-6 py-3 rounded-md text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        メッセージを送信
+                      </button>
                     </div>
-                    <button 
-                      onClick={handleSendMessage}
-                      disabled={!newMessageInput.trim()}
-                      className="whitespace-nowrap bg-[#162D50] hover:bg-[#0f1f3d] text-white px-6 py-3 rounded-md text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      メッセージを送信
-                    </button>
                   </div>
-                </div>
-              )}
-            </div>
+                )}
+              </div>
+            )}
           </div>
 
           {/* アクション Buttons */}
