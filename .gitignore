@@ -7,3 +7,27 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
+# Database dumps and backups — never commit real data
+db_dump/
+server/db_dump/
+*.bson
+*.gz
+*.zip
+*.tar
+*.tar.gz
+dump.tar.gz
+oms_backup.gz
+oms_deploy.tar.gz
+update_patch.tar.gz
+server_logs.txt
+server/account_department.sqlite
+server/database_export.json
+
+# One-off maintenance scripts
+server/reset_passwords.js
+server/scratch_hash.js
+server/scratch_inspect.mjs
+
+# MCP config (may contain tokens)
+.mcp.json
+
