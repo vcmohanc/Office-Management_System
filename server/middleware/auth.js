@@ -13,7 +13,7 @@ export const verifyToken = async (req, res, next) => {
   try {
     const verified = jwt.verify(token.replace('Bearer ', ''), process.env.JWT_SECRET);
     const user = await User.findById(verified.id).select('tokenVersion').lean();
-    if (!user || user.tokenVersion !== verified.tokenVersion) {
+    if (!user || (user.tokenVersion ?? 0) !== (verified.tokenVersion ?? 0)) {
       return res.status(401).json({ error: 'Token has been revoked' });
     }
     req.user = verified;
@@ -49,7 +49,7 @@ export const verifyFileToken = async (req, res, next) => {
   try {
     const verified = jwt.verify(token, process.env.JWT_SECRET);
     const user = await User.findById(verified.id).select('tokenVersion').lean();
-    if (!user || user.tokenVersion !== verified.tokenVersion) {
+    if (!user || (user.tokenVersion ?? 0) !== (verified.tokenVersion ?? 0)) {
       return res.status(401).json({ error: 'Token has been revoked' });
     }
     req.user = verified;
