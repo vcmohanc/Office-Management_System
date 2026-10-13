@@ -1,11 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { Wallet, TrendingUp, Clipboard, CheckCircle, Landmark, User, ArrowRight, Building, Building2 } from 'lucide-react';
+import { Wallet, TrendingUp, Clipboard, CheckCircle, Landmark, User, ArrowRight, Building, Building2, X, ChevronDown, ChevronUp } from 'lucide-react';
 import { apiFetch } from '../../utils/apiFetch.js';
 import { PATTERN_CONFIG, toPartyJP, toFlowTypeJP } from '../../utils/settlementPatterns.js';
 
 export default function AccountDashboard() {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [showBreakdown, setShowBreakdown] = useState(false);
+  const [breakdown, setBreakdown] = useState(null);
+  const [breakdownLoading, setBreakdownLoading] = useState(false);
 
   useEffect(() => {
     const fetchDashboardData = async () => {
@@ -20,6 +23,21 @@ export default function AccountDashboard() {
     };
     fetchDashboardData();
   }, []);
+
+  const handleToggleBreakdown = async () => {
+    if (showBreakdown) { setShowBreakdown(false); return; }
+    setShowBreakdown(true);
+    if (breakdown) return;
+    setBreakdownLoading(true);
+    try {
+      const res = await apiFetch('/api/dashboard/account/recovery-breakdown');
+      if (res.ok) setBreakdown(await res.json());
+    } catch (e) {
+      console.error('Error fetching breakdown:', e);
+    } finally {
+      setBreakdownLoading(false);
+    }
+  };
 
   const getEntityIcon = (name) => {
     if (!name) return Building;
@@ -84,20 +102,104 @@ export default function AccountDashboard() {
           </p>
         </div>
 
-        {/* Card 3 */}
-        <div className="bg-white rounded-xl p-5 border border-gray-200 shadow-sm">
+        {/* Card 3 — clickable to show breakdown */}
+        <div
+          className="bg-white rounded-xl p-5 border border-gray-200 shadow-sm cursor-pointer hover:border-green-300 hover:shadow-md transition-all"
+          onClick={handleToggleBreakdown}
+          title="クリックして内訳を表示"
+        >
           <div className="flex justify-between items-start mb-4">
             <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider">今期の回収額</h3>
-            <CheckCircle className="text-green-500 w-5 h-5" />
+            <div className="flex items-center gap-1">
+              <CheckCircle className="text-green-500 w-5 h-5" />
+              {showBreakdown ? <ChevronUp className="text-gray-400 w-4 h-4" /> : <ChevronDown className="text-gray-400 w-4 h-4" />}
+            </div>
           </div>
           <p className="text-3xl font-bold text-green-500 mb-2">
             {loading ? '...' : formatCurrency(summaryMetrics.recoveredThisPeriod)}
           </p>
           <p className="text-xs font-medium text-gray-500">
-            回収率 {summaryMetrics.overallRecoveryRate || 0}%
+            回収率 {summaryMetrics.overallRecoveryRate || 0}% &nbsp;·&nbsp; 内訳を{showBreakdown ? '閉じる' : '表示'}
           </p>
         </div>
       </div>
+
+      {/* Recovery Breakdown Panel */}
+      {showBreakdown && (
+        <div className="mb-6 bg-white rounded-xl border border-green-200 shadow-sm overflow-hidden">
+          <div className="flex justify-between items-center px-5 py-3 bg-green-50 border-b border-green-200">
+            <div>
+              <h3 className="font-bold text-green-800 text-sm">今期の回収一覧</h3>
+              {breakdown && (
+                <p className="text-xs text-green-600 mt-0.5">
+                  {breakdown.month} ／ 合計: {formatCurrency(breakdown.total)} （{breakdown.rows?.length || 0}件）
+                </p>
+              )}
+            </div>
+            <button onClick={() => setShowBreakdown(false)} className="text-gray-400 hover:text-gray-600 p-1">
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+
+          {breakdownLoading ? (
+            <div className="px-5 py-8 text-center text-sm text-gray-400">読み込み中...</div>
+          ) : !breakdown?.rows?.length ? (
+            <div className="px-5 py-8 text-center text-sm text-gray-400">今月の回収データはありません。</div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-left">
+                <thead>
+                  <tr className="bg-gray-50 border-b border-gray-200">
+                    <th className="px-4 py-2 text-xs font-bold text-gray-500 uppercase">案件番号</th>
+                    <th className="px-4 py-2 text-xs font-bold text-gray-500 uppercase">スタッフ名</th>
+                    <th className="px-4 py-2 text-xs font-bold text-gray-500 uppercase">経費種別</th>
+                    <th className="px-4 py-2 text-xs font-bold text-gray-500 uppercase">回数</th>
+                    <th className="px-4 py-2 text-xs font-bold text-gray-500 uppercase text-right">回収額</th>
+                    <th className="px-4 py-2 text-xs font-bold text-gray-500 uppercase">支払日</th>
+                    <th className="px-4 py-2 text-xs font-bold text-gray-500 uppercase">種別</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100">
+                  {breakdown.rows.map((row) => (
+                    <tr key={row.id} className="hover:bg-gray-50">
+                      <td className="px-4 py-3 text-sm font-mono text-[#162D50]">{row.caseRef || '-'}</td>
+                      <td className="px-4 py-3 text-sm text-gray-800">{row.staffName || '-'}</td>
+                      <td className="px-4 py-3 text-sm text-gray-600">{row.expenseType || '-'}</td>
+                      <td className="px-4 py-3 text-sm text-gray-600 text-center">
+                        {row.termNumber ? `第${row.termNumber}回` : '-'}
+                      </td>
+                      <td className="px-4 py-3 text-sm font-bold text-green-600 text-right">
+                        {formatCurrency(row.amount || 0)}
+                      </td>
+                      <td className="px-4 py-3 text-sm text-gray-500">
+                        {row.paymentDate ? new Date(row.paymentDate).toLocaleDateString('ja-JP') : '-'}
+                      </td>
+                      <td className="px-4 py-3">
+                        <span className={`text-xs px-2 py-0.5 rounded font-medium ${
+                          row.source === 'payment'
+                            ? 'bg-blue-50 text-blue-700'
+                            : 'bg-purple-50 text-purple-700'
+                        }`}>
+                          {row.source === 'payment' ? '分割払い' : '決済'}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+                <tfoot>
+                  <tr className="bg-green-50 border-t-2 border-green-200">
+                    <td colSpan="4" className="px-4 py-3 text-sm font-bold text-green-800">合計</td>
+                    <td className="px-4 py-3 text-sm font-bold text-green-800 text-right">
+                      {formatCurrency(breakdown.total || 0)}
+                    </td>
+                    <td colSpan="2"></td>
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
+          )}
+        </div>
+      )}
 
       <div className="mb-4 text-sm text-gray-600 bg-gray-50 p-3 rounded-lg border border-gray-200">
         <p className="font-bold mb-1 text-gray-700">フロー種別の凡例:</p>
