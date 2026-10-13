@@ -1,0 +1,14 @@
+import mongoose from 'mongoose';
+await mongoose.connect('mongodb://localhost:27017/office_manage_system');
+const db = mongoose.connection.db;
+const opts = await db.collection('options').find({ type: { $in: ['AdvancerCategory', 'BearingParty'] } }).toArray();
+console.log('OPTIONS', JSON.stringify(opts.map(o => ({ type: o.type, label: o.label, value: o.value }))));
+const cases = await db.collection('cases').find({}).toArray();
+console.log('CASES', JSON.stringify(cases.map(c => ({ _id: String(c._id), case_id: c.case_id, staff: c.staff_name, exp: c.expense_type, adv: c.advancer_category, bear: c.bearing_party, amt: c.expense_amount, fin: c.final_total_amount, status: c.status, paid: c.paidTerms, cnt: c.installment_count, plan: c.installment_plan, recs: (c.installment_records||[]).map(r => r.status) }))));
+const claims = await db.collection('claims').find({}).toArray();
+console.log('CLAIMS', JSON.stringify(claims.map(c => ({ _id: String(c._id), id: c.claim_id, staff: c.full_name, exp: c.expense_type, adv: c.advancer_category, bear: c.bearing_party, amt: c.expense_amount, status: c.status, paid: c.paidTerms, cnt: c.installment_count }))));
+const ledgers = await db.collection('settlementledgers').find({}).limit(5).toArray();
+console.log('LEDGER_SAMPLE', JSON.stringify(ledgers).slice(0, 1500));
+const pays = await db.collection('settlementpayments').find({}).limit(5).toArray();
+console.log('PAY_SAMPLE', JSON.stringify(pays).slice(0, 1500));
+await mongoose.disconnect();

@@ -1,0 +1,128 @@
+[
+  {
+    "_id": "6a92554d42b99f870fcf3525",
+    "type": "Location",
+    "label": "Tokyo Office",
+    "value": "Tokyo Office",
+    "__v": 0,
+    "createdAt": "2026-08-29T03:43:09.437Z",
+    "updatedAt": "2026-08-29T03:43:09.437Z"
+  },
+  {
+    "_id": "6a92554d42b99f870fcf3526",
+    "type": "Location",
+    "label": "Osaka Office",
+    "value": "Osaka Office",
+    "__v": 0,
+    "createdAt": "2026-08-29T03:43:09.437Z",
+    "updatedAt": "2026-08-29T03:43:09.437Z"
+  },
+  {
+    "_id": "6a92554d42b99f870fcf3527",
+    "type": "Location",
+    "label": "Nagoya Office",
+    "value": "Nagoya Office",
+    "__v": 0,
+    "createdAt": "2026-08-29T03:43:09.437Z",
+    "updatedAt": "2026-08-29T03:43:09.437Z"
+  },
+  {
+    "_id": "6a92554d42b99f870fcf3528",
+    "type": "Location",
+    "label": "Fukuoka Office",
+    "value": "Fukuoka Office",
+    "__v": 0,
+    "createdAt": "2026-08-29T03:43:09.438Z",
+    "updatedAt": "2026-08-29T03:43:09.438Z"
+  },
+  {
+    "_id": "6a92554d42b99f870fcf3529",
+    "type": "ExpenseType",
+    "label": "Postage",
+    "value": "Postage",
+    "__v": 0,
+    "createdAt": "2026-08-29T03:43:09.438Z",
+    "updatedAt": "2026-08-29T03:43:09.438Z"
+  },
+  {
+    "_id": "6a92554d42b99f870fcf352a",
+    "type": "ExpenseType",
+    "label": "Transportation Expenses / Flight Fare",
+    "value": "Transportation Expenses / Flight Fare",
+    "__v": 0,
+    "createdAt": "2026-08-29T03:43:09.438Z",
+    "updatedAt": "2026-08-29T03:43:09.438Z"
+  },
+  {
+    "_id": "6a92554d42b99f870fcf352b",
+    "type": "ExpenseType",
+    "label": "Visa application fee",
+    "value": "Visa application fee",
+    "__v": 0,
+    "createdAt": "2026-08-29T03:43:09.438Z",
+    "updatedAt": "2026-08-29T03:43:09.438Z"
+  },
+  {
+    "_id": "6a92554d42b99f870fcf3999",
+    "type": "ExpenseType",
+    "label": "Hostel Fee",
+    "value": "Hostel Fee",
+    "__v": 0,
+    "createdAt": "2026-10-06T15:53:00.000Z",
+    "updatedAt": "2026-10-06T15:53:00.000Z"
+  },
+  {
+    "_id": "6a92554d42b99f870fcf399a",
+    "type": "ExpenseType",
+    "label": "Language Class Fee",
+    "value": "Language Class Fee",
+    "__v": 0,
+    "createdAt": "2026-10-06T15:53:00.000Z",
+    "updatedAt": "2026-10-06T15:53:00.000Z"
+  },
+  {
+    "_id": "6a92554d42b99f870fcf352c",
+    "type": "ExpenseType",
+    "label": "Waiting Dormitory Fee",
+    "value": "Waiting Dormitory Fee",
+    "__v": 0,
+    "createdAt": "2026-08-29T03:43:09.438Z",
+    "updatedAt": "2026-08-29T03:43:09.438Z"
+  },
+  {
+    "_id": "6a92554d42b99f870fcf352d",
+    "type": "ExpenseType",
+    "label": "Hospital/ Drugs Expenses",
+    "value": "Hospital/ Drugs Expenses",
+    "__v": 0,
+    "createdAt": "2026-08-29T03:43:09.438Z",
+    "updatedAt": "2026-08-29T03:43:09.438Z"
+  },
+  {
+    "_id": "6a92554d42b99f870fcf352e",
+    "type": "ExpenseType",
+    "label": "Equipment/Supplies",
+    "value": "Equipment/Supplies",
+    "__v": 0,
+    "createdAt": "2026-08-29T03:43:09.438Z",
+    "updatedAt": "2026-08-29T03:43:09.438Z"
+  },
+  {
+    "_id": "6a92554d42b99f870fcf352f",
+    "type": "ExpenseType",
+    "label": "WIFI",
+    "value": "WIFI",
+    "__v": 0,
+    "createdAt": "2026-08-29T03:43:09.438Z",
+    "updatedAt": "2026-08-29T03:43:09.438Z"
+  },
+  {
+    "_id": "6a92554d42b99f870fcf3530",
+    "type": "ExpenseType",
+    "label": "others",
+    "value": "others",
+    "__v": 0,
+    "createdAt": "2026-08-29T03:43:09.438Z",
+    "updatedAt": "2026-08-29T03:43:09.438Z"
+  }
+]
