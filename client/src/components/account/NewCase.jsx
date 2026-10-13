@@ -341,7 +341,9 @@ export default function NewCase() {
           collection_start_month: collectionStartMonth || "TBD",
           installment_schedule: installmentSchedule,
           labor_consent: laborConsent,
-          status: '保留中'
+          status: '保留中',
+          registered_by: (JSON.parse(localStorage.getItem('user')) || {}).username || 'account_user',
+          registered_by_role: (JSON.parse(localStorage.getItem('user')) || {}).role || 'account'
         };
 
         return apiFetch('/api/cases', {

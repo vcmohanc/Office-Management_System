@@ -52,7 +52,9 @@ const claimSchema = new mongoose.Schema({
   hasSupportNotification: { type: Boolean, default: false },
   supportUpdatedFields: [{ type: String }],
   consentRecorded: { type: Boolean, default: false },
-  consentDate: { type: Date }
+  consentDate: { type: Date },
+  registered_by: { type: String, default: 'support_user' },
+  registered_by_role: { type: String, default: 'support' }
 }, { timestamps: true });
 
 export default mongoose.model('Claim', claimSchema);
