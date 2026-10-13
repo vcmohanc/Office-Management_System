@@ -213,6 +213,69 @@ router.get('/account', verifyToken, requireRole('admin', 'account'), async (req,
   }
 });
 
+// Recovery breakdown: individual payment records making up 今期の回収額
+router.get('/account/recovery-breakdown', verifyToken, requireRole('admin', 'account'), async (req, res) => {
+  try {
+    const now = new Date();
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+
+    const [payments, settlements, rawCases, rawClaims] = await Promise.all([
+      SettlementPayment.find({ status: 'PAID', paymentDate: { $gte: startOfMonth } }).lean(),
+      Settlement.find({ paymentDate: { $gte: startOfMonth } }).lean(),
+      Case.find({}, { _id: 1, case_id: 1, staff_name: 1, expense_type: 1, final_total_amount: 1 }).lean(),
+      Claim.find({}, { _id: 1, claim_id: 1, full_name: 1, expense_type: 1, total_expense_amount: 1 }).lean()
+    ]);
+
+    // Build lookup maps
+    const caseMap = {};
+    rawCases.forEach(c => { caseMap[c._id.toString()] = c; });
+    rawClaims.forEach(c => { caseMap[c._id.toString()] = { ...c, staff_name: c.full_name, case_id: c.claim_id, final_total_amount: c.total_expense_amount }; });
+
+    const rows = [];
+
+    payments.forEach(p => {
+      const rec = caseMap[p.caseId] || {};
+      rows.push({
+        id: p._id,
+        source: 'payment',
+        caseId: p.caseId,
+        caseRef: rec.case_id || p.caseId,
+        staffName: rec.staff_name || '—',
+        expenseType: rec.expense_type || '—',
+        termNumber: p.termNumber,
+        amount: p.paidAmount,
+        paymentDate: p.paymentDate,
+        totalCaseAmount: rec.final_total_amount || 0,
+      });
+    });
+
+    settlements.forEach(s => {
+      const key = s.caseId?.toString();
+      const rec = key ? (caseMap[key] || {}) : {};
+      rows.push({
+        id: s._id,
+        source: 'settlement',
+        caseId: key || '',
+        caseRef: rec.case_id || key || '—',
+        staffName: s.payeeName || rec.staff_name || '—',
+        expenseType: rec.expense_type || '—',
+        termNumber: null,
+        amount: s.financials?.netPayable || 0,
+        paymentDate: s.paymentDate,
+        totalCaseAmount: rec.final_total_amount || 0,
+      });
+    });
+
+    rows.sort((a, b) => new Date(b.paymentDate) - new Date(a.paymentDate));
+    const total = rows.reduce((sum, r) => sum + r.amount, 0);
+
+    res.json({ rows, total, month: `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}` });
+  } catch (error) {
+    console.error('Error fetching recovery breakdown:', error);
+    res.status(500).json({ error: 'Server error fetching recovery breakdown' });
+  }
+});
+
 // Get Support Dashboard stats (Admin and Support roles only)
 router.get('/support', verifyToken, requireRole('admin', 'support'), async (req, res) => {
   try {
