@@ -15,11 +15,23 @@ if (!fs.existsSync(uploadDir)) {
   fs.mkdirSync(uploadDir, { recursive: true });
 }
 
-// Allowed MIME types and their corresponding extensions
+// MIME types the browser may report in the multipart Content-Type header
 const ALLOWED_MIME_TYPES = new Set([
   'image/jpeg',
   'image/jpg',
   'image/png',
+  'image/apng',
+  'application/pdf',
+]);
+
+// MIME types that file-type may detect via magic bytes.
+// Includes image/apng because file-type distinguishes animated PNGs from static
+// ones — both are valid PNG images and must be accepted.
+const ALLOWED_MAGIC_MIME_TYPES = new Set([
+  'image/jpeg',
+  'image/jpg',
+  'image/png',
+  'image/apng',
   'application/pdf',
 ]);
 
@@ -49,7 +61,7 @@ const fileFilter = (req, file, cb) => {
     cb(null, true);
   } else {
     cb(
-      Object.assign(new Error('Invalid file type. Only JPG, PNG, and PDF files are allowed.'), { code: 'INVALID_FILE_TYPE' }),
+      Object.assign(new Error('無効なファイル形式です。JPG、PNG、PDFファイルのみアップロード可能です。'), { code: 'INVALID_FILE_TYPE' }),
       false
     );
   }
@@ -71,18 +83,18 @@ router.post('/', (req, res) => {
     // Handle multer-level errors inline (file size, type, count limits)
     if (err) {
       if (err.code === 'LIMIT_FILE_SIZE') {
-        return res.status(400).json({ message: 'File too large. Maximum size is 5 MB per file.' });
+        return res.status(400).json({ message: 'ファイルサイズが大きすぎます。1ファイルの最大サイズは5MBです。' });
       }
       if (err.code === 'INVALID_FILE_TYPE') {
         return res.status(400).json({ message: err.message });
       }
       console.error('Multer error:', err);
-      return res.status(400).json({ message: err.message || 'Upload error.' });
+      return res.status(400).json({ message: err.message || 'アップロードエラーが発生しました。' });
     }
 
     try {
       if (!req.files || req.files.length === 0) {
-        return res.status(400).json({ message: 'No files uploaded.' });
+        return res.status(400).json({ message: 'ファイルがアップロードされていません。' });
       }
 
       // Second-pass: magic-byte validation using the file-type package
@@ -96,7 +108,7 @@ router.post('/', (req, res) => {
           // 2. If fileTypeFromBuffer is inconclusive, verify PDF magic header (%PDF-)
           const isPdfMagic = buffer.length >= 5 && buffer.subarray(0, 5).toString('ascii') === '%PDF-';
           const isValidMagic = detected
-            ? ALLOWED_MIME_TYPES.has(detected.mime)
+            ? ALLOWED_MAGIC_MIME_TYPES.has(detected.mime)
             : (/\.pdf$/i.test(file.originalname) && isPdfMagic);
 
           if (!isValidMagic) {
@@ -104,7 +116,7 @@ router.post('/', (req, res) => {
             if (fs.existsSync(file.path)) {
               fs.unlinkSync(file.path);
             }
-            return { filename: file.originalname, error: 'File content does not match allowed types or header signatures.' };
+            return { filename: file.originalname, error: 'ファイルの内容が許可された形式と一致しません。' };
           }
 
           return { filename: file.filename, ok: true };
@@ -115,7 +127,7 @@ router.post('/', (req, res) => {
       const succeeded = results.filter((r) => r.ok).map((r) => r.filename);
 
       if (failed.length > 0 && succeeded.length === 0) {
-        return res.status(400).json({ message: 'All uploaded files failed validation.', failed });
+        return res.status(400).json({ message: 'アップロードされたファイルの検証に失敗しました。ファイルが破損していないか確認してください。', failed });
       }
 
       const response = { message: 'Files uploaded successfully', fileNames: succeeded };
@@ -124,7 +136,7 @@ router.post('/', (req, res) => {
       res.json(response);
     } catch (error) {
       console.error('Error uploading files:', error);
-      res.status(500).json({ message: 'Error uploading files' });
+      res.status(500).json({ message: 'ファイルのアップロード中にサーバーエラーが発生しました。' });
     }
   });
 });
