@@ -98,26 +98,77 @@ router.get('/account', verifyToken, requireRole('admin', 'account'), async (req,
 
     const allRecords = [...mappedCases, ...mappedClaims];
 
-    // Total amount advanced across all cases and claims
-    const totalAdvances = allRecords.reduce((sum, c) => sum + (c.finalTotal || 0), 0);
+    // Map expense type → pattern id (mirrors client-side EXPENSE_TYPE_TO_PATTERN_ID)
+    const EXPENSE_TO_PTN = {
+      'Postage': 'PTN-1', '郵便料金': 'PTN-1',
+      'Transportation / Airfare': 'PTN-1', '交通費 / 航空運賃': 'PTN-1',
+      'Waiting dormitory fees': 'PTN-1', '待機寮費': 'PTN-1',
+      'Visa application fee': 'PTN-2', 'ビザ申請料': 'PTN-2',
+      'Accommodation costs': 'PTN-2', '宿泊費': 'PTN-2',
+      'Language course fees': 'PTN-2', '語学講習費': 'PTN-2',
+      'Equipment / Consumables': 'PTN-3', '機材費': 'PTN-3',
+      '過払い回収': 'PTN-3', '返金': 'PTN-3', 'Wi-Fi': 'PTN-3',
+      'Other': 'PTN-4', '出張費': 'PTN-4', 'その他': 'PTN-4',
+      'Hospital fees / Medicine': 'PTN-5', 'relocation costs': 'PTN-5',
+    };
 
-    // Total actually recovered = sum of paidAmount from PAID/PARTIAL SettlementPayment records
-    // + netPayable from confirmed Settlement records (separate settlement flow)
-    const totalRecoveredFromPayments = allPayments
-      .filter(p => p.status === 'PAID' || p.status === 'PARTIAL')
-      .reduce((sum, p) => sum + (p.paidAmount || 0), 0);
+    // Build per-caseId recovered amount index from SettlementPayment
+    const paymentsByCaseId = {};
+    allPayments.filter(p => p.status === 'PAID' || p.status === 'PARTIAL').forEach(p => {
+      paymentsByCaseId[p.caseId] = (paymentsByCaseId[p.caseId] || 0) + (p.paidAmount || 0);
+    });
 
-    const totalRecoveredFromSettlements = allSettlements
-      .reduce((sum, s) => sum + (s.financials?.netPayable || 0), 0);
+    // Also include Settlement records (confirmed settlements)
+    const settlementByCaseId = {};
+    allSettlements.forEach(s => {
+      const key = s.caseId?.toString();
+      if (key) settlementByCaseId[key] = (settlementByCaseId[key] || 0) + (s.financials?.netPayable || 0);
+    });
 
-    const totalRecovered = totalRecoveredFromPayments + totalRecoveredFromSettlements;
+    // Per-pattern metrics computed from real payment data
+    const patternMetrics = {};
+    ['PTN-1', 'PTN-2', 'PTN-3', 'PTN-4', 'PTN-5'].forEach(id => {
+      patternMetrics[id] = { totalAdvanced: 0, totalRecovered: 0, active: 0, netExposure: 0, progress: 0 };
+    });
 
-    // Active advances = total advanced minus all recovered amounts
-    const totalActiveAdvances = Math.max(0, totalAdvances - totalRecovered);
-
-    // Pending = cases/claims not in a completed status
     const completedStatuses = ['Completed', '完了', '支払済', 'PAID'];
-    const pendingSettlements = allRecords.filter(c => !completedStatuses.includes(c.status)).length;
+    let totalAdvances = 0;
+    let totalRecovered = 0;
+    let pendingSettlements = 0;
+
+    allRecords.forEach(c => {
+      const expType = c.expense_type || 'Other';
+      const ptnId = EXPENSE_TO_PTN[expType] || 'PTN-4';
+      const amt = c.finalTotal || 0;
+      const caseIdStr = c._id?.toString() || '';
+
+      // Real recovered: SettlementPayment first, then Settlement, then installment_records
+      const fromPayments = paymentsByCaseId[caseIdStr] || 0;
+      const fromSettlement = settlementByCaseId[caseIdStr] || 0;
+      const fromInstallments = (c.installment_records || [])
+        .filter(r => r.status === 'DEDUCTED')
+        .reduce((sum, r) => sum + (r.amount || 0), 0);
+      const recovered = Math.max(fromPayments + fromSettlement, fromInstallments);
+      const remaining = Math.max(0, amt - recovered);
+
+      totalAdvances += amt;
+      totalRecovered += recovered;
+      if (!completedStatuses.includes(c.status)) pendingSettlements += 1;
+
+      patternMetrics[ptnId].totalAdvanced += amt;
+      patternMetrics[ptnId].totalRecovered += recovered;
+      if (remaining > 0) patternMetrics[ptnId].active += 1;
+    });
+
+    // Compute derived pattern fields
+    Object.values(patternMetrics).forEach(m => {
+      m.netExposure = Math.max(0, m.totalAdvanced - m.totalRecovered);
+      m.progress = m.totalAdvanced > 0
+        ? Math.min(100, Math.round((m.totalRecovered / m.totalAdvanced) * 100))
+        : 0;
+    });
+
+    const totalActiveAdvances = Math.max(0, totalAdvances - totalRecovered);
 
     // This period (current month) recovered amounts
     const startOfMonth = new Date();
@@ -133,7 +184,6 @@ router.get('/account', verifyToken, requireRole('admin', 'account'), async (req,
       .reduce((sum, s) => sum + (s.financials?.netPayable || 0), 0);
 
     const recoveredThisPeriod = paidThisPeriod + settledThisPeriod;
-
     const overallRecoveryRate = totalAdvances > 0 ? Math.round((totalRecovered / totalAdvances) * 100) : 0;
 
     const casesCreatedThisMonth = allRecords.filter(c => {
@@ -154,7 +204,8 @@ router.get('/account', verifyToken, requireRole('admin', 'account'), async (req,
       pendingSettlements,
       recoveredThisPeriod,
       overallRecoveryRate,
-      activeAdvancesMoM
+      activeAdvancesMoM,
+      patternMetrics
     });
   } catch (error) {
     console.error('Error fetching account dashboard data:', error);
