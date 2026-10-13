@@ -73,7 +73,7 @@ export default function Dashboard({ setToken }) {
           {activeTab === 'Assign Work Place' && <AssignWorkPlace />}
           {activeTab === 'Visa Management' && <VisaManagement />}
           {activeTab === 'Resignation' && <Resignation />}
-          {activeTab === 'サポート部門' && <SupportDashboard />}
+          {activeTab === 'サポート部門' && <SupportDashboard setActiveTab={setActiveTab} />}
           {activeTab === 'Staff Claim Request' && <StaffClaimRequest />}
           {activeTab === 'Claim List' && <ClaimList />}
           {activeTab === 'Admin New Registration' && <AdminNewRegistration setActiveTab={setActiveTab} />}

@@ -165,36 +165,87 @@ router.get('/account', verifyToken, requireRole('admin', 'account'), async (req,
 // Get Support Dashboard stats (Admin and Support roles only)
 router.get('/support', verifyToken, requireRole('admin', 'support'), async (req, res) => {
   try {
-    const claims = await Claim.find().sort({ createdAt: -1 });
-    
-    // Active Claims
-    const activeClaims = claims.filter(c => c.status !== 'Completed' && c.status !== 'Paid').length;
-    
-    // Recent Activity mapping
-    const recentActivity = claims.slice(0, 5).map(c => {
-      let statusColor = 'bg-gray-100 text-gray-700';
-      if (c.status === 'Approved') statusColor = 'bg-green-100 text-green-700';
-      else if (c.status === 'Pending') statusColor = 'bg-yellow-100 text-yellow-700';
-      else if (c.status === 'In Finance Review') statusColor = 'bg-blue-100 text-blue-700';
-      else if (c.status === 'Returned for Edits' || c.status === 'Needs Edit' || c.status === 'Returned') statusColor = 'bg-red-100 text-red-700';
-      
-      const dateStr = new Date(c.createdAt || Date.now()).toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+    const [claims, employees] = await Promise.all([
+      Claim.find().sort({ createdAt: -1 }).lean(),
+      Employee.find({}, { katakanaName: 1, romajiName: 1, department: 1, visaEndDate: 1, joinDate: 1 }).lean()
+    ]);
 
-      return {
-        id: c._id,
-        staff: c.full_name || 'Unknown Staff',
-        type: c.expense_type || 'Unknown Type',
-        status: c.status || 'Pending',
-        statusColor,
-        date: dateStr
-      };
-    });
-    
+    const completedStatuses = ['Completed', 'Paid', '完了', '支払済'];
+    const pendingActionStatuses = ['Pending', 'Needs Edit', 'Returned', 'RETURNED_FOR_CORRECTION', '保留中 Correction'];
+
+    // KPI: active claims (not completed/paid)
+    const activeClaims = claims.filter(c => !completedStatuses.includes(c.status)).length;
+
+    // KPI: claims currently needing support action
+    const pendingActionClaims = claims.filter(c => pendingActionStatuses.includes(c.status)).length;
+
+    // KPI: total active staff count (proxy for scheduled shifts — no Shift model)
+    const totalStaff = employees.length;
+
+    // KPI: task (claim) completion rate
+    const completedCount = claims.filter(c => completedStatuses.includes(c.status)).length;
+    const completionRate = claims.length > 0 ? Math.round((completedCount / claims.length) * 100) : 0;
+
+    // Staff with valid visas vs total (for coverage badge)
+    const now = new Date();
+    const validVisaStaff = employees.filter(e => !e.visaEndDate || new Date(e.visaEndDate) > now).length;
+    const staffCoverageRate = totalStaff > 0 ? Math.round((validVisaStaff / totalStaff) * 100) : 100;
+
+    // Month-over-month completion trend
+    const startOfThisMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    const startOfLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    const completedThisMonth = claims.filter(c => completedStatuses.includes(c.status) && new Date(c.updatedAt) >= startOfThisMonth).length;
+    const completedLastMonth = claims.filter(c => completedStatuses.includes(c.status) && new Date(c.updatedAt) >= startOfLastMonth && new Date(c.updatedAt) < startOfThisMonth).length;
+    const completionTrend = completedThisMonth >= completedLastMonth ? 'up' : 'down';
+
+    // Task delegation: pending/completed counts + top 3 active claims as "tasks"
+    const tasksPending = activeClaims;
+    const tasksCompleted = completedCount;
+    const recentTasks = claims
+      .filter(c => !completedStatuses.includes(c.status))
+      .slice(0, 3)
+      .map(c => {
+        const deadline = c.expected_settlement_date
+          ? new Date(c.expected_settlement_date).toLocaleDateString('ja-JP', { month: 'long', day: 'numeric' })
+          : null;
+        const isExpired = c.expected_settlement_date && new Date(c.expected_settlement_date) < now;
+        return {
+          id: c._id,
+          title: `${c.expense_type || 'クレーム'} — ${c.claim_id || ''}`.trim(),
+          person: c.full_name || '不明',
+          deadline,
+          isExpired
+        };
+      });
+
+    // Recent activity: last 8 claims
+    const statusColorMap = {
+      'Approved': 'bg-green-100 text-green-700',
+      'Pending': 'bg-yellow-100 text-yellow-700',
+      'In Finance Review': 'bg-blue-100 text-blue-700',
+      'Needs Edit': 'bg-red-100 text-red-700',
+      'Returned': 'bg-red-100 text-red-700',
+      'RETURNED_FOR_CORRECTION': 'bg-red-100 text-red-700',
+      'Completed': 'bg-green-100 text-green-700',
+      'Paid': 'bg-green-100 text-green-700',
+    };
+    const recentActivity = claims.slice(0, 8).map(c => ({
+      id: c._id,
+      staff: c.full_name || '不明',
+      type: c.expense_type || '不明',
+      status: c.status || 'Pending',
+      statusColor: statusColorMap[c.status] || 'bg-gray-100 text-gray-700',
+      date: new Date(c.createdAt || Date.now()).toLocaleDateString('ja-JP', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })
+    }));
+
     res.json({
       activeClaims,
-      pendingLeaves: 7, // Mocked as no Leave model exists
-      scheduledShifts: 18, // Mocked as no Shift model exists
-      taskCompletionRate: '82%', // Mocked as no Task model exists
+      pendingActionClaims,
+      totalStaff,
+      completionRate,
+      staffCoverageRate,
+      completionTrend,
+      taskDelegation: { pending: tasksPending, completed: tasksCompleted, tasks: recentTasks },
       recentActivity
     });
   } catch (error) {
