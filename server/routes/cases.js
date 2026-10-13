@@ -3,7 +3,7 @@ import mongoose from 'mongoose';
 import { z } from 'zod';
 import Case from '../models/Case.js';
 import Settlement from '../models/Settlement.js';
-import { requireRole } from '../middleware/auth.js';
+import { verifyToken, requireRole } from '../middleware/auth.js';
 import { validateBackendExpenseAmount } from '../utils/amountHelper.js';
 import { expenseRules } from '../utils/expenseRules.js';
 import { caseEvents } from '../events.js';
@@ -58,7 +58,7 @@ const caseSchemaZod = z.object({
   registered_by_role: z.string().optional().nullable()
 });
 
-router.get('/', async (req, res) => {
+router.get('/', verifyToken, requireRole('admin', 'account', 'support'), async (req, res) => {
   try {
     const cases = await Case.find().sort({ createdAt: -1 });
     res.json(cases);
@@ -203,7 +203,6 @@ router.post('/:id/settle', requireRole('admin', 'account'), async (req, res) => 
   try {
     const caseId = req.params.id;
     const {
-      processedBy,
       payeeName,
       paymentMethod,
       destinationDetails,
@@ -217,6 +216,8 @@ router.post('/:id/settle', requireRole('admin', 'account'), async (req, res) => 
     if (!isConfirmed) {
       return res.status(400).json({ message: 'Settlement must be confirmed' });
     }
+
+    const processedBy = req.user.username;
 
     // Verify case exists
     const existingCase = await Case.findById(caseId);
@@ -345,12 +346,15 @@ router.post('/:id/deduct-term', requireRole('admin', 'account'), async (req, res
   }
 });
 
-router.post('/:id/messages', async (req, res) => {
+router.post('/:id/messages', verifyToken, requireRole('admin', 'account', 'support'), async (req, res) => {
   try {
-    const { text, author } = req.body;
+    const { text } = req.body;
     if (!text) {
       return res.status(400).json({ message: 'Message text is required' });
     }
+
+    const role = req.user.role;
+    const author = role === 'support' ? 'support_user' : role === 'account' ? 'account_user' : req.user.username;
 
     const updatedCase = await Case.findByIdAndUpdate(
       req.params.id,
@@ -358,13 +362,13 @@ router.post('/:id/messages', async (req, res) => {
         $push: {
           messages: {
             text,
-            author: author || 'system',
+            author,
             date: new Date()
           }
         },
         $set: {
-          hasSupportNotification: author === 'account_user',
-          hasAccountNotification: author === 'support_user'
+          hasSupportNotification: role === 'account',
+          hasAccountNotification: role === 'support'
         }
       },
       { new: true }

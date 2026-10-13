@@ -4,6 +4,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import fs from 'fs';
 import { fileTypeFromBuffer } from 'file-type';
+import { requireRole } from '../middleware/auth.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -66,7 +67,7 @@ const upload = multer({
 
 // Use multer's callback pattern — compatible with Express v5 + multer v2.
 // The old router-level (err, req, res, next) pattern is unreliable in this stack.
-router.post('/', (req, res) => {
+router.post('/', requireRole('admin', 'account', 'support'), (req, res) => {
   upload.array('files', 10)(req, res, async (err) => {
     // Handle multer-level errors inline (file size, type, count limits)
     if (err) {

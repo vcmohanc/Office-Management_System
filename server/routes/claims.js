@@ -1,7 +1,7 @@
 import express from 'express';
 import { z } from 'zod';
 import Claim from '../models/Claim.js';
-import { requireRole } from '../middleware/auth.js';
+import { verifyToken, requireRole } from '../middleware/auth.js';
 import { validateBackendExpenseAmount } from '../utils/amountHelper.js';
 import { expenseRules } from '../utils/expenseRules.js';
 import { caseEvents } from '../events.js';
@@ -9,7 +9,7 @@ import Settlement from '../models/Settlement.js';
 
 const router = express.Router();
 
-router.get('/', async (req, res) => {
+router.get('/', verifyToken, requireRole('admin', 'account', 'support'), async (req, res) => {
   try {
     const claims = await Claim.find().sort({ createdAt: -1 });
     res.json(claims);
@@ -213,12 +213,15 @@ router.patch('/:id/messages/read', async (req, res) => {
   }
 });
 
-router.post('/:id/messages', async (req, res) => {
+router.post('/:id/messages', verifyToken, requireRole('admin', 'account', 'support'), async (req, res) => {
   try {
-    const { text, author } = req.body;
+    const { text } = req.body;
     if (!text) {
       return res.status(400).json({ message: 'Message text is required' });
     }
+
+    const role = req.user.role;
+    const author = role === 'support' ? 'support_user' : role === 'account' ? 'account_user' : req.user.username;
 
     const updatedClaim = await Claim.findByIdAndUpdate(
       req.params.id,
@@ -226,13 +229,13 @@ router.post('/:id/messages', async (req, res) => {
         $push: {
           messages: {
             text,
-            author: author || 'system',
+            author,
             date: new Date()
           }
         },
         $set: {
-          hasSupportNotification: author === 'account_user',
-          hasAccountNotification: author === 'support_user'
+          hasSupportNotification: role === 'account',
+          hasAccountNotification: role === 'support'
         }
       },
       { new: true }

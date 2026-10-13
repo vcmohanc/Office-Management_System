@@ -54,7 +54,7 @@ router.post('/register', authLimiter, verifyToken, requireRole('admin'), async (
 router.post('/login', authLimiter, async (req, res) => {
   try {
     const { username, password } = req.body;
-    if (!username || !password) {
+    if (!username || typeof username !== 'string' || !password || typeof password !== 'string') {
       return res.status(400).json({ error: 'Username and password are required' });
     }
 
@@ -71,7 +71,7 @@ router.post('/login', authLimiter, async (req, res) => {
     }
 
     const token = jwt.sign(
-      { id: user._id, role: user.role, username: user.username },
+      { id: user._id, role: user.role, username: user.username, tokenVersion: user.tokenVersion },
       process.env.JWT_SECRET,
       { expiresIn: '1d' }
     );
@@ -117,6 +117,7 @@ router.put('/update-password', verifyToken, async (req, res) => {
     const hashedPassword = await bcrypt.hash(newPassword, salt);
 
     user.password = hashedPassword;
+    user.tokenVersion = (user.tokenVersion || 0) + 1;
     await user.save();
 
     res.json({ message: 'Password updated successfully' });
@@ -173,21 +174,26 @@ router.put('/users/:id', verifyToken, async (req, res) => {
       ...(role && isAdmin && { role }),   // role only settable by admin
     };
 
+    let incFields = {};
     if (password) {
       if (!password || password.length < 8) {
         return res.status(400).json({ error: 'Password must be at least 8 characters' });
       }
       const salt = await bcrypt.genSalt(10);
       updateFields.password = await bcrypt.hash(password, salt);
+      incFields.tokenVersion = 1;
     }
 
     if (Object.keys(updateFields).length === 0) {
       return res.status(400).json({ error: 'No valid fields provided for update' });
     }
 
+    const updateOp = { $set: updateFields };
+    if (Object.keys(incFields).length > 0) updateOp.$inc = incFields;
+
     const updatedUser = await User.findByIdAndUpdate(
       req.params.id,
-      { $set: updateFields },
+      updateOp,
       { new: true, select: '-password' }
     );
 

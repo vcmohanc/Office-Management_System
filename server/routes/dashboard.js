@@ -7,10 +7,13 @@ import Claim from '../models/Claim.js';
 import Settlement from '../models/Settlement.js';
 const router = express.Router();
 
-// Get dashboard stats & employees (Protected)
-router.get('/', verifyToken, async (req, res) => {
+// Get dashboard stats & employees (Admin and HR only)
+router.get('/', verifyToken, requireRole('admin', 'hr'), async (req, res) => {
   try {
-    const employees = await Employee.find();
+    const employees = await Employee.find(
+      {},
+      { _id: 1, name: 1, staffId: 1, department: 1, role: 1, joinDate: 1, visaEndDate: 1, onboardingステータス: 1 }
+    );
     
     // HR Stats
     const totalStaff = employees.length;

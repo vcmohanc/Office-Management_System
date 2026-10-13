@@ -117,16 +117,23 @@ export default function HRDashboard() {
               </tr>
             </thead>
             <tbody>
-              ${filteredEmployees.map((emp, i) => `
+              ${filteredEmployees.map((emp, i) => {
+                const esc = (s) => s == null ? 'N/A' : String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+                const staffId = emp.staffId ? esc(emp.staffId.replace(/[#-]/g, '')) : 'STF' + esc(emp._id?.slice(-6).toUpperCase());
+                const name = esc(emp.romajiName || emp.katakanaName);
+                const dept = esc(Array.isArray(emp.department) ? emp.department.join(', ') : emp.department);
+                const joinDate = emp.joinDate ? esc(new Date(emp.joinDate).toLocaleDateString()) : 'N/A';
+                const status = esc(emp.onboardingステータス || 'Active');
+                return `
                 <tr>
                   <td>${i + 1}</td>
-                  <td>${emp.staffId ? emp.staffId.replace(/[#-]/g, '') : 'STF' + emp._id?.slice(-6).toUpperCase()}</td>
-                  <td>${emp.romajiName || emp.katakanaName || 'N/A'}</td>
-                  <td>${Array.isArray(emp.department) ? emp.department.join(', ') : (emp.department || 'N/A')}</td>
-                  <td>${emp.joinDate ? new Date(emp.joinDate).toLocaleDateString() : 'N/A'}</td>
-                  <td>${emp.onboardingステータス || 'Active'}</td>
+                  <td>${staffId}</td>
+                  <td>${name}</td>
+                  <td>${dept}</td>
+                  <td>${joinDate}</td>
+                  <td>${status}</td>
                 </tr>
-              `).join('')}
+              `;}).join('')}
             </tbody>
           </table>
           <div class="footer">
