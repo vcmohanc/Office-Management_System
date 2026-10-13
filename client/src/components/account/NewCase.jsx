@@ -279,8 +279,10 @@ export default function NewCase() {
         newCases[index].receipts = [...(newCases[index].receipts || []), ...data.fileNames];
         setCases(newCases);
       } else {
-        console.error('Failed to upload files');
-        toast.error('ファイルのアップロードに失敗しました。');
+        const errorData = await response.json().catch(() => ({}));
+        const msg = errorData.message || 'ファイルのアップロードに失敗しました。';
+        console.error('Failed to upload files:', response.status, msg);
+        toast.error(msg);
       }
     } catch (error) {
       console.error('Error uploading files:', error);
