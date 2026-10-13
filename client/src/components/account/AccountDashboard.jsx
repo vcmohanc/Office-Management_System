@@ -1,60 +1,17 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import { Wallet, TrendingUp, Clipboard, CheckCircle, Landmark, User, Tractor, ArrowRight, Briefcase, Users, Building, Building2 } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Wallet, TrendingUp, Clipboard, CheckCircle, Landmark, User, ArrowRight, Building, Building2 } from 'lucide-react';
 import { apiFetch } from '../../utils/apiFetch.js';
-import { PATTERN_CONFIG, getPatternForExpense, getPatternByParties, calculateSettlementMetrics, toPartyJP, toFlowTypeJP } from '../../utils/settlementPatterns.js';
+import { PATTERN_CONFIG, toPartyJP, toFlowTypeJP } from '../../utils/settlementPatterns.js';
 
 export default function AccountDashboard() {
-  const [data, setData] = useState({
-    totalActiveAdvances: 0,
-    pendingSettlements: 0,
-    recoveredThisPeriod: 0,
-    fundFlowPatterns: {
-      ptn1: { activeCount: 0, totalAdvanced: 0, totalRecovered: 0, netExposure: 0 },
-      ptn2: { activeCount: 0, totalAdvanced: 0, totalRecovered: 0, netExposure: 0 },
-      ptn3: { activeCount: 0, totalAdvanced: 0, totalRecovered: 0, netExposure: 0 },
-      ptn4: { activeCount: 0, totalAdvanced: 0, totalRecovered: 0, netExposure: 0 }
-    }
-  });
+  const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
-
-  const [cases, setCases] = useState([]);
 
   useEffect(() => {
     const fetchDashboardData = async () => {
       try {
-        const [dashRes, casesRes, claimsRes] = await Promise.all([
-          apiFetch('/api/dashboard/account'),
-          apiFetch('/api/cases'),
-          apiFetch('/api/claims')
-        ]);
-        
-        if (dashRes.ok) {
-          setData(await dashRes.json());
-        }
-        
-        let casesData = [];
-        let claimsData = [];
-        if (casesRes.ok) casesData = await casesRes.json();
-        if (claimsRes.ok) claimsData = await claimsRes.json();
-        
-        const mappedCases = casesData.map(c => ({
-          ...c,
-          advancerCategory: c.advancerCategory || 'Office',
-          finalTotal: c.finalTotal || c.totalExpense || c.final_total_amount || 0,
-          expenseType: c.expenseType || c.expense_type || 'Other',
-          workPlace: c.workPlace || 'N/A'
-        }));
-
-        const mappedClaims = claimsData.map(c => ({
-          ...c,
-          isClaim: true,
-          advancerCategory: c.advancer_category || c.advancerCategory || 'Staff',
-          finalTotal: c.totalExpense金額 || c.total_expense_amount || 0,
-          expenseType: c.expenseType || c.expense_type || 'Claim',
-          workPlace: c.workPlace || 'N/A'
-        }));
-
-        setCases([...mappedCases, ...mappedClaims]);
+        const res = await apiFetch('/api/dashboard/account');
+        if (res.ok) setData(await res.json());
       } catch (error) {
         console.error('Error fetching dashboard data:', error);
       } finally {
@@ -75,79 +32,22 @@ export default function AccountDashboard() {
   const getFlowColors = (flowType) => {
     if (flowType === 'Reimburse' || flowType === '精算') return { text: 'text-blue-500', bg: 'bg-blue-500' };
     if (flowType === 'Collect' || flowType === '回収') return { text: 'text-green-500', bg: 'bg-green-500' };
-    return { text: 'text-gray-500', bg: 'bg-gray-500' }; // Transfer / 振替
+    return { text: 'text-gray-500', bg: 'bg-gray-500' };
   };
 
-  const paymentOptions = useMemo(() => {
-    // Group records by pattern
-    const patternGroups = {};
-    PATTERN_CONFIG.forEach(p => {
-      patternGroups[p.id] = { ...p, records: [] };
-    });
+  // Merge server-computed metrics with client pattern config for rendering
+  const paymentOptions = PATTERN_CONFIG.map(p => {
+    const m = data?.patternMetrics?.[p.id] || { totalAdvanced: 0, totalRecovered: 0, netExposure: 0, progress: 0, active: 0 };
+    return { ...p, ...m };
+  });
 
-    const activeCases = cases.filter(c => {
-      if (!c || c.isDeleted) return false;
-      if (['Pending', 'New', 'Registered', '新た', 'REJECTED', '拒否', 'RETURNED_FOR_CORRECTION', '保留中 Correction', 'Payment 保留中', '保留中'].includes(c.status)) return false;
-      return true;
-    });
-
-    activeCases.forEach(c => {
-      const expType = c.expenseType || 'Other';
-      
-      let pattern = getPatternForExpense(expType);
-      
-      if (pattern.id === 'PTN-4' && expType !== 'Other' && expType !== '出張費' && expType !== 'その他') {
-        const partyPattern = getPatternByParties(c.advancerCategory, c.bearing_party || c.bearer);
-        if (partyPattern) {
-          pattern = partyPattern;
-        }
-      }
-
-      if (pattern && patternGroups[pattern.id]) {
-        patternGroups[pattern.id].records.push(c);
-      }
-    });
-
-    return PATTERN_CONFIG.map(p => {
-      const group = patternGroups[p.id];
-      const metrics = calculateSettlementMetrics(group.records);
-      return {
-        ...p,
-        ...metrics
-      };
-    });
-  }, [cases]);
-
-  const summaryMetrics = useMemo(() => {
-    let totalAdvanced = 0;
-    let totalRecovered = 0;
-    let totalNetExposure = 0;
-    let activeCount = 0;
-
-    paymentOptions.forEach(p => {
-      totalAdvanced += p.totalAdvanced || 0;
-      totalRecovered += p.totalRecovered || 0;
-      totalNetExposure += p.netExposure || 0;
-      activeCount += p.active || 0;
-    });
-
-    const pendingApprovals = cases.filter(c => {
-      if (!c || c.isDeleted) return false;
-      return ['Pending', 'New', 'Registered', '新た', '保留中', 'Payment 保留中', 'APPROVED_FOR_PAYMENT'].includes(c.status);
-    }).length;
-
-    const overallRate = totalAdvanced > 0 
-      ? Math.round((totalRecovered / totalAdvanced) * 100) 
-      : (data.overallRecoveryRate || 0);
-
-    return {
-      totalActiveAdvances: totalNetExposure > 0 ? totalNetExposure : (data.totalActiveAdvances || totalAdvanced || 0),
-      pendingSettlements: activeCount > 0 ? activeCount : (pendingApprovals || data.pendingSettlements || 0),
-      recoveredThisPeriod: data.recoveredThisPeriod || totalRecovered || 0,
-      overallRecoveryRate: overallRate || data.overallRecoveryRate || 0,
-      activeAdvancesMoM: data.activeAdvancesMoM || 0
-    };
-  }, [paymentOptions, cases, data]);
+  const summaryMetrics = {
+    totalActiveAdvances: data?.totalActiveAdvances || 0,
+    pendingSettlements: data?.pendingSettlements || 0,
+    recoveredThisPeriod: data?.recoveredThisPeriod || 0,
+    overallRecoveryRate: data?.overallRecoveryRate || 0,
+    activeAdvancesMoM: data?.activeAdvancesMoM || 0,
+  };
 
   const formatCurrency = (amount) => {
     return new Intl.NumberFormat('ja-JP', { style: 'currency', currency: 'JPY' }).format(amount);
