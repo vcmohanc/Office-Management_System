@@ -1,54 +1,7 @@
-# Allowlist approach — only the files below are copied into the image.
-# Everything else is excluded by default.
-# DO NOT switch this back to a denylist.
-
-# Required application code
-!server.js
-!package.json
-!package-lock.json
-!routes/
-!models/
-!middleware/
-!controllers/
-!utils/
-!config/
-!services/
-!events.js
-!migrations/
-
-# Explicitly exclude everything sensitive
 node_modules
 .env
 .env.*
-*.sqlite
-*.json.bak
-db_dump/
-uploads/
-database_export.json
-*.bson
-*.gz
-*.zip
-*.tar
-Dockerfile
-docker-compose.yml
 .git
 .vscode
-tests/
-*.test.js
-check*.js
-scratch_*.js
-scratch_*.mjs
-reset_passwords.js
-export_*.js
-import*.js
-import.sh
-transfer_db.cjs
-update_db*.cjs
-fix_db*.cjs
-rename_*.cjs
-add_options.cjs
-get_options*.js
-get_options*.cjs
-migrate*.js
-seed*.js
-update.js
+Dockerfile
+docker-compose.yml
