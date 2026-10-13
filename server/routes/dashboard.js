@@ -98,46 +98,50 @@ router.get('/account', verifyToken, requireRole('admin', 'account'), async (req,
 
     const allRecords = [...mappedCases, ...mappedClaims];
 
-    // Compute metrics
-    let totalAdvances = 0;
-    let totalRecovered = 0;
-    let totalActiveAdvances = 0;
-    let pendingSettlements = 0;
+    // Total amount advanced across all cases and claims
+    const totalAdvances = allRecords.reduce((sum, c) => sum + (c.finalTotal || 0), 0);
 
-    allRecords.forEach(c => {
-      const amt = c.finalTotal;
-      const terms = c.totalTerms;
-      const paid = c.paidTerms;
-      const nextPayment = terms > 0 ? amt / terms : amt;
-      const remaining = Math.max(0, amt - (paid * nextPayment));
-      const recovered = amt - remaining;
+    // Total actually recovered = sum of paidAmount from PAID/PARTIAL SettlementPayment records
+    // + netPayable from confirmed Settlement records (separate settlement flow)
+    const totalRecoveredFromPayments = allPayments
+      .filter(p => p.status === 'PAID' || p.status === 'PARTIAL')
+      .reduce((sum, p) => sum + (p.paidAmount || 0), 0);
 
-      totalAdvances += amt;
-      totalRecovered += recovered;
+    const totalRecoveredFromSettlements = allSettlements
+      .reduce((sum, s) => sum + (s.financials?.netPayable || 0), 0);
 
-      const isCompleted = ['Completed', '完了', '支払済', 'PAID'].includes(c.status) && remaining <= 0;
-      if (!isCompleted) {
-        totalActiveAdvances += remaining;
-        pendingSettlements += 1;
-      }
-    });
+    const totalRecovered = totalRecoveredFromPayments + totalRecoveredFromSettlements;
 
-    // Check recent settlements this month
+    // Active advances = total advanced minus all recovered amounts
+    const totalActiveAdvances = Math.max(0, totalAdvances - totalRecovered);
+
+    // Pending = cases/claims not in a completed status
+    const completedStatuses = ['Completed', '完了', '支払済', 'PAID'];
+    const pendingSettlements = allRecords.filter(c => !completedStatuses.includes(c.status)).length;
+
+    // This period (current month) recovered amounts
     const startOfMonth = new Date();
     startOfMonth.setDate(1);
     startOfMonth.setHours(0, 0, 0, 0);
 
-    const recentSettlements = allSettlements.filter(s => s.paymentDate && new Date(s.paymentDate) >= startOfMonth);
-    const recoveredThisPeriod = recentSettlements.length > 0 
-      ? recentSettlements.reduce((sum, s) => sum + (s.financials?.netPayable || 0), 0)
-      : totalRecovered;
+    const paidThisPeriod = allPayments
+      .filter(p => p.status === 'PAID' && p.paymentDate && new Date(p.paymentDate) >= startOfMonth)
+      .reduce((sum, p) => sum + (p.paidAmount || 0), 0);
+
+    const settledThisPeriod = allSettlements
+      .filter(s => s.paymentDate && new Date(s.paymentDate) >= startOfMonth)
+      .reduce((sum, s) => sum + (s.financials?.netPayable || 0), 0);
+
+    const recoveredThisPeriod = paidThisPeriod + settledThisPeriod;
 
     const overallRecoveryRate = totalAdvances > 0 ? Math.round((totalRecovered / totalAdvances) * 100) : 0;
-    
-    const casesCreatedThisMonth = allRecords.filter(c => new Date(c.createdAt || c._id.getTimestamp()) >= startOfMonth);
-    const advancesCreatedThisMonth = casesCreatedThisMonth.reduce((sum, c) => sum + c.finalTotal, 0);
-    const lastMonthActiveAdvances = totalActiveAdvances - advancesCreatedThisMonth + recoveredThisPeriod;
-    
+
+    const casesCreatedThisMonth = allRecords.filter(c => {
+      try { return new Date(c.createdAt) >= startOfMonth; } catch { return false; }
+    });
+    const advancesCreatedThisMonth = casesCreatedThisMonth.reduce((sum, c) => sum + (c.finalTotal || 0), 0);
+    const lastMonthActiveAdvances = totalActiveAdvances + advancesCreatedThisMonth - recoveredThisPeriod;
+
     let activeAdvancesMoM = 0;
     if (lastMonthActiveAdvances > 0) {
       activeAdvancesMoM = Math.round(((totalActiveAdvances - lastMonthActiveAdvances) / lastMonthActiveAdvances) * 100);
