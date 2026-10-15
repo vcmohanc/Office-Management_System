@@ -919,9 +919,14 @@ export default function AssignWorkPlace() {
         const _workPlaces = Array.isArray(viewStaff.assignedWorkPlace) ? viewStaff.assignedWorkPlace : (viewStaff.assignedWorkPlace ? [viewStaff.assignedWorkPlace] : []);
         const _departments = Array.isArray(viewStaff.department) ? viewStaff.department : (viewStaff.department ? [viewStaff.department] : []);
         const _offices = Array.isArray(viewStaff.office) ? viewStaff.office : (viewStaff.office ? [viewStaff.office] : []);
-        const _linkedPartners = _workPlaces.length > 0
-          ? getPartnersForWorkPlaces(_workPlaces, partners)
-          : partners.filter(p => (p.status || '').toLowerCase() === 'active').slice(0, 4);
+        // Assigned partner: the one specifically selected during assignment
+        const _assignedPartner = viewStaff.assignedPartnerName
+          ? partners.find(p => p.partner_name === viewStaff.assignedPartnerName) || null
+          : null;
+        // Other matching partners for the same work places (excluding the assigned one)
+        const _matchedPartners = _workPlaces.length > 0
+          ? getPartnersForWorkPlaces(_workPlaces, partners).filter(p => p.partner_name !== viewStaff.assignedPartnerName)
+          : [];
         const _colleagues = _workPlaces.length > 0
           ? employees.filter(e => e._id !== viewStaff._id && _workPlaces.some(wp => Array.isArray(e.assignedWorkPlace) ? e.assignedWorkPlace.includes(wp) : e.assignedWorkPlace === wp)).length
           : 0;
@@ -1074,26 +1079,169 @@ export default function AssignWorkPlace() {
                         )}
                       </div>
                     </div>
+                    {/* ── 関連B2Bパートナー card ── */}
                     <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
                       <div className="px-4 py-3 bg-gray-50 border-b border-gray-100 flex items-center justify-between gap-2">
                         <div className="flex items-center gap-2">
                           <Building2 className="w-4 h-4 text-[#162D50]" />
-                          <span className="text-xs font-bold text-[#162D50] uppercase tracking-wider">関連B2Bパートナー</span>
+                          <span className="text-xs font-bold text-[#162D50] uppercase tracking-wider">
+                            {_assignedPartner ? '配属パートナー企業' : '関連B2Bパートナー'}
+                          </span>
                         </div>
-                        <span className="text-xs text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full">{_linkedPartners.length}社</span>
+                        {_assignedPartner ? (
+                          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[#162D50]/10 text-[#162D50]">配属先指定</span>
+                        ) : (
+                          <span className="text-xs text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full">{_matchedPartners.length}社</span>
+                        )}
                       </div>
+
                       {partnersLoading ? (
                         <div className="p-5 flex items-center justify-center gap-2 text-gray-400 text-sm">
                           <div className="w-4 h-4 border-2 border-gray-200 border-t-[#162D50] rounded-full animate-spin" />読み込み中...
                         </div>
-                      ) : _linkedPartners.length === 0 ? (
-                        <div className="px-4 py-6 text-center">
-                          <Building2 className="w-8 h-8 mx-auto mb-2 text-gray-200" />
-                          <p className="text-sm text-gray-400">パートナー企業が見つかりません</p>
+                      ) : _assignedPartner ? (() => {
+                        // ── Rich single-partner card ──
+                        const ap = _assignedPartner;
+                        const apEnd = ap.contract_end_date ? new Date(ap.contract_end_date) : null;
+                        const apStart = ap.contract_start_date ? new Date(ap.contract_start_date) : null;
+                        const apDays = apEnd ? Math.ceil((apEnd - Date.now()) / 86400000) : null;
+                        const apTotal = (apEnd && apStart) ? Math.ceil((apEnd - apStart) / 86400000) : null;
+                        const apUsed = (apEnd && apStart) ? Math.ceil((Date.now() - apStart) / 86400000) : null;
+                        const apPct = (apTotal && apUsed) ? Math.min(100, Math.max(0, Math.round(apUsed / apTotal * 100))) : null;
+                        const apIsUrgent = apDays !== null && apDays <= 30;
+                        const apStatusCfg = {
+                          'active': { label: '契約中', cls: 'bg-green-100 text-green-700', dot: 'bg-green-400' },
+                          'expiring soon': { label: '期限間近', cls: 'bg-amber-100 text-amber-700', dot: 'bg-amber-400' },
+                          'pending': { label: '提案中', cls: 'bg-blue-100 text-blue-700', dot: 'bg-blue-400' },
+                          'terminated': { label: '終了', cls: 'bg-red-100 text-red-700', dot: 'bg-red-400' },
+                        }[(ap.status || '').toLowerCase()] || { label: ap.status || '—', cls: 'bg-gray-100 text-gray-500', dot: 'bg-gray-400' };
+                        const staffCount = employees.filter(e =>
+                          e._id !== viewStaff._id &&
+                          (e.assignedPartnerName === ap.partner_name ||
+                            (_workPlaces.length > 0 && _workPlaces.some(wp => Array.isArray(e.assignedWorkPlace) ? e.assignedWorkPlace.includes(wp) : e.assignedWorkPlace === wp)))
+                        ).length;
+                        return (
+                          <div className="p-4 space-y-4">
+                            {/* Header row */}
+                            <div className="flex items-start gap-3">
+                              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-[#162D50] to-[#1a3460] flex items-center justify-center flex-shrink-0 shadow-sm">
+                                <Building2 className="w-6 h-6 text-white" />
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-2 flex-wrap">
+                                  <p className="font-bold text-base text-[#162D50] leading-tight">{ap.partner_name}</p>
+                                  <span className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold ${apStatusCfg.cls}`}>
+                                    <span className={`w-1.5 h-1.5 rounded-full ${apStatusCfg.dot}`} />
+                                    {apStatusCfg.label}
+                                  </span>
+                                  {ap.priority === 'High' && <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-[#162D50]/10 text-[#162D50]">優先</span>}
+                                </div>
+                                <p className="text-xs text-gray-500 mt-0.5">{ap.industry || '—'}</p>
+                              </div>
+                            </div>
+
+                            {/* Stats row */}
+                            <div className="grid grid-cols-3 gap-2">
+                              {[
+                                { label: '月間収益', value: ap.monthly_revenue > 0 ? `¥${Number(ap.monthly_revenue).toLocaleString()}` : '—' },
+                                { label: '同職場人数', value: `${staffCount + 1}名` },
+                                { label: '契約残日数', value: apDays === null ? '—' : apDays <= 0 ? '期限切れ' : `${apDays}日`, warn: apIsUrgent },
+                              ].map((s, i) => (
+                                <div key={i} className={`rounded-lg p-2 text-center ${s.warn ? 'bg-red-50 border border-red-100' : 'bg-gray-50 border border-gray-100'}`}>
+                                  <p className="text-[10px] text-gray-400 mb-0.5">{s.label}</p>
+                                  <p className={`text-xs font-bold ${s.warn ? 'text-red-600' : 'text-[#162D50]'}`}>{s.value}</p>
+                                </div>
+                              ))}
+                            </div>
+
+                            {/* Contract progress */}
+                            {apPct !== null && (
+                              <div>
+                                <div className="flex justify-between text-xs text-gray-400 mb-1.5">
+                                  <span>契約進捗</span>
+                                  <span className={apIsUrgent ? 'text-red-500 font-semibold' : ''}>{apPct}%</span>
+                                </div>
+                                <div className="w-full h-2 bg-gray-100 rounded-full overflow-hidden">
+                                  <div className={`h-full rounded-full transition-all ${apIsUrgent ? 'bg-red-400' : apDays !== null && apDays <= 90 ? 'bg-amber-400' : 'bg-[#162D50]'}`} style={{ width: `${apPct}%` }} />
+                                </div>
+                                <div className="flex justify-between text-[10px] text-gray-400 mt-1">
+                                  <span>{apStart ? apStart.toLocaleDateString('ja-JP') : '—'}</span>
+                                  <span>{apEnd ? apEnd.toLocaleDateString('ja-JP') : '—'}</span>
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Contact */}
+                            {(ap.contact_name || ap.contact_phone || ap.contact_email) && (
+                              <div className="border-t border-gray-100 pt-3 space-y-1.5">
+                                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2">担当者連絡先</p>
+                                {ap.contact_name && (
+                                  <div className="flex items-center gap-2 text-xs text-gray-700">
+                                    <User className="w-3.5 h-3.5 text-gray-400 flex-shrink-0" />
+                                    <span className="font-medium">{ap.contact_name}</span>
+                                  </div>
+                                )}
+                                {ap.contact_phone && (
+                                  <div className="flex items-center gap-2 text-xs text-gray-600">
+                                    <Phone className="w-3.5 h-3.5 text-gray-400 flex-shrink-0" />
+                                    <span>{ap.contact_phone}</span>
+                                  </div>
+                                )}
+                                {ap.contact_email && (
+                                  <div className="flex items-center gap-2 text-xs text-gray-600">
+                                    <Mail className="w-3.5 h-3.5 text-gray-400 flex-shrink-0" />
+                                    <span className="truncate">{ap.contact_email}</span>
+                                  </div>
+                                )}
+                                {ap.website && (
+                                  <div className="flex items-center gap-2 text-xs text-blue-600">
+                                    <Globe className="w-3.5 h-3.5 flex-shrink-0" />
+                                    <a href={ap.website.startsWith('http') ? ap.website : `https://${ap.website}`} target="_blank" rel="noopener noreferrer" className="hover:underline truncate flex items-center gap-1" onClick={e => e.stopPropagation()}>
+                                      {ap.website}<ExternalLink className="w-3 h-3 flex-shrink-0" />
+                                    </a>
+                                  </div>
+                                )}
+                              </div>
+                            )}
+
+                            {/* Notes */}
+                            {ap.notes && (
+                              <div className="bg-amber-50 border border-amber-100 rounded-lg px-3 py-2">
+                                <p className="text-[10px] font-bold text-amber-600 mb-1 uppercase tracking-wider">メモ</p>
+                                <p className="text-xs text-gray-600 leading-relaxed italic">{ap.notes}</p>
+                              </div>
+                            )}
+
+                            {/* Other matched partners (collapsed chips) */}
+                            {_matchedPartners.length > 0 && (
+                              <div className="border-t border-gray-100 pt-3">
+                                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2">同カテゴリーの他パートナー ({_matchedPartners.length}社)</p>
+                                <div className="flex flex-wrap gap-1.5">
+                                  {_matchedPartners.map(mp => {
+                                    const mpStatus = (mp.status || '').toLowerCase();
+                                    const chipCls = mpStatus === 'active' ? 'bg-green-50 border-green-200 text-green-800'
+                                      : mpStatus === 'expiring soon' ? 'bg-amber-50 border-amber-200 text-amber-800'
+                                      : 'bg-gray-50 border-gray-200 text-gray-600';
+                                    return (
+                                      <span key={mp._id} className={`px-2.5 py-1 rounded-lg border text-xs font-medium ${chipCls}`}>
+                                        {mp.partner_name}
+                                      </span>
+                                    );
+                                  })}
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })() : _matchedPartners.length === 0 ? (
+                        <div className="px-4 py-8 flex flex-col items-center justify-center text-center gap-2">
+                          <Building2 className="w-8 h-8 text-gray-200" />
+                          <p className="text-sm text-gray-400 font-medium">パートナー企業が未設定です</p>
+                          <p className="text-xs text-gray-400">配属確定時にパートナー企業を選択してください</p>
                         </div>
                       ) : (
                         <div className="divide-y divide-gray-100 max-h-56 overflow-y-auto">
-                          {_linkedPartners.map((p) => {
+                          {_matchedPartners.map((p) => {
                             const _pEnd = p.contract_end_date ? new Date(p.contract_end_date) : null;
                             const _pStart = p.contract_start_date ? new Date(p.contract_start_date) : null;
                             const _pDays = _pEnd ? Math.ceil((_pEnd - Date.now()) / 86400000) : null;
