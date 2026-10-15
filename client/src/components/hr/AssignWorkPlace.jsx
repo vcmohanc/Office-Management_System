@@ -81,6 +81,7 @@ export default function AssignWorkPlace() {
   );
   const [draftPartnerName, setDraftPartnerName] = useState('');
   const [draftNotes, setDraftNotes] = useState('');
+  const [partnerSearch, setPartnerSearch] = useState('');
 
   // View modal state
   const [viewStaff, setViewStaff] = useState(null);
@@ -203,6 +204,7 @@ export default function AssignWorkPlace() {
     );
     setDraftPartnerName(staff.assignedPartnerName || '');
     setDraftNotes(staff.assignmentNotes || '');
+    setPartnerSearch('');
     setAssignSuccess(false);
     setAssignError('');
     setIsModalOpen(true);
@@ -807,6 +809,15 @@ export default function AssignWorkPlace() {
                     const isHaken = draftStaffType === 'Haken Staff';
                     const partnerList = isHaken ? draftMatchedPartners : draftMatchedPartnersOffice;
                     const selectedKeys = isHaken ? draftWorkPlaces : draftDepartments;
+                    const q = partnerSearch.trim().toLowerCase();
+                    const filteredList = q
+                      ? partnerList.filter(p =>
+                          (p.partner_name || '').toLowerCase().includes(q) ||
+                          (p.industry || '').toLowerCase().includes(q) ||
+                          (p.contact_name || '').toLowerCase().includes(q) ||
+                          (p.workplaceCategories || []).some(c => c.toLowerCase().includes(q))
+                        )
+                      : partnerList;
                     return (
                       <div className="bg-white rounded-xl border border-gray-200 p-5 shadow-sm">
                         <h4 className="text-sm font-bold text-[#162D50] mb-1 flex items-center gap-2.5">
@@ -818,13 +829,33 @@ export default function AssignWorkPlace() {
                                 選択カテゴリー優先表示
                               </span>
                             )}
-                            <span className="text-[10px] text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full font-semibold">{partnerList.length}社</span>
+                            <span className="text-[10px] text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full font-semibold">
+                              {q ? `${filteredList.length}/${partnerList.length}社` : `${partnerList.length}社`}
+                            </span>
                           </span>
                         </h4>
-                        <p className="text-[10px] text-gray-400 mb-4 ml-9">
+                        <p className="text-[10px] text-gray-400 mb-3 ml-9">
                           {isHaken ? '派遣スタッフ向けパートナー企業' : '内勤スタッフ向けパートナー企業'}
                           {selectedKeys.length > 0 ? '（選択した配属先に近い順）' : '（スタッフタイプで絞り込み済み）'}
                         </p>
+
+                        {/* Search input */}
+                        <div className="relative mb-3">
+                          <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+                          <input
+                            type="text"
+                            value={partnerSearch}
+                            onChange={e => setPartnerSearch(e.target.value)}
+                            placeholder="会社名・業種・カテゴリーで検索..."
+                            disabled={assigning}
+                            className="w-full pl-8 pr-8 py-2 text-xs border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#162D50]/30 focus:border-[#162D50] bg-gray-50 disabled:opacity-50 placeholder:text-gray-300"
+                          />
+                          {partnerSearch && (
+                            <button onClick={() => setPartnerSearch('')} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-300 hover:text-gray-500 transition-colors">
+                              <X className="w-3.5 h-3.5" />
+                            </button>
+                          )}
+                        </div>
 
                         {partnersLoading ? (
                           <div className="flex items-center justify-center gap-2 py-6 text-gray-400 text-xs">
@@ -839,17 +870,25 @@ export default function AssignWorkPlace() {
                             </p>
                             <p className="text-[10px] text-gray-300 mt-1">B2B管理画面でパートナーを登録してください</p>
                           </div>
+                        ) : filteredList.length === 0 ? (
+                          <div className="text-center py-6">
+                            <Search className="w-7 h-7 mx-auto mb-2 text-gray-200" />
+                            <p className="text-xs text-gray-400 font-medium">「{partnerSearch}」に一致する企業が見つかりません</p>
+                            <button onClick={() => setPartnerSearch('')} className="mt-2 text-[10px] text-[#162D50] underline">検索をクリア</button>
+                          </div>
                         ) : (
-                          <div className="space-y-2 max-h-64 overflow-y-auto pr-1">
-                            <button onClick={() => setDraftPartnerName('')} disabled={assigning}
-                              className={`w-full text-left p-3 rounded-xl border-2 transition-all ${draftPartnerName === '' ? 'border-gray-400 bg-gray-100' : 'border-gray-200 bg-white hover:border-gray-300'} ${assigning ? 'opacity-50 cursor-not-allowed' : ''}`}>
-                              <div className="flex items-center justify-between">
-                                <span className="text-xs font-medium text-gray-500">指定しない</span>
-                                {draftPartnerName === '' && <CheckCircle2 className="w-3.5 h-3.5 text-gray-500" />}
-                              </div>
-                            </button>
+                          <div className="space-y-2 max-h-56 overflow-y-auto pr-1">
+                            {!partnerSearch && (
+                              <button onClick={() => setDraftPartnerName('')} disabled={assigning}
+                                className={`w-full text-left p-3 rounded-xl border-2 transition-all ${draftPartnerName === '' ? 'border-gray-400 bg-gray-100' : 'border-gray-200 bg-white hover:border-gray-300'} ${assigning ? 'opacity-50 cursor-not-allowed' : ''}`}>
+                                <div className="flex items-center justify-between">
+                                  <span className="text-xs font-medium text-gray-500">指定しない</span>
+                                  {draftPartnerName === '' && <CheckCircle2 className="w-3.5 h-3.5 text-gray-500" />}
+                                </div>
+                              </button>
+                            )}
 
-                            {partnerList.map((p) => {
+                            {filteredList.map((p) => {
                               const sel = draftPartnerName === p.partner_name;
                               const active = (p.status || '').toLowerCase() === 'active';
                               const isMatch = selectedKeys.length > 0 && Array.isArray(p.workplaceCategories) && p.workplaceCategories.some(c => selectedKeys.includes(c));
