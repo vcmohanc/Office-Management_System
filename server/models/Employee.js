@@ -58,7 +58,10 @@ const employeeSchema = new mongoose.Schema({
     appStatus: String,
     updatedAt: { type: Date, default: Date.now }
   }],
-  pledgeDocument: { type: String }
+  pledgeDocument: { type: String },
+  assignmentStartDate: { type: Date },
+  assignedPartnerName: { type: String },
+  assignmentNotes: { type: String }
 }, { timestamps: true });
 
 export default mongoose.model('Employee', employeeSchema);

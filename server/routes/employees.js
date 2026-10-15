@@ -64,7 +64,10 @@ const employeeSchemaZod = z.object({
     appStatus: z.string().optional(),
     updatedAt: z.coerce.date().optional().nullable().or(z.string()).or(z.literal(''))
   })).optional(),
-  pledgeDocument: z.string().optional()
+  pledgeDocument: z.string().optional(),
+  assignmentStartDate: z.coerce.date().optional().nullable().or(z.literal('')),
+  assignedPartnerName: z.string().optional(),
+  assignmentNotes: z.string().optional()
 });
 
 
