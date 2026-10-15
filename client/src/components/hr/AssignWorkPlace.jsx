@@ -976,10 +976,20 @@ export default function AssignWorkPlace() {
         const _workPlaces = Array.isArray(viewStaff.assignedWorkPlace) ? viewStaff.assignedWorkPlace : (viewStaff.assignedWorkPlace ? [viewStaff.assignedWorkPlace] : []);
         const _departments = Array.isArray(viewStaff.department) ? viewStaff.department : (viewStaff.department ? [viewStaff.department] : []);
         const _offices = Array.isArray(viewStaff.office) ? viewStaff.office : (viewStaff.office ? [viewStaff.office] : []);
-        // Show ONLY the one partner explicitly assigned to this staff member
-        const _linkedPartners = viewStaff.assignedPartnerName
-          ? partners.filter(p => p.partner_name === viewStaff.assignedPartnerName)
-          : [];
+        // Show all partners matching this staff's assigned work places or departments.
+        // If a specific partner is assigned (assignedPartnerName), sort it first and badge it.
+        const _isOfficeStaff = viewStaff.staffType === 'Office Staff' ||
+          (Array.isArray(viewStaff.department) ? viewStaff.department.some(d => ['Management','Administration','Accounting & Finance','HR / Recruitment','Sales','Marketing','IT / Technical','Customer Support','Purchasing / Procurement','Operations'].includes(d)) : false);
+        const _rawLinked = _isOfficeStaff
+          ? partners.filter(p => Array.isArray(p.workplaceCategories) && _departments.some(d => p.workplaceCategories.includes(d)))
+          : _workPlaces.length > 0
+            ? getPartnersForWorkPlaces(_workPlaces, partners)
+            : [];
+        // Assigned partner first, rest alphabetically
+        const _linkedPartners = [
+          ..._rawLinked.filter(p => p.partner_name === viewStaff.assignedPartnerName),
+          ..._rawLinked.filter(p => p.partner_name !== viewStaff.assignedPartnerName),
+        ];
         const _colleagues = _workPlaces.length > 0
           ? employees.filter(e => e._id !== viewStaff._id && _workPlaces.some(wp => Array.isArray(e.assignedWorkPlace) ? e.assignedWorkPlace.includes(wp) : e.assignedWorkPlace === wp)).length
           : 0;
@@ -1147,12 +1157,8 @@ export default function AssignWorkPlace() {
                       ) : _linkedPartners.length === 0 ? (
                         <div className="px-4 py-6 text-center">
                           <Building2 className="w-8 h-8 mx-auto mb-2 text-gray-200" />
-                          <p className="text-sm text-gray-400 font-medium">
-                            {viewStaff.assignedPartnerName ? 'パートナー情報が見つかりません' : 'パートナー企業が未設定です'}
-                          </p>
-                          {!viewStaff.assignedPartnerName && (
-                            <p className="text-xs text-gray-400 mt-1">配属確定時にパートナー企業を選択できます</p>
-                          )}
+                          <p className="text-sm text-gray-400 font-medium">関連するパートナー企業がありません</p>
+                          <p className="text-xs text-gray-400 mt-1">B2B部門でパートナーを登録してください</p>
                         </div>
                       ) : (
                         <div className="divide-y divide-gray-100 max-h-56 overflow-y-auto">
@@ -1169,15 +1175,21 @@ export default function AssignWorkPlace() {
                               'pending': { label: '提案中', cls: 'bg-blue-100 text-blue-700' },
                               'terminated': { label: '終了', cls: 'bg-red-100 text-red-700' },
                             }[(p.status || '').toLowerCase()] || { label: p.status || '—', cls: 'bg-gray-100 text-gray-500' };
+                            const _isAssigned = p.partner_name === viewStaff.assignedPartnerName;
                             return (
-                              <div key={p._id} className="px-4 py-3 hover:bg-blue-50/30 transition-colors">
+                              <div key={p._id} className={`px-4 py-3 transition-colors ${_isAssigned ? 'bg-[#162D50]/5 border-l-2 border-[#162D50]' : 'hover:bg-blue-50/30'}`}>
                                 <div className="flex items-start justify-between gap-2 mb-1">
-                                  <div className="min-w-0">
+                                  <div className="min-w-0 flex items-center gap-2 flex-wrap">
                                     <p className="font-bold text-sm text-[#162D50] leading-tight truncate">{p.partner_name}</p>
-                                    <p className="text-xs text-gray-500">{p.industry || '—'}</p>
+                                    {_isAssigned && (
+                                      <span className="flex-shrink-0 flex items-center gap-1 px-1.5 py-0.5 bg-[#162D50] text-white text-[10px] font-bold rounded-full">
+                                        <CheckCircle2 className="w-2.5 h-2.5" />配属先
+                                      </span>
+                                    )}
                                   </div>
                                   <span className={`px-2 py-0.5 rounded-full text-xs font-semibold flex-shrink-0 ${_pStatusCfg.cls}`}>{_pStatusCfg.label}</span>
                                 </div>
+                                <p className="text-xs text-gray-500 mb-1">{p.industry || '—'}{p.contact_name ? ` · ${p.contact_name}` : ''}</p>
                                 {_contractPct !== null && (
                                   <div className="mt-2">
                                     <div className="flex justify-between text-xs text-gray-400 mb-1">
