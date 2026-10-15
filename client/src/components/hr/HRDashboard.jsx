@@ -4,6 +4,7 @@ import {
   ChevronDown, Eye, Edit, Search, Filter, Download, Printer,
   X, Calendar, Briefcase, Hash, Clock, Building2, MapPin,
   Phone, Mail, FileText, ShieldCheck, RefreshCw, Link2,
+  BellRing, EyeOff,
 } from 'lucide-react';
 import { apiFetch } from '../../utils/apiFetch.js';
 
@@ -67,6 +68,8 @@ export default function HRDashboard() {
   const [newStatus, setNewStatus] = useState('Active');
   const [newWorkPlace, setNewWorkPlace] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showExpiredVisa, setShowExpiredVisa] = useState(false);
+  const [expiredAlertDismissed, setExpiredAlertDismissed] = useState(false);
 
   useEffect(() => { fetchStaff(); fetchPartners(); }, []);
 
@@ -108,6 +111,10 @@ export default function HRDashboard() {
     const s = getEmpStatus(e);
     return s === 'Verification 保留中' || s === 'Verification Pending';
   }).length;
+  const visaExpiredStaff = useMemo(() => employees.filter(e => {
+    if (!e.visaEndDate) return false;
+    return (new Date(e.visaEndDate) - Date.now()) / 86400000 < 0;
+  }), [employees]);
   const visaExpiringSoon = employees.filter(e => {
     if (!e.visaEndDate) return false;
     const d = (new Date(e.visaEndDate) - Date.now()) / 86400000;
@@ -133,7 +140,15 @@ export default function HRDashboard() {
   );
 
   // ── Filtered list ────────────────────────────────────────────────────────────
+  const isVisaExpired = (emp) => {
+    if (!emp.visaEndDate) return false;
+    return (new Date(emp.visaEndDate) - Date.now()) / 86400000 < 0;
+  };
+
   const filteredEmployees = useMemo(() => employees.filter(emp => {
+    // Hide expired-visa staff unless the toggle is on
+    if (!showExpiredVisa && isVisaExpired(emp)) return false;
+
     const matchSearch =
       (emp.romajiName || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
       (emp.katakanaName || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -157,7 +172,7 @@ export default function HRDashboard() {
     }
 
     return matchSearch && matchStatus && matchTab && matchPartner;
-  }), [employees, searchQuery, statusFilter, activeTab, partnerFilter, partners]);
+  }), [employees, searchQuery, statusFilter, activeTab, partnerFilter, partners, showExpiredVisa]);
 
   // ── Helpers ─────────────────────────────────────────────────────────────────
   const getInitials = (emp) => {
@@ -364,16 +379,87 @@ export default function HRDashboard() {
             <p className="text-xs text-gray-500 font-medium mt-0.5">B2Bパートナー</p>
           </div>
         </div>
-        <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5 flex items-center gap-4">
-          <div className={`w-10 h-10 rounded-lg flex items-center justify-center shrink-0 ${visaExpiringSoon > 0 ? 'bg-red-50' : 'bg-gray-50'}`}>
-            <ShieldCheck className={`w-5 h-5 ${visaExpiringSoon > 0 ? 'text-red-500' : 'text-gray-400'}`} />
+        <div
+          className={`bg-white rounded-xl border shadow-sm p-5 flex items-center gap-4 cursor-pointer transition-all ${
+            visaExpiredStaff.length > 0 ? 'border-red-200 hover:border-red-300' : 'border-gray-100'
+          }`}
+          onClick={() => { if (visaExpiredStaff.length > 0) { setShowExpiredVisa(v => !v); setExpiredAlertDismissed(false); } }}
+          title={visaExpiredStaff.length > 0 ? 'クリックして期限切れスタッフを表示/非表示' : undefined}
+        >
+          <div className={`w-10 h-10 rounded-lg flex items-center justify-center shrink-0 ${visaExpiredStaff.length > 0 ? 'bg-red-50' : visaExpiringSoon > 0 ? 'bg-orange-50' : 'bg-gray-50'}`}>
+            <ShieldCheck className={`w-5 h-5 ${visaExpiredStaff.length > 0 ? 'text-red-600' : visaExpiringSoon > 0 ? 'text-orange-500' : 'text-gray-400'}`} />
           </div>
-          <div>
-            <p className={`text-2xl font-bold ${visaExpiringSoon > 0 ? 'text-red-600' : 'text-[#162D50]'}`}>{visaExpiringSoon}</p>
-            <p className="text-xs text-gray-500 font-medium mt-0.5">ビザ期限間近</p>
+          <div className="min-w-0">
+            <div className="flex items-baseline gap-1.5">
+              {visaExpiredStaff.length > 0 && (
+                <span className="text-2xl font-bold text-red-600">{visaExpiredStaff.length}</span>
+              )}
+              {visaExpiringSoon > 0 && (
+                <span className={`font-bold ${visaExpiredStaff.length > 0 ? 'text-sm text-orange-400' : 'text-2xl text-orange-500'}`}>
+                  {visaExpiredStaff.length > 0 ? `+${visaExpiringSoon}` : visaExpiringSoon}
+                </span>
+              )}
+              {visaExpiredStaff.length === 0 && visaExpiringSoon === 0 && (
+                <span className="text-2xl font-bold text-[#162D50]">0</span>
+              )}
+            </div>
+            <p className="text-xs text-gray-500 font-medium mt-0.5 truncate">
+              {visaExpiredStaff.length > 0 ? '期限切れ / 間近' : 'ビザ期限間近'}
+            </p>
           </div>
         </div>
       </div>
+
+      {/* ── Expired Visa Alert Banner ── */}
+      {visaExpiredStaff.length > 0 && !expiredAlertDismissed && (
+        <div className="bg-red-50 border border-red-200 rounded-xl px-5 py-4 flex items-start gap-3">
+          <div className="w-8 h-8 rounded-full bg-red-100 flex items-center justify-center shrink-0 mt-0.5">
+            <BellRing className="w-4 h-4 text-red-600" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 mb-1">
+              <p className="text-sm font-bold text-red-800">
+                ビザ期限切れ — {visaExpiredStaff.length}名のスタッフが対応必要です
+              </p>
+              <span className="text-xs bg-red-600 text-white font-bold px-2 py-0.5 rounded-full animate-pulse">要対応</span>
+            </div>
+            <p className="text-xs text-red-600 mb-2">
+              以下のスタッフのビザが失効しています。速やかに更新手続きを行ってください。
+            </p>
+            <div className="flex flex-wrap gap-1.5">
+              {visaExpiredStaff.slice(0, 6).map(emp => (
+                <button
+                  key={emp._id}
+                  onClick={() => { setViewStaff(emp); }}
+                  className="flex items-center gap-1.5 bg-white border border-red-200 hover:border-red-400 text-red-700 text-xs font-semibold px-2.5 py-1 rounded-full transition-colors"
+                >
+                  <span className="w-1.5 h-1.5 rounded-full bg-red-500 shrink-0" />
+                  {emp.romajiName || emp.katakanaName || 'N/A'}
+                  <span className="text-red-400 font-normal">
+                    {emp.visaEndDate ? `（${Math.abs(Math.ceil((new Date(emp.visaEndDate) - Date.now()) / 86400000))}日超過）` : ''}
+                  </span>
+                </button>
+              ))}
+              {visaExpiredStaff.length > 6 && (
+                <span className="text-xs text-red-500 font-medium self-center">他{visaExpiredStaff.length - 6}名…</span>
+              )}
+            </div>
+            <button
+              onClick={() => { setShowExpiredVisa(true); setExpiredAlertDismissed(true); }}
+              className="mt-2.5 text-xs font-semibold text-red-700 hover:text-red-900 underline underline-offset-2"
+            >
+              名簿で期限切れスタッフを表示する →
+            </button>
+          </div>
+          <button
+            onClick={() => setExpiredAlertDismissed(true)}
+            className="p-1 rounded-lg hover:bg-red-100 text-red-400 hover:text-red-600 transition-colors shrink-0"
+            title="閉じる"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+      )}
 
       {/* ── B2B Farm Placement Panel ── */}
       <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
@@ -454,10 +540,16 @@ export default function HRDashboard() {
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
         {/* Header bar */}
         <div className="px-6 py-4 border-b border-gray-100 bg-gray-50 flex flex-col md:flex-row md:items-center justify-between gap-3">
-          <div className="flex items-center gap-2.5">
+          <div className="flex items-center gap-2.5 flex-wrap">
             <Handshake className="w-5 h-5 text-[#162D50]" />
             <h3 className="text-base font-bold text-[#162D50]">スタッフ名簿</h3>
             <span className="px-2 py-0.5 rounded-full bg-[#162D50]/10 text-[#162D50] text-xs font-semibold">{filteredEmployees.length}</span>
+            {visaExpiredStaff.length > 0 && (
+              <span className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-red-100 text-red-700 text-xs font-semibold">
+                <EyeOff className="w-3 h-3" />
+                期限切れ {visaExpiredStaff.length}名 非表示
+              </span>
+            )}
             {partnerFilter && partnerFilter !== 'unassigned' && (() => {
               const p = partners.find(pt => pt._id === partnerFilter);
               return p ? <span className="px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-700 text-xs font-semibold">{p.partner_name}</span> : null;
@@ -490,6 +582,19 @@ export default function HRDashboard() {
               </select>
               <ChevronDown className="w-3.5 h-3.5 absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
             </div>
+            {visaExpiredStaff.length > 0 && (
+              <button
+                onClick={() => setShowExpiredVisa(v => !v)}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors ${
+                  showExpiredVisa
+                    ? 'bg-red-50 border-red-300 text-red-700 hover:bg-red-100'
+                    : 'border-red-200 text-red-600 hover:bg-red-50'
+                }`}
+              >
+                {showExpiredVisa ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
+                <span>{showExpiredVisa ? '期限切れ非表示' : `期限切れ表示 (${visaExpiredStaff.length})`}</span>
+              </button>
+            )}
             <button onClick={handleExportCSV} className="flex items-center gap-1.5 px-3 py-1.5 border border-gray-200 rounded-lg text-xs font-medium text-gray-600 hover:bg-gray-50 transition-colors">
               <Download className="w-3.5 h-3.5" /><span>CSV</span>
             </button>
@@ -562,8 +667,9 @@ export default function HRDashboard() {
                   const initials = getInitials(emp);
                   const linkedPartner = getLinkedPartner(emp);
                   const workplace = Array.isArray(emp.assignedWorkPlace) ? emp.assignedWorkPlace.filter(Boolean)[0] : null;
+                  const expired = isVisaExpired(emp);
                   return (
-                    <tr key={emp._id} className="border-b border-gray-100 bg-white hover:bg-gray-50/70 transition-colors">
+                    <tr key={emp._id} className={`border-b transition-colors ${expired ? 'bg-red-50/60 border-red-100 hover:bg-red-50' : 'border-gray-100 bg-white hover:bg-gray-50/70'}`}>
                       <td className="py-3.5 px-4 text-gray-400 text-sm">{index + 1}</td>
                       <td className="py-3.5 px-4 text-gray-500 font-medium text-sm font-mono">
                         {emp.staffId ? emp.staffId.replace(/[#-]/g, '') : `STF${emp._id?.slice(-6).toUpperCase()}`}
