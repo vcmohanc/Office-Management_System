@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Wallet, TrendingUp, TrendingDown, Clipboard, CheckCircle, Landmark, User, ArrowRight, Building, Building2, X, ChevronDown, ChevronUp } from 'lucide-react';
+import { Wallet, TrendingUp, TrendingDown, Clipboard, CheckCircle, Landmark, User, ArrowRight, Building, Building2, X, ChevronDown, ChevronUp, Trash2 } from 'lucide-react';
 import { apiFetch } from '../../utils/apiFetch.js';
 import { PATTERN_CONFIG, toPartyJP, toFlowTypeJP } from '../../utils/settlementPatterns.js';
 
@@ -9,6 +9,8 @@ export default function AccountDashboard() {
   const [showBreakdown, setShowBreakdown] = useState(false);
   const [breakdown, setBreakdown] = useState(null);
   const [breakdownLoading, setBreakdownLoading] = useState(false);
+  const [deletingId, setDeletingId] = useState(null);
+  const [confirmId, setConfirmId] = useState(null);
 
   useEffect(() => {
     const fetchDashboardData = async () => {
@@ -36,6 +38,27 @@ export default function AccountDashboard() {
       console.error('Error fetching breakdown:', e);
     } finally {
       setBreakdownLoading(false);
+    }
+  };
+
+  const handleDeleteRow = async (row) => {
+    setDeletingId(row.id);
+    try {
+      const res = await apiFetch(`/api/dashboard/account/recovery-breakdown/${row.source}/${row.id}`, { method: 'DELETE' });
+      if (!res.ok) throw new Error('Failed');
+      setBreakdown(prev => {
+        const rows = prev.rows.filter(r => String(r.id) !== String(row.id));
+        const total = rows.reduce((s, r) => s + r.amount, 0);
+        return { ...prev, rows, total };
+      });
+      // Refresh the top-level KPI card so 今期の回収額 updates
+      const dash = await apiFetch('/api/dashboard/account');
+      if (dash.ok) setData(await dash.json());
+    } catch {
+      // silently fail — row stays in list
+    } finally {
+      setDeletingId(null);
+      setConfirmId(null);
     }
   };
 
@@ -224,34 +247,68 @@ export default function AccountDashboard() {
                     <th className="px-4 py-2.5 text-xs font-bold text-gray-500 uppercase tracking-wide text-right">回収額</th>
                     <th className="px-4 py-2.5 text-xs font-bold text-gray-500 uppercase tracking-wide">支払日</th>
                     <th className="px-4 py-2.5 text-xs font-bold text-gray-500 uppercase tracking-wide">種別</th>
+                    <th className="px-4 py-2.5 text-xs font-bold text-gray-500 uppercase tracking-wide"></th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">
-                  {breakdown.rows.map((row) => (
-                    <tr key={row.id} className="hover:bg-gray-50 transition-colors">
-                      <td className="px-4 py-3 text-sm font-mono text-[#162D50] font-semibold">{row.caseRef || '-'}</td>
-                      <td className="px-4 py-3 text-sm text-gray-800">{row.staffName || '-'}</td>
-                      <td className="px-4 py-3 text-sm text-gray-600">{row.expenseType || '-'}</td>
-                      <td className="px-4 py-3 text-sm text-gray-600 text-center">
-                        {row.termNumber ? `第${row.termNumber}回` : '-'}
-                      </td>
-                      <td className="px-4 py-3 text-sm font-bold text-green-600 text-right">
-                        {formatCurrency(row.amount || 0)}
-                      </td>
-                      <td className="px-4 py-3 text-sm text-gray-500">
-                        {row.paymentDate ? new Date(row.paymentDate).toLocaleDateString('ja-JP') : '-'}
-                      </td>
-                      <td className="px-4 py-3">
-                        <span className={`text-xs px-2 py-0.5 rounded-full font-semibold ${
-                          row.source === 'payment'
-                            ? 'bg-blue-50 text-blue-700'
-                            : 'bg-purple-50 text-purple-700'
-                        }`}>
-                          {row.source === 'payment' ? '分割払い' : '決済'}
-                        </span>
-                      </td>
-                    </tr>
-                  ))}
+                  {breakdown.rows.map((row) => {
+                    const rowId = String(row.id);
+                    const isConfirming = confirmId === rowId;
+                    const isDeleting = deletingId === rowId;
+                    return (
+                      <tr key={rowId} className={`transition-colors ${isConfirming ? 'bg-red-50' : 'hover:bg-gray-50'}`}>
+                        <td className="px-4 py-3 text-sm font-mono text-[#162D50] font-semibold">{row.caseRef || '-'}</td>
+                        <td className="px-4 py-3 text-sm text-gray-800">{row.staffName || '-'}</td>
+                        <td className="px-4 py-3 text-sm text-gray-600">{row.expenseType || '-'}</td>
+                        <td className="px-4 py-3 text-sm text-gray-600 text-center">
+                          {row.termNumber ? `第${row.termNumber}回` : '-'}
+                        </td>
+                        <td className="px-4 py-3 text-sm font-bold text-green-600 text-right">
+                          {formatCurrency(row.amount || 0)}
+                        </td>
+                        <td className="px-4 py-3 text-sm text-gray-500">
+                          {row.paymentDate ? new Date(row.paymentDate).toLocaleDateString('ja-JP') : '-'}
+                        </td>
+                        <td className="px-4 py-3">
+                          <span className={`text-xs px-2 py-0.5 rounded-full font-semibold ${
+                            row.source === 'payment'
+                              ? 'bg-blue-50 text-blue-700'
+                              : 'bg-purple-50 text-purple-700'
+                          }`}>
+                            {row.source === 'payment' ? '分割払い' : '決済'}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 text-right whitespace-nowrap">
+                          {isConfirming ? (
+                            <div className="flex items-center justify-end gap-1.5">
+                              <button
+                                onClick={() => handleDeleteRow(row)}
+                                disabled={isDeleting}
+                                className="text-xs font-bold text-white bg-red-500 hover:bg-red-600 px-2.5 py-1 rounded-lg transition-colors disabled:opacity-60"
+                              >
+                                {isDeleting ? '削除中…' : '確認'}
+                              </button>
+                              <button
+                                onClick={() => setConfirmId(null)}
+                                disabled={isDeleting}
+                                className="text-xs font-medium text-gray-500 hover:text-gray-700 px-2.5 py-1 rounded-lg bg-gray-100 hover:bg-gray-200 transition-colors"
+                              >
+                                取消
+                              </button>
+                            </div>
+                          ) : (
+                            <button
+                              onClick={() => setConfirmId(rowId)}
+                              className="p-1.5 text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                              title="削除"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
                 <tfoot>
                   <tr className="bg-green-50 border-t-2 border-green-200">
@@ -259,7 +316,7 @@ export default function AccountDashboard() {
                     <td className="px-4 py-3 text-sm font-bold text-green-800 text-right">
                       {formatCurrency(breakdown.total || 0)}
                     </td>
-                    <td colSpan="2"></td>
+                    <td colSpan="3"></td>
                   </tr>
                 </tfoot>
               </table>

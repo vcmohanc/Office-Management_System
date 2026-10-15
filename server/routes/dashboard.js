@@ -276,6 +276,26 @@ router.get('/account/recovery-breakdown', verifyToken, requireRole('admin', 'acc
   }
 });
 
+// DELETE a recovery-breakdown row (payment or settlement)
+router.delete('/account/recovery-breakdown/:source/:id', verifyToken, requireRole('admin', 'account'), async (req, res) => {
+  try {
+    const { source, id } = req.params;
+    if (source === 'payment') {
+      const doc = await SettlementPayment.findByIdAndDelete(id);
+      if (!doc) return res.status(404).json({ error: '支払い記録が見つかりません' });
+    } else if (source === 'settlement') {
+      const doc = await Settlement.findByIdAndDelete(id);
+      if (!doc) return res.status(404).json({ error: '決済記録が見つかりません' });
+    } else {
+      return res.status(400).json({ error: '無効なソース種別です' });
+    }
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Error deleting recovery record:', error);
+    res.status(500).json({ error: 'Server error deleting recovery record' });
+  }
+});
+
 // Get Support Dashboard stats (Admin and Support roles only)
 router.get('/support', verifyToken, requireRole('admin', 'support'), async (req, res) => {
   try {
