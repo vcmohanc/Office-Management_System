@@ -6,6 +6,9 @@ const claimSchema = new mongoose.Schema({
   staff_id: { type: String, required: true },
   location: { type: String, required: true },
   branch_farm_name: { type: String, default: '' },
+  partner_id:       { type: String, default: '' },
+  partner_name:     { type: String, default: '' },
+  partner_industry: { type: String, default: '' },
   visa_status: { type: String, default: '' },
   visa_available_time: { type: Date, default: null },
 

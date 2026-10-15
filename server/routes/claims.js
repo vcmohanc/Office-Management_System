@@ -24,6 +24,9 @@ const claimSchemaZod = z.object({
   staff_id: z.string().min(1, 'Staff ID is required'),
   location: z.string().min(1, 'Location is required'),
   branch_farm_name: z.string().optional().nullable(),
+  partner_id: z.string().optional().nullable(),
+  partner_name: z.string().optional().nullable(),
+  partner_industry: z.string().optional().nullable(),
   visa_status: z.string().optional().nullable(),
   visa_available_time: z.string().optional().nullable(),
 

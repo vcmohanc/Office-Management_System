@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Wallet, TrendingUp, Clipboard, CheckCircle, Landmark, User, ArrowRight, Building, Building2, X, ChevronDown, ChevronUp } from 'lucide-react';
+import { Wallet, TrendingUp, TrendingDown, Clipboard, CheckCircle, Landmark, User, ArrowRight, Building, Building2, X, ChevronDown, ChevronUp } from 'lucide-react';
 import { apiFetch } from '../../utils/apiFetch.js';
 import { PATTERN_CONFIG, toPartyJP, toFlowTypeJP } from '../../utils/settlementPatterns.js';
 
@@ -71,62 +71,121 @@ export default function AccountDashboard() {
     return new Intl.NumberFormat('ja-JP', { style: 'currency', currency: 'JPY' }).format(amount);
   };
 
-    return (
-    <>
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-        {/* Card 1 */}
-        <div className="bg-white rounded-xl p-5 border border-gray-200 shadow-sm">
-          <div className="flex justify-between items-start mb-4">
-            <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider">アクティブな前払金合計</h3>
-            <Wallet className="text-[#162D50] w-5 h-5" />
+  const momPositive = summaryMetrics.activeAdvancesMoM >= 0;
+
+  return (
+    <div className="space-y-6">
+
+      {/* ── Hero Header ── */}
+      <div className="relative bg-gradient-to-r from-[#162D50] to-[#1e4080] rounded-2xl p-6 overflow-hidden">
+        {/* Decorative circles */}
+        <div className="absolute -top-8 -right-8 w-40 h-40 rounded-full bg-white/5 pointer-events-none" />
+        <div className="absolute -bottom-10 -right-2 w-28 h-28 rounded-full bg-white/5 pointer-events-none" />
+        <div className="absolute top-4 right-32 w-14 h-14 rounded-full bg-white/5 pointer-events-none" />
+
+        <div className="relative flex items-center gap-4">
+          <div className="w-12 h-12 rounded-xl bg-white/10 flex items-center justify-center flex-shrink-0">
+            <Landmark className="w-6 h-6 text-white" />
           </div>
-          <p className="text-3xl font-bold text-[#162D50] mb-2">
-            {loading ? '...' : formatCurrency(summaryMetrics.totalActiveAdvances)}
-          </p>
-          <p className={`text-xs font-medium flex items-center ${summaryMetrics.activeAdvancesMoM >= 0 ? 'text-blue-500' : 'text-red-500'}`}>
-            <TrendingUp className="w-3 h-3 mr-1" /> 先月比 {summaryMetrics.activeAdvancesMoM >= 0 ? '+' : ''}{summaryMetrics.activeAdvancesMoM || 0}%
-          </p>
+          <div>
+            <p className="text-blue-200 text-xs font-semibold uppercase tracking-widest mb-0.5">
+              財務・精算管理
+            </p>
+            <h2 className="text-2xl font-bold text-white leading-tight">経理部門</h2>
+            <p className="text-blue-200 text-sm mt-0.5">
+              前払金の精算・回収状況を一元管理します。
+            </p>
+          </div>
         </div>
-        
-        {/* Card 2 */}
-        <div className="bg-white rounded-xl p-5 border border-gray-200 shadow-sm">
+      </div>
+
+      {/* ── KPI Strip ── */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+
+        {/* Card 1 — Total Active Advances */}
+        <div className="bg-white rounded-xl p-5 border border-gray-100 shadow-sm">
           <div className="flex justify-between items-start mb-4">
-            <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider">保留中の決済</h3>
-            <Clipboard className="text-yellow-500 w-5 h-5" />
+            <div className="w-8 h-8 rounded-lg bg-[#162D50]/10 flex items-center justify-center">
+              <Wallet className="text-[#162D50] w-4 h-4" />
+            </div>
           </div>
-          <p className="text-3xl font-bold text-[#162D50] mb-2">
-            {loading ? '...' : summaryMetrics.pendingSettlements}
+          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">
+            アクティブな前払金合計
           </p>
-          <p className="text-xs font-medium text-gray-500">
-            承認待ちの案件
+          <p className="text-3xl font-bold text-[#162D50] mb-2 leading-none">
+            {loading ? (
+              <span className="inline-block w-32 h-8 bg-gray-100 animate-pulse rounded" />
+            ) : (
+              formatCurrency(summaryMetrics.totalActiveAdvances)
+            )}
+          </p>
+          <p className={`text-xs font-medium flex items-center gap-1 ${momPositive ? 'text-blue-500' : 'text-red-500'}`}>
+            {momPositive
+              ? <TrendingUp className="w-3 h-3" />
+              : <TrendingDown className="w-3 h-3" />
+            }
+            先月比 {momPositive ? '+' : ''}{summaryMetrics.activeAdvancesMoM || 0}%
           </p>
         </div>
 
-        {/* Card 3 — clickable to show breakdown */}
+        {/* Card 2 — Pending Settlements */}
+        <div className="bg-white rounded-xl p-5 border border-gray-100 shadow-sm">
+          <div className="flex justify-between items-start mb-4">
+            <div className="w-8 h-8 rounded-lg bg-amber-50 flex items-center justify-center">
+              <Clipboard className={`w-4 h-4 ${summaryMetrics.pendingSettlements > 0 ? 'text-amber-500' : 'text-gray-400'}`} />
+            </div>
+          </div>
+          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">
+            保留中の決済
+          </p>
+          <p className={`text-3xl font-bold mb-2 leading-none ${summaryMetrics.pendingSettlements > 0 ? 'text-amber-500' : 'text-[#162D50]'}`}>
+            {loading ? (
+              <span className="inline-block w-16 h-8 bg-gray-100 animate-pulse rounded" />
+            ) : (
+              summaryMetrics.pendingSettlements
+            )}
+          </p>
+          <p className="text-xs font-medium text-gray-500">承認待ちの案件</p>
+        </div>
+
+        {/* Card 3 — Recovery This Period (clickable) */}
         <div
-          className="bg-white rounded-xl p-5 border border-gray-200 shadow-sm cursor-pointer hover:border-green-300 hover:shadow-md transition-all"
+          className="bg-white rounded-xl p-5 border border-gray-100 shadow-sm cursor-pointer hover:border-green-300 hover:shadow-md transition-all"
           onClick={handleToggleBreakdown}
           title="クリックして内訳を表示"
         >
           <div className="flex justify-between items-start mb-4">
-            <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider">今期の回収額</h3>
-            <div className="flex items-center gap-1">
-              <CheckCircle className="text-green-500 w-5 h-5" />
-              {showBreakdown ? <ChevronUp className="text-gray-400 w-4 h-4" /> : <ChevronDown className="text-gray-400 w-4 h-4" />}
+            <div className="w-8 h-8 rounded-lg bg-green-50 flex items-center justify-center">
+              <CheckCircle className="text-green-600 w-4 h-4" />
+            </div>
+            <div className="flex items-center gap-0.5 text-gray-400">
+              {showBreakdown
+                ? <ChevronUp className="w-4 h-4" />
+                : <ChevronDown className="w-4 h-4" />
+              }
             </div>
           </div>
-          <p className="text-3xl font-bold text-green-500 mb-2">
-            {loading ? '...' : formatCurrency(summaryMetrics.recoveredThisPeriod)}
+          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">
+            今期の回収額
+          </p>
+          <p className="text-3xl font-bold text-green-600 mb-2 leading-none">
+            {loading ? (
+              <span className="inline-block w-32 h-8 bg-gray-100 animate-pulse rounded" />
+            ) : (
+              formatCurrency(summaryMetrics.recoveredThisPeriod)
+            )}
           </p>
           <p className="text-xs font-medium text-gray-500">
-            回収率 {summaryMetrics.overallRecoveryRate || 0}% &nbsp;·&nbsp; 内訳を{showBreakdown ? '閉じる' : '表示'}
+            回収率 {summaryMetrics.overallRecoveryRate || 0}%
+            &nbsp;·&nbsp;
+            内訳を{showBreakdown ? '閉じる' : '表示'}
           </p>
         </div>
       </div>
 
-      {/* Recovery Breakdown Panel */}
+      {/* ── Recovery Breakdown Panel ── */}
       {showBreakdown && (
-        <div className="mb-6 bg-white rounded-xl border border-green-200 shadow-sm overflow-hidden">
+        <div className="bg-white rounded-xl border border-green-200 shadow-sm overflow-hidden">
           <div className="flex justify-between items-center px-5 py-3 bg-green-50 border-b border-green-200">
             <div>
               <h3 className="font-bold text-green-800 text-sm">今期の回収一覧</h3>
@@ -136,33 +195,41 @@ export default function AccountDashboard() {
                 </p>
               )}
             </div>
-            <button onClick={() => setShowBreakdown(false)} className="text-gray-400 hover:text-gray-600 p-1">
+            <button
+              onClick={() => setShowBreakdown(false)}
+              className="text-gray-400 hover:text-gray-600 p-1 rounded-lg hover:bg-green-100 transition-colors"
+            >
               <X className="w-4 h-4" />
             </button>
           </div>
 
           {breakdownLoading ? (
-            <div className="px-5 py-8 text-center text-sm text-gray-400">読み込み中...</div>
+            <div className="px-5 py-10 text-center text-sm text-gray-400">
+              <div className="inline-block w-5 h-5 border-2 border-green-300 border-t-green-600 rounded-full animate-spin mb-2" />
+              <p>読み込み中...</p>
+            </div>
           ) : !breakdown?.rows?.length ? (
-            <div className="px-5 py-8 text-center text-sm text-gray-400">今月の回収データはありません。</div>
+            <div className="px-5 py-10 text-center text-sm text-gray-400">
+              今月の回収データはありません。
+            </div>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-left">
                 <thead>
                   <tr className="bg-gray-50 border-b border-gray-200">
-                    <th className="px-4 py-2 text-xs font-bold text-gray-500 uppercase">案件番号</th>
-                    <th className="px-4 py-2 text-xs font-bold text-gray-500 uppercase">スタッフ名</th>
-                    <th className="px-4 py-2 text-xs font-bold text-gray-500 uppercase">経費種別</th>
-                    <th className="px-4 py-2 text-xs font-bold text-gray-500 uppercase">回数</th>
-                    <th className="px-4 py-2 text-xs font-bold text-gray-500 uppercase text-right">回収額</th>
-                    <th className="px-4 py-2 text-xs font-bold text-gray-500 uppercase">支払日</th>
-                    <th className="px-4 py-2 text-xs font-bold text-gray-500 uppercase">種別</th>
+                    <th className="px-4 py-2.5 text-xs font-bold text-gray-500 uppercase tracking-wide">案件番号</th>
+                    <th className="px-4 py-2.5 text-xs font-bold text-gray-500 uppercase tracking-wide">スタッフ名</th>
+                    <th className="px-4 py-2.5 text-xs font-bold text-gray-500 uppercase tracking-wide">経費種別</th>
+                    <th className="px-4 py-2.5 text-xs font-bold text-gray-500 uppercase tracking-wide">回数</th>
+                    <th className="px-4 py-2.5 text-xs font-bold text-gray-500 uppercase tracking-wide text-right">回収額</th>
+                    <th className="px-4 py-2.5 text-xs font-bold text-gray-500 uppercase tracking-wide">支払日</th>
+                    <th className="px-4 py-2.5 text-xs font-bold text-gray-500 uppercase tracking-wide">種別</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">
                   {breakdown.rows.map((row) => (
-                    <tr key={row.id} className="hover:bg-gray-50">
-                      <td className="px-4 py-3 text-sm font-mono text-[#162D50]">{row.caseRef || '-'}</td>
+                    <tr key={row.id} className="hover:bg-gray-50 transition-colors">
+                      <td className="px-4 py-3 text-sm font-mono text-[#162D50] font-semibold">{row.caseRef || '-'}</td>
                       <td className="px-4 py-3 text-sm text-gray-800">{row.staffName || '-'}</td>
                       <td className="px-4 py-3 text-sm text-gray-600">{row.expenseType || '-'}</td>
                       <td className="px-4 py-3 text-sm text-gray-600 text-center">
@@ -175,7 +242,7 @@ export default function AccountDashboard() {
                         {row.paymentDate ? new Date(row.paymentDate).toLocaleDateString('ja-JP') : '-'}
                       </td>
                       <td className="px-4 py-3">
-                        <span className={`text-xs px-2 py-0.5 rounded font-medium ${
+                        <span className={`text-xs px-2 py-0.5 rounded-full font-semibold ${
                           row.source === 'payment'
                             ? 'bg-blue-50 text-blue-700'
                             : 'bg-purple-50 text-purple-700'
@@ -201,86 +268,136 @@ export default function AccountDashboard() {
         </div>
       )}
 
-      <div className="mb-4 text-sm text-gray-600 bg-gray-50 p-3 rounded-lg border border-gray-200">
-        <p className="font-bold mb-1 text-gray-700">フロー種別の凡例:</p>
-        <div className="flex gap-4">
-          <span className="flex items-center"><div className="w-3 h-3 bg-blue-500 rounded-full mr-1"></div> 精算（資金流出）</span>
-          <span className="flex items-center"><div className="w-3 h-3 bg-green-500 rounded-full mr-1"></div> 回収（資金流入）</span>
-          <span className="flex items-center"><div className="w-3 h-3 bg-gray-500 rounded-full mr-1"></div> 振替（ファンド外移動）</span>
+      {/* ── Legend ── */}
+      <div className="flex gap-3 flex-wrap items-center">
+        <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider mr-1">凡例:</span>
+        <span className="flex items-center gap-1.5 bg-white border border-gray-200 rounded-full px-3 py-1 text-xs font-medium text-gray-600">
+          <span className="w-2 h-2 rounded-full bg-blue-500 flex-shrink-0"></span>
+          精算（資金流出）
+        </span>
+        <span className="flex items-center gap-1.5 bg-white border border-gray-200 rounded-full px-3 py-1 text-xs font-medium text-gray-600">
+          <span className="w-2 h-2 rounded-full bg-green-500 flex-shrink-0"></span>
+          回収（資金流入）
+        </span>
+        <span className="flex items-center gap-1.5 bg-white border border-gray-200 rounded-full px-3 py-1 text-xs font-medium text-gray-600">
+          <span className="w-2 h-2 rounded-full bg-gray-400 flex-shrink-0"></span>
+          振替（ファンド外移動）
+        </span>
+      </div>
+
+      {/* ── Payment Pattern Section ── */}
+      <div>
+        <div className="flex items-center border-l-4 border-[#162D50] pl-3 mb-5">
+          <h2 className="text-lg font-bold text-[#162D50]">経費精算パターン</h2>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+          {paymentOptions.map((option) => {
+            const advancerLabel = option.advancerJP || toPartyJP(option.advancer);
+            const bearerLabel = option.bearerJP || toPartyJP(option.bearer);
+            const flowTypeLabel = option.flowTypeLabel || option.flowTypeJP || toFlowTypeJP(option.flowType);
+            const SourceIcon = getEntityIcon(option.advancer);
+            const TargetIcon = getEntityIcon(option.bearer);
+            const flowColors = getFlowColors(option.flowType);
+
+            return (
+              <div key={option.id} className="bg-white rounded-xl border border-gray-200 shadow-sm flex flex-col overflow-hidden">
+
+                {/* Card Header */}
+                <div className="px-5 pt-5 pb-4">
+                  <div className="flex justify-between items-start mb-3">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="bg-[#162D50]/10 text-[#162D50] px-2 py-0.5 rounded text-xs font-bold">
+                        {option.id}
+                      </span>
+                      <h3 className="font-bold text-[#162D50] text-sm leading-snug">{option.flowTitle}</h3>
+                    </div>
+                    <span className="text-xs text-gray-500 font-semibold whitespace-nowrap ml-2 mt-0.5">
+                      進行中: <span className="text-[#162D50]">{option.active}</span>
+                    </span>
+                  </div>
+
+                  {/* Expense type chips */}
+                  <div className="flex flex-wrap gap-1.5">
+                    {option.expenseTypes.map((type, i) => (
+                      <span
+                        key={i}
+                        className="bg-slate-100 text-slate-600 px-2 py-0.5 rounded-md text-[11px] font-semibold"
+                      >
+                        {type}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Flow Diagram */}
+                <div className="flex justify-between items-center px-8 py-5">
+                  {/* Source node */}
+                  <div className="flex flex-col items-center gap-1">
+                    <div className="w-12 h-12 rounded-xl bg-gray-50 border border-gray-100 flex items-center justify-center">
+                      <SourceIcon className="w-6 h-6 text-[#162D50]" aria-hidden="true" />
+                    </div>
+                    <span className="font-bold text-[12px] text-[#162D50] text-center leading-tight max-w-[70px]">
+                      {advancerLabel}
+                    </span>
+                  </div>
+
+                  {/* Arrow + label */}
+                  <div className="flex-1 px-3 flex flex-col items-center relative">
+                    <div className={`w-full h-[2px] ${flowColors.bg} absolute top-1/2 -translate-y-1/2`}></div>
+                    <ArrowRight
+                      className={`${flowColors.text} absolute top-1/2 -right-1 -translate-y-1/2 w-4 h-4`}
+                      aria-hidden="true"
+                    />
+                    <div className="relative bg-white px-2 z-10">
+                      <span className={`text-[11px] font-bold ${flowColors.text}`}>{flowTypeLabel}</span>
+                    </div>
+                  </div>
+
+                  {/* Target node */}
+                  <div className="flex flex-col items-center gap-1">
+                    <div className="w-12 h-12 rounded-xl bg-gray-50 border border-gray-100 flex items-center justify-center">
+                      <TargetIcon className="w-6 h-6 text-[#162D50]" aria-hidden="true" />
+                    </div>
+                    <span className="font-bold text-[12px] text-[#162D50] text-center leading-tight max-w-[70px]">
+                      {bearerLabel}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Bottom Stats Bar */}
+                <div className="mt-auto bg-gray-50 rounded-b-xl p-4 border-t border-gray-100">
+                  <div className="flex justify-between items-center gap-2 mb-3">
+                    <div className="text-center">
+                      <p className="text-[10px] text-gray-500 font-semibold uppercase tracking-wide mb-0.5">立替総額</p>
+                      <p className="text-[13px] font-bold text-red-500">{formatCurrency(option.totalAdvanced)}</p>
+                    </div>
+                    <div className="text-center">
+                      <p className="text-[10px] text-gray-500 font-semibold uppercase tracking-wide mb-0.5">回収総額</p>
+                      <p className="text-[13px] font-bold text-green-600">{formatCurrency(option.totalRecovered)}</p>
+                    </div>
+                    <div className="text-center">
+                      <p className="text-[10px] text-gray-500 font-semibold uppercase tracking-wide mb-0.5">差引残額</p>
+                      <p className={`text-[13px] font-bold ${option.netExposure > 0 ? 'text-red-600' : 'text-gray-700'}`}>
+                        {formatCurrency(option.netExposure)}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Progress bar */}
+                  <div className="w-full h-2 rounded-full bg-gray-200 overflow-hidden">
+                    <div
+                      className={`h-full rounded-full ${flowColors.bg} transition-all duration-500`}
+                      style={{ width: `${Math.min(100, option.progress || 0)}%` }}
+                    />
+                  </div>
+                </div>
+              </div>
+            );
+          })}
         </div>
       </div>
 
-      <h2 className="text-xl font-bold text-[#162D50] mb-6">経費精算パターン</h2>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {paymentOptions.map((option) => {
-          const advancerLabel = option.advancerJP || toPartyJP(option.advancer);
-          const bearerLabel = option.bearerJP || toPartyJP(option.bearer);
-          const flowTypeLabel = option.flowTypeLabel || option.flowTypeJP || toFlowTypeJP(option.flowType);
-          const SourceIcon = getEntityIcon(option.advancer);
-          const TargetIcon = getEntityIcon(option.bearer);
-          const flowColors = getFlowColors(option.flowType);
-          
-          return (
-            <div key={option.id} className="bg-white rounded-xl border border-gray-200 shadow-sm flex flex-col p-4 pb-0">
-              <div className="flex justify-between items-center mb-2">
-                <h3 className="font-bold text-[#162D50] text-[16px]">{option.id} : {option.flowTitle}</h3>
-                <span className="text-[13px] text-gray-800 font-medium">進行中: {option.active}</span>
-              </div>
-              
-              <div className="flex flex-wrap gap-2 mb-6">
-                {option.expenseTypes.map((type, i) => (
-                  <span key={i} className="bg-[#E2E8F0] text-[#4A5568] px-2 py-0.5 rounded-md text-[11px] font-bold">
-                    {type}
-                  </span>
-                ))}
-              </div>
-
-              <div className="flex-1 flex flex-col">
-                <div className="flex justify-between items-center mb-8 px-4">
-                  <div className="flex flex-col items-center">
-                    <div className="w-12 h-12 bg-white flex items-center justify-center mb-1">
-                      <SourceIcon className="w-8 h-8 text-[#162D50]" aria-hidden="true" />
-                    </div>
-                    <span className="font-bold text-[13px] text-[#162D50]">{advancerLabel}</span>
-                  </div>
-                  <div className="flex-1 px-4 flex flex-col items-center relative -mt-3">
-                    <div className={`w-full h-[2px] ${flowColors.bg} absolute top-1/2`}></div>
-                    <ArrowRight className={`${flowColors.text} absolute top-1/2 -right-1 transform -translate-y-1/2 w-5 h-5`} aria-hidden="true" />
-                    <div className="bg-white px-2 z-10 flex flex-col items-center -mt-3">
-                      <span className={`text-[12px] font-bold ${flowColors.text}`}>{flowTypeLabel}</span>
-                    </div>
-                  </div>
-                  <div className="flex flex-col items-center">
-                    <div className="w-12 h-12 bg-white flex items-center justify-center mb-1">
-                      <TargetIcon className="w-8 h-8 text-[#162D50]" aria-hidden="true" />
-                    </div>
-                    <span className="font-bold text-[13px] text-[#162D50]">{bearerLabel}</span>
-                  </div>
-                </div>
-                
-                <div className="mt-auto bg-[#E9EDF1] rounded-b-xl p-4 -mx-4 border-t border-gray-200">
-                  <div className="flex justify-between items-center mb-2">
-                    <p className="text-[12px] text-gray-700 font-bold">
-                      立替総額 ({advancerLabel}): <span className="text-[13px] font-bold text-red-500">{formatCurrency(option.totalAdvanced)}</span>
-                    </p>
-                    <p className="text-[12px] text-gray-700 font-bold">
-                      回収総額 ({bearerLabel}): <span className="text-[13px] font-bold text-green-500">{formatCurrency(option.totalRecovered)}</span>
-                    </p>
-                  </div>
-                  <div className="w-full h-[6px] flex rounded-full overflow-hidden mb-2 bg-gray-200">
-                    <div className={`${flowColors.bg}`} style={{ width: `${option.progress}%` }}></div>
-                  </div>
-                  <div className="text-right">
-                    <p className={`text-[12px] font-bold ${option.netExposure > 0 ? 'text-red-600' : 'text-gray-800'}`}>
-                      差引残額: {formatCurrency(option.netExposure)}
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          );
-        })}
-      </div>
-    </>
+    </div>
   );
 }
