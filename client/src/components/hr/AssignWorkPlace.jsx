@@ -119,18 +119,33 @@ export default function AssignWorkPlace() {
     return getPartnersForWorkPlaces([filterWorkPlace], partners);
   }, [filterWorkPlace, partners]);
 
+  // All Haken-relevant partners (any WORK_PLACES category), sorted: selected work places first
   const draftMatchedPartners = useMemo(() => {
-    return draftWorkPlaces.length > 0 ? getPartnersForWorkPlaces(draftWorkPlaces, partners) : [];
+    const hakenPartners = partners.filter(p =>
+      Array.isArray(p.workplaceCategories) &&
+      p.workplaceCategories.some(c => WORK_PLACES.includes(c))
+    );
+    if (draftWorkPlaces.length === 0) return hakenPartners;
+    return [...hakenPartners].sort((a, b) => {
+      const aMatch = a.workplaceCategories.some(c => draftWorkPlaces.includes(c));
+      const bMatch = b.workplaceCategories.some(c => draftWorkPlaces.includes(c));
+      return (bMatch ? 1 : 0) - (aMatch ? 1 : 0);
+    });
   }, [draftWorkPlaces, partners]);
 
-  // Office Staff: match partners by department category
+  // All Office-relevant partners (any OFFICE_DEPARTMENTS category), sorted: selected depts first
   const draftMatchedPartnersOffice = useMemo(() => {
-    if (draftStaffType !== 'Office Staff' || draftDepartments.length === 0) return [];
-    return partners.filter(p =>
+    const officePartners = partners.filter(p =>
       Array.isArray(p.workplaceCategories) &&
-      draftDepartments.some(d => p.workplaceCategories.includes(d))
+      p.workplaceCategories.some(c => OFFICE_DEPARTMENTS.includes(c))
     );
-  }, [draftStaffType, draftDepartments, partners]);
+    if (draftDepartments.length === 0) return officePartners;
+    return [...officePartners].sort((a, b) => {
+      const aMatch = a.workplaceCategories.some(c => draftDepartments.includes(c));
+      const bMatch = b.workplaceCategories.some(c => draftDepartments.includes(c));
+      return (bMatch ? 1 : 0) - (aMatch ? 1 : 0);
+    });
+  }, [draftDepartments, partners]);
 
   const handleAssignWorkPlace = async () => {
     if (!selectedStaff) return;
@@ -787,108 +802,107 @@ export default function AssignWorkPlace() {
                     </div>
                   </div>
 
-                  {/* Section: Partner Company (Haken + work places selected) */}
-                  {draftStaffType === 'Haken Staff' && draftWorkPlaces.length > 0 && (
-                    <div className="bg-white rounded-xl border border-gray-200 p-5 shadow-sm">
-                      <h4 className="text-sm font-bold text-[#162D50] mb-4 flex items-center gap-2.5">
-                        <span className="w-6 h-6 rounded-full bg-[#162D50] text-white text-xs flex items-center justify-center font-bold flex-shrink-0">5</span>
-                        パートナー企業（任意）
-                        <span className="ml-auto text-[10px] text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full">{draftMatchedPartners.length}社</span>
-                      </h4>
-                      {draftMatchedPartners.length === 0 ? (
-                        <div className="text-center py-5">
-                          <Building2 className="w-7 h-7 mx-auto mb-2 text-gray-200" />
-                          <p className="text-xs text-gray-400">この配属先カテゴリーに登録されたパートナー企業がありません</p>
-                        </div>
-                      ) : (
-                        <div className="space-y-2">
-                          <button onClick={() => setDraftPartnerName('')}
-                            className={`w-full text-left p-3 rounded-xl border-2 transition-all ${draftPartnerName === '' ? 'border-gray-400 bg-gray-50' : 'border-gray-200 bg-white hover:border-gray-300'}`}>
-                            <span className="text-xs font-medium text-gray-500">指定しない</span>
-                          </button>
-                          {draftMatchedPartners.map((p) => {
-                            const sel = draftPartnerName === p.partner_name;
-                            const active = (p.status || '').toLowerCase() === 'active';
-                            return (
-                              <button key={p._id} onClick={() => setDraftPartnerName(p.partner_name)} disabled={assigning}
-                                className={`w-full text-left p-3 rounded-xl border-2 transition-all ${sel ? 'border-[#162D50] bg-[#162D50]/5' : 'border-gray-200 bg-white hover:border-[#162D50]/30'} ${assigning ? 'opacity-50 cursor-not-allowed' : ''}`}>
-                                <div className="flex items-center justify-between">
-                                  <div className="flex items-center gap-2.5">
-                                    <div className={`w-7 h-7 rounded-lg flex items-center justify-center ${sel ? 'bg-[#162D50]' : 'bg-[#162D50]/10'}`}>
-                                      <Building2 className={`w-3.5 h-3.5 ${sel ? 'text-white' : 'text-[#162D50]'}`} />
-                                    </div>
-                                    <div>
-                                      <p className={`text-xs font-bold ${sel ? 'text-[#162D50]' : 'text-gray-800'}`}>{p.partner_name}</p>
-                                      <p className="text-[10px] text-gray-500">{p.industry || '—'}{p.contact_name ? ` · ${p.contact_name}` : ''}</p>
-                                    </div>
-                                  </div>
-                                  <div className="flex items-center gap-2">
-                                    <span className={`text-[10px] px-2 py-0.5 rounded-full font-semibold ${active ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>{active ? '契約中' : p.status}</span>
-                                    {sel && <CheckCircle2 className="w-4 h-4 text-[#162D50]" />}
-                                  </div>
-                                </div>
-                              </button>
-                            );
-                          })}
-                        </div>
-                      )}
-                    </div>
-                  )}
+                  {/* Section: Partner Company — always visible, list switches by staff type */}
+                  {(() => {
+                    const isHaken = draftStaffType === 'Haken Staff';
+                    const partnerList = isHaken ? draftMatchedPartners : draftMatchedPartnersOffice;
+                    const selectedKeys = isHaken ? draftWorkPlaces : draftDepartments;
+                    return (
+                      <div className="bg-white rounded-xl border border-gray-200 p-5 shadow-sm">
+                        <h4 className="text-sm font-bold text-[#162D50] mb-1 flex items-center gap-2.5">
+                          <span className="w-6 h-6 rounded-full bg-[#162D50] text-white text-xs flex items-center justify-center font-bold flex-shrink-0">5</span>
+                          パートナー企業（任意）
+                          <span className="ml-auto flex items-center gap-2">
+                            {selectedKeys.length > 0 && (
+                              <span className="text-[10px] text-blue-600 bg-blue-50 border border-blue-200 px-2 py-0.5 rounded-full font-bold">
+                                選択カテゴリー優先表示
+                              </span>
+                            )}
+                            <span className="text-[10px] text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full font-semibold">{partnerList.length}社</span>
+                          </span>
+                        </h4>
+                        <p className="text-[10px] text-gray-400 mb-4 ml-9">
+                          {isHaken ? '派遣スタッフ向けパートナー企業' : '内勤スタッフ向けパートナー企業'}
+                          {selectedKeys.length > 0 ? '（選択した配属先に近い順）' : '（スタッフタイプで絞り込み済み）'}
+                        </p>
 
-                  {/* Section: Partner Company (Office Staff + departments selected) */}
-                  {draftStaffType === 'Office Staff' && draftDepartments.length > 0 && (
-                    <div className="bg-white rounded-xl border border-gray-200 p-5 shadow-sm">
-                      <h4 className="text-sm font-bold text-[#162D50] mb-4 flex items-center gap-2.5">
-                        <span className="w-6 h-6 rounded-full bg-[#162D50] text-white text-xs flex items-center justify-center font-bold flex-shrink-0">5</span>
-                        パートナー企業（任意）
-                        <span className="ml-auto text-[10px] text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full">{draftMatchedPartnersOffice.length}社</span>
-                      </h4>
-                      {draftMatchedPartnersOffice.length === 0 ? (
-                        <div className="text-center py-5">
-                          <Building2 className="w-7 h-7 mx-auto mb-2 text-gray-200" />
-                          <p className="text-xs text-gray-400">選択した部署に対応するパートナー企業がありません</p>
-                        </div>
-                      ) : (
-                        <div className="space-y-2">
-                          <button onClick={() => setDraftPartnerName('')}
-                            className={`w-full text-left p-3 rounded-xl border-2 transition-all ${draftPartnerName === '' ? 'border-gray-400 bg-gray-50' : 'border-gray-200 bg-white hover:border-gray-300'}`}>
-                            <span className="text-xs font-medium text-gray-500">指定しない</span>
-                          </button>
-                          {draftMatchedPartnersOffice.map((p) => {
-                            const sel = draftPartnerName === p.partner_name;
-                            const active = (p.status || '').toLowerCase() === 'active';
-                            return (
-                              <button key={p._id} onClick={() => setDraftPartnerName(p.partner_name)} disabled={assigning}
-                                className={`w-full text-left p-3 rounded-xl border-2 transition-all ${sel ? 'border-[#162D50] bg-[#162D50]/5' : 'border-gray-200 bg-white hover:border-[#162D50]/30'} ${assigning ? 'opacity-50 cursor-not-allowed' : ''}`}>
-                                <div className="flex items-center justify-between">
-                                  <div className="flex items-center gap-2.5">
-                                    <div className={`w-7 h-7 rounded-lg flex items-center justify-center ${sel ? 'bg-[#162D50]' : 'bg-[#162D50]/10'}`}>
-                                      <Building2 className={`w-3.5 h-3.5 ${sel ? 'text-white' : 'text-[#162D50]'}`} />
+                        {partnersLoading ? (
+                          <div className="flex items-center justify-center gap-2 py-6 text-gray-400 text-xs">
+                            <div className="w-4 h-4 border-2 border-gray-200 border-t-[#162D50] rounded-full animate-spin" />
+                            パートナー情報を読み込み中...
+                          </div>
+                        ) : partnerList.length === 0 ? (
+                          <div className="text-center py-6">
+                            <Building2 className="w-8 h-8 mx-auto mb-2 text-gray-200" />
+                            <p className="text-xs text-gray-400 font-medium">
+                              {isHaken ? '派遣スタッフ向けパートナー企業がありません' : '内勤スタッフ向けパートナー企業がありません'}
+                            </p>
+                            <p className="text-[10px] text-gray-300 mt-1">B2B管理画面でパートナーを登録してください</p>
+                          </div>
+                        ) : (
+                          <div className="space-y-2 max-h-64 overflow-y-auto pr-1">
+                            <button onClick={() => setDraftPartnerName('')} disabled={assigning}
+                              className={`w-full text-left p-3 rounded-xl border-2 transition-all ${draftPartnerName === '' ? 'border-gray-400 bg-gray-100' : 'border-gray-200 bg-white hover:border-gray-300'} ${assigning ? 'opacity-50 cursor-not-allowed' : ''}`}>
+                              <div className="flex items-center justify-between">
+                                <span className="text-xs font-medium text-gray-500">指定しない</span>
+                                {draftPartnerName === '' && <CheckCircle2 className="w-3.5 h-3.5 text-gray-500" />}
+                              </div>
+                            </button>
+
+                            {partnerList.map((p) => {
+                              const sel = draftPartnerName === p.partner_name;
+                              const active = (p.status || '').toLowerCase() === 'active';
+                              const isMatch = selectedKeys.length > 0 && Array.isArray(p.workplaceCategories) && p.workplaceCategories.some(c => selectedKeys.includes(c));
+                              const matchingCats = selectedKeys.length > 0
+                                ? p.workplaceCategories.filter(c => selectedKeys.includes(c))
+                                : p.workplaceCategories.slice(0, 2);
+                              return (
+                                <button key={p._id} onClick={() => setDraftPartnerName(p.partner_name)} disabled={assigning}
+                                  className={`w-full text-left p-3 rounded-xl border-2 transition-all duration-150 ${sel ? 'border-[#162D50] bg-[#162D50]/5 shadow-sm' : isMatch ? 'border-blue-200 bg-blue-50/40 hover:border-[#162D50]/50' : 'border-gray-200 bg-white hover:border-gray-300'} ${assigning ? 'opacity-50 cursor-not-allowed' : ''}`}>
+                                  <div className="flex items-start justify-between gap-2">
+                                    <div className="flex items-center gap-2.5 min-w-0">
+                                      <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${sel ? 'bg-[#162D50]' : isMatch ? 'bg-blue-100' : 'bg-[#162D50]/10'}`}>
+                                        <Building2 className={`w-4 h-4 ${sel ? 'text-white' : isMatch ? 'text-blue-600' : 'text-[#162D50]'}`} />
+                                      </div>
+                                      <div className="min-w-0">
+                                        <p className={`text-xs font-bold truncate ${sel ? 'text-[#162D50]' : 'text-gray-800'}`}>{p.partner_name}</p>
+                                        <p className="text-[10px] text-gray-500 truncate">{p.industry || '—'}{p.contact_name ? ` · ${p.contact_name}` : ''}</p>
+                                      </div>
                                     </div>
-                                    <div>
-                                      <p className={`text-xs font-bold ${sel ? 'text-[#162D50]' : 'text-gray-800'}`}>{p.partner_name}</p>
-                                      <p className="text-[10px] text-gray-500">{p.industry || '—'}{p.contact_name ? ` · ${p.contact_name}` : ''}</p>
+                                    <div className="flex flex-col items-end gap-1 flex-shrink-0">
+                                      <div className="flex items-center gap-1.5">
+                                        {isMatch && (
+                                          <span className="text-[9px] px-1.5 py-0.5 rounded-full font-bold bg-blue-100 text-blue-700 border border-blue-200">マッチ</span>
+                                        )}
+                                        <span className={`text-[10px] px-2 py-0.5 rounded-full font-semibold ${active ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>
+                                          {active ? '契約中' : p.status}
+                                        </span>
+                                        {sel && <CheckCircle2 className="w-4 h-4 text-[#162D50]" />}
+                                      </div>
                                     </div>
                                   </div>
-                                  <div className="flex items-center gap-2">
-                                    <span className={`text-[10px] px-2 py-0.5 rounded-full font-semibold ${active ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>{active ? '契約中' : p.status}</span>
-                                    {sel && <CheckCircle2 className="w-4 h-4 text-[#162D50]" />}
-                                  </div>
-                                </div>
-                              </button>
-                            );
-                          })}
-                        </div>
-                      )}
-                    </div>
-                  )}
+                                  {matchingCats.length > 0 && (
+                                    <div className="mt-2 ml-10 flex flex-wrap gap-1">
+                                      {matchingCats.map((cat, i) => (
+                                        <span key={i} className={`text-[9px] px-1.5 py-0.5 rounded font-medium ${isMatch ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-500'}`}>
+                                          {cat}
+                                        </span>
+                                      ))}
+                                    </div>
+                                  )}
+                                </button>
+                              );
+                            })}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })()}
 
                   {/* Section: Notes */}
                   <div className="bg-white rounded-xl border border-gray-200 p-5 shadow-sm">
                     <h4 className="text-sm font-bold text-[#162D50] mb-4 flex items-center gap-2.5">
-                      <span className="w-6 h-6 rounded-full bg-[#162D50] text-white text-xs flex items-center justify-center font-bold flex-shrink-0">
-                        {draftStaffType === 'Haken Staff' && draftWorkPlaces.length > 0 ? '6' : '5'}
-                      </span>
+                      <span className="w-6 h-6 rounded-full bg-[#162D50] text-white text-xs flex items-center justify-center font-bold flex-shrink-0">6</span>
                       配属備考
                       <span className="ml-auto text-[10px] text-gray-400">{draftNotes.length}/200</span>
                     </h4>
@@ -976,20 +990,10 @@ export default function AssignWorkPlace() {
         const _workPlaces = Array.isArray(viewStaff.assignedWorkPlace) ? viewStaff.assignedWorkPlace : (viewStaff.assignedWorkPlace ? [viewStaff.assignedWorkPlace] : []);
         const _departments = Array.isArray(viewStaff.department) ? viewStaff.department : (viewStaff.department ? [viewStaff.department] : []);
         const _offices = Array.isArray(viewStaff.office) ? viewStaff.office : (viewStaff.office ? [viewStaff.office] : []);
-        // Show all partners matching this staff's assigned work places or departments.
-        // If a specific partner is assigned (assignedPartnerName), sort it first and badge it.
-        const _isOfficeStaff = viewStaff.staffType === 'Office Staff' ||
-          (Array.isArray(viewStaff.department) ? viewStaff.department.some(d => ['Management','Administration','Accounting & Finance','HR / Recruitment','Sales','Marketing','IT / Technical','Customer Support','Purchasing / Procurement','Operations'].includes(d)) : false);
-        const _rawLinked = _isOfficeStaff
-          ? partners.filter(p => Array.isArray(p.workplaceCategories) && _departments.some(d => p.workplaceCategories.includes(d)))
-          : _workPlaces.length > 0
-            ? getPartnersForWorkPlaces(_workPlaces, partners)
-            : [];
-        // Assigned partner first, rest alphabetically
-        const _linkedPartners = [
-          ..._rawLinked.filter(p => p.partner_name === viewStaff.assignedPartnerName),
-          ..._rawLinked.filter(p => p.partner_name !== viewStaff.assignedPartnerName),
-        ];
+        // Show ONLY the one partner explicitly assigned to this staff member
+        const _linkedPartners = viewStaff.assignedPartnerName
+          ? partners.filter(p => p.partner_name === viewStaff.assignedPartnerName)
+          : [];
         const _colleagues = _workPlaces.length > 0
           ? employees.filter(e => e._id !== viewStaff._id && _workPlaces.some(wp => Array.isArray(e.assignedWorkPlace) ? e.assignedWorkPlace.includes(wp) : e.assignedWorkPlace === wp)).length
           : 0;
@@ -1157,8 +1161,12 @@ export default function AssignWorkPlace() {
                       ) : _linkedPartners.length === 0 ? (
                         <div className="px-4 py-6 text-center">
                           <Building2 className="w-8 h-8 mx-auto mb-2 text-gray-200" />
-                          <p className="text-sm text-gray-400 font-medium">関連するパートナー企業がありません</p>
-                          <p className="text-xs text-gray-400 mt-1">B2B部門でパートナーを登録してください</p>
+                          <p className="text-sm text-gray-400 font-medium">
+                            {viewStaff.assignedPartnerName ? 'パートナー情報が見つかりません' : 'パートナー企業が未設定です'}
+                          </p>
+                          {!viewStaff.assignedPartnerName && (
+                            <p className="text-xs text-gray-400 mt-1">配属確定時にパートナー企業を選択できます</p>
+                          )}
                         </div>
                       ) : (
                         <div className="divide-y divide-gray-100 max-h-56 overflow-y-auto">
@@ -1175,21 +1183,15 @@ export default function AssignWorkPlace() {
                               'pending': { label: '提案中', cls: 'bg-blue-100 text-blue-700' },
                               'terminated': { label: '終了', cls: 'bg-red-100 text-red-700' },
                             }[(p.status || '').toLowerCase()] || { label: p.status || '—', cls: 'bg-gray-100 text-gray-500' };
-                            const _isAssigned = p.partner_name === viewStaff.assignedPartnerName;
                             return (
-                              <div key={p._id} className={`px-4 py-3 transition-colors ${_isAssigned ? 'bg-[#162D50]/5 border-l-2 border-[#162D50]' : 'hover:bg-blue-50/30'}`}>
+                              <div key={p._id} className="px-4 py-3 hover:bg-blue-50/30 transition-colors">
                                 <div className="flex items-start justify-between gap-2 mb-1">
-                                  <div className="min-w-0 flex items-center gap-2 flex-wrap">
+                                  <div className="min-w-0">
                                     <p className="font-bold text-sm text-[#162D50] leading-tight truncate">{p.partner_name}</p>
-                                    {_isAssigned && (
-                                      <span className="flex-shrink-0 flex items-center gap-1 px-1.5 py-0.5 bg-[#162D50] text-white text-[10px] font-bold rounded-full">
-                                        <CheckCircle2 className="w-2.5 h-2.5" />配属先
-                                      </span>
-                                    )}
+                                    <p className="text-xs text-gray-500">{p.industry || '—'}</p>
                                   </div>
                                   <span className={`px-2 py-0.5 rounded-full text-xs font-semibold flex-shrink-0 ${_pStatusCfg.cls}`}>{_pStatusCfg.label}</span>
                                 </div>
-                                <p className="text-xs text-gray-500 mb-1">{p.industry || '—'}{p.contact_name ? ` · ${p.contact_name}` : ''}</p>
                                 {_contractPct !== null && (
                                   <div className="mt-2">
                                     <div className="flex justify-between text-xs text-gray-400 mb-1">
