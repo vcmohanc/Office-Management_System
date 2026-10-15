@@ -1,17 +1,17 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { apiFetch } from '../../utils/apiFetch.js';
 
-import { 
-  Search, 
-  MapPin, 
-  Building2, 
-  User, 
-  Phone, 
-  Mail, 
-  Calendar, 
-  CheckCircle2, 
-  X, 
-  Eye, 
+import {
+  Search,
+  MapPin,
+  Building2,
+  User,
+  Phone,
+  Mail,
+  Calendar,
+  CheckCircle2,
+  X,
+  Eye,
   ChevronDown,
   Users,
   Briefcase,
@@ -27,7 +27,11 @@ import {
   ArrowRightLeft,
   Radio,
   Wifi,
-  Antenna
+  Antenna,
+  ExternalLink,
+  Globe,
+  TrendingUp,
+  AlertCircle
 } from 'lucide-react';
 
 import { WORK_PLACES, OFFICE_DEPARTMENTS, ALL_DEPARTMENTS } from '../../constants';
@@ -82,9 +86,20 @@ const OFFICE_LOCATIONS = [
   "Others"
 ];
 
+// Match partners directly via workplaceCategories field (exact category name match)
+const getPartnersForWorkPlaces = (workPlaceList, allPartners) => {
+  if (!workPlaceList || workPlaceList.length === 0) return [];
+  return allPartners.filter(p =>
+    Array.isArray(p.workplaceCategories) &&
+    workPlaceList.some(wp => p.workplaceCategories.includes(wp))
+  );
+};
+
 export default function AssignWorkPlace() {
   const [employees, setEmployees] = useState([]);
+  const [partners, setPartners] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [partnersLoading, setPartnersLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [mainCategory, setMainCategory] = useState('Haken');
   const [filterWorkPlace, setFilterWorkPlace] = useState('Unassigned');
@@ -95,6 +110,8 @@ export default function AssignWorkPlace() {
   const [draftDepartments, setDraftDepartments] = useState([]);
   const [draftOffices, setDraftOffices] = useState([]);
   const [draftStaffType, setDraftStaffType] = useState('Haken Staff');
+  const [viewStaff, setViewStaff] = useState(null);
+  const [isViewModalOpen, setIsViewModalOpen] = useState(false);
 
   const includesValue = (field, value) => {
     if (!field) return false;
@@ -104,6 +121,7 @@ export default function AssignWorkPlace() {
 
   useEffect(() => {
     fetchStaff();
+    fetchPartners();
   }, []);
 
   const fetchStaff = () => {
@@ -111,7 +129,6 @@ export default function AssignWorkPlace() {
     apiFetch('/api/employees')
       .then(res => res.json())
       .then(data => {
-        // Fetch all staff so we can route non-active ones to Unassigned
         setEmployees(data);
         setLoading(false);
       })
@@ -120,6 +137,27 @@ export default function AssignWorkPlace() {
         setLoading(false);
       });
   };
+
+  const fetchPartners = () => {
+    setPartnersLoading(true);
+    apiFetch('/api/b2b/engagements?limit=100')
+      .then(res => res.json())
+      .then(data => {
+        const list = Array.isArray(data) ? data : (data.data || data.partners || data.engagements || []);
+        setPartners(list);
+        setPartnersLoading(false);
+      })
+      .catch(err => {
+        console.error('Error fetching partners:', err);
+        setPartnersLoading(false);
+      });
+  };
+
+  // Returns B2B partners matching the current work place filter
+  const matchedPartners = useMemo(() => {
+    if (!filterWorkPlace || filterWorkPlace === 'All' || filterWorkPlace === 'Unassigned') return [];
+    return getPartnersForWorkPlaces([filterWorkPlace], partners);
+  }, [filterWorkPlace, partners]);
 
   const handleAssignWorkPlace = async () => {
     if (!selectedStaff) return;
@@ -393,6 +431,151 @@ export default function AssignWorkPlace() {
         })}
       </div>
 
+      {/* B2B Partner Companies Panel */}
+      {mainCategory === 'Haken' && filterWorkPlace !== 'All' && filterWorkPlace !== 'Unassigned' && (
+        <div className="mb-6 bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+          <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between bg-gradient-to-r from-[#162D50]/5 to-transparent">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-lg bg-[#162D50] flex items-center justify-center">
+                <Building2 className="w-4 h-4 text-white" />
+              </div>
+              <div>
+                <h3 className="font-bold text-[#162D50] text-sm">
+                  {translateWorkPlace(filterWorkPlace)} — 関連B2Bパートナー
+                </h3>
+                <p className="text-xs text-gray-500 mt-0.5">
+                  {partnersLoading ? '読み込み中...' : `${matchedPartners.length}件のパートナー企業`}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {partnersLoading ? (
+            <div className="p-6 flex items-center justify-center gap-2 text-gray-400 text-sm">
+              <div className="w-4 h-4 border-2 border-gray-300 border-t-[#162D50] rounded-full animate-spin" />
+              パートナー情報を読み込み中...
+            </div>
+          ) : matchedPartners.length === 0 ? (
+            <div className="p-8 flex flex-col items-center justify-center text-center gap-2">
+              <AlertCircle className="w-8 h-8 text-gray-300" />
+              <p className="text-sm text-gray-400 font-medium">このカテゴリに関連するB2Bパートナーが見つかりません</p>
+              <p className="text-xs text-gray-400">B2B部門でパートナーを登録してください</p>
+            </div>
+          ) : (
+            <div className="p-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                {matchedPartners.map((partner) => {
+                  const isActive = (partner.status || '').toLowerCase() === 'active';
+                  const contractEnd = partner.contract_end_date ? new Date(partner.contract_end_date) : null;
+                  const today = new Date();
+                  const daysLeft = contractEnd ? Math.ceil((contractEnd - today) / (1000 * 60 * 60 * 24)) : null;
+                  const isExpiringSoon = daysLeft !== null && daysLeft <= 30 && daysLeft > 0;
+                  const isExpired = daysLeft !== null && daysLeft <= 0;
+
+                  return (
+                    <div
+                      key={partner._id}
+                      className="rounded-xl border border-gray-200 bg-white hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 overflow-hidden"
+                    >
+                      {/* Card header */}
+                      <div className="px-4 py-3 border-b border-gray-100 flex items-start justify-between gap-2">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <div className="w-8 h-8 rounded-lg bg-[#162D50]/10 flex items-center justify-center flex-shrink-0">
+                            <Building2 className="w-4 h-4 text-[#162D50]" />
+                          </div>
+                          <div className="min-w-0">
+                            <p className="font-bold text-[#162D50] text-sm leading-tight truncate">{partner.partner_name || 'N/A'}</p>
+                            <p className="text-xs text-gray-500 truncate">{partner.industry || '—'}</p>
+                          </div>
+                        </div>
+                        <span className={`flex-shrink-0 px-2 py-0.5 rounded-full text-xs font-semibold ${
+                          isActive ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'
+                        }`}>
+                          {isActive ? '契約中' : partner.status || '—'}
+                        </span>
+                      </div>
+
+                      {/* Card body */}
+                      <div className="px-4 py-3 space-y-2">
+                        {partner.contact_name && (
+                          <div className="flex items-center gap-2 text-xs text-gray-600">
+                            <User className="w-3.5 h-3.5 text-gray-400 flex-shrink-0" />
+                            <span className="truncate">{partner.contact_name}</span>
+                          </div>
+                        )}
+                        {partner.contact_phone && (
+                          <div className="flex items-center gap-2 text-xs text-gray-600">
+                            <Phone className="w-3.5 h-3.5 text-gray-400 flex-shrink-0" />
+                            <span>{partner.contact_phone}</span>
+                          </div>
+                        )}
+                        {partner.contact_email && (
+                          <div className="flex items-center gap-2 text-xs text-gray-600">
+                            <Mail className="w-3.5 h-3.5 text-gray-400 flex-shrink-0" />
+                            <span className="truncate">{partner.contact_email}</span>
+                          </div>
+                        )}
+                        {partner.monthly_revenue != null && (
+                          <div className="flex items-center gap-2 text-xs text-gray-600">
+                            <TrendingUp className="w-3.5 h-3.5 text-gray-400 flex-shrink-0" />
+                            <span>¥{Number(partner.monthly_revenue).toLocaleString()}/月</span>
+                          </div>
+                        )}
+
+                        {/* Contract expiry */}
+                        {contractEnd && (
+                          <div className={`flex items-center gap-2 text-xs font-medium mt-1 ${
+                            isExpired ? 'text-red-600' : isExpiringSoon ? 'text-amber-600' : 'text-gray-500'
+                          }`}>
+                            <Calendar className="w-3.5 h-3.5 flex-shrink-0" />
+                            {isExpired
+                              ? `契約終了 ${Math.abs(daysLeft)}日前`
+                              : isExpiringSoon
+                              ? `契約終了まで${daysLeft}日`
+                              : `契約満了: ${contractEnd.toLocaleDateString('ja-JP')}`}
+                          </div>
+                        )}
+
+                        {/* Staff placed */}
+                        {(() => {
+                          const placedCount = employees.filter(e =>
+                            Array.isArray(e.assignedWorkPlace)
+                              ? e.assignedWorkPlace.some(wp => wp === filterWorkPlace)
+                              : e.assignedWorkPlace === filterWorkPlace
+                          ).length;
+                          return (
+                            <div className="flex items-center gap-2 text-xs text-[#162D50] font-semibold">
+                              <Users className="w-3.5 h-3.5 flex-shrink-0" />
+                              <span>配属スタッフ: {placedCount}名</span>
+                            </div>
+                          );
+                        })()}
+                      </div>
+
+                      {partner.website && (
+                        <div className="px-4 py-2 border-t border-gray-100">
+                          <a
+                            href={partner.website.startsWith('http') ? partner.website : `https://${partner.website}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center gap-1.5 text-xs text-blue-600 hover:text-blue-800 transition-colors"
+                            onClick={e => e.stopPropagation()}
+                          >
+                            <Globe className="w-3 h-3" />
+                            ウェブサイト
+                            <ExternalLink className="w-3 h-3" />
+                          </a>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Toolbar */}
       <div className="bg-gray-50 p-4 rounded-t-xl border border-gray-200 border-b-0 flex flex-col sm:flex-row justify-between items-center gap-4">
         <h3 className="text-lg font-bold text-[#162D50] flex-1">
@@ -487,12 +670,10 @@ export default function AssignWorkPlace() {
                       {employee.joinDate ? new Date(employee.joinDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'N/A'}
                     </td>
                     <td className="py-4 px-6 text-center space-x-2">
-                      <button 
-                        onClick={() => {
-                          // TODO View logic or expand view
-                        }}
+                      <button
+                        onClick={() => { setViewStaff(employee); setIsViewModalOpen(true); }}
                         className="p-1.5 text-gray-400 hover:text-[#162D50] hover:bg-blue-50 rounded-md transition-colors"
-                        title="View Details"
+                        title="詳細を表示"
                       >
                         <Eye className="w-5 h-5" />
                       </button>
@@ -796,6 +977,307 @@ export default function AssignWorkPlace() {
           </div>
         </div>
       )}
+
+      {/* Staff View Modal */}
+      {isViewModalOpen && viewStaff && (() => {
+        const _status = viewStaff.onboardingStatus || viewStaff['onboardingステータス'] || 'Active';
+        const _isActive = _status === 'Active';
+        const _tenureDays = viewStaff.joinDate ? Math.floor((new Date() - new Date(viewStaff.joinDate)) / (1000*60*60*24)) : null;
+        const _tenureText = _tenureDays === null ? '—' : _tenureDays < 30 ? `${_tenureDays}日` : _tenureDays < 365 ? `${Math.floor(_tenureDays/30)}ヶ月` : `${Math.floor(_tenureDays/365)}年${Math.floor((_tenureDays%365)/30)}ヶ月`;
+        const _visaEnd = viewStaff.visaEndDate ? new Date(viewStaff.visaEndDate) : null;
+        const _visaDaysLeft = _visaEnd ? Math.ceil((_visaEnd - new Date()) / (1000*60*60*24)) : null;
+        const _workPlaces = Array.isArray(viewStaff.assignedWorkPlace) ? viewStaff.assignedWorkPlace : (viewStaff.assignedWorkPlace ? [viewStaff.assignedWorkPlace] : []);
+        const _departments = Array.isArray(viewStaff.department) ? viewStaff.department : (viewStaff.department ? [viewStaff.department] : []);
+        const _offices = Array.isArray(viewStaff.office) ? viewStaff.office : (viewStaff.office ? [viewStaff.office] : []);
+        const _linkedPartners = _workPlaces.length > 0
+          ? getPartnersForWorkPlaces(_workPlaces, partners)
+          : partners.filter(p => (p.status||'').toLowerCase() === 'active').slice(0, 4);
+        const _isUnassignedPartners = _workPlaces.length === 0;
+        const _colleagues = _workPlaces.length > 0
+          ? employees.filter(e => e._id !== viewStaff._id && _workPlaces.some(wp => Array.isArray(e.assignedWorkPlace) ? e.assignedWorkPlace.includes(wp) : e.assignedWorkPlace === wp)).length
+          : 0;
+        return (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl max-h-[92vh] flex flex-col overflow-hidden">
+
+            {/* Hero Header */}
+            <div className="relative bg-gradient-to-br from-[#162D50] via-[#1a3460] to-[#0f2040] px-6 pt-6 pb-0 flex-shrink-0">
+              <button onClick={() => { setIsViewModalOpen(false); setViewStaff(null); }} className="absolute top-4 right-4 p-2 text-white/60 hover:text-white hover:bg-white/10 rounded-full transition-colors">
+                <X className="w-5 h-5" />
+              </button>
+              <div className="flex items-end gap-5 pb-5">
+                <div className="relative flex-shrink-0">
+                  <div className="w-20 h-20 rounded-2xl bg-white/15 border-2 border-white/30 flex items-center justify-center text-white text-3xl font-bold shadow-lg">
+                    {(viewStaff.romajiName || 'A').charAt(0).toUpperCase()}
+                  </div>
+                  <div className={`absolute -bottom-1.5 -right-1.5 w-5 h-5 rounded-full border-2 border-white ${_isActive ? 'bg-green-400' : 'bg-amber-400'}`} />
+                </div>
+                <div className="flex-1 min-w-0 pb-1">
+                  <div className="flex flex-wrap items-center gap-2 mb-1">
+                    <span className={`px-2.5 py-0.5 rounded-full text-xs font-bold ${_isActive ? 'bg-green-400/20 text-green-300' : 'bg-amber-400/20 text-amber-300'}`}>{_status}</span>
+                    <span className="px-2.5 py-0.5 rounded-full text-xs font-medium bg-white/10 text-white/70">{viewStaff.staffType || viewStaff.joiningType || 'Haken Staff'}</span>
+                  </div>
+                  <h2 className="text-2xl font-bold text-white leading-tight truncate">{viewStaff.romajiName || 'N/A'}</h2>
+                  <p className="text-sm text-white/60">{viewStaff.katakanaName || ''}</p>
+                  <p className="text-xs font-mono text-white/40 mt-1">ID: #{viewStaff._id?.slice(-8).toUpperCase()}</p>
+                </div>
+              </div>
+              <div className="grid grid-cols-4 border-t border-white/10 -mx-6">
+                {[
+                  { label: '勤続期間', value: _tenureText, sub: viewStaff.joinDate ? new Date(viewStaff.joinDate).toLocaleDateString('ja-JP') : '—' },
+                  { label: '配属先', value: _workPlaces.length > 0 ? translateWorkPlace(_workPlaces[0]) : '未配属', sub: _workPlaces.length > 1 ? `+${_workPlaces.length-1}` : '' },
+                  { label: '同職場の同僚', value: _colleagues, sub: '名' },
+                  { label: 'ビザ残日数', value: _visaDaysLeft === null ? '—' : _visaDaysLeft <= 0 ? '期限切れ' : `${_visaDaysLeft}日`, sub: _visaEnd ? _visaEnd.toLocaleDateString('ja-JP') : '情報なし', warn: _visaDaysLeft !== null && _visaDaysLeft <= 60 },
+                ].map((kpi, i) => (
+                  <div key={i} className={`px-4 py-3 text-center ${i < 3 ? 'border-r border-white/10' : ''}`}>
+                    <p className="text-xs text-white/50 mb-0.5">{kpi.label}</p>
+                    <p className={`text-lg font-bold ${kpi.warn ? 'text-red-300' : 'text-white'}`}>{kpi.value}</p>
+                    <p className="text-xs text-white/40">{kpi.sub}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Body */}
+            <div className="overflow-y-auto flex-1 p-5 space-y-4 bg-gray-50">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* LEFT col */}
+                <div className="space-y-4">
+                  {/* Contact card */}
+                  <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+                    <div className="px-4 py-3 bg-gray-50 border-b border-gray-100 flex items-center gap-2">
+                      <User className="w-4 h-4 text-[#162D50]" />
+                      <span className="text-xs font-bold text-[#162D50] uppercase tracking-wider">個人・連絡先情報</span>
+                    </div>
+                    <div className="p-4 space-y-3">
+                      {[
+                        { icon: Mail, cls: 'text-blue-500 bg-blue-50', label: 'メールアドレス', value: viewStaff.email || '—' },
+                        { icon: Phone, cls: 'text-green-500 bg-green-50', label: '電話番号', value: viewStaff.phone || '—' },
+                        { icon: Calendar, cls: 'text-orange-500 bg-orange-50', label: '入社日', value: viewStaff.joinDate ? new Date(viewStaff.joinDate).toLocaleDateString('ja-JP') : '—' },
+                        { icon: Briefcase, cls: 'text-purple-500 bg-purple-50', label: 'スタッフ種別', value: viewStaff.staffType || viewStaff.joiningType || '派遣スタッフ' },
+                      ].map(({ icon: Icon, cls, label, value }) => (
+                        <div key={label} className="flex items-center gap-3">
+                          <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${cls.split(' ')[1]}`}>
+                            <Icon className={`w-4 h-4 ${cls.split(' ')[0]}`} />
+                          </div>
+                          <div className="min-w-0">
+                            <p className="text-xs text-gray-400">{label}</p>
+                            <p className="text-sm font-medium text-gray-800 truncate">{value}</p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                  {/* Visa card */}
+                  <div className={`bg-white rounded-xl border shadow-sm overflow-hidden ${_visaDaysLeft !== null && _visaDaysLeft <= 60 ? 'border-red-200' : 'border-gray-200'}`}>
+                    <div className={`px-4 py-3 border-b flex items-center gap-2 ${_visaDaysLeft !== null && _visaDaysLeft <= 60 ? 'bg-red-50 border-red-100' : 'bg-gray-50 border-gray-100'}`}>
+                      <CheckCircle2 className={`w-4 h-4 ${_visaDaysLeft !== null && _visaDaysLeft <= 60 ? 'text-red-500' : 'text-sky-600'}`} />
+                      <span className={`text-xs font-bold uppercase tracking-wider ${_visaDaysLeft !== null && _visaDaysLeft <= 60 ? 'text-red-600' : 'text-[#162D50]'}`}>ビザ情報</span>
+                      {_visaDaysLeft !== null && _visaDaysLeft <= 60 && (
+                        <span className="ml-auto text-xs font-bold text-red-600 bg-red-100 px-2 py-0.5 rounded-full">{_visaDaysLeft <= 0 ? '期限切れ' : `残${_visaDaysLeft}日`}</span>
+                      )}
+                    </div>
+                    <div className="p-4 space-y-3">
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-lg bg-sky-50 flex items-center justify-center flex-shrink-0"><CheckCircle2 className="w-4 h-4 text-sky-500" /></div>
+                        <div><p className="text-xs text-gray-400">ビザ種別</p><p className="text-sm font-medium text-gray-800">{viewStaff.visaStatus || '情報なし'}</p></div>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${_visaDaysLeft !== null && _visaDaysLeft <= 60 ? 'bg-red-50' : 'bg-gray-50'}`}>
+                          <Calendar className={`w-4 h-4 ${_visaDaysLeft !== null && _visaDaysLeft <= 60 ? 'text-red-500' : 'text-gray-400'}`} />
+                        </div>
+                        <div><p className="text-xs text-gray-400">有効期限</p><p className={`text-sm font-medium ${_visaDaysLeft !== null && _visaDaysLeft <= 60 ? 'text-red-600' : 'text-gray-800'}`}>{_visaEnd ? _visaEnd.toLocaleDateString('ja-JP') : '情報なし'}</p></div>
+                      </div>
+                      {_visaEnd && (
+                        <div>
+                          <div className="flex justify-between text-xs text-gray-400 mb-1"><span>残存率</span><span>{_visaDaysLeft !== null && _visaDaysLeft > 0 ? `${Math.min(100,Math.round(_visaDaysLeft/365*100))}%` : '0%'}</span></div>
+                          <div className="w-full h-2 bg-gray-100 rounded-full overflow-hidden">
+                            <div className={`h-full rounded-full ${_visaDaysLeft !== null && _visaDaysLeft <= 60 ? 'bg-red-400' : _visaDaysLeft !== null && _visaDaysLeft <= 180 ? 'bg-amber-400' : 'bg-green-400'}`} style={{ width: `${_visaDaysLeft !== null && _visaDaysLeft > 0 ? Math.min(100,Math.round(_visaDaysLeft/365*100)) : 0}%` }} />
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* RIGHT col */}
+                <div className="space-y-4">
+                  {/* Work assignment */}
+                  <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+                    <div className="px-4 py-3 bg-gray-50 border-b border-gray-100 flex items-center gap-2">
+                      <MapPin className="w-4 h-4 text-[#162D50]" />
+                      <span className="text-xs font-bold text-[#162D50] uppercase tracking-wider">配属・勤務情報</span>
+                    </div>
+                    <div className="p-4 space-y-4">
+                      <div>
+                        <p className="text-xs text-gray-400 mb-2">配属先カテゴリー</p>
+                        <div className="flex flex-wrap gap-1.5">
+                          {_workPlaces.length > 0 ? _workPlaces.map((wp, i) => {
+                            const WpIcon = getIconForWorkPlace(wp);
+                            const wpCol = getColorForWorkPlace(wp);
+                            return (<span key={i} className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 border border-blue-200 text-blue-800 rounded-lg text-xs font-semibold"><WpIcon className={`w-3.5 h-3.5 ${wpCol}`} />{translateWorkPlace(wp)}</span>);
+                          }) : <span className="px-3 py-1.5 bg-amber-50 border border-amber-200 text-amber-700 rounded-lg text-xs font-semibold">未配属</span>}
+                        </div>
+                      </div>
+                      <div>
+                        <p className="text-xs text-gray-400 mb-2">部署</p>
+                        <div className="flex flex-wrap gap-1.5">
+                          {_departments.length > 0 ? _departments.map((d, i) => (
+                            <span key={i} className="px-3 py-1.5 bg-purple-50 border border-purple-200 text-purple-800 rounded-lg text-xs font-semibold">{translateDepartment(d)}</span>
+                          )) : <span className="text-sm text-gray-400">—</span>}
+                        </div>
+                      </div>
+                      {_offices.length > 0 && (
+                        <div>
+                          <p className="text-xs text-gray-400 mb-2">オフィス</p>
+                          <div className="flex flex-wrap gap-1.5">
+                            {_offices.map((o, i) => (<span key={i} className="px-3 py-1.5 bg-teal-50 border border-teal-200 text-teal-800 rounded-lg text-xs font-semibold">{translateOfficeLocation(o)}</span>))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  {/* Linked B2B */}
+                  <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+                    <div className="px-4 py-3 bg-gray-50 border-b border-gray-100 flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-2">
+                        <Building2 className="w-4 h-4 text-[#162D50]" />
+                        <span className="text-xs font-bold text-[#162D50] uppercase tracking-wider">関連B2Bパートナー</span>
+                        {_isUnassignedPartners && <span className="text-xs text-amber-600 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-full">アクティブ一覧</span>}
+                      </div>
+                      <span className="text-xs text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full">{_linkedPartners.length}社</span>
+                    </div>
+
+                    {partnersLoading ? (
+                      <div className="p-5 flex items-center justify-center gap-2 text-gray-400 text-sm">
+                        <div className="w-4 h-4 border-2 border-gray-200 border-t-[#162D50] rounded-full animate-spin" />
+                        読み込み中...
+                      </div>
+                    ) : _linkedPartners.length === 0 ? (
+                      <div className="px-4 py-6 text-center">
+                        <Building2 className="w-8 h-8 mx-auto mb-2 text-gray-200" />
+                        <p className="text-sm text-gray-400 font-medium">パートナー企業が見つかりません</p>
+                        <p className="text-xs text-gray-400 mt-1">配属先を設定するとパートナーが表示されます</p>
+                      </div>
+                    ) : (
+                      <div className="divide-y divide-gray-100 max-h-72 overflow-y-auto">
+                        {_linkedPartners.map((p) => {
+                          const _pEnd = p.contract_end_date ? new Date(p.contract_end_date) : null;
+                          const _pStart = p.contract_start_date ? new Date(p.contract_start_date) : null;
+                          const _pDays = _pEnd ? Math.ceil((_pEnd - new Date()) / (1000*60*60*24)) : null;
+                          const _totalDays = (_pEnd && _pStart) ? Math.ceil((_pEnd - _pStart) / (1000*60*60*24)) : null;
+                          const _usedDays = (_pEnd && _pStart) ? Math.ceil((new Date() - _pStart) / (1000*60*60*24)) : null;
+                          const _contractPct = (_totalDays && _usedDays) ? Math.min(100, Math.max(0, Math.round(_usedDays / _totalDays * 100))) : null;
+                          const _pStatusCfg = {
+                            'active':        { label: '契約中', cls: 'bg-green-100 text-green-700' },
+                            'expiring soon': { label: '期限間近', cls: 'bg-amber-100 text-amber-700' },
+                            'pending':       { label: '提案中', cls: 'bg-blue-100 text-blue-700' },
+                            'terminated':    { label: '終了', cls: 'bg-red-100 text-red-700' },
+                          }[(p.status||'').toLowerCase()] || { label: p.status||'—', cls: 'bg-gray-100 text-gray-500' };
+                          const _priorityCfg = {
+                            'High':   'bg-red-50 text-red-600 border-red-200',
+                            'Medium': 'bg-amber-50 text-amber-600 border-amber-200',
+                            'Low':    'bg-gray-50 text-gray-500 border-gray-200',
+                          }[p.priority] || 'bg-gray-50 text-gray-500 border-gray-200';
+
+                          return (
+                            <div key={p._id} className="px-4 py-3 hover:bg-blue-50/30 transition-colors group">
+                              {/* Top row */}
+                              <div className="flex items-start justify-between gap-2 mb-1">
+                                <div className="min-w-0">
+                                  <p className="font-bold text-sm text-[#162D50] leading-tight truncate">{p.partner_name}</p>
+                                  <p className="text-xs text-gray-500 mt-0.5">{p.industry||'—'}</p>
+                                </div>
+                                <div className="flex items-center gap-1.5 flex-shrink-0">
+                                  {p.priority && <span className={`text-xs font-semibold px-1.5 py-0.5 rounded border ${_priorityCfg}`}>{p.priority}</span>}
+                                  <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${_pStatusCfg.cls}`}>{_pStatusCfg.label}</span>
+                                </div>
+                              </div>
+
+                              {/* Details row */}
+                              <div className="flex flex-wrap gap-x-3 gap-y-1 mt-1.5">
+                                {p.contact_name && (
+                                  <span className="text-xs text-gray-500 flex items-center gap-1">
+                                    <User className="w-3 h-3 text-gray-400" />{p.contact_name}
+                                  </span>
+                                )}
+                                {p.contact_phone && (
+                                  <span className="text-xs text-gray-500 flex items-center gap-1">
+                                    <Phone className="w-3 h-3 text-gray-400" />{p.contact_phone}
+                                  </span>
+                                )}
+                                {p.monthly_revenue > 0 && (
+                                  <span className="text-xs text-gray-600 font-medium flex items-center gap-1">
+                                    <TrendingUp className="w-3 h-3 text-green-500" />¥{Number(p.monthly_revenue).toLocaleString()}/月
+                                  </span>
+                                )}
+                              </div>
+
+                              {/* Contract progress bar */}
+                              {_contractPct !== null && (
+                                <div className="mt-2">
+                                  <div className="flex justify-between text-xs text-gray-400 mb-1">
+                                    <span>契約進捗</span>
+                                    <span className={_pDays !== null && _pDays <= 30 ? 'text-red-500 font-medium' : ''}>
+                                      {_pDays !== null && _pDays <= 0 ? '期限切れ' : _pDays !== null ? `残${_pDays}日` : '—'}
+                                    </span>
+                                  </div>
+                                  <div className="w-full h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                                    <div
+                                      className={`h-full rounded-full transition-all ${_pDays !== null && _pDays <= 30 ? 'bg-red-400' : _pDays !== null && _pDays <= 90 ? 'bg-amber-400' : 'bg-[#162D50]'}`}
+                                      style={{ width: `${_contractPct}%` }}
+                                    />
+                                  </div>
+                                </div>
+                              )}
+
+                              {/* Notes */}
+                              {p.notes && (
+                                <p className="text-xs text-gray-400 mt-1.5 italic leading-tight line-clamp-1">{p.notes}</p>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+            </div>
+
+            {/* Footer */}
+            <div className="px-5 py-4 border-t border-gray-100 bg-white flex items-center justify-between gap-3 flex-shrink-0">
+              <button
+                onClick={() => {
+                  const staff = viewStaff;
+                  setIsViewModalOpen(false);
+                  setViewStaff(null);
+                  setSelectedStaff(staff);
+                  setDraftWorkPlaces(Array.isArray(staff.assignedWorkPlace) ? staff.assignedWorkPlace : (staff.assignedWorkPlace ? [staff.assignedWorkPlace] : []));
+                  setDraftDepartments(Array.isArray(staff.department) ? staff.department : (staff.department ? [staff.department] : []));
+                  setDraftOffices(Array.isArray(staff.office) ? staff.office : (staff.office ? [staff.office] : []));
+                  const _deptArr = Array.isArray(staff.department) ? staff.department : (staff.department ? [staff.department] : []);
+                  const _isOfficeDept = _deptArr.some(d => ['Audit & Compliance', 'Taxation', 'Payroll', 'HR', ...OFFICE_DEPARTMENTS].includes(d));
+                  setDraftStaffType(staff.staffType || (_isOfficeDept ? 'Office Staff' : 'Haken Staff'));
+                  setIsModalOpen(true);
+                }}
+                className="flex items-center gap-2 px-5 py-2.5 bg-[#162D50] text-white font-bold rounded-xl hover:bg-[#0f1f3a] transition-colors text-sm"
+              >
+                <MapPin className="w-4 h-4" />
+                配属を変更
+              </button>
+              <button
+                onClick={() => { setIsViewModalOpen(false); setViewStaff(null); }}
+                className="px-5 py-2.5 bg-gray-100 border border-gray-200 text-gray-700 font-bold rounded-xl hover:bg-gray-200 transition-colors text-sm"
+              >
+                閉じる
+              </button>
+            </div>
+          </div>
+        </div>
+        );
+      })()}
     </div>
   );
 }

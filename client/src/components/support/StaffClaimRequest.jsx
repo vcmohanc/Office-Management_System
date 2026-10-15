@@ -3,7 +3,7 @@ import { apiFetch } from '../../utils/apiFetch.js';
 import { validateExpenseAmount } from '../../utils/amountHelper.js';
 import { getAutoFill, getPaymentMethod } from '../../utils/expenseRules.js';
 import { getDirection, calculateInstallments } from '../../utils/paymentUtils.js';
-import { User, ChevronDown, Box, Calendar, UploadCloud, ArrowRight, Wallet, Landmark, FileText, ArrowLeft, Image, AlertTriangle } from 'lucide-react';
+import { User, ChevronDown, Box, Calendar, UploadCloud, ArrowRight, Wallet, Landmark, FileText, ArrowLeft, Image, AlertTriangle, Building2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { PAYMENT_METHODS } from '../../utils/paymentMethodMapping.js';
 import { 
@@ -64,6 +64,11 @@ export default function StaffClaimRequest() {
   }]);
   
   const [staffInfo, setStaffInfo] = useState({ fullName: '', id: '', location: '', branchAndFarmName: '', visaステータス: '', visaAvailableTime: '', availableWorkPlaces: [] });
+  const [partners, setPartners] = useState([]);
+  const [partnerInfo, setPartnerInfo] = useState({ partnerId: '', partnerName: '', industry: '', status: '', contactName: '', contactEmail: '', contactPhone: '', website: '' });
+  const [partnerSearch, setPartnerSearch] = useState('');
+  const [showPartnerDropdown, setShowPartnerDropdown] = useState(false);
+  const [partnerAutoFilled, setPartnerAutoFilled] = useState(false);
   const [employees, setEmployees] = useState([]);
   const [regions, setRegions] = useState([]);
   const [postalMatrix, setPostalMatrix] = useState({});
@@ -143,6 +148,42 @@ export default function StaffClaimRequest() {
     };
     fetchOptions();
   }, []);
+
+  useEffect(() => {
+    apiFetch('/api/b2b/engagements?limit=100')
+      .then(r => r.json())
+      .then(d => { if (d.data) setPartners(d.data); })
+      .catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    const hasFarm = cases.some(c => ['Farm', 'ファーム'].includes(c.advancerCategory) || ['Farm', 'ファーム'].includes(c.bearingParty));
+    if (!hasFarm) {
+      setPartnerInfo({ partnerId: '', partnerName: '', industry: '', status: '', contactName: '', contactEmail: '', contactPhone: '', website: '' });
+      setPartnerSearch('');
+      setPartnerAutoFilled(false);
+    }
+  }, [cases]);
+
+  useEffect(() => {
+    const branchName = staffInfo.branchAndFarmName;
+    const hasFarm = cases.some(c => ['Farm', 'ファーム'].includes(c.advancerCategory) || ['Farm', 'ファーム'].includes(c.bearingParty));
+    if (!hasFarm || !branchName || branchName === '配属先を選択' || partners.length === 0) return;
+    // Match by workplaceCategories (exact key match); sort Active + High priority first
+    const matched = partners
+      .filter(p => Array.isArray(p.workplaceCategories) && p.workplaceCategories.includes(branchName))
+      .sort((a, b) => {
+        const statusScore = (s) => s === 'Active' ? 0 : s === 'Expiring Soon' ? 1 : 2;
+        const priScore = (p) => p === 'High' ? 0 : p === 'Medium' ? 1 : 2;
+        return statusScore(a.status) - statusScore(b.status) || priScore(a.priority) - priScore(b.priority);
+      });
+    const match = matched[0];
+    if (match) {
+      setPartnerInfo({ partnerId: match._id, partnerName: match.partner_name, industry: match.industry || '', status: match.status || '', contactName: match.contact_name || '', contactEmail: match.contact_email || '', contactPhone: match.contact_phone || '', website: match.website || '', workplaceCategories: match.workplaceCategories || [], matchedCount: matched.length });
+      setPartnerSearch('');
+      setPartnerAutoFilled(true);
+    }
+  }, [staffInfo.branchAndFarmName, partners, cases]);
 
   const updateCase = (index, field, value) => {
     const newCases = [...cases];
@@ -310,6 +351,9 @@ export default function StaffClaimRequest() {
           staff_id: staffInfo.id || "N/A",
           location: staffInfo.location || "N/A",
           branch_farm_name: staffInfo.branchAndFarmName || "",
+          partner_id: partnerInfo.partnerId || '',
+          partner_name: partnerInfo.partnerName || '',
+          partner_industry: partnerInfo.industry || '',
           visa_status: staffInfo.visaステータス || "",
           visa_available_time: staffInfo.visaAvailableTime || null,
           expense_type: caseItem.expenseType,
@@ -376,6 +420,9 @@ export default function StaffClaimRequest() {
         remark: ''
       }]);
       setStaffInfo({ fullName: '', id: '', location: '' });
+      setPartnerInfo({ partnerId: '', partnerName: '', industry: '', status: '', contactName: '', contactEmail: '', contactPhone: '', website: '' });
+      setPartnerSearch('');
+      setPartnerAutoFilled(false);
       setUnsettledBalance(0);
       setExpectedSettlementDate('');
       setCollectionStartMonth('');
@@ -819,7 +866,146 @@ export default function StaffClaimRequest() {
                   </div>
                 </div>
               </div>
-            ); 
+            );
+          })()}
+
+          {/* パートナー名 Section */}
+          {cases.some(c => ['Farm', 'ファーム'].includes(c.advancerCategory) || ['Farm', 'ファーム'].includes(c.bearingParty)) && (() => {
+            const currentWorkplace = staffInfo.branchAndFarmName;
+            const workplaceMatched = currentWorkplace
+              ? partners.filter(p => Array.isArray(p.workplaceCategories) && p.workplaceCategories.includes(currentWorkplace))
+              : [];
+            const workplaceMatchedIds = new Set(workplaceMatched.map(p => p._id));
+            const searchLower = partnerSearch.toLowerCase();
+            const matchSearch = (p) => !partnerSearch || p.partner_name.toLowerCase().includes(searchLower) || (p.industry || '').toLowerCase().includes(searchLower);
+            const filteredPartners = [
+              ...workplaceMatched.filter(matchSearch),
+              ...partners.filter(p => !workplaceMatchedIds.has(p._id) && matchSearch(p)),
+            ];
+            return (
+            <div className="bg-white border border-gray-200 rounded-lg mb-6 sm:mb-8 shadow-xs">
+              <div className="p-4 sm:p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-2 text-[#162D50] font-bold text-base sm:text-lg">
+                    <Building2 className="w-4 h-4 shrink-0" />
+                    パートナー名
+                    {partnerAutoFilled && (
+                      <span className="text-xs font-normal bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">配属先より自動入力</span>
+                    )}
+                  </div>
+                  {partnerInfo.partnerId && (
+                    <button
+                      type="button"
+                      onClick={() => { setPartnerInfo({ partnerId: '', partnerName: '', industry: '', status: '', contactName: '', contactEmail: '', contactPhone: '', website: '' }); setPartnerSearch(''); setPartnerAutoFilled(false); }}
+                      className="text-xs text-red-500 hover:text-red-700 font-medium transition-colors"
+                    >
+                      クリア
+                    </button>
+                  )}
+                </div>
+                {workplaceMatched.length > 0 && !partnerInfo.partnerId && (
+                  <div className="flex items-center gap-2 mb-3 p-2.5 bg-blue-50 border border-blue-100 rounded-md">
+                    <span className="text-blue-500 text-sm">🔗</span>
+                    <p className="text-xs text-blue-700 font-medium">
+                      「{currentWorkplace}」に対応するパートナー企業が{workplaceMatched.length}社見つかりました
+                    </p>
+                  </div>
+                )}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+                  <div>
+                    <label className="block text-sm font-bold text-gray-700 mb-1.5 sm:mb-2">
+                      パートナー名<span className="text-gray-400 font-normal ml-1">（任意）</span>
+                    </label>
+                    <div className="relative">
+                      <input
+                        type="text"
+                        value={partnerInfo.partnerName || partnerSearch}
+                        placeholder="パートナー名を検索・入力"
+                        onFocus={() => { if (partnerInfo.partnerId) return; setShowPartnerDropdown(true); }}
+                        onChange={e => {
+                          setPartnerSearch(e.target.value);
+                          setPartnerInfo({ partnerId: '', partnerName: '', industry: '', status: '', contactName: '', contactEmail: '', contactPhone: '', website: '' });
+                          setPartnerAutoFilled(false);
+                          setShowPartnerDropdown(true);
+                        }}
+                        onBlur={() => setTimeout(() => setShowPartnerDropdown(false), 150)}
+                        readOnly={!!partnerInfo.partnerId}
+                        className={`w-full px-3 sm:px-4 py-2 border rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50] text-sm ${partnerInfo.partnerId ? (partnerAutoFilled ? 'bg-blue-50 border-blue-200 text-gray-700 cursor-default' : 'bg-gray-50 border-gray-300 text-gray-700 cursor-default') : 'border-gray-300 text-gray-700'}`}
+                      />
+                      {showPartnerDropdown && !partnerInfo.partnerId && (
+                        <div className="absolute z-20 w-full bg-white border border-gray-200 rounded-md shadow-lg mt-1 max-h-60 overflow-y-auto">
+                          {workplaceMatched.length > 0 && !partnerSearch && (
+                            <div className="px-3 py-1.5 bg-blue-50 border-b border-blue-100 text-xs text-blue-600 font-semibold">配属先マッチ ({workplaceMatched.length}社)</div>
+                          )}
+                          {filteredPartners.length === 0 ? (
+                            <div className="px-4 py-3 text-sm text-gray-400">パートナーが見つかりません</div>
+                          ) : filteredPartners.map(p => {
+                            const isMatch = workplaceMatchedIds.has(p._id);
+                            return (
+                              <button
+                                key={p._id}
+                                type="button"
+                                onMouseDown={() => {
+                                  setPartnerInfo({ partnerId: p._id, partnerName: p.partner_name, industry: p.industry || '', status: p.status || '', contactName: p.contact_name || '', contactEmail: p.contact_email || '', contactPhone: p.contact_phone || '', website: p.website || '', workplaceCategories: p.workplaceCategories || [], matchedCount: 1 });
+                                  setPartnerSearch('');
+                                  setPartnerAutoFilled(false);
+                                  setShowPartnerDropdown(false);
+                                }}
+                                className={`w-full text-left px-4 py-2.5 border-b border-gray-100 last:border-0 transition-colors ${isMatch ? 'hover:bg-blue-50 bg-blue-50/40' : 'hover:bg-indigo-50'}`}
+                              >
+                                <div className="flex items-center justify-between">
+                                  <p className="text-sm font-medium text-gray-800">{p.partner_name}</p>
+                                  {isMatch && <span className="text-xs bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded font-semibold shrink-0 ml-2">配属先マッチ</span>}
+                                </div>
+                                <p className="text-xs text-gray-400 mt-0.5">{p.industry} · <span className={p.status === 'Active' ? 'text-green-600' : p.status === 'Expiring Soon' ? 'text-orange-600' : 'text-gray-400'}>{p.status}</span></p>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  {partnerInfo.partnerId ? (
+                    <div className={`border rounded-md p-3 sm:p-4 flex flex-col gap-2 ${partnerAutoFilled ? 'bg-blue-50 border-blue-100' : 'bg-indigo-50 border-indigo-100'}`}>
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-xs font-bold text-[#162D50]">パートナー詳細</span>
+                        <div className="flex items-center gap-1.5">
+                          {partnerAutoFilled && partnerInfo.matchedCount > 1 && (
+                            <span className="text-xs bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded font-semibold">{partnerInfo.matchedCount}社マッチ中</span>
+                          )}
+                          <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
+                            partnerInfo.status === 'Active' ? 'bg-green-100 text-green-700' :
+                            partnerInfo.status === 'Pending' ? 'bg-yellow-100 text-yellow-700' :
+                            partnerInfo.status === 'Expiring Soon' ? 'bg-orange-100 text-orange-700' :
+                            'bg-gray-100 text-gray-600'
+                          }`}>{partnerInfo.status}</span>
+                        </div>
+                      </div>
+                      {partnerInfo.industry && <div className="flex items-center gap-2"><span className="text-xs text-gray-500 w-14 shrink-0">業種</span><span className="text-xs font-medium text-gray-700">{partnerInfo.industry}</span></div>}
+                      {partnerInfo.contactName && <div className="flex items-center gap-2"><span className="text-xs text-gray-500 w-14 shrink-0">担当者</span><span className="text-xs font-medium text-gray-700">{partnerInfo.contactName}</span></div>}
+                      {partnerInfo.contactEmail && <div className="flex items-center gap-2"><span className="text-xs text-gray-500 w-14 shrink-0">メール</span><a href={`mailto:${partnerInfo.contactEmail}`} className="text-xs text-blue-600 hover:underline truncate">{partnerInfo.contactEmail}</a></div>}
+                      {partnerInfo.contactPhone && <div className="flex items-center gap-2"><span className="text-xs text-gray-500 w-14 shrink-0">電話</span><span className="text-xs font-medium text-gray-700">{partnerInfo.contactPhone}</span></div>}
+                      {partnerInfo.website && <div className="flex items-center gap-2"><span className="text-xs text-gray-500 w-14 shrink-0">サイト</span><a href={partnerInfo.website} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-600 hover:underline truncate">{partnerInfo.website}</a></div>}
+                      {partnerAutoFilled && partnerInfo.matchedCount > 1 && (
+                        <div className="mt-1 pt-2 border-t border-blue-100">
+                          <p className="text-xs text-blue-600">他のパートナーを選ぶには「クリア」してドロップダウンを開いてください</p>
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="hidden sm:flex flex-col items-center justify-center border border-dashed border-gray-200 rounded-md p-4 gap-2">
+                      <span className="text-2xl">🏢</span>
+                      <p className="text-sm text-gray-400 text-center">
+                        {currentWorkplace && workplaceMatched.length === 0
+                          ? 'この配属先に対応するパートナーがいません'
+                          : 'パートナーを選択すると詳細が表示されます'}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+            );
           })()}
 
           {/* Summary Box & Add Case */}
