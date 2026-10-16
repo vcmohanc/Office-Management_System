@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Search, ChevronDown, Calendar, FileText, AlertTriangle, Image, Edit, X, Download } from 'lucide-react';
 import { fileUrl } from '../../utils/fileUrl.js';
 import { apiFetch } from '../../utils/apiFetch.js';
@@ -66,10 +66,52 @@ export default function CaseList({ setActiveTab: onNavigate }) {
   const [editData, setEditData] = useState({});
   const [previewImage, setPreviewImage] = useState(null);
   const [actionModal, setActionModal] = useState(null); // { type: 'REJECTED'|'RETURNED_FOR_CORRECTION', comment: '' }
-  
+  const [chatInput, setChatInput] = useState('');
+  const [isSendingMsg, setIsSendingMsg] = useState(false);
+  const chatEndRef = useRef(null);
+
+  useEffect(() => {
+    chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [selectedCase?.messages?.length]);
+
+  const handleSendMessage = async () => {
+    const text = chatInput.trim();
+    if (!text || !selectedCase || isSendingMsg) return;
+    setIsSendingMsg(true);
+    setChatInput('');
+    const isClaim = selectedCase._isClaim;
+    const endpoint = isClaim
+      ? `/api/claims/${selectedCase._id}/messages`
+      : `/api/cases/${selectedCase._id}/messages`;
+    try {
+      const response = await apiFetch(endpoint, {
+        method: 'POST',
+        body: JSON.stringify({ text, author: user.role === 'support' ? 'support_user' : 'account_user' })
+      });
+      if (response.ok) {
+        const updatedMessages = await response.json();
+        setSelectedCase(prev => prev ? { ...prev, messages: updatedMessages } : prev);
+        if (isClaim) {
+          setClaims(prev => prev.map(c => c._id === selectedCase._id ? { ...c, messages: updatedMessages } : c));
+        } else {
+          setCases(prev => prev.map(c => c._id === selectedCase._id ? { ...c, messages: updatedMessages } : c));
+        }
+      } else {
+        toast.error('メッセージの送信に失敗しました。');
+        setChatInput(text);
+      }
+    } catch {
+      toast.error('エラーが発生しました。');
+      setChatInput(text);
+    } finally {
+      setIsSendingMsg(false);
+    }
+  };
+
   const handleViewDetails = async (caseObj) => {
     setSelectedCase(caseObj);
     setIsEditing(false);
+    setChatInput('');
 
     if (user.role !== 'support' && caseObj.hasAccountNotification) {
       try {
@@ -872,44 +914,80 @@ export default function CaseList({ setActiveTab: onNavigate }) {
                 )}
                 {isCaseRegisteredBySupport(selectedCase) && (
                   <div className="w-full">
-                    <h4 className="text-xs font-bold text-gray-500 mb-4 tracking-wider">理由 / メッセージ履歴</h4>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      {/* 経理部門 Messages */}
-                      <div>
-                        <h5 className="text-sm font-bold text-orange-700 mb-3 border-b border-orange-200 pb-1">経理部門</h5>
-                        <div className="space-y-3">
-                          {(selectedCase.messages || []).filter(m => m.author === 'account_user' || m.author === '経理部門' || !m.author).map((m, i) => (
-                            <div key={i} className="bg-orange-50 border border-orange-200 rounded-md p-3 text-sm text-gray-700">
-                              <div className="flex justify-between items-center mb-1 pb-1 border-b border-orange-200/50">
-                                <span className="text-xs font-bold text-orange-700">経理部門</span>
-                                <span className="text-xs text-orange-600">{m.date ? new Date(m.date).toLocaleString() : ''}</span>
-                              </div>
-                              <div className="whitespace-pre-wrap mt-1">{m.text}</div>
-                            </div>
-                          ))}
+                    <h4 className="text-xs font-bold text-gray-500 mb-3 tracking-wider">理由 / メッセージ履歴</h4>
+                    <div className="border border-gray-200 rounded-xl overflow-hidden shadow-sm">
+                      {/* Legend bar */}
+                      <div className="flex items-center justify-between px-4 py-2 bg-gray-50 border-b border-gray-200">
+                        <div className="flex items-center gap-5 text-xs font-medium text-gray-600">
+                          <span className="flex items-center gap-1.5">
+                            <span className="w-2.5 h-2.5 rounded-full bg-orange-400 inline-block" />
+                            経理部門
+                          </span>
+                          <span className="flex items-center gap-1.5">
+                            <span className="w-2.5 h-2.5 rounded-full bg-blue-500 inline-block" />
+                            サポート部門
+                          </span>
                         </div>
+                        <span className="text-xs text-gray-400">{(selectedCase.messages || []).length} 件</span>
                       </div>
 
-                      {/* サポート部門 Messages */}
-                      <div>
-                        <h5 className="text-sm font-bold text-blue-700 mb-3 border-b border-blue-200 pb-1">サポート部門</h5>
-                        <div className="space-y-3">
-                          {(selectedCase.messages || []).filter(m => !(m.author === 'account_user' || m.author === '経理部門' || !m.author)).map((m, i) => {
-                            const displayAuthor = m.author === 'support_user' ? 'サポート部門' : m.author;
+                      {/* Chat thread */}
+                      <div className="h-64 overflow-y-auto p-4 space-y-3 bg-white">
+                        {(selectedCase.messages || []).length === 0 && (
+                          <div className="flex items-center justify-center h-full text-gray-400 text-sm">
+                            メッセージはまだありません
+                          </div>
+                        )}
+                        {[...(selectedCase.messages || [])]
+                          .sort((a, b) => new Date(a.date || 0) - new Date(b.date || 0))
+                          .map((m, i) => {
+                            const isAccount = m.author === 'account_user' || m.author === '経理部門' || !m.author;
+                            const isMe = (user.role === 'account' && isAccount) || (user.role === 'support' && !isAccount);
                             return (
-                              <div key={i} className="bg-blue-50 border border-blue-200 rounded-md p-3 text-sm text-gray-700">
-                                <div className="flex justify-between items-center mb-1 pb-1 border-b border-blue-200/50">
-                                  <span className="text-xs font-bold text-blue-700">{displayAuthor}</span>
-                                  <span className="text-xs text-blue-600">{m.date ? new Date(m.date).toLocaleString() : ''}</span>
+                              <div key={i} className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}>
+                                <div className={`max-w-[75%] rounded-2xl px-4 py-2.5 shadow-sm ${
+                                  isAccount
+                                    ? 'bg-orange-500 text-white rounded-tr-sm'
+                                    : 'bg-blue-500 text-white rounded-tl-sm'
+                                }`}>
+                                  <div className="text-xs font-bold mb-1 opacity-75">
+                                    {isAccount ? '経理部門' : 'サポート部門'}
+                                  </div>
+                                  <div className="text-sm whitespace-pre-wrap leading-relaxed">{m.text}</div>
+                                  <div className="text-xs mt-1.5 opacity-60 text-right">
+                                    {m.date ? new Date(m.date).toLocaleString('ja-JP', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : ''}
+                                  </div>
                                 </div>
-                                <div className="whitespace-pre-wrap mt-1">{m.text}</div>
                               </div>
                             );
                           })}
-                        </div>
+                        <div ref={chatEndRef} />
+                      </div>
+
+                      {/* Input area */}
+                      <div className="border-t border-gray-200 p-3 bg-gray-50 flex gap-2 items-end">
+                        <textarea
+                          value={chatInput}
+                          onChange={e => setChatInput(e.target.value)}
+                          onKeyDown={e => {
+                            if (e.key === 'Enter' && !e.shiftKey) {
+                              e.preventDefault();
+                              handleSendMessage();
+                            }
+                          }}
+                          placeholder="メッセージを入力… (Shift+Enter で改行)"
+                          rows={1}
+                          className="flex-1 resize-none min-h-[38px] max-h-[100px] px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#162D50] bg-white"
+                        />
+                        <button
+                          onClick={handleSendMessage}
+                          disabled={!chatInput.trim() || isSendingMsg}
+                          className="shrink-0 bg-[#162D50] hover:bg-[#0f1f3d] text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                        >
+                          {isSendingMsg ? '…' : '送信'}
+                        </button>
                       </div>
                     </div>
-                    
                   </div>
                 )}
               </div>
