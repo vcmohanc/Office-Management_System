@@ -76,19 +76,26 @@ const employeeSchemaZod = z.object({
 router.get('/', requireRole('admin', 'hr', 'account', 'support'), async (req, res) => {
   try {
     const isHrOrAdmin = req.user && (req.user.role === 'admin' || req.user.role === 'hr');
-    const projection = isHrOrAdmin 
-      ? {} 
-      : { 
-          dob: 0, 
-          age: 0, 
-          nationality: 0, 
-          pledgeDocument: 0, 
-          educationalQualifications: 0, 
-          workExperience: 0, 
-          personality: 0, 
-          physicalAttributes: 0, 
-          phone: 0, 
-          email: 0 
+    const projection = isHrOrAdmin
+      ? {}
+      : {
+          dob: 0,
+          age: 0,
+          nationality: 0,
+          pledgeDocument: 0,
+          educationalQualifications: 0,
+          workExperience: 0,
+          personality: 0,
+          physicalAttributes: 0,
+          phone: 0,
+          email: 0,
+          photo: 0,
+          visaStartDate: 0,
+          visaEndDate: 0,
+          visaRenewalDate: 0,
+          visaAppStatus: 0,
+          visaExpiryHistory: 0,
+          visaRenewalHistory: 0
         };
 
     const employees = await Employee.find({}, projection).sort({ createdAt: -1 });

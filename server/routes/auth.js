@@ -102,8 +102,13 @@ router.get('/me', verifyToken, async (req, res) => {
 router.put('/update-password', verifyToken, async (req, res) => {
   try {
     const { currentPassword, newPassword } = req.body;
+
+    if (!newPassword || typeof newPassword !== 'string' || newPassword.length < 8) {
+      return res.status(400).json({ error: 'New password must be at least 8 characters' });
+    }
+
     const user = await User.findById(req.user.id);
-    
+
     if (!user) {
       return res.status(404).json({ error: 'User not found' });
     }

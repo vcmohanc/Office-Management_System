@@ -224,6 +224,20 @@ router.post('/:id/settle', requireRole('admin', 'account'), async (req, res) => 
     if (!existingCase) {
       return res.status(404).json({ message: 'Case not found' });
     }
+    if (existingCase.status === 'Completed') {
+      return res.status(409).json({ message: 'Case is already settled and cannot be re-settled' });
+    }
+
+    // Validate financial amounts are positive numbers
+    const financialsSchema = z.object({
+      claimAmount: z.number().positive(),
+      deductions: z.number().min(0),
+      netPayable: z.number().positive()
+    });
+    const financialsParsed = financialsSchema.safeParse(financials);
+    if (!financialsParsed.success) {
+      return res.status(400).json({ error: financialsParsed.error.flatten() });
+    }
 
     // Verify financials with floating point tolerance
     const calculatedNet = financials.claimAmount - (financials.deductions || 0);
@@ -292,7 +306,7 @@ router.delete('/:id', requireRole('admin', 'account'), async (req, res) => {
   }
 });
 
-router.patch('/:id/messages/read', async (req, res) => {
+router.patch('/:id/messages/read', requireRole('admin', 'account', 'support'), async (req, res) => {
   try {
     const updatedCase = await Case.findOneAndUpdate(
       { _id: req.params.id },

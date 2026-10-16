@@ -199,7 +199,7 @@ router.patch('/:id/status', requireRole('admin', 'account'), async (req, res) =>
   }
 });
 
-router.patch('/:id/messages/read', async (req, res) => {
+router.patch('/:id/messages/read', requireRole('admin', 'account', 'support'), async (req, res) => {
   try {
     const updatedClaim = await Claim.findOneAndUpdate(
       { _id: req.params.id },
@@ -299,7 +299,6 @@ router.post('/:id/settle', requireRole('admin', 'account'), async (req, res) => 
   try {
     const claimId = req.params.id;
     const {
-      processedBy,
       payeeName,
       paymentMethod,
       destinationDetails,
@@ -309,6 +308,7 @@ router.post('/:id/settle', requireRole('admin', 'account'), async (req, res) => 
       proofDocument,
       isConfirmed
     } = req.body;
+    const processedBy = req.user.username;
 
     if (!isConfirmed) {
       return res.status(400).json({ message: 'Settlement must be confirmed' });
@@ -318,6 +318,20 @@ router.post('/:id/settle', requireRole('admin', 'account'), async (req, res) => 
     const existingClaim = await Claim.findById(claimId);
     if (!existingClaim) {
       return res.status(404).json({ message: 'Claim not found' });
+    }
+    if (existingClaim.status === 'Completed') {
+      return res.status(409).json({ message: 'Claim is already settled and cannot be re-settled' });
+    }
+
+    // Validate financial amounts are positive numbers
+    const financialsSchema = z.object({
+      claimAmount: z.number().positive(),
+      deductions: z.number().min(0),
+      netPayable: z.number().positive()
+    });
+    const financialsParsed = financialsSchema.safeParse(financials);
+    if (!financialsParsed.success) {
+      return res.status(400).json({ error: financialsParsed.error.flatten() });
     }
 
     // Verify financials with floating point tolerance

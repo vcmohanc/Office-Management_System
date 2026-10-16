@@ -1,5 +1,6 @@
 import express from 'express';
 import B2BPartner from '../models/B2BPartner.js';
+import { requireRole } from '../middleware/auth.js';
 
 const router = express.Router();
 
@@ -78,7 +79,7 @@ router.get('/partners/:id', async (req, res) => {
 });
 
 // POST /api/b2b/partners
-router.post('/partners', async (req, res) => {
+router.post('/partners', requireRole('admin', 'account'), async (req, res) => {
   try {
     const {
       partner_name, industry, priority, contract_start_date, contract_end_date,
@@ -115,7 +116,7 @@ router.post('/partners', async (req, res) => {
 });
 
 // PUT /api/b2b/partners/:id
-router.put('/partners/:id', async (req, res) => {
+router.put('/partners/:id', requireRole('admin', 'account'), async (req, res) => {
   try {
     const {
       partner_name, industry, priority, contract_start_date, contract_end_date,
@@ -156,7 +157,7 @@ router.put('/partners/:id', async (req, res) => {
 });
 
 // DELETE /api/b2b/partners/:id
-router.delete('/partners/:id', async (req, res) => {
+router.delete('/partners/:id', requireRole('admin', 'account'), async (req, res) => {
   try {
     const partner = await B2BPartner.findByIdAndDelete(req.params.id);
     if (!partner) return res.status(404).json({ message: 'パートナーが見つかりません' });
