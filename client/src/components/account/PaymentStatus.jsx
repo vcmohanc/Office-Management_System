@@ -1007,8 +1007,26 @@ export default function PaymentStatus() {
           }}></div>
           
           <div className="bg-[#F5F1E6] p-8 md:p-12 text-[#162D50] rounded-b-md shadow-sm print:bg-white print:shadow-none print:p-4">
-            <div className="border-b-2 border-dashed border-[#162D50] pb-6 mb-8 print:pb-2 print:mb-4 relative text-center">
-              <div className="absolute right-0 top-0 print:hidden">
+            {/* Print-only: navy banner header matching OMS report style */}
+            <div className="hidden print:flex -mx-4 -mt-4 mb-6 items-center justify-between bg-[#162D50] px-6 py-3">
+              <div className="flex items-center gap-3">
+                <img src={vegeiconBase64} alt="Logo" className="h-9 w-9 object-contain" />
+                <div>
+                  <div className="text-white font-bold tracking-[0.25em] uppercase text-sm">OFFICE MANAGEMENT SYSTEM</div>
+                  <div className="text-[#B0C4DE] text-[10px] tracking-widest mt-0.5">
+                    {selectedCase.advancerCategory === 'Staff' ? '経費精算領収書' : '精算台帳'}
+                  </div>
+                </div>
+              </div>
+              <div className="text-right">
+                <div className="text-white text-[11px] font-mono">生成日: {new Date().toLocaleDateString('ja-JP')}</div>
+                <div className="text-[#B0C4DE] text-[10px] font-mono mt-0.5">総レコード数: {selectedBatchCases.length}</div>
+              </div>
+            </div>
+
+            {/* Screen-only: centered heading with print button */}
+            <div className="border-b-2 border-dashed border-[#162D50] pb-6 mb-8 relative text-center print:hidden">
+              <div className="absolute right-0 top-0">
                 <button
                   type="button"
                   onClick={() => window.print()}
@@ -1018,8 +1036,8 @@ export default function PaymentStatus() {
                   印刷
                 </button>
               </div>
-              <div className="hidden print:flex justify-center mb-2">
-                <img src={vegeiconBase64} alt="Logo" className="h-10 w-10 object-contain" />
+              <div className="flex justify-center mb-3">
+                <img src={vegeiconBase64} alt="Logo" className="h-14 w-14 object-contain" />
               </div>
               <h3 className="text-2xl font-bold tracking-widest uppercase mb-2">
                 {selectedCase.advancerCategory === 'Staff' ? '経費精算領収書' : '精算台帳'}
