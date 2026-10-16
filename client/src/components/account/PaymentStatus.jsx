@@ -1018,8 +1018,8 @@ export default function PaymentStatus() {
                   印刷
                 </button>
               </div>
-              <div className="flex justify-center mb-3 print:mb-2">
-                <img src={vegeiconBase64} alt="Logo" className="h-14 w-14 print:h-10 print:w-10 object-contain" />
+              <div className="hidden print:flex justify-center mb-2">
+                <img src={vegeiconBase64} alt="Logo" className="h-10 w-10 object-contain" />
               </div>
               <h3 className="text-2xl font-bold tracking-widest uppercase mb-2">
                 {selectedCase.advancerCategory === 'Staff' ? '経費精算領収書' : '精算台帳'}
