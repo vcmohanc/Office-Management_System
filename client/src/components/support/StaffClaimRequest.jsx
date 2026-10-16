@@ -166,6 +166,31 @@ export default function StaffClaimRequest() {
   }, [cases]);
 
   useEffect(() => {
+    if (!staffInfo.id) {
+      setUnsettledBalance(0);
+      setIncludeBalance(false);
+      return;
+    }
+    apiFetch('/api/claims')
+      .then(r => r.json())
+      .then(allClaims => {
+        const staffClaims = (Array.isArray(allClaims) ? allClaims : []).filter(
+          c => c.staff_id === staffInfo.id && c.status !== 'Completed'
+        );
+        const remaining = staffClaims.reduce((sum, c) => {
+          const total = c.total_expense_amount || 0;
+          const terms = c.installment_count || 1;
+          const paid = c.paidTerms || 0;
+          const perTerm = Math.floor(total / terms);
+          const alreadyPaid = paid >= terms ? total : (paid * perTerm);
+          return sum + Math.max(0, total - alreadyPaid);
+        }, 0);
+        setUnsettledBalance(remaining);
+      })
+      .catch(() => {});
+  }, [staffInfo.id]);
+
+  useEffect(() => {
     const branchName = staffInfo.branchAndFarmName;
     const hasFarm = cases.some(c => ['Farm', 'ファーム'].includes(c.advancerCategory) || ['Farm', 'ファーム'].includes(c.bearingParty));
     if (!hasFarm || !branchName || branchName === '配属先を選択' || partners.length === 0) return;
@@ -1096,11 +1121,14 @@ export default function StaffClaimRequest() {
                 <div>
                   <label className="block text-sm font-bold text-gray-700 mb-1.5 sm:mb-2">未精算残高を合計に含めますか？</label>
                   <div className="flex items-center mt-3">
-                    <div className="relative inline-block w-10 mr-2 align-middle select-none transition duration-200 ease-in">
-                      <input type="checkbox" name="toggle" id="toggle" checked={includeBalance} onChange={e => setIncludeBalance(e.target.checked)} className="toggle-checkbox absolute block w-5 h-5 rounded-full bg-white border-4 appearance-none cursor-pointer" />
-                      <label htmlFor="toggle" className="toggle-label block overflow-hidden h-5 rounded-full bg-gray-300 cursor-pointer"></label>
-                    </div>
-                    <span className="text-gray-500 text-sm font-medium">残高を含める</span>
+                    <button
+                      type="button"
+                      onClick={() => setIncludeBalance(v => !v)}
+                      className={`relative inline-flex h-6 w-11 flex-shrink-0 items-center rounded-full transition-colors duration-200 focus:outline-none ${includeBalance ? 'bg-[#162D50]' : 'bg-gray-300'}`}
+                    >
+                      <span className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform duration-200 ${includeBalance ? 'translate-x-6' : 'translate-x-1'}`} />
+                    </button>
+                    <span className="ml-3 text-gray-500 text-sm font-medium">残高を含める</span>
                   </div>
                 </div>
               </div>
