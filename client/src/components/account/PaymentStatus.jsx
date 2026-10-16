@@ -274,8 +274,21 @@ export default function PaymentStatus() {
     let allSuccess = true;
     let remainingDeduction = deductions;
     let newCases = [...cases];
-    
-    for (const currentCase of selectedBatchCases) {
+
+    const casesToProcess = selectedBatchCases.filter(
+      c => c.status !== 'Completed' && c.status !== '完了'
+    );
+    const alreadySettledCount = selectedBatchCases.length - casesToProcess.length;
+    if (alreadySettledCount > 0 && casesToProcess.length === 0) {
+      toast.error('選択されたすべての案件はすでに精算済みです。');
+      setisSubmitting(false);
+      return;
+    }
+    if (alreadySettledCount > 0) {
+      toast(`${alreadySettledCount} 件の精算済み案件をスキップしました。`, { icon: 'ℹ️' });
+    }
+
+    for (const currentCase of casesToProcess) {
       const totalTerms = currentCase.installmentPlan ? (currentCase.installmentPlan.match(/\d+/) ? parseInt(currentCase.installmentPlan.match(/\d+/)[0], 10) : 1) : 1;
       const totalAmt = currentCase.finalTotal || currentCase.totalExpense || 0;
       const baseAmt = Math.round(totalAmt / totalTerms);
@@ -325,6 +338,8 @@ export default function PaymentStatus() {
             }
             return c;
           });
+        } else if (response.status === 409) {
+          // Already settled — treat as skipped, not a failure
         } else {
           allSuccess = false;
           const errorData = await response.json();
@@ -1009,26 +1024,93 @@ export default function PaymentStatus() {
               {/* 合意条件 (Read-Only) */}
               <div className="border-b border-dashed border-[#162D50] pb-8 mb-8 print:pb-4 print:mb-4">
                   <div className="text-xs font-bold uppercase tracking-widest text-gray-500 mb-6 print:mb-2">合意条件</div>
-                  <div className="grid grid-cols-4 gap-6">
+                  <div className="grid grid-cols-4 gap-6 mb-6">
                     <div>
                       <label className="block text-[10px] font-bold uppercase tracking-widest mb-1 text-gray-400">回収・精算方法</label>
-                      <div className="font-mono text-sm">{selectedCase.advancerCategory === 'Staff' ? (selectedCase.settlement_method || selectedCase.settlementMethod || 'N/A') : (selectedCase.collection_method || selectedCase.collectionMethod || 'N/A')}</div>
+                      <div className="font-mono text-sm">
+                        {selectedCase.collection_method || selectedCase.collectionMethod
+                          || selectedCase.settlement_method || selectedCase.settlementMethod
+                          || 'N/A'}
+                      </div>
                     </div>
                     <div>
                       <label className="block text-[10px] font-bold uppercase tracking-widest mb-1 text-gray-400">分割払いプラン</label>
-                      <div className="font-mono text-sm">{selectedCase.advancerCategory === 'Staff' ? '一括払い' : (selectedCase.installment_plan || selectedCase.installmentPlan || 'N/A')}</div>
+                      <div className="font-mono text-sm">
+                        {(() => {
+                          const n = selectedCase.installment_count || selectedCase.installmentCount;
+                          if (n && n > 1) return `${n}回払い`;
+                          const plan = selectedCase.installment_plan || selectedCase.installmentPlan;
+                          if (plan) return plan;
+                          return '一括払い';
+                        })()}
+                      </div>
                     </div>
                     <div>
                       <label className="block text-[10px] font-bold uppercase tracking-widest mb-1 text-gray-400">開始月</label>
-                      <div className="font-mono text-sm">{selectedCase.advancerCategory === 'Staff' ? (((selectedCase.settlement_method || selectedCase.settlementMethod) === '給与に加算') ? (selectedCase.payroll_month || selectedCase.payrollMonth || 'TBD') : 'N/A') : (selectedCase.collection_start_month || selectedCase.collectionStartMonth || 'N/A')}</div>
+                      <div className="font-mono text-sm">
+                        {selectedCase.collection_start_month || selectedCase.collectionStartMonth
+                          || selectedCase.payroll_month || selectedCase.payrollMonth
+                          || 'N/A'}
+                      </div>
                     </div>
                     <div>
                       <label className="block text-[10px] font-bold uppercase tracking-widest mb-1 text-gray-400">現在の期間</label>
                       <div className="font-mono text-sm">
-                        {selectedCase.advancerCategory === 'Staff' ? '1 / 1' : (selectedCaseTotalTerms > 1 ? `第${selectedCaseCurrentTerm}回 / 全${selectedCaseTotalTerms}回` : 'N/A')}
+                        {selectedCase.advancerCategory === 'Staff'
+                          ? (() => {
+                              const total = selectedCase.installment_count || selectedCase.installmentCount || 1;
+                              const paid = selectedCase.paidTerms || 0;
+                              return total > 1 ? `第${paid + 1}回 / 全${total}回` : '1 / 1';
+                            })()
+                          : (selectedCaseTotalTerms > 1 ? `第${selectedCaseCurrentTerm}回 / 全${selectedCaseTotalTerms}回` : 'N/A')}
                       </div>
                     </div>
                   </div>
+
+                  {/* 分割回収スケジュール */}
+                  {(() => {
+                    const schedule = selectedCase.installment_schedule || selectedCase.installmentSchedule;
+                    if (!schedule || schedule.length <= 1) return null;
+                    const paid = selectedCase.paidTerms || 0;
+                    return (
+                      <div>
+                        <div className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-3">分割回収スケジュール</div>
+                        <div className="grid grid-cols-12 gap-2 text-[9px] font-bold text-gray-400 uppercase tracking-widest mb-2 border-b border-gray-200 pb-1">
+                          <div className="col-span-1">No.</div>
+                          <div className="col-span-3">回収月</div>
+                          <div className="col-span-3 text-right">回収額</div>
+                          <div className="col-span-3 text-right">残高</div>
+                          <div className="col-span-2 text-right">状態</div>
+                        </div>
+                        <div className="space-y-1">
+                          {schedule.map((inst, i) => {
+                            const isDone = i < paid;
+                            const isCurrent = i === paid;
+                            return (
+                              <div
+                                key={inst.no ?? i}
+                                className={`grid grid-cols-12 gap-2 text-xs items-center py-1 ${
+                                  isDone ? 'text-gray-400' : isCurrent ? 'font-bold text-[#162D50]' : ''
+                                }`}
+                              >
+                                <div className="col-span-1 font-mono">{String(inst.no ?? i + 1).padStart(2, '0')}</div>
+                                <div className="col-span-3 font-mono">{inst.month || '—'}</div>
+                                <div className="col-span-3 text-right font-mono">¥ {(inst.amount || 0).toLocaleString()}</div>
+                                <div className="col-span-3 text-right font-mono text-gray-500">¥ {(inst.remaining || 0).toLocaleString()}</div>
+                                <div className="col-span-2 text-right">
+                                  <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded ${
+                                    isDone ? 'bg-green-100 text-green-700' : isCurrent ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-500'
+                                  }`}>
+                                    {isDone ? '完了' : isCurrent ? '今回' : '予定'}
+                                  </span>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    );
+                  })()}
                 </div>
 
               {/* 支払方法 & Deductions Form (Interactive) */}
