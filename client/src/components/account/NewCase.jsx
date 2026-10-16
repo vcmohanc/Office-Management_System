@@ -184,6 +184,38 @@ export default function NewCase() {
     }
   }, [staffInfo.branchAndFarmName, partners, cases]);
 
+  useEffect(() => {
+    if (!staffInfo.id) {
+      setUnsettledBalance(0);
+      setIncludeBalance(false);
+      return;
+    }
+    const calcRemaining = (c, amtField) => {
+      const totalTerms = c.installment_count || (c.installment_plan ? (parseInt((c.installment_plan.match(/\d+/) || ['1'])[0], 10) || 1) : 1);
+      const paid = c.paidTerms || 0;
+      const total = c[amtField] || 0;
+      if (total === 0) return 0;
+      const base = Math.round(total / totalTerms);
+      const totalPaid = (base * Math.min(paid, totalTerms - 1)) + (paid >= totalTerms ? (total - base * (totalTerms - 1)) : 0);
+      return Math.max(0, total - totalPaid);
+    };
+    const excluded = new Set(['Pending', 'Completed']);
+    Promise.all([
+      apiFetch('/api/cases').then(r => r.json()).catch(() => []),
+      apiFetch('/api/claims').then(r => r.json()).catch(() => [])
+    ]).then(([casesData, claimsData]) => {
+      const caseBalance = (Array.isArray(casesData) ? casesData : [])
+        .filter(c => c.staff_id === staffInfo.id && !excluded.has(c.status))
+        .reduce((sum, c) => sum + calcRemaining(c, 'final_total_amount'), 0);
+      const claimBalance = (Array.isArray(claimsData) ? claimsData : [])
+        .filter(c => c.staff_id === staffInfo.id && !excluded.has(c.status))
+        .reduce((sum, c) => sum + calcRemaining(c, 'total_expense_amount'), 0);
+      const total = caseBalance + claimBalance;
+      setUnsettledBalance(total);
+      if (total > 0) setIncludeBalance(true);
+    });
+  }, [staffInfo.id]);
+
   const updateCase = (index, field, value) => {
     const newCases = [...cases];
     newCases[index][field] = value;
@@ -1090,7 +1122,7 @@ export default function NewCase() {
                   </div>
                 </div>
                 <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-1.5 sm:mb-2">前回未精算残高 (¥)</label>
+                  <label className="block text-sm font-bold text-gray-700 mb-1.5 sm:mb-2">前回未精算残高 (¥) <span className="ml-1 text-xs font-normal text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded border border-blue-200">自動</span></label>
                   <input type="number" value={unsettledBalance} onChange={e => setUnsettledBalance(Number(e.target.value))} className="w-full px-3 sm:px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50] text-gray-600 text-sm" />
                 </div>
                 <div>
