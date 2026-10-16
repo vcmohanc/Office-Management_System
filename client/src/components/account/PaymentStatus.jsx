@@ -99,31 +99,31 @@ export default function PaymentStatus() {
   }, []);
 
   useEffect(() => {
-    if (selectedCase) {
-      const totalTerms = selectedCase.installment_count || (selectedCase.installmentPlan ? (selectedCase.installmentPlan.match(/\d+/) ? parseInt(selectedCase.installmentPlan.match(/\d+/)[0], 10) : 1) : 1);
-      const totalAmt = selectedCase.finalTotal || selectedCase.totalExpense || 0;
+    if (!selectedCase) return;
+
+    const getCaseAmount = (c) => {
+      const totalTerms = c.installment_count || (c.installmentPlan ? (c.installmentPlan.match(/\d+/) ? parseInt(c.installmentPlan.match(/\d+/)[0], 10) : 1) : 1);
+      const totalAmt = c.finalTotal || c.totalExpense || 0;
       const baseAmt = Math.floor(totalAmt / totalTerms);
-      const isLastTerm = ((selectedCase.paidTerms || 0) + 1) >= totalTerms;
+      const isLastTerm = ((c.paidTerms || 0) + 1) >= totalTerms;
       const calculatedAmt = isLastTerm ? (totalAmt - (baseAmt * (totalTerms - 1))) : baseAmt;
-      
-      const paidTerms = selectedCase.paidTerms || 0;
-      let claimAmount = selectedCase.nextPaymentAmount || calculatedAmt;
-      
-      if (selectedCase.installment_schedule && selectedCase.installment_schedule.length > paidTerms) {
-        claimAmount = selectedCase.installment_schedule[paidTerms].amount;
+      let amt = c.nextPaymentAmount || calculatedAmt;
+      const paid = c.paidTerms || 0;
+      if (c.installment_schedule && c.installment_schedule.length > paid) {
+        amt = c.installment_schedule[paid].amount;
       }
-      
+      return amt;
+    };
+
+    if (paymentMethod === '給与控除' || paymentMethod === '給与振込') {
+      const batch = selectedBatchCases.length > 0 ? selectedBatchCases : [selectedCase];
+      setDeductions(batch.reduce((sum, c) => sum + getCaseAmount(c), 0));
+    } else {
       const advanceToRecover = selectedCase.previousBalance || 0;
-      
-      if (paymentMethod === '給与控除' || paymentMethod === '給与振込') {
-        setDeductions(claimAmount);
-      } else if (advanceToRecover > 0) {
-        setDeductions(Math.floor(advanceToRecover / totalTerms));
-      } else {
-        setDeductions(0);
-      }
+      const totalTerms = selectedCase.installment_count || (selectedCase.installmentPlan ? (selectedCase.installmentPlan.match(/\d+/) ? parseInt(selectedCase.installmentPlan.match(/\d+/)[0], 10) : 1) : 1);
+      setDeductions(advanceToRecover > 0 ? Math.floor(advanceToRecover / totalTerms) : 0);
     }
-  }, [selectedCase, paymentMethod]);
+  }, [selectedCase, selectedBatchCases, paymentMethod]);
 
   useEffect(() => {
     if (selectedCase) {
