@@ -822,7 +822,7 @@ export default function PaymentStatus() {
 
         <div className="print:hidden space-y-6">
           {/* Filter Bar */}
-          <div className="bg-[#F8F9FA] border border-gray-200 rounded-md p-4 flex items-end space-x-4">
+          <div className="bg-[#F8F9FA] border border-gray-200 rounded-md p-4 flex flex-col sm:flex-row sm:flex-wrap sm:items-end gap-3">
             <div className="flex-1">
               <label className="block text-xs font-bold text-gray-600 mb-1">検索</label>
               <div className="relative">
@@ -830,7 +830,7 @@ export default function PaymentStatus() {
                 <Search className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
               </div>
             </div>
-            <div className="w-48">
+            <div className="w-full sm:w-44">
               <label className="block text-xs font-bold text-gray-600 mb-1">ステータス</label>
               <div className="relative">
                 <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)} className="w-full pl-4 pr-10 py-2 border border-gray-300 rounded-md text-sm appearance-none focus:outline-none focus:ring-1 focus:ring-[#162D50] text-gray-600">
@@ -842,7 +842,7 @@ export default function PaymentStatus() {
                 <ChevronDown className="w-4 h-4 absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none" />
               </div>
             </div>
-            <div className="w-48">
+            <div className="w-full sm:w-44">
               <label className="block text-xs font-bold text-gray-600 mb-1">経費の種類</label>
               <div className="relative">
                 <select value={expenseTypeFilter} onChange={e => setExpenseTypeFilter(e.target.value)} className="w-full pl-4 pr-10 py-2 border border-gray-300 rounded-md text-sm appearance-none focus:outline-none focus:ring-1 focus:ring-[#162D50] text-gray-600">
@@ -877,49 +877,28 @@ export default function PaymentStatus() {
         </div>
 
         {/* Payment History Section */}
-        <div className="bg-white border border-gray-200 rounded-md shadow-sm overflow-hidden overflow-x-auto mt-6 print:hidden">
-          <div className="px-6 py-4 border-b border-gray-200 bg-[#F8F9FA]">
+        <div className="mt-6 print:hidden">
+          <div className="px-0 py-3 mb-3">
             <h3 className="text-lg font-bold text-[#162D50]">支払履歴および関連案件</h3>
           </div>
-          <table className="w-full text-left border-collapse">
-            <thead>
-              <tr className="bg-white border-b border-gray-200 text-xs font-bold text-gray-500 uppercase tracking-wider">
-                <th className="py-3 px-6 w-10">
-                  <input 
-                    type="checkbox" 
-                    className="rounded border-gray-300 text-[#162D50] focus:ring-[#162D50]"
-                    checked={filteredPersonCases.length > 0 && filteredPersonCases.every(c => selectedBatchCases.some(item => item._id === c._id))}
-                    onChange={(e) => handleSelectAllCases(e, filteredPersonCases)}
-                  />
-                </th>
-                <th className="py-3 px-6">案件ID</th>
-                <th className="py-3 px-6">期間</th>
-                <th className="py-3 px-6">経費の種類</th>
-                <th className="py-3 px-6">残額</th>
-                <th className="py-3 px-6">ステータス</th>
-                <th className="py-3 px-6 text-right">アクション</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-100 text-sm">
-              {filteredPersonCases.length === 0 ? (
-                <tr><td colSpan="6" className="py-4 px-6 text-center text-gray-500">フィルターに一致する案件が見つかりません。</td></tr>
-              ) : (
-                filteredPersonCases.map(c => (
-                <tr key={c._id} className={`hover:bg-gray-50 transition-colors ${selectedBatchCases.some(item => item._id === c._id) ? 'bg-blue-50' : ''}`}>
-                  <td className="py-4 px-6">
-                    <input 
-                      type="checkbox" 
-                      className="rounded border-gray-300 text-[#162D50] focus:ring-[#162D50]"
-                      checked={selectedBatchCases.some(item => item._id === c._id)}
-                      onChange={() => handleSelectCase(c)}
-                    />
-                  </td>
-                  <td className="py-4 px-6 font-medium text-[#162D50]">#CAS-{c._id.slice(-6).toUpperCase()}</td>
-                  <td className="py-4 px-6 text-gray-600">{c.expense期間Start ? new Date(c.expense期間Start).toLocaleDateString() : 'N/A'} - {c.expense期間End ? new Date(c.expense期間End).toLocaleDateString() : 'N/A'}</td>
-                  <td className="py-4 px-6 text-gray-600">{getExpenseTypeJapanese(c.expenseType)}</td>
-                  <td className="py-4 px-6 font-bold text-[#162D50]">{c.currency === 'JPY' ? '¥' : '$'}{Math.round(get残りBalance(c)).toLocaleString()}</td>
-                  <td className="py-4 px-6">
-                    <span className={`px-2 py-1 rounded-full text-xs font-medium border ${
+          {/* Mobile cards */}
+          <div className="block sm:hidden space-y-3">
+            {filteredPersonCases.length === 0 ? (
+              <div className="py-6 text-center text-gray-500 text-sm">フィルターに一致する案件が見つかりません。</div>
+            ) : (
+              filteredPersonCases.map(c => (
+                <div key={c._id} className={`bg-white border rounded-lg p-4 shadow-sm ${selectedBatchCases.some(item => item._id === c._id) ? 'border-blue-400 bg-blue-50' : 'border-gray-200'}`}>
+                  <div className="flex justify-between items-start mb-3">
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        className="rounded border-gray-300 text-[#162D50] focus:ring-[#162D50]"
+                        checked={selectedBatchCases.some(item => item._id === c._id)}
+                        onChange={() => handleSelectCase(c)}
+                      />
+                      <span className="text-xs font-mono text-gray-500">#CAS-{c._id.slice(-6).toUpperCase()}</span>
+                    </label>
+                    <span className={`px-2.5 py-1 rounded-full text-xs font-medium border ${
                       c.status === 'Payment 保留中' || c.status === 'APPROVED_FOR_PAYMENT' ? 'bg-yellow-100 text-yellow-700 border-yellow-200' :
                       c.status === '処理中' || (c.status && c.status.includes('完了') && c.status !== '完了') ? 'bg-blue-100 text-blue-700 border-blue-200' :
                       c.status === '完了' ? 'bg-green-100 text-green-700 border-green-200' :
@@ -927,15 +906,81 @@ export default function PaymentStatus() {
                     }`}>
                       {getStatusJapanese(c.status)}
                     </span>
-                  </td>
-                  <td className="py-4 px-6 text-right">
+                  </div>
+                  <div className="text-xs text-gray-500 mb-1">{getExpenseTypeJapanese(c.expenseType)}</div>
+                  <div className="flex justify-between items-center mb-2">
+                    <span className="text-xs text-gray-400">
+                      {c.expense期間Start ? new Date(c.expense期間Start).toLocaleDateString() : 'N/A'} - {c.expense期間End ? new Date(c.expense期間End).toLocaleDateString() : 'N/A'}
+                    </span>
+                    <span className="font-bold text-[#162D50] text-sm">
+                      {c.currency === 'JPY' ? '¥' : '$'}{Math.round(get残りBalance(c)).toLocaleString()}
+                    </span>
+                  </div>
+                  <div className="pt-2 border-t border-gray-100">
                     <button onClick={() => setSelectedCase(c)} className="text-[#162D50] font-bold hover:underline text-xs">表示</button>
-                  </td>
-                </tr>
+                  </div>
+                </div>
               ))
             )}
-          </tbody>
-          </table>
+          </div>
+          {/* Desktop table */}
+          <div className="hidden sm:block bg-white border border-gray-200 rounded-md shadow-sm overflow-hidden overflow-x-auto">
+            <table className="w-full text-left border-collapse">
+              <thead>
+                <tr className="bg-white border-b border-gray-200 text-xs font-bold text-gray-500 uppercase tracking-wider">
+                  <th className="py-3 px-6 w-10">
+                    <input
+                      type="checkbox"
+                      className="rounded border-gray-300 text-[#162D50] focus:ring-[#162D50]"
+                      checked={filteredPersonCases.length > 0 && filteredPersonCases.every(c => selectedBatchCases.some(item => item._id === c._id))}
+                      onChange={(e) => handleSelectAllCases(e, filteredPersonCases)}
+                    />
+                  </th>
+                  <th className="py-3 px-6">案件ID</th>
+                  <th className="py-3 px-6">期間</th>
+                  <th className="py-3 px-6">経費の種類</th>
+                  <th className="py-3 px-6">残額</th>
+                  <th className="py-3 px-6">ステータス</th>
+                  <th className="py-3 px-6 text-right">アクション</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100 text-sm">
+                {filteredPersonCases.length === 0 ? (
+                  <tr><td colSpan="6" className="py-4 px-6 text-center text-gray-500">フィルターに一致する案件が見つかりません。</td></tr>
+                ) : (
+                  filteredPersonCases.map(c => (
+                  <tr key={c._id} className={`hover:bg-gray-50 transition-colors ${selectedBatchCases.some(item => item._id === c._id) ? 'bg-blue-50' : ''}`}>
+                    <td className="py-4 px-6">
+                      <input
+                        type="checkbox"
+                        className="rounded border-gray-300 text-[#162D50] focus:ring-[#162D50]"
+                        checked={selectedBatchCases.some(item => item._id === c._id)}
+                        onChange={() => handleSelectCase(c)}
+                      />
+                    </td>
+                    <td className="py-4 px-6 font-medium text-[#162D50]">#CAS-{c._id.slice(-6).toUpperCase()}</td>
+                    <td className="py-4 px-6 text-gray-600">{c.expense期間Start ? new Date(c.expense期間Start).toLocaleDateString() : 'N/A'} - {c.expense期間End ? new Date(c.expense期間End).toLocaleDateString() : 'N/A'}</td>
+                    <td className="py-4 px-6 text-gray-600">{getExpenseTypeJapanese(c.expenseType)}</td>
+                    <td className="py-4 px-6 font-bold text-[#162D50]">{c.currency === 'JPY' ? '¥' : '$'}{Math.round(get残りBalance(c)).toLocaleString()}</td>
+                    <td className="py-4 px-6">
+                      <span className={`px-2 py-1 rounded-full text-xs font-medium border ${
+                        c.status === 'Payment 保留中' || c.status === 'APPROVED_FOR_PAYMENT' ? 'bg-yellow-100 text-yellow-700 border-yellow-200' :
+                        c.status === '処理中' || (c.status && c.status.includes('完了') && c.status !== '完了') ? 'bg-blue-100 text-blue-700 border-blue-200' :
+                        c.status === '完了' ? 'bg-green-100 text-green-700 border-green-200' :
+                        'bg-gray-100 text-gray-700 border-gray-200'
+                      }`}>
+                        {getStatusJapanese(c.status)}
+                      </span>
+                    </td>
+                    <td className="py-4 px-6 text-right">
+                      <button onClick={() => setSelectedCase(c)} className="text-[#162D50] font-bold hover:underline text-xs">表示</button>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+            </table>
+          </div>
         </div>
         {/* Dynamic Settlement Form / Receipt */}
         <div className="mt-12 font-sans print-area print:mt-0 print:w-full print:[print-color-adjust:exact]" id="settlement-form">
@@ -1024,7 +1069,7 @@ export default function PaymentStatus() {
               {/* 合意条件 (Read-Only) */}
               <div className="border-b border-dashed border-[#162D50] pb-8 mb-8 print:pb-4 print:mb-4">
                   <div className="text-xs font-bold uppercase tracking-widest text-gray-500 mb-6 print:mb-2">合意条件</div>
-                  <div className="grid grid-cols-4 gap-6 mb-6">
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 sm:gap-6 mb-6">
                     <div>
                       <label className="block text-[10px] font-bold uppercase tracking-widest mb-1 text-gray-400">回収・精算方法</label>
                       <div className="font-mono text-sm">
@@ -1286,12 +1331,12 @@ export default function PaymentStatus() {
           支払リストに戻る
         </button>
 
-        <div className="flex justify-between items-start mb-6">
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4 mb-6">
           <div>
             <h2 className="text-2xl font-bold text-[#162D50] mb-1">給与・精算エクスポート</h2>
             <p className="text-gray-500 text-sm">給与統合や銀行振込用の一括データファイルを生成します。</p>
           </div>
-          <div className="flex items-center space-x-3">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-2">
             <div className="flex items-center border border-gray-300 rounded-md px-3 py-2 bg-white text-sm text-gray-700">
               <Calendar className="w-4 h-4 mr-2 text-gray-500" />
               <span>
@@ -1403,12 +1448,12 @@ export default function PaymentStatus() {
           </div>
 
           {/* Filters */}
-          <div className="p-3 bg-[#F8F9FA] border-b border-gray-200 flex space-x-3">
+          <div className="p-3 bg-[#F8F9FA] border-b border-gray-200 flex flex-col sm:flex-row sm:items-center gap-2">
             <div className="relative flex-1">
               <Search className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
               <input type="text" placeholder="検索 installments by スタッフID or Name..." className="w-full pl-9 pr-4 py-2 border border-gray-200 rounded-md text-sm focus:outline-none focus:border-gray-300" />
             </div>
-            <div className="relative w-48">
+            <div className="relative w-full sm:w-44">
               <select className="w-full pl-3 pr-8 py-2 border border-gray-200 rounded-md text-sm appearance-none focus:outline-none focus:border-gray-300 text-gray-600">
                 <option>カテゴリでフィルタリング</option>
               </select>
@@ -1561,23 +1606,23 @@ export default function PaymentStatus() {
       <div className="bg-[#F2F4F7] p-1 rounded-md flex space-x-1 mb-4 border border-gray-200">
         <button 
           onClick={() => setActivePaymentTab('Office')}
-          className={`flex-1 py-2 text-sm font-bold rounded-md transition-colors ${activePaymentTab === 'Office' ? 'text-white bg-[#0A192F] shadow-sm' : 'text-gray-500 hover:bg-gray-200'}`}>
+          className={`flex-1 py-1.5 sm:py-2 text-xs sm:text-sm font-bold rounded-md transition-colors ${activePaymentTab === 'Office' ? 'text-white bg-[#0A192F] shadow-sm' : 'text-gray-500 hover:bg-gray-200'}`}>
           オフィス支払案件 <span className={`ml-2 px-2 py-0.5 rounded-full text-xs ${activePaymentTab === 'Office' ? 'bg-white text-[#0A192F]' : 'bg-gray-200 text-gray-600'}`}>{officeCasesCount}</span>
         </button>
         <button 
           onClick={() => setActivePaymentTab('Staff')}
-          className={`flex-1 py-2 text-sm font-bold rounded-md transition-colors ${activePaymentTab === 'Staff' ? 'text-white bg-[#0A192F] shadow-sm' : 'text-gray-500 hover:bg-gray-200'}`}>
+          className={`flex-1 py-1.5 sm:py-2 text-xs sm:text-sm font-bold rounded-md transition-colors ${activePaymentTab === 'Staff' ? 'text-white bg-[#0A192F] shadow-sm' : 'text-gray-500 hover:bg-gray-200'}`}>
           スタッフ支払案件 <span className={`ml-2 px-2 py-0.5 rounded-full text-xs ${activePaymentTab === 'Staff' ? 'bg-white text-[#0A192F]' : 'bg-gray-200 text-gray-600'}`}>{staffCasesCount}</span>
         </button>
         <button 
           onClick={() => setActivePaymentTab('Host Company')}
-          className={`flex-1 py-2 text-sm font-bold rounded-md transition-colors ${activePaymentTab === 'Host Company' ? 'text-white bg-[#0A192F] shadow-sm' : 'text-gray-500 hover:bg-gray-200'}`}>
+          className={`flex-1 py-1.5 sm:py-2 text-xs sm:text-sm font-bold rounded-md transition-colors ${activePaymentTab === 'Host Company' ? 'text-white bg-[#0A192F] shadow-sm' : 'text-gray-500 hover:bg-gray-200'}`}>
           ホスト会社案件 <span className={`ml-2 px-2 py-0.5 rounded-full text-xs ${activePaymentTab === 'Host Company' ? 'bg-white text-[#0A192F]' : 'bg-gray-200 text-gray-600'}`}>{hostCompanyCasesCount}</span>
         </button>
       </div>
 
       {/* Filter Bar */}
-      <div className="bg-[#F8F9FA] border border-gray-200 rounded-md p-4 flex items-end space-x-4">
+      <div className="bg-[#F8F9FA] border border-gray-200 rounded-md p-4 flex flex-col sm:flex-row sm:flex-wrap sm:items-end gap-3">
         <div className="flex-1">
           <label className="block text-xs font-bold text-gray-600 mb-1">検索</label>
           <div className="relative">
@@ -1585,7 +1630,7 @@ export default function PaymentStatus() {
             <Search className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
           </div>
         </div>
-        <div className="w-48">
+        <div className="w-full sm:w-44">
           <label className="block text-xs font-bold text-gray-600 mb-1">ステータス</label>
           <div className="relative">
             <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)} className="w-full pl-4 pr-10 py-2 border border-gray-300 rounded-md text-sm appearance-none focus:outline-none focus:ring-1 focus:ring-[#162D50] text-gray-600">
@@ -1597,7 +1642,7 @@ export default function PaymentStatus() {
             <ChevronDown className="w-4 h-4 absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none" />
           </div>
         </div>
-        <div className="w-48">
+        <div className="w-full sm:w-44">
           <label className="block text-xs font-bold text-gray-600 mb-1">経費の種類</label>
           <div className="relative">
             <select value={expenseTypeFilter} onChange={e => setExpenseTypeFilter(e.target.value)} className="w-full pl-4 pr-10 py-2 border border-gray-300 rounded-md text-sm appearance-none focus:outline-none focus:ring-1 focus:ring-[#162D50] text-gray-600">
@@ -1609,7 +1654,7 @@ export default function PaymentStatus() {
             <ChevronDown className="w-4 h-4 absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none" />
           </div>
         </div>
-        <div className="w-48">
+        <div className="w-full sm:w-44">
           <label className="block text-xs font-bold text-gray-600 mb-1">日付 Range</label>
           <div className="relative">
             <input type="text" placeholder="YYYY / MM / DD" className="w-full pl-4 pr-10 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-[#162D50]" />
@@ -1627,8 +1672,59 @@ export default function PaymentStatus() {
         </div>
       </div>
 
-      {/* Data Table */}
-      <div className="bg-white border border-gray-200 rounded-md overflow-hidden overflow-x-auto">
+      {/* Data Table — Mobile cards */}
+      <div className="block sm:hidden space-y-3">
+        {loading ? (
+          <div className="py-8 text-center text-gray-500 text-sm">読み込み中...</div>
+        ) : filteredCases.length === 0 ? (
+          <div className="py-8 text-center text-gray-500 text-sm">案件が見つかりません。</div>
+        ) : (
+          filteredCases.map(c => {
+            const totalTerms = c.installment_count || (c.installmentPlan ? (c.installmentPlan.match(/\d+/) ? parseInt(c.installmentPlan.match(/\d+/)[0], 10) : 1) : 1);
+            const paidTerms = c.paidTerms || 0;
+            const pendingTerms = Math.max(0, totalTerms - paidTerms);
+            const is完了 = paidTerms >= totalTerms;
+            const displayStatus = is完了 ? '完了' : c.status;
+            return (
+              <div key={c._id} className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
+                <div className="flex justify-between items-start mb-3">
+                  <span className="text-xs font-mono text-gray-500">
+                    {c.advancerCategory === 'Staff' ? '#CLM-' : '#CAS-'}{c._id.slice(-6).toUpperCase()}
+                  </span>
+                  <span className={`px-2.5 py-1 rounded-full text-xs font-medium border ${
+                    displayStatus === '保留中' ? 'bg-yellow-100 text-yellow-700 border-yellow-200' :
+                    (displayStatus === '処理中' || displayStatus === 'APPROVED_FOR_PAYMENT') ? 'bg-blue-100 text-blue-700 border-blue-200' :
+                    displayStatus === '完了' ? 'bg-green-100 text-green-700 border-green-200' :
+                    'bg-gray-100 text-gray-700 border-gray-200'
+                  }`}>
+                    {totalTerms > 1 ? `${Math.min(paidTerms, totalTerms)}/${totalTerms} 完了` : getStatusJapanese(displayStatus)}
+                  </span>
+                </div>
+                <div className="font-bold text-gray-800 text-sm mb-0.5">{c.staffName}</div>
+                <div className="text-xs text-gray-500 mb-2">{getExpenseTypeJapanese(c.expenseType)}</div>
+                <div className="flex justify-between items-center mb-2">
+                  <span className="text-xs text-gray-400">{new Date(c.expense期間Start).toLocaleDateString('en-US')}</span>
+                  <span className="font-bold text-gray-800 text-sm">
+                    {c.currency === 'JPY' ? '¥' : '$'}{Math.round(get残りBalance(c)).toLocaleString()}
+                  </span>
+                </div>
+                <div className="text-xs text-gray-600 mb-3">
+                  {c.advancerCategory === 'Staff' ? (c.settlement_method || c.settlementMethod || 'N/A') : (c.collection_method || c.collectionMethod || 'N/A')}
+                  {totalTerms > 1 && <span className="ml-2 text-gray-400">({pendingTerms}回保留中)</span>}
+                </div>
+                <div className="flex items-center gap-3 pt-3 border-t border-gray-100">
+                  <button onClick={() => setSelectedCase(c)} className="text-[#162D50] font-bold text-xs hover:underline">表示 Details</button>
+                  <button onClick={() => handle削除Case(c)} className="text-red-500 font-bold text-xs hover:underline inline-flex items-center">
+                    <Trash2 className="w-3 h-3 mr-1" />削除
+                  </button>
+                </div>
+              </div>
+            );
+          })
+        )}
+      </div>
+      {/* Data Table — Desktop */}
+      <div className="hidden sm:block bg-white border border-gray-200 rounded-md overflow-hidden overflow-x-auto">
         <table className="w-full text-left border-collapse">
           <thead>
             <tr className="bg-[#F8F9FA] border-b border-gray-200 text-xs font-bold text-gray-600">
@@ -1657,7 +1753,7 @@ export default function PaymentStatus() {
                 const paidTerms = c.paidTerms || 0;
                 const pendingTerms = Math.max(0, totalTerms - paidTerms);
                 const is完了 = paidTerms >= totalTerms;
-                
+
                 // Override status badge if completed via installment logic
                 const displayStatus = is完了 ? '完了' : c.status;
 
