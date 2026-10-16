@@ -581,7 +581,7 @@ export default function CaseList({ setActiveTab: onNavigate }) {
         {user.role !== 'support' && (
           <button 
             onClick={() => setActiveTab('Office')}
-            className={`relative flex-1 py-2 text-sm font-bold rounded-md transition-colors ${activeTab === 'Office' ? 'text-white bg-[#0A192F] shadow-sm' : 'text-gray-500 hover:bg-gray-200'}`}>
+            className={`relative flex-1 py-1.5 sm:py-2 text-xs sm:text-sm font-bold rounded-md transition-colors ${activeTab === 'Office' ? 'text-white bg-[#0A192F] shadow-sm' : 'text-gray-500 hover:bg-gray-200'}`}>
             オフィス案件 <span className={`ml-2 px-2 py-0.5 rounded-full text-xs ${activeTab === 'Office' ? 'bg-white text-[#0A192F]' : 'bg-gray-200 text-gray-600'}`}>{officeCasesCount}</span>
             {hasOfficeNotification && (
               <span className="absolute top-2 right-4 flex h-3 w-3" title="New updates available">
@@ -593,7 +593,7 @@ export default function CaseList({ setActiveTab: onNavigate }) {
         )}
         <button 
           onClick={() => setActiveTab('Staff')}
-          className={`relative flex-1 py-2 text-sm font-bold rounded-md transition-colors ${activeTab === 'Staff' ? 'text-white bg-[#0A192F] shadow-sm' : 'text-gray-500 hover:bg-gray-200'}`}>
+          className={`relative flex-1 py-1.5 sm:py-2 text-xs sm:text-sm font-bold rounded-md transition-colors ${activeTab === 'Staff' ? 'text-white bg-[#0A192F] shadow-sm' : 'text-gray-500 hover:bg-gray-200'}`}>
           スタッフ案件 <span className={`ml-2 px-2 py-0.5 rounded-full text-xs ${activeTab === 'Staff' ? 'bg-white text-[#0A192F]' : 'bg-gray-200 text-gray-600'}`}>{staffCasesCount}</span>
           {hasStaffNotification && (
             <span className="absolute top-2 right-4 flex h-3 w-3" title="New updates available">
@@ -605,7 +605,7 @@ export default function CaseList({ setActiveTab: onNavigate }) {
         {user.role !== 'support' && (
           <button 
             onClick={() => setActiveTab('Host Company')}
-            className={`relative flex-1 py-2 text-sm font-bold rounded-md transition-colors ${activeTab === 'Host Company' ? 'text-white bg-[#0A192F] shadow-sm' : 'text-gray-500 hover:bg-gray-200'}`}>
+            className={`relative flex-1 py-1.5 sm:py-2 text-xs sm:text-sm font-bold rounded-md transition-colors ${activeTab === 'Host Company' ? 'text-white bg-[#0A192F] shadow-sm' : 'text-gray-500 hover:bg-gray-200'}`}>
             ホスト会社案件 <span className={`ml-2 px-2 py-0.5 rounded-full text-xs ${activeTab === 'Host Company' ? 'bg-white text-[#0A192F]' : 'bg-gray-200 text-gray-600'}`}>{hostCompanyCasesCount}</span>
             {hasHostCompanyNotification && (
               <span className="absolute top-2 right-4 flex h-3 w-3" title="New updates available">
@@ -618,15 +618,15 @@ export default function CaseList({ setActiveTab: onNavigate }) {
       </div>
 
       {/* Filter Bar */}
-      <div className="bg-[#F8F9FA] border border-gray-200 rounded-md p-4 flex items-end space-x-4">
-        <div className="flex-1">
+      <div className="bg-[#F8F9FA] border border-gray-200 rounded-md p-4 flex flex-col sm:flex-row sm:flex-wrap sm:items-end gap-3">
+        <div className="flex-1 min-w-0">
           <label className="block text-xs font-bold text-gray-600 mb-1">検索</label>
           <div className="relative">
             <input type="text" placeholder="Search 案件ID, スタッフ名..." className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-[#162D50]" />
             <Search className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
           </div>
         </div>
-        <div className="w-48">
+        <div className="w-full sm:w-44">
           <label className="block text-xs font-bold text-gray-600 mb-1">ステータス</label>
           <div className="relative">
             <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)} className="w-full pl-4 pr-10 py-2 border border-gray-300 rounded-md text-sm appearance-none focus:outline-none focus:ring-1 focus:ring-[#162D50] text-gray-600">
@@ -638,7 +638,7 @@ export default function CaseList({ setActiveTab: onNavigate }) {
             <ChevronDown className="w-4 h-4 absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none" />
           </div>
         </div>
-        <div className="w-48">
+        <div className="w-full sm:w-44">
           <label className="block text-xs font-bold text-gray-600 mb-1">経費の種類</label>
           <div className="relative">
             <select value={expenseTypeFilter} onChange={e => setExpenseTypeFilter(e.target.value)} className="w-full pl-4 pr-10 py-2 border border-gray-300 rounded-md text-sm appearance-none focus:outline-none focus:ring-1 focus:ring-[#162D50] text-gray-600">
@@ -650,20 +650,74 @@ export default function CaseList({ setActiveTab: onNavigate }) {
             <ChevronDown className="w-4 h-4 absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none" />
           </div>
         </div>
-        <div className="w-48">
+        <div className="w-full sm:w-44">
           <label className="block text-xs font-bold text-gray-600 mb-1">日付 Range</label>
           <div className="relative">
             <input type="text" placeholder="YYYY / MM / DD" className="w-full pl-4 pr-10 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-[#162D50]" />
             <Calendar className="w-4 h-4 absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-800" />
           </div>
         </div>
-        <button className="bg-[#0A192F] text-white px-6 py-2 rounded-md text-sm font-bold hover:bg-[#162D50] transition-colors shadow-sm whitespace-nowrap h-[38px]">
+        <button className="w-full sm:w-auto bg-[#0A192F] text-white px-6 py-2 rounded-md text-sm font-bold hover:bg-[#162D50] transition-colors shadow-sm whitespace-nowrap h-[38px]">
           Apply Filters
         </button>
       </div>
 
-      {/* Data Table */}
-      <div className="bg-white border border-gray-200 rounded-md overflow-hidden overflow-x-auto">
+      {/* Data Table — Mobile cards */}
+      <div className="block sm:hidden space-y-3">
+        {loading ? (
+          <div className="bg-white border border-gray-200 rounded-lg py-8 text-center text-gray-500 text-sm">読み込み中...</div>
+        ) : filteredRecords.length === 0 ? (
+          <div className="bg-white border border-gray-200 rounded-lg py-8 text-center text-gray-500 text-sm">案件が見つかりません.</div>
+        ) : (
+          filteredRecords.map(c => (
+            <div key={c._id} className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
+              <div className="flex justify-between items-start mb-3">
+                <span className="text-xs font-mono text-gray-500">{c.displayId}</span>
+                <span className={`px-2.5 py-1 rounded-full text-xs font-medium border ${
+                  c.displayStatus === '修正依頼' ? 'bg-orange-100 text-orange-700 border-orange-200' :
+                  c.displayStatus === '拒否' ? 'bg-red-100 text-red-700 border-red-200' :
+                  c.displayStatus === '新た' ? 'bg-blue-100 text-blue-700 border-blue-200' :
+                  c.displayStatus === '再提出済み' ? 'bg-purple-100 text-purple-700 border-purple-200' :
+                  'bg-gray-100 text-gray-700 border-gray-200'
+                }`}>{c.displayStatus}</span>
+              </div>
+              <div className="font-bold text-gray-800 text-sm mb-0.5">{c.displayName}</div>
+              <div className="text-xs text-gray-500 mb-2">{c.expense_type}</div>
+              <div className="flex justify-between items-center mb-3">
+                <span className="text-xs text-gray-400">{c.displayDate}</span>
+                <span className="font-bold text-gray-800 text-sm">{c.currencySymbol}{c.displayTotal.toLocaleString()}</span>
+              </div>
+              <div className="flex items-center gap-4 pt-3 border-t border-gray-100">
+                <div className="relative inline-block">
+                  <button onClick={() => handleViewDetails(c)} className="text-[#162D50] font-bold hover:underline text-sm">
+                    View Details
+                  </button>
+                  {user.role === 'support' && (c.hasSupportNotification || (c.messages && c.messages.some(m => !m.readBySupport))) && (
+                    <span className="absolute -top-1 -right-3 flex h-3 w-3" title="New update from 経理部門">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                      <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
+                    </span>
+                  )}
+                  {user.role !== 'support' && c.hasAccountNotification && (
+                    <span className="absolute -top-1 -right-3 flex h-3 w-3" title="Updated by Support">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
+                      <span className="relative inline-flex rounded-full h-3 w-3 bg-blue-500"></span>
+                    </span>
+                  )}
+                </div>
+                {user.role !== 'support' && (
+                  <button onClick={(e) => handleDelete(e, c)} className="text-red-500 font-bold hover:underline text-sm">
+                    Delete
+                  </button>
+                )}
+              </div>
+            </div>
+          ))
+        )}
+      </div>
+
+      {/* Data Table — Desktop */}
+      <div className="hidden sm:block bg-white border border-gray-200 rounded-md overflow-hidden overflow-x-auto">
         <table className="w-full text-left border-collapse">
           <thead>
             <tr className="bg-[#F8F9FA] border-b border-gray-200 text-xs font-bold text-gray-600">
@@ -711,7 +765,7 @@ export default function CaseList({ setActiveTab: onNavigate }) {
                   <td className="py-4 px-6">
                     <div className="flex items-center space-x-3">
                       <div className="relative inline-block">
-                        <button 
+                        <button
                           onClick={() => handleViewDetails(c)}
                           className="text-[#162D50] font-bold hover:underline"
                         >
@@ -750,9 +804,9 @@ export default function CaseList({ setActiveTab: onNavigate }) {
       {/* Case Detail Preview */}
       {selectedCase && (
         <div className="bg-[#F8F9FA] border border-gray-200 rounded-md mt-8">
-          <div className="p-6 border-b border-gray-200 flex justify-between items-center bg-white rounded-t-md">
+          <div className="p-4 sm:p-6 border-b border-gray-200 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 bg-white rounded-t-md">
             <h3 className="text-[#162D50] text-lg font-bold">案件詳細プレビュー</h3>
-            <div className="flex items-center space-x-3">
+            <div className="flex items-center flex-wrap gap-2">
               {selectedCase.missingReceipt && (
                 <span className="bg-red-100 text-red-600 px-4 py-1.5 rounded-full text-sm font-medium border border-red-200">領収書不足</span>
               )}
@@ -1010,7 +1064,7 @@ export default function CaseList({ setActiveTab: onNavigate }) {
           </div>
 
           {/* アクション Buttons */}
-          <div className="p-4 border-t border-gray-200 flex justify-end items-center space-x-4 bg-gray-50 rounded-b-md">
+          <div className="p-4 border-t border-gray-200 flex flex-wrap justify-end items-center gap-3 bg-gray-50 rounded-b-md">
             {user.role !== 'support' && (
               <>
                 {(selectedCase.status === '拒否' || selectedCase.status === 'REJECTED' || selectedCase.status === '保留中 Correction' || selectedCase.status === 'RETURNED_FOR_CORRECTION') && (
