@@ -62,9 +62,11 @@ app.use(helmet({
 }));
 
 // Restrict CORS securely (disallow credentials with wildcard)
-const allowedOrigins = process.env.CLIENT_URL 
+const envOrigins = process.env.CLIENT_URL 
   ? process.env.CLIENT_URL.split(',').map(o => o.trim()) 
-  : ['http://localhost:5173', 'http://localhost:3000', 'http://localhost:5174'];
+  : [];
+const defaultDevOrigins = ['http://localhost', 'http://localhost:80', 'http://localhost:5173', 'http://localhost:3000', 'http://localhost:5174', 'http://127.0.0.1'];
+const allowedOrigins = Array.from(new Set([...envOrigins, ...defaultDevOrigins]));
 
 app.use(cors({
   origin: function (origin, callback) {
