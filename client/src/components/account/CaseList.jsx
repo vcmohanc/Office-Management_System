@@ -311,7 +311,7 @@ export default function CaseList({ setActiveTab: onNavigate }) {
           : `/api/cases/${selectedCase._id}/status`;
         await apiFetch(statusEndpoint, {
           method: 'PATCH',
-          body: JSON.stringify({ status: newStatus, hasSupportNotification: true, clearSupportUpdatedFields: true })
+          body: JSON.stringify({ status: newStatus, hasAccountNotification: true, clearSupportUpdatedFields: true })
         });
 
         const mappedUpdated = {
