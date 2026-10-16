@@ -25,6 +25,7 @@ export default function PaymentStatus() {
   const [expenseTypeOptions, setExpenseTypeOptions] = useState([]);
   const [dateFilterStart, setDateFilterStart] = useState('');
   const [dateFilterEnd, setDateFilterEnd] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
 
   // Settlement Form State
   const [paymentMethod, setPaymentMethod] = useState('');
@@ -497,8 +498,16 @@ export default function PaymentStatus() {
     const matchesTab = c.advancerCategory === activePaymentTab || (!c.advancerCategory && activePaymentTab === 'Office');
     const matchesStatus = statusFilter === 'すべてのステータス' || c.status === statusFilter;
     const matchesType = expenseTypeFilter === 'すべての種類' || c.expenseType === expenseTypeFilter;
-    
-    return matchesTab && matchesStatus && matchesType;
+    const q = searchQuery.toLowerCase();
+    const matchesSearch = !q ||
+      (c.staffId || '').toLowerCase().includes(q) ||
+      (c.staffName || '').toLowerCase().includes(q) ||
+      (c.case_id || c.caseId || '').toLowerCase().includes(q) ||
+      (c._id || '').toLowerCase().includes(q);
+    const recordDate = new Date(c.expense期間Start || c.createdAt);
+    const matchesDateStart = !dateFilterStart || recordDate >= new Date(dateFilterStart);
+    const matchesDateEnd = !dateFilterEnd || recordDate <= new Date(dateFilterEnd + 'T23:59:59');
+    return matchesTab && matchesStatus && matchesType && matchesSearch && matchesDateStart && matchesDateEnd;
   });
 
   const tabCases = postApprovalCases.filter(c => c.advancerCategory === activePaymentTab || (!c.advancerCategory && activePaymentTab === 'Office'));
@@ -530,8 +539,13 @@ export default function PaymentStatus() {
       const matchesStatus = statusFilter === 'すべてのステータス' || c.status === statusFilter;
       const matchesType = expenseTypeFilter === 'すべての種類' || c.expenseType === expenseTypeFilter;
       const matchesDateStart = !dateFilterStart || new Date(c.expense期間Start || c.createdAt) >= new Date(dateFilterStart);
-      const matchesDateEnd = !dateFilterEnd || new Date(c.expense期間End || c.createdAt) <= new Date(dateFilterEnd);
-      return matchesStatus && matchesType && matchesDateStart && matchesDateEnd;
+      const matchesDateEnd = !dateFilterEnd || new Date(c.expense期間End || c.createdAt) <= new Date(dateFilterEnd + 'T23:59:59');
+      const q = searchQuery.toLowerCase();
+      const matchesSearch = !q ||
+        (c.staffId || '').toLowerCase().includes(q) ||
+        (c.staffName || '').toLowerCase().includes(q) ||
+        (c.case_id || c.caseId || c._id || '').toLowerCase().includes(q);
+      return matchesStatus && matchesType && matchesDateStart && matchesDateEnd && matchesSearch;
     });
 
     let batchTotalNextPayment = selectedBatchCases.reduce((total, currentCase) => {
@@ -826,7 +840,7 @@ export default function PaymentStatus() {
             <div className="flex-1">
               <label className="block text-xs font-bold text-gray-600 mb-1">検索</label>
               <div className="relative">
-                <input type="text" placeholder="案件ID、スタッフ名を検索..." className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-[#162D50]" />
+                <input type="text" placeholder="案件ID、スタッフ名を検索..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)} className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-[#162D50]" />
                 <Search className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
               </div>
             </div>
@@ -864,9 +878,9 @@ export default function PaymentStatus() {
                 <input type="date" value={dateFilterEnd} onChange={e => setDateFilterEnd(e.target.value)} className="w-full px-2 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-[#162D50]" />
               </div>
             </div>
-            <div className="flex space-x-2">
-              <button className="bg-[#0A192F] text-white px-6 py-2 rounded-md text-sm font-bold hover:bg-[#162D50] transition-colors shadow-sm whitespace-nowrap h-[38px]">
-                フィルター適用
+            <div className="flex flex-col sm:flex-row gap-2">
+              <button onClick={() => { setSearchQuery(''); setDateFilterStart(''); setDateFilterEnd(''); setStatusFilter('すべてのステータス'); setExpenseTypeFilter('すべての種類'); }} className="bg-gray-100 text-gray-700 px-4 py-2 rounded-md text-sm font-bold hover:bg-gray-200 transition-colors whitespace-nowrap h-[38px]">
+                クリア
               </button>
               <button onClick={() => handleエクスポート(filteredPersonCases)} className="flex items-center bg-[#162D50] text-white px-4 py-2 rounded-md text-sm font-bold hover:bg-[#0f1f38] transition-colors shadow-sm whitespace-nowrap h-[38px]">
                 <Download className="w-4 h-4 mr-2" />
@@ -1654,16 +1668,19 @@ export default function PaymentStatus() {
             <ChevronDown className="w-4 h-4 absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none" />
           </div>
         </div>
-        <div className="w-full sm:w-44">
-          <label className="block text-xs font-bold text-gray-600 mb-1">日付 Range</label>
-          <div className="relative">
-            <input type="text" placeholder="YYYY / MM / DD" className="w-full pl-4 pr-10 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-[#162D50]" />
-            <Calendar className="w-4 h-4 absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-800" />
+        <div className="flex flex-col sm:flex-row gap-2">
+          <div className="w-full sm:w-36">
+            <label className="block text-xs font-bold text-gray-600 mb-1">開始日</label>
+            <input type="date" value={dateFilterStart} onChange={e => setDateFilterStart(e.target.value)} className="w-full px-2 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-[#162D50]" />
+          </div>
+          <div className="w-full sm:w-36">
+            <label className="block text-xs font-bold text-gray-600 mb-1">終了日</label>
+            <input type="date" value={dateFilterEnd} onChange={e => setDateFilterEnd(e.target.value)} className="w-full px-2 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-[#162D50]" />
           </div>
         </div>
-        <div className="flex space-x-2">
-          <button className="bg-[#0A192F] text-white px-6 py-2 rounded-md text-sm font-bold hover:bg-[#162D50] transition-colors shadow-sm whitespace-nowrap h-[38px]">
-            フィルター適用
+        <div className="flex flex-col sm:flex-row gap-2">
+          <button onClick={() => { setSearchQuery(''); setDateFilterStart(''); setDateFilterEnd(''); setStatusFilter('すべてのステータス'); setExpenseTypeFilter('すべての種類'); }} className="bg-gray-100 text-gray-700 px-4 py-2 rounded-md text-sm font-bold hover:bg-gray-200 transition-colors whitespace-nowrap h-[38px]">
+            クリア
           </button>
           <button onClick={() => handleエクスポート(filteredCases)} className="flex items-center bg-[#162D50] text-white px-4 py-2 rounded-md text-sm font-bold hover:bg-[#0f1f38] transition-colors shadow-sm whitespace-nowrap h-[38px]">
             <Download className="w-4 h-4 mr-2" />
