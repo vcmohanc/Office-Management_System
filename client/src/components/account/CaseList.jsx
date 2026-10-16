@@ -60,6 +60,9 @@ export default function CaseList({ setActiveTab: onNavigate }) {
   const [statusFilter, setStatusFilter] = useState('すべてのステータス');
   const [expenseTypeFilter, setExpenseTypeFilter] = useState('すべての種類');
   const [expenseTypeOptions, setExpenseTypeOptions] = useState([]);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [dateFilterStart, setDateFilterStart] = useState('');
+  const [dateFilterEnd, setDateFilterEnd] = useState('');
   const [selectedCase, setSelectedCase] = useState(null);
   
   const [isEditing, setIsEditing] = useState(false);
@@ -553,7 +556,15 @@ export default function CaseList({ setActiveTab: onNavigate }) {
   const filteredRecords = baseFiltered.filter(c => {
     const activeCaseType = activeTab + ' Case';
     const matchesTab = c.type === activeCaseType || (activeTab === 'Host Company' && c.type === 'Host Company Case');
-    return matchesTab;
+    const q = searchQuery.toLowerCase();
+    const matchesSearch = !q ||
+      (c.displayId || '').toLowerCase().includes(q) ||
+      (c.displayName || '').toLowerCase().includes(q) ||
+      (c.expense_type || '').toLowerCase().includes(q);
+    const recordDate = new Date(c.expensePeriodStart || c.expense_period_start || c.createdAt);
+    const matchesDateStart = !dateFilterStart || recordDate >= new Date(dateFilterStart);
+    const matchesDateEnd = !dateFilterEnd || recordDate <= new Date(dateFilterEnd + 'T23:59:59');
+    return matchesTab && matchesSearch && matchesDateStart && matchesDateEnd;
   });
 
   useEffect(() => {
@@ -622,7 +633,7 @@ export default function CaseList({ setActiveTab: onNavigate }) {
         <div className="flex-1 min-w-0">
           <label className="block text-xs font-bold text-gray-600 mb-1">検索</label>
           <div className="relative">
-            <input type="text" placeholder="Search 案件ID, スタッフ名..." className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-[#162D50]" />
+            <input type="text" placeholder="Search 案件ID, スタッフ名..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)} className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-[#162D50]" />
             <Search className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
           </div>
         </div>
@@ -650,16 +661,21 @@ export default function CaseList({ setActiveTab: onNavigate }) {
             <ChevronDown className="w-4 h-4 absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none" />
           </div>
         </div>
-        <div className="w-full sm:w-44">
-          <label className="block text-xs font-bold text-gray-600 mb-1">日付 Range</label>
-          <div className="relative">
-            <input type="text" placeholder="YYYY / MM / DD" className="w-full pl-4 pr-10 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-[#162D50]" />
-            <Calendar className="w-4 h-4 absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-800" />
+        <div className="flex flex-col sm:flex-row gap-2">
+          <div className="w-full sm:w-36">
+            <label className="block text-xs font-bold text-gray-600 mb-1">開始日</label>
+            <input type="date" value={dateFilterStart} onChange={e => setDateFilterStart(e.target.value)} className="w-full px-2 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-[#162D50]" />
+          </div>
+          <div className="w-full sm:w-36">
+            <label className="block text-xs font-bold text-gray-600 mb-1">終了日</label>
+            <input type="date" value={dateFilterEnd} onChange={e => setDateFilterEnd(e.target.value)} className="w-full px-2 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-[#162D50]" />
           </div>
         </div>
-        <button className="w-full sm:w-auto bg-[#0A192F] text-white px-6 py-2 rounded-md text-sm font-bold hover:bg-[#162D50] transition-colors shadow-sm whitespace-nowrap h-[38px]">
-          Apply Filters
-        </button>
+        {(searchQuery || dateFilterStart || dateFilterEnd || statusFilter !== 'すべてのステータス' || expenseTypeFilter !== 'すべての種類') && (
+          <button onClick={() => { setSearchQuery(''); setDateFilterStart(''); setDateFilterEnd(''); setStatusFilter('すべてのステータス'); setExpenseTypeFilter('すべての種類'); }} className="w-full sm:w-auto bg-gray-100 text-gray-700 px-4 py-2 rounded-md text-sm font-bold hover:bg-gray-200 transition-colors whitespace-nowrap h-[38px]">
+            クリア
+          </button>
+        )}
       </div>
 
       {/* Data Table — Mobile cards */}
