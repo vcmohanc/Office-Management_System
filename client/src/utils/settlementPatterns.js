@@ -1,23 +1,23 @@
 export const PATTERN_CONFIG = [
   {
     id: 'PTN-1',
-    flowTitle: 'VCファンド → サービススタッフ',
+    flowTitle: 'VC → サービススタッフ',
     flowTitleEn: 'VC Fund → Service Staff',
     advancer: 'Service Staff',
     bearer: 'VC Fund',
     advancerJP: 'サービススタッフ',
-    bearerJP: 'VCファンド',
+    bearerJP: 'VC',
     flowType: 'Reimburse', // outflow from fund
     flowTypeLabel: '精算',
     expenseTypes: ['郵便料金', '交通費 / 航空運賃', '待機寮費']
   },
   {
     id: 'PTN-2',
-    flowTitle: 'サービススタッフ → VCファンド',
+    flowTitle: 'サービススタッフ → VC',
     flowTitleEn: 'Service Staff → VC Fund',
     advancer: 'VC Fund',
     bearer: 'Service Staff',
-    advancerJP: 'VCファンド',
+    advancerJP: 'VC',
     bearerJP: 'サービススタッフ',
     flowType: 'Collect', // inflow to fund
     flowTypeLabel: '回収',
@@ -25,11 +25,11 @@ export const PATTERN_CONFIG = [
   },
   {
     id: 'PTN-3',
-    flowTitle: 'ファーム → VCファンド',
+    flowTitle: 'ファーム → VC',
     flowTitleEn: 'Farm → VC Fund',
     advancer: 'VC Fund',
     bearer: 'Farm',
-    advancerJP: 'VCファンド',
+    advancerJP: 'VC',
     bearerJP: 'ファーム',
     flowType: 'Collect', // inflow to fund
     flowTypeLabel: '回収',
@@ -37,12 +37,12 @@ export const PATTERN_CONFIG = [
   },
   {
     id: 'PTN-4',
-    flowTitle: 'VCファンド → サポートスタッフ',
+    flowTitle: 'VC → サポートスタッフ',
     flowTitleEn: 'VC Fund → Support Staff',
     advancer: 'Support Staff',
     bearer: 'VC Fund',
     advancerJP: 'サポートスタッフ',
-    bearerJP: 'VCファンド',
+    bearerJP: 'VC',
     flowType: 'Reimburse', // outflow from fund
     flowTypeLabel: '精算',
     expenseTypes: ['その他']
@@ -62,7 +62,7 @@ export const PATTERN_CONFIG = [
 ];
 
 export const PARTY_JP = {
-  'VC Fund': 'VCファンド',
+  'VC Fund': 'VC',
   'VC': 'VC',
   'Service Staff': 'サービススタッフ',
   'Support Staff': 'サポートスタッフ',
