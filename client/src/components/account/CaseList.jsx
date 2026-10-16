@@ -305,9 +305,20 @@ export default function CaseList({ setActiveTab: onNavigate }) {
       });
       
       if (response.ok) {
+        const newStatus = 'RESUBMITTED';
+        const statusEndpoint = isClaim
+          ? `/api/claims/${selectedCase._id}/status`
+          : `/api/cases/${selectedCase._id}/status`;
+        await apiFetch(statusEndpoint, {
+          method: 'PATCH',
+          body: JSON.stringify({ status: newStatus, hasSupportNotification: true, clearSupportUpdatedFields: true })
+        });
+
         const mappedUpdated = {
           ...selectedCase,
           ...payload,
+          status: newStatus,
+          displayStatus: '再提出済み',
           displayTotal: parseFloat(editData.total_expense),
           expense_type: editData.expense_type,
           settlement_method: editData.settlement_method,
@@ -317,16 +328,18 @@ export default function CaseList({ setActiveTab: onNavigate }) {
           hasAccountNotification: payload.hasAccountNotification !== undefined ? payload.hasAccountNotification : selectedCase.hasAccountNotification,
           supportUpdatedFields: payload.supportUpdatedFields !== undefined ? payload.supportUpdatedFields : selectedCase.supportUpdatedFields
         };
-        
+
         if (isClaim) {
-          setClaims(prev => prev.map(c => c._id === selectedCase._id ? { ...c, ...payload } : c));
+          setClaims(prev => prev.map(c => c._id === selectedCase._id ? { ...c, ...payload, status: newStatus, displayStatus: '再提出済み' } : c));
         } else {
-          setCases(prev => prev.map(c => c._id === selectedCase._id ? { ...c, ...payload } : c));
+          setCases(prev => prev.map(c => c._id === selectedCase._id ? { ...c, ...payload, status: newStatus, displayStatus: '再提出済み' } : c));
         }
         setSelectedCase(mappedUpdated);
         setIsEditing(false);
+        toast.success('再提出しました。');
       } else {
         console.error('Failed to update record');
+        toast.error('更新に失敗しました。');
       }
     } catch (error) {
       console.error('Error updating record', error);
@@ -497,6 +510,7 @@ export default function CaseList({ setActiveTab: onNavigate }) {
     if (['Pending', 'New', 'Registered', '保留中'].includes(status)) return '新た';
     if (['REJECTED', '拒否'].includes(status)) return '拒否';
     if (['RETURNED_FOR_CORRECTION', '保留中 Correction'].includes(status)) return '修正依頼';
+    if (['RESUBMITTED', '再提出済み'].includes(status)) return '再提出済み';
     return status;
   };
 
@@ -617,7 +631,7 @@ export default function CaseList({ setActiveTab: onNavigate }) {
           <div className="relative">
             <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)} className="w-full pl-4 pr-10 py-2 border border-gray-300 rounded-md text-sm appearance-none focus:outline-none focus:ring-1 focus:ring-[#162D50] text-gray-600">
               <option value="すべてのステータス">すべてのステータス</option>
-              {['新た', '拒否', '修正依頼'].map(status => (
+              {['新た', '拒否', '修正依頼', '再提出済み'].map(status => (
                 <option key={status} value={status}>{status}</option>
               ))}
             </select>
@@ -688,6 +702,7 @@ export default function CaseList({ setActiveTab: onNavigate }) {
                       c.displayStatus === '修正依頼' ? 'bg-orange-100 text-orange-700 border-orange-200' :
                       c.displayStatus === '拒否' ? 'bg-red-100 text-red-700 border-red-200' :
                       c.displayStatus === '新た' ? 'bg-blue-100 text-blue-700 border-blue-200' :
+                      c.displayStatus === '再提出済み' ? 'bg-purple-100 text-purple-700 border-purple-200' :
                       'bg-gray-100 text-gray-700 border-gray-200'
                     }`}>
                       {c.displayStatus}
@@ -747,7 +762,7 @@ export default function CaseList({ setActiveTab: onNavigate }) {
                     Cancel
                   </button>
                   <button onClick={handleSaveEdit} className="bg-[#0A192F] text-white font-bold text-sm px-4 py-2 rounded-md hover:bg-[#162D50] transition-colors">
-                    Save
+                    再提出
                   </button>
                 </>
               ) : (
