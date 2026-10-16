@@ -1172,7 +1172,7 @@ export default function PaymentStatus() {
               </div>
 
               {/* 支払方法 & Deductions Form (Interactive) */}
-              <div className="mt-8 print:hidden border-t border-dashed border-[#162D50] pt-8">
+              <div className="mt-8 print:hidden">
                 <div className="text-xs font-bold uppercase tracking-widest text-gray-500 mb-6">支払いを記録</div>
                 <div className="space-y-6">
                   <div className="flex flex-col sm:flex-row gap-6">
