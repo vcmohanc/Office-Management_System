@@ -44,7 +44,7 @@ export default function Dashboard({ setToken }) {
   return (
     <div className="flex h-screen bg-[#F8F9FA] text-[#333333] font-sans overflow-hidden print:block print:overflow-visible print:h-auto">
       {/* Sidebar */}
-      <div className="print:hidden">
+      <div className="h-full print:hidden">
         <Sidebar
           activeTab={activeTab}
           setActiveTab={setActiveTab}

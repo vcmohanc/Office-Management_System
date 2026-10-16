@@ -113,8 +113,8 @@ export default function Sidebar({ activeTab, setActiveTab, openMenus, toggleMenu
 
       <aside className={`fixed md:static inset-y-0 left-0 z-50 transform md:transform-none transition-transform duration-300 ease-in-out ${
         mobileMenuOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'
-      } ${isCollapsed ? 'md:w-20' : 'md:w-64'} w-64 bg-[#F2F4F7] flex flex-col justify-between border-r border-gray-200 shadow-xl md:shadow-none shrink-0`}>
-        <div className="overflow-hidden">
+      } ${isCollapsed ? 'md:w-20' : 'md:w-64'} w-64 h-full bg-[#F2F4F7] flex flex-col justify-between border-r border-gray-200 shadow-xl md:shadow-none shrink-0`}>
+        <div className="flex-1 overflow-y-auto overflow-x-hidden">
           <div className={`p-4 flex items-center ${isCollapsed ? 'md:justify-center md:flex-col md:space-y-4' : 'justify-between'} justify-between mb-2`}>
             <div className="flex items-center">
               <div className={`w-10 h-10 bg-[#162D50] rounded flex items-center justify-center text-white font-bold uppercase shrink-0 ${isCollapsed ? 'md:mr-0 mr-3' : 'mr-3'}`}>
