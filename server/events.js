@@ -8,7 +8,8 @@ const CASE_BROADCAST_ROLES = ['admin', 'account'];
 
 export const sseHandler = (req, res) => {
   res.setHeader('Content-Type', 'text/event-stream');
-  res.setHeader('Cache-Control', 'no-cache');
+  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+  res.setHeader('Referrer-Policy', 'no-referrer');
   res.setHeader('Connection', 'keep-alive');
 
   res.write(': connected\n\n');
