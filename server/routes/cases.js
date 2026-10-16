@@ -155,13 +155,17 @@ router.put('/:id', requireRole('admin', 'account', 'support'), async (req, res) 
   }
 });
 
-router.patch('/:id/status', requireRole('admin', 'account'), async (req, res) => {
+router.patch('/:id/status', requireRole('admin', 'account', 'support'), async (req, res) => {
   try {
-    const { status, statusMessage, newMessage, clearSupportUpdatedFields, hasSupportNotification } = req.body;
+    const { status, statusMessage, newMessage, clearSupportUpdatedFields, hasSupportNotification, hasAccountNotification } = req.body;
     if (!status) {
       return res.status(400).json({ message: 'Status is required' });
     }
-    
+    // Support role may only resubmit
+    if (req.user.role === 'support' && status !== 'RESUBMITTED') {
+      return res.status(403).json({ message: 'Support role may only set status to RESUBMITTED' });
+    }
+
     let updateQuery = { $set: { status } };
     if (statusMessage !== undefined) {
       updateQuery.$set.statusMessage = statusMessage;
@@ -171,6 +175,9 @@ router.patch('/:id/status', requireRole('admin', 'account'), async (req, res) =>
     }
     if (hasSupportNotification) {
       updateQuery.$set.hasSupportNotification = true;
+    }
+    if (hasAccountNotification) {
+      updateQuery.$set.hasAccountNotification = true;
     }
     
     if (newMessage) {
