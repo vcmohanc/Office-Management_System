@@ -810,14 +810,15 @@ const getEntityIcon = (name) => {
     const paymentOptions = useMemo(() => {
     const postApprovalCases = cases.filter(c => {
       const totalTerms = c.installment_count || (c.installmentPlan ? (String(c.installmentPlan).match(/\d+/) ? parseInt(String(c.installmentPlan).match(/\d+/)[0], 10) : 1) : 1);
-      
-      if (c.status === '完了') return true;
-      if (c.paidTerms >= totalTerms && totalTerms > 0) return true;
-      
-      if (c.paidTerms > 0 && c.paidTerms < totalTerms) return true;
-      if (c.status && c.status.includes('完了')) return true;
-      
-      return ['APPROVED_FOR_PAYMENT', 'Payment 保留中', '処理中', '期限切れ', '完了'].includes(c.status) || c.status === 'Approve for Payment' || c.status === '承認済 for Payment';
+      const paidTerms = c.paidTerms || 0;
+
+      // Exclude fully paid / completed cases — no payment can be recorded
+      if (paidTerms >= totalTerms && totalTerms > 0) return false;
+      if (c.status === '完了' || c.status === 'Completed') return false;
+
+      // Include cases actively in the payment flow (started or approved to start)
+      if (paidTerms > 0 && paidTerms < totalTerms) return true;
+      return ['APPROVED_FOR_PAYMENT', 'Approve for Payment', '承認済 for Payment', '処理中', '期限切れ'].includes(c.status);
     });
 
     const patternGroups = {};
