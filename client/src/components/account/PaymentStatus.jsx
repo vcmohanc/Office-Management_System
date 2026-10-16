@@ -821,9 +821,9 @@ export default function PaymentStatus() {
 
     return (
       <div className="w-full px-4 sm:px-6 lg:px-8 xl:px-12 space-y-6 pb-10">
-        <button 
+        <button
           onClick={() => setSelectedCase(null)}
-          className="flex items-center text-[#162D50] hover:underline font-medium mb-4"
+          className="flex items-center text-[#162D50] hover:underline font-medium mb-4 print:hidden"
         >
           <ArrowLeft className="w-4 h-4 mr-1" />
           支払リストに戻る
@@ -1009,9 +1009,9 @@ export default function PaymentStatus() {
           <div className="bg-[#F5F1E6] p-8 md:p-12 text-[#162D50] rounded-b-md shadow-sm print:bg-white print:shadow-none print:p-4">
             <div className="border-b-2 border-dashed border-[#162D50] pb-6 mb-8 print:pb-2 print:mb-4 relative text-center">
               <div className="absolute right-0 top-0 print:hidden">
-                <button 
+                <button
                   type="button"
-                  onClick={() => generateReceiptPDF()}
+                  onClick={() => window.print()}
                   className="flex items-center px-4 py-2 border-2 border-[#162D50] hover:bg-[#162D50] hover:text-[#F5F1E6] text-xs font-bold uppercase tracking-widest transition-colors"
                 >
                   <Printer className="w-4 h-4 mr-2" />

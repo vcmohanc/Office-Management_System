@@ -42,25 +42,29 @@ export default function Dashboard({ setToken }) {
   };
 
   return (
-    <div className="flex h-screen bg-[#F8F9FA] text-[#333333] font-sans overflow-hidden">
+    <div className="flex h-screen bg-[#F8F9FA] text-[#333333] font-sans overflow-hidden print:block print:overflow-visible print:h-auto">
       {/* Sidebar */}
-      <Sidebar 
-        activeTab={activeTab} 
-        setActiveTab={setActiveTab} 
-        openMenus={openMenus} 
-        toggleMenu={toggleMenu} 
-        setToken={setToken} 
-        user={user}
-        mobileMenuOpen={mobileMenuOpen}
-        setMobileMenuOpen={setMobileMenuOpen}
-      />
+      <div className="print:hidden">
+        <Sidebar
+          activeTab={activeTab}
+          setActiveTab={setActiveTab}
+          openMenus={openMenus}
+          toggleMenu={toggleMenu}
+          setToken={setToken}
+          user={user}
+          mobileMenuOpen={mobileMenuOpen}
+          setMobileMenuOpen={setMobileMenuOpen}
+        />
+      </div>
 
       {/* Main Content */}
-      <main className="flex-1 flex flex-col overflow-hidden min-w-0">
+      <main className="flex-1 flex flex-col overflow-hidden min-w-0 print:block print:overflow-visible print:h-auto">
         {/* Header */}
-        <Header activeTab={activeTab} user={user} setActiveTab={setActiveTab} setMobileMenuOpen={setMobileMenuOpen} />
+        <div className="print:hidden">
+          <Header activeTab={activeTab} user={user} setActiveTab={setActiveTab} setMobileMenuOpen={setMobileMenuOpen} />
+        </div>
 
-        <div className="flex-1 overflow-auto p-2.5 sm:p-4 md:p-6 lg:p-8">
+        <div className="flex-1 overflow-auto p-2.5 sm:p-4 md:p-6 lg:p-8 print:overflow-visible print:p-0">
           {activeTab === 'Dashboard' && <DashboardHome setActiveTab={setActiveTab} />}
           {activeTab === '経理部門' && <AccountDashboard />}
           {activeTab === '人事部門' && <HRDashboard />}
