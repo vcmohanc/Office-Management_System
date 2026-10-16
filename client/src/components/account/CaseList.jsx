@@ -58,40 +58,7 @@ export default function CaseList({ setActiveTab: onNavigate }) {
   const [isEditing, setIsEditing] = useState(false);
   const [editData, setEditData] = useState({});
   const [previewImage, setPreviewImage] = useState(null);
-  const [newMessageInput, setNewMessageInput] = useState('');
-  
-  const handleSendMessage = async () => {
-    if (!newMessageInput.trim()) return;
-    
-    const isClaim = selectedCase._isClaim;
-    const endpoint = isClaim ? `/api/claims/${selectedCase._id}/messages` : `/api/cases/${selectedCase._id}/messages`;
-    
-    try {
-      const response = await apiFetch(endpoint, {
-        method: 'POST',
-        body: JSON.stringify({
-          text: newMessageInput,
-          author: user.role === 'support' ? 'support_user' : 'account_user'
-        })
-      });
-      
-      if (response.ok) {
-        const updatedMessages = await response.json();
-        setSelectedCase(prev => ({
-          ...prev,
-          messages: updatedMessages
-        }));
-        setNewMessageInput('');
-        toast.success('Message sent');
-      } else {
-        const errorData = await response.json();
-        toast.error(errorData.message || 'Failed to send message');
-      }
-    } catch (error) {
-      console.error('Error sending message:', error);
-      toast.error('An error occurred while sending the message');
-    }
-  };
+  const [actionModal, setActionModal] = useState(null); // { type: 'REJECTED'|'RETURNED_FOR_CORRECTION', comment: '' }
   
   const handleViewDetails = async (caseObj) => {
     setSelectedCase(caseObj);
@@ -317,21 +284,16 @@ export default function CaseList({ setActiveTab: onNavigate }) {
     }
   };
 
-  const handleUpdateStatus = async (newステータス) => {
+  const handleUpdateStatus = async (newステータス, comment = '') => {
     if (!selectedCase) return;
-    
-    if (newステータス === 'REJECTED' || newステータス === 'RETURNED_FOR_CORRECTION') {
-      const actionName = newステータス === 'REJECTED' ? 'Reject' : 'Return for Correction';
-      const confirmed = await toastConfirm(`Are you sure you want to ${actionName} ${selectedCase.displayId}?`);
-      if (!confirmed) return;
-    }
-    
-    let newMessage = null;
+
+    const newMessage = comment.trim()
+      ? { text: comment.trim(), author: 'account_user', date: new Date().toISOString() }
+      : null;
 
     const isClaim = selectedCase._isClaim;
     const endpoint = isClaim ? `/api/claims/${selectedCase._id}/status` : `/api/cases/${selectedCase._id}/status`;
 
-    // Update main list
     const updateFn = (c) => {
       if (c._id === selectedCase._id) {
         const updatedMessages = c.messages ? [...c.messages] : [];
@@ -340,25 +302,33 @@ export default function CaseList({ setActiveTab: onNavigate }) {
       }
       return c;
     };
-    
+
     if (isClaim) {
       setClaims(prev => prev.map(updateFn));
     } else {
       setCases(prev => prev.map(updateFn));
     }
-    
-    // Update currently selected case to reflect immediately
+
     setSelectedCase(prev => {
       const updatedMessages = prev.messages ? [...prev.messages] : [];
       if (newMessage) updatedMessages.push(newMessage);
       return { ...prev, status: newステータス, messages: updatedMessages, supportUpdatedFields: [] };
     });
 
-    // Update the backend
     apiFetch(`${endpoint}`, {
       method: 'PATCH',
       body: JSON.stringify({ status: newステータス, newMessage, clearSupportUpdatedFields: true, hasSupportNotification: true })
     }).catch(err => console.error('Failed to update status', err));
+  };
+
+  const openActionModal = (type) => {
+    setActionModal({ type, comment: '' });
+  };
+
+  const submitActionModal = () => {
+    if (!actionModal) return;
+    handleUpdateStatus(actionModal.type, actionModal.comment);
+    setActionModal(null);
   };
 
   const handleDelete = async (e, record) => {
@@ -933,25 +903,6 @@ export default function CaseList({ setActiveTab: onNavigate }) {
                       </div>
                     </div>
                     
-                    {/* New Message Input */}
-                    <div className="mt-6 flex flex-col md:flex-row gap-4 items-end">
-                      <div className="flex-1 w-full">
-                        <label className="block text-xs font-bold text-gray-500 mb-2 uppercase tracking-wider">新規メッセージ</label>
-                        <textarea 
-                          value={newMessageInput}
-                          onChange={(e) => setNewMessageInput(e.target.value)}
-                          placeholder="他の部署へのメッセージを入力..."
-                          className="w-full min-h-[60px] p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#162D50] text-sm resize-y"
-                        ></textarea>
-                      </div>
-                      <button 
-                        onClick={handleSendMessage}
-                        disabled={!newMessageInput.trim()}
-                        className="whitespace-nowrap bg-[#162D50] hover:bg-[#0f1f3d] text-white px-6 py-3 rounded-md text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                      >
-                        メッセージを送信
-                      </button>
-                    </div>
                   </div>
                 )}
               </div>
@@ -970,14 +921,14 @@ export default function CaseList({ setActiveTab: onNavigate }) {
                     保留中に戻す
                   </button>
                 )}
-                <button 
-                  onClick={() => handleUpdateStatus('REJECTED')}
+                <button
+                  onClick={() => openActionModal('REJECTED')}
                   className="text-red-500 font-medium px-4 hover:underline"
                 >
                   拒否
                 </button>
-                <button 
-                  onClick={() => handleUpdateStatus('RETURNED_FOR_CORRECTION')}
+                <button
+                  onClick={() => openActionModal('RETURNED_FOR_CORRECTION')}
                   className="border border-gray-300 bg-white text-gray-600 px-6 py-2 rounded-md font-medium hover:bg-gray-50"
                 >
                   修正依頼
@@ -995,6 +946,48 @@ export default function CaseList({ setActiveTab: onNavigate }) {
                 </button>
               </>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* 拒否 / 修正依頼 Comment Modal */}
+      {actionModal && (
+        <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4" onClick={() => setActionModal(null)}>
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-md p-6" onClick={e => e.stopPropagation()}>
+            <h3 className={`text-base font-bold mb-1 ${actionModal.type === 'REJECTED' ? 'text-red-600' : 'text-orange-600'}`}>
+              {actionModal.type === 'REJECTED' ? '拒否の確認' : '修正依頼の確認'}
+            </h3>
+            <p className="text-sm text-gray-500 mb-4">
+              {actionModal.type === 'REJECTED'
+                ? `案件 ${selectedCase?.displayId} を拒否します。理由をご入力ください（任意）。`
+                : `案件 ${selectedCase?.displayId} に修正を依頼します。コメントをご入力ください（任意）。`}
+            </p>
+            <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">
+              コメント / 理由
+            </label>
+            <textarea
+              autoFocus
+              value={actionModal.comment}
+              onChange={e => setActionModal(prev => ({ ...prev, comment: e.target.value }))}
+              placeholder={actionModal.type === 'REJECTED' ? '拒否の理由を入力...' : '修正が必要な内容を入力...'}
+              className="w-full min-h-[100px] p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#162D50] text-sm resize-y mb-5"
+            />
+            <div className="flex justify-end gap-3">
+              <button
+                type="button"
+                onClick={() => setActionModal(null)}
+                className="px-5 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
+              >
+                キャンセル
+              </button>
+              <button
+                type="button"
+                onClick={submitActionModal}
+                className={`px-5 py-2 text-sm font-bold text-white rounded-md ${actionModal.type === 'REJECTED' ? 'bg-red-500 hover:bg-red-600' : 'bg-orange-500 hover:bg-orange-600'}`}
+              >
+                {actionModal.type === 'REJECTED' ? '拒否する' : '修正依頼を送る'}
+              </button>
+            </div>
           </div>
         </div>
       )}
