@@ -1018,6 +1018,9 @@ export default function PaymentStatus() {
                   印刷
                 </button>
               </div>
+              <div className="flex justify-center mb-3 print:mb-2">
+                <img src={vegeiconBase64} alt="Logo" className="h-14 w-14 print:h-10 print:w-10 object-contain" />
+              </div>
               <h3 className="text-2xl font-bold tracking-widest uppercase mb-2">
                 {selectedCase.advancerCategory === 'Staff' ? '経費精算領収書' : '精算台帳'}
               </h3>
@@ -1168,6 +1171,91 @@ export default function PaymentStatus() {
                       </div>
                     );
                   })}
+                </div>
+              </div>
+
+              {/* Print-only: Payment Details Summary */}
+              <div className="hidden print:block border-b border-dashed border-[#162D50] pb-4 mb-4">
+                <div className="text-xs font-bold uppercase tracking-widest text-gray-500 mb-3">支払い詳細</div>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-3">
+                  <div>
+                    <label className="block text-[10px] font-bold uppercase tracking-widest mb-1 text-gray-400">支払方法</label>
+                    <div className="font-mono text-sm">{paymentMethod || '—'}</div>
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-bold uppercase tracking-widest mb-1 text-gray-400">支払日</label>
+                    <div className="font-mono text-sm">{paymentDate ? new Date(paymentDate).toLocaleDateString('ja-JP') : '—'}</div>
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-bold uppercase tracking-widest mb-1 text-gray-400">取引参照番号</label>
+                    <div className="font-mono text-sm">{transactionRefId || '—'}</div>
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-bold uppercase tracking-widest mb-1 text-gray-400">控除額</label>
+                    <div className="font-mono text-sm">¥ {(deductions || 0).toLocaleString()}</div>
+                  </div>
+                </div>
+                {paymentMethod === '銀行振込' && (
+                  <div className="grid grid-cols-3 gap-4 mb-3">
+                    <div>
+                      <label className="block text-[10px] font-bold uppercase tracking-widest mb-1 text-gray-400">銀行名</label>
+                      <div className="font-mono text-sm">{destinationDetails.bankName || '—'}</div>
+                    </div>
+                    <div>
+                      <label className="block text-[10px] font-bold uppercase tracking-widest mb-1 text-gray-400">支店コード</label>
+                      <div className="font-mono text-sm">{destinationDetails.branchCode || '—'}</div>
+                    </div>
+                    <div>
+                      <label className="block text-[10px] font-bold uppercase tracking-widest mb-1 text-gray-400">口座番号</label>
+                      <div className="font-mono text-sm">{destinationDetails.accountNumber || '—'}</div>
+                    </div>
+                  </div>
+                )}
+                {(paymentMethod === '給与控除' || paymentMethod === '給与振込') && (
+                  <div className="mb-3">
+                    <label className="block text-[10px] font-bold uppercase tracking-widest mb-1 text-gray-400">対象給与期間</label>
+                    <div className="font-mono text-sm">{destinationDetails.payroll期間 || '—'}</div>
+                  </div>
+                )}
+                {paymentMethod === '小切手' && (
+                  <div className="grid grid-cols-2 gap-4 mb-3">
+                    <div>
+                      <label className="block text-[10px] font-bold uppercase tracking-widest mb-1 text-gray-400">小切手番号</label>
+                      <div className="font-mono text-sm">{destinationDetails.checkNumber || '—'}</div>
+                    </div>
+                    <div>
+                      <label className="block text-[10px] font-bold uppercase tracking-widest mb-1 text-gray-400">送付先</label>
+                      <div className="font-mono text-sm">{destinationDetails.checkDelivery || '—'}</div>
+                    </div>
+                  </div>
+                )}
+                {paymentMethod === '法人カード' && (
+                  <div className="grid grid-cols-2 gap-4 mb-3">
+                    <div>
+                      <label className="block text-[10px] font-bold uppercase tracking-widest mb-1 text-gray-400">使用カード (下4桁)</label>
+                      <div className="font-mono text-sm">{destinationDetails.cardLast4 || '—'}</div>
+                    </div>
+                    <div>
+                      <label className="block text-[10px] font-bold uppercase tracking-widest mb-1 text-gray-400">カード名義</label>
+                      <div className="font-mono text-sm">{destinationDetails.cardholderName || '—'}</div>
+                    </div>
+                  </div>
+                )}
+                {(paymentMethod === 'Cash' || paymentMethod === '小口現金') && (
+                  <div className="mb-3">
+                    <label className="block text-[10px] font-bold uppercase tracking-widest mb-1 text-gray-400">受取人名</label>
+                    <div className="font-mono text-sm">{destinationDetails.receiverName || '—'}</div>
+                  </div>
+                )}
+                <div className="flex justify-end mt-2">
+                  <div className="text-right">
+                    <label className="block text-[10px] font-bold uppercase tracking-widest mb-1 text-gray-400">
+                      {paymentMethod === '給与控除' ? '今回控除額' : '差引支払額'}
+                    </label>
+                    <div className="font-mono text-2xl font-bold text-[#162D50]">
+                      ¥ {(paymentMethod === '給与控除' ? (deductions || 0) : Math.max(0, batchTotalNextPayment - (deductions || 0))).toLocaleString()}
+                    </div>
+                  </div>
                 </div>
               </div>
 
@@ -1324,6 +1412,27 @@ export default function PaymentStatus() {
                       {!isSubmitting && <ArrowRight className="w-4 h-4 ml-2" />}
                     </button>
                   </div>
+                </div>
+              </div>
+
+              {/* Print-only: Signature Lines */}
+              <div className="hidden print:block mt-8 pt-6 border-t border-dashed border-[#162D50]">
+                <div className="grid grid-cols-3 gap-8 text-center">
+                  <div>
+                    <div className="h-14 border-b border-gray-400 mb-2"></div>
+                    <div className="text-[10px] font-bold uppercase tracking-widest text-gray-400">担当者署名</div>
+                  </div>
+                  <div>
+                    <div className="h-14 border-b border-gray-400 mb-2"></div>
+                    <div className="text-[10px] font-bold uppercase tracking-widest text-gray-400">承認者署名</div>
+                  </div>
+                  <div>
+                    <div className="h-14 border-b border-gray-400 mb-2"></div>
+                    <div className="text-[10px] font-bold uppercase tracking-widest text-gray-400">受取人署名</div>
+                  </div>
+                </div>
+                <div className="mt-4 text-right text-[10px] text-gray-400 font-mono">
+                  発行日: {new Date().toLocaleDateString('ja-JP')} &nbsp;|&nbsp; Office Management System
                 </div>
               </div>
             </form>
