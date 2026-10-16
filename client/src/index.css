@@ -7,6 +7,10 @@
 }
 
 @media print {
+  html, body {
+    overflow: visible !important;
+    height: auto !important;
+  }
   body * {
     visibility: hidden;
   }
