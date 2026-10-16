@@ -4,7 +4,7 @@ export const caseEvents = new EventEmitter();
 
 let clients = [];
 
-const CASE_BROADCAST_ROLES = ['admin', 'account'];
+const CASE_BROADCAST_ROLES = ['admin', 'account', 'support'];
 
 export const sseHandler = (req, res) => {
   res.setHeader('Content-Type', 'text/event-stream');

@@ -31,10 +31,17 @@ export default function CaseList({ setActiveTab: onNavigate }) {
     sse.addEventListener('CASE_UPDATED', (e) => {
       const updatedRecord = JSON.parse(e.data);
       if (updatedRecord.claim_id) {
-        setClaims(prev => prev.map(c => c._id === updatedRecord._id ? updatedRecord : c));
+        setClaims(prev => prev.map(c => c._id === updatedRecord._id ? { ...updatedRecord, _isClaim: true } : c));
       } else {
-        setCases(prev => prev.map(c => c._id === updatedRecord._id ? updatedRecord : c));
+        setCases(prev => prev.map(c => c._id === updatedRecord._id ? { ...updatedRecord, _isClaim: false } : c));
       }
+      // Refresh open detail panel so new messages appear immediately
+      setSelectedCase(prev => {
+        if (prev && prev._id === updatedRecord._id) {
+          return { ...prev, ...updatedRecord };
+        }
+        return prev;
+      });
     });
 
     return () => sse.close();
