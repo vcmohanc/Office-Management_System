@@ -26,19 +26,28 @@ const optionLabelJP = {
   'Postage': '郵便料金',
   'Transportation Expenses / Flight Fare': '交通費 / 航空運賃',
   'Visa Application Fee': 'ビザ申請料',
+  'Visa application fee': 'ビザ申請料',
   'Accommodation cost': '宿泊費',
   'Language Course Fee': '語学講習費',
   'Waiting Dormitory Fee': '待機寮費',
   'Hospital/ Drugs Expenses': '病院費/薬代',
+  'Hospital Fee': '病院費',
+  'Equipment / Consumable Items': '備品・消耗品',
   'Equipment/Supplies': '備品・消耗品',
+  'Wifi': 'WIFI',
   'WIFI': 'WIFI',
   'others': 'その他',
   'サポートスタッフ': 'サポートスタッフ',
+  'Support Staff': 'サポートスタッフ',
   'VC': 'VC',
+  'Farm': 'ファーム',
   'ファーム': 'ファーム',
+  'Dispatch destination: Farm': '派遣先: ファーム',
   'Select for each project': 'プロジェクト毎に選択',
   'Office': 'オフィス',
-  'Staff': 'サービススタッフ',
+  'Service Staff': 'サービススタッフ',
+  'Service staff': 'サービススタッフ',
+  'Staff': 'スタッフ',
   'Host Company': 'ホスト企業',
   'salary_addition': '給与に加算',
   'salary_deduction': '給与から控除',
@@ -46,8 +55,6 @@ const optionLabelJP = {
   'direct_transfer': '本人へ振込',
   'bank_transfer': '銀行振込',
   'Farm and VC Asset Transfer Agreement': 'Farm and VC Asset Transfer Agreement',
-  
-  
 };
 const toJP = (label) => optionLabelJP[label] ?? label;
 

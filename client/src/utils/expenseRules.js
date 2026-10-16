@@ -11,6 +11,10 @@ export const EXPENSE_RULES_MAPPING = {
     advancerCategory: 'VC',
     bearingParty: 'Service Staff',
   },
+  'Visa application fee': {
+    advancerCategory: 'VC',
+    bearingParty: 'Service Staff',
+  },
   'Accommodation cost': {
     advancerCategory: 'VC',
     bearingParty: 'Service Staff',
@@ -28,7 +32,15 @@ export const EXPENSE_RULES_MAPPING = {
     advancerCategory: 'VC',
     bearingParty: 'Farm',
   },
+  'Equipment/Supplies': {
+    advancerCategory: 'VC',
+    bearingParty: 'Farm',
+  },
   'Hospital/ Drugs Expenses': {
+    advancerCategory: 'Farm',
+    bearingParty: 'Service Staff',
+  },
+  'Hospital Fee': {
     advancerCategory: 'Farm',
     bearingParty: 'Service Staff',
   },
@@ -37,6 +49,10 @@ export const EXPENSE_RULES_MAPPING = {
     bearingParty: 'Service Staff',
   },
   'Wifi': {
+    advancerCategory: 'VC',
+    bearingParty: 'Farm',
+  },
+  'WIFI': {
     advancerCategory: 'VC',
     bearingParty: 'Farm',
   }
