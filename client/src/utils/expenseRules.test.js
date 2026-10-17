@@ -1,139 +1,85 @@
-import { getAutoFill, getPaymentMethod } from './expenseRules.js';
+import { describe, it, expect } from 'vitest';
+import { getAutoFill, getPaymentMethod, EXPENSE_RULES_MAPPING } from './expenseRules.js';
 
 describe('expenseRules utils', () => {
   describe('getPaymentMethod', () => {
-    it('returns 給与から控除 if bearer is Service staff', () => {
-      expect(getPaymentMethod('VC', 'サポートスタッフ')).toBe('給与から控除');
-      expect(getPaymentMethod('ファーム', 'サポートスタッフ')).toBe('給与から控除');
+    it('returns salary_deduction if bearer is Service staff', () => {
+      expect(getPaymentMethod('VC', 'Service staff')).toBe('salary_deduction');
+      expect(getPaymentMethod('VC', 'Service Staff')).toBe('salary_deduction');
+      expect(getPaymentMethod('Dispatch destination: Farm', 'Service staff')).toBe('salary_deduction');
+      expect(getPaymentMethod('VC', 'サポートスタッフ')).toBe('salary_deduction');
     });
 
-    it('returns 給与に加算 if payer is Service staff (and bearer is not)', () => {
-      expect(getPaymentMethod('サポートスタッフ', 'VC')).toBe('給与に加算');
-      expect(getPaymentMethod('サポートスタッフ', 'ファーム')).toBe('給与に加算');
+    it('returns salary_addition if payer is Service staff (and bearer is not)', () => {
+      expect(getPaymentMethod('Service staff', 'VC')).toBe('salary_addition');
+      expect(getPaymentMethod('Service Staff', 'VC')).toBe('salary_addition');
+      expect(getPaymentMethod('サポートスタッフ', 'VC')).toBe('salary_addition');
     });
 
-    it('returns 銀行振込 for other cases (between VC and Farm)', () => {
-      expect(getPaymentMethod('VC', 'ファーム')).toBe('銀行振込');
-      expect(getPaymentMethod('ファーム', 'VC')).toBe('銀行振込');
+    it('returns direct_transfer for VC advancing to Farm', () => {
+      expect(getPaymentMethod('VC', 'Dispatch destination: Farm')).toBe('direct_transfer');
+      expect(getPaymentMethod('VC', 'Farm')).toBe('direct_transfer');
+      expect(getPaymentMethod('VC', 'ファーム')).toBe('direct_transfer');
+    });
+
+    it('returns client_invoice for other combinations', () => {
+      expect(getPaymentMethod('Office', 'VC')).toBe('client_invoice');
     });
   });
 
   describe('getAutoFill', () => {
-    it('handles Postage (郵便料金)', () => {
+    it('handles Postage', () => {
       const result = getAutoFill('Postage');
       expect(result).toEqual({
-        advancerCategory: 'サポートスタッフ',
+        advancerCategory: 'Service staff',
         bearingParty: 'VC',
-        advancerName: '給与に加算',
-        sender: 'VC',
-        recipient: 'サポートスタッフ',
-        editable: false
+        advancerName: 'salary_addition'
       });
     });
 
-    it('handles Transportation Expenses / Flight Fare (交通費・航空券)', () => {
+    it('handles Transportation Expenses / Flight Fare', () => {
       const result = getAutoFill('Transportation Expenses / Flight Fare');
       expect(result).toEqual({
-        advancerCategory: 'サポートスタッフ',
+        advancerCategory: 'Service staff',
         bearingParty: 'VC',
-        advancerName: '給与に加算',
-        sender: 'VC',
-        recipient: 'サポートスタッフ',
-        editable: false
+        advancerName: 'salary_addition'
       });
     });
 
-    it('handles Visa application fee (ビザ申請費用)', () => {
+    it('handles Visa application fee', () => {
       const result = getAutoFill('Visa application fee');
       expect(result).toEqual({
         advancerCategory: 'VC',
-        bearingParty: 'サポートスタッフ',
-        advancerName: '給与から控除',
-        sender: 'サポートスタッフ',
-        recipient: 'VC',
-        editable: false
+        bearingParty: 'Service staff',
+        advancerName: 'salary_deduction'
       });
     });
 
-    it('handles Waiting Dormitory Fee (待機寮費)', () => {
-      const result = getAutoFill('Waiting Dormitory Fee');
-      expect(result).toEqual({
-        advancerCategory: 'サポートスタッフ',
-        bearingParty: 'VC',
-        advancerName: '給与に加算',
-        sender: 'VC',
-        recipient: 'サポートスタッフ',
-        editable: false
-      });
-    });
-
-    it('handles Hostel Fee (ホステル費用)', () => {
-      const result = getAutoFill('Hostel Fee');
-      expect(result).toEqual({
-        advancerCategory: 'VC',
-        bearingParty: 'サポートスタッフ',
-        advancerName: '給与から控除',
-        sender: 'サポートスタッフ',
-        recipient: 'VC',
-        editable: false
-      });
-    });
-
-    it('handles Equipment/Supplies (備品・消耗品)', () => {
+    it('handles Equipment/Supplies', () => {
       const result = getAutoFill('Equipment/Supplies');
       expect(result).toEqual({
         advancerCategory: 'VC',
-        bearingParty: 'ファーム',
-        advancerName: '銀行振込',
-        sender: 'ファーム',
-        recipient: 'VC',
-        editable: false
+        bearingParty: 'Dispatch destination: Farm',
+        advancerName: 'direct_transfer'
       });
     });
 
-    it('handles Hospital/ Drugs Expenses (病院費/薬代)', () => {
-      const result = getAutoFill('Hospital/ Drugs Expenses');
-      expect(result).toEqual({
-        advancerCategory: 'ファーム',
-        bearingParty: 'サポートスタッフ',
-        advancerName: '給与から控除',
-        sender: 'サポートスタッフ',
-        recipient: 'ファーム',
-        editable: false
-      });
+    it('handles dynamic matching against DB options', () => {
+      const mockAdvancers = [
+        { value: 'Service staff', label: 'Service staff' },
+        { value: 'VC', label: 'VC' }
+      ];
+      const mockBearers = [
+        { value: 'Dispatch destination: Farm', label: 'Farm' },
+        { value: 'VC', label: 'VC' }
+      ];
+      const result = getAutoFill('Postage', mockAdvancers, mockBearers);
+      expect(result.advancerCategory).toBe('Service staff');
+      expect(result.bearingParty).toBe('VC');
     });
 
-    it('handles Drugs (薬代)', () => {
-      const result = getAutoFill('Drugs');
-      expect(result).toEqual({
-        advancerCategory: 'ファーム',
-        bearingParty: 'サポートスタッフ',
-        advancerName: '給与から控除',
-        sender: 'サポートスタッフ',
-        recipient: 'ファーム',
-        editable: false
-      });
-    });
-
-    it('handles WIFI (Wi-Fi)', () => {
-      const result = getAutoFill('WIFI');
-      expect(result).toEqual({
-        advancerCategory: 'VC',
-        bearingParty: 'ファーム',
-        advancerName: '銀行振込',
-        sender: 'ファーム',
-        recipient: 'VC',
-        editable: false
-      });
-    });
-
-    it('handles others (その他)', () => {
-      const result = getAutoFill('others');
-      expect(result.editable).toBe(true);
-      expect(result.advancerCategory).toBe('');
-      expect(result.bearingParty).toBe('');
-      expect(result.sender).toBe('');
-      expect(result.recipient).toBe('');
+    it('returns null for unknown expense type', () => {
+      expect(getAutoFill('NonExistentType')).toBeNull();
     });
   });
 });

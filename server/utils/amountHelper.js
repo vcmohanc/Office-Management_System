@@ -3,7 +3,7 @@ import PostalCharge from '../models/PostalCharge.js';
 import TravelCharge from '../models/TravelCharge.js';
 
 export const validateBackendExpenseAmount = async (expenseType, expenseAmount, locations) => {
-  if (expenseAmount <= 0) return true;
+  if (expenseAmount <= 0) return { isValid: true };
 
   if (expenseType === 'Postage' && locations.sender && locations.recipient) {
     const sender = await Region.findOne({ name1: locations.sender });
@@ -20,7 +20,7 @@ export const validateBackendExpenseAmount = async (expenseType, expenseAmount, l
     }
   }
 
-  if (expenseType === 'Transportation' && locations.departure && locations.destination) {
+  if ((expenseType === 'Transportation' || expenseType === 'Transportation Expenses / Flight Fare') && locations.departure && locations.destination) {
     const departure = await Region.findOne({ name1: locations.departure });
     const destination = await Region.findOne({ name2: locations.destination });
     if (departure && destination) {
