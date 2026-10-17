@@ -21,7 +21,9 @@ router.get('/', verifyToken, requireRole('admin', 'account', 'support'), async (
 
 router.get('/:id', verifyToken, requireRole('admin', 'account', 'support'), async (req, res) => {
   try {
-    const claim = await Claim.findById(req.params.id);
+    const claim = await Claim.findOne({
+      $or: [{ _id: req.params.id }, { claim_id: req.params.id }]
+    });
     if (!claim) return res.status(404).json({ message: 'Claim not found' });
     res.json(claim);
   } catch (error) {
@@ -217,23 +219,6 @@ router.patch('/:id/status', requireRole('admin', 'account', 'support'), async (r
   }
 });
 
-router.patch('/:id/messages/read', requireRole('admin', 'account', 'support'), async (req, res) => {
-  try {
-    const updatedClaim = await Claim.findOneAndUpdate(
-      { _id: req.params.id },
-      { $set: { "messages.$[].readBySupport": true } },
-      { new: true }
-    );
-    if (!updatedClaim) {
-      return res.status(404).json({ message: 'Claim not found' });
-    }
-    res.json(updatedClaim);
-  } catch (error) {
-    console.error('Error updating read status:', error);
-    res.status(500).json({ message: 'Server error updating read status' });
-  }
-});
-
 router.post('/:id/messages', verifyToken, requireRole('admin', 'account', 'support'), async (req, res) => {
   try {
     const { text } = req.body;
@@ -244,8 +229,8 @@ router.post('/:id/messages', verifyToken, requireRole('admin', 'account', 'suppo
     const role = req.user.role;
     const author = role === 'support' ? 'support_user' : role === 'account' ? 'account_user' : req.user.username;
 
-    const updatedClaim = await Claim.findByIdAndUpdate(
-      req.params.id,
+    const updatedClaim = await Claim.findOneAndUpdate(
+      { $or: [{ _id: req.params.id }, { claim_id: req.params.id }] },
       {
         $push: {
           messages: {
@@ -259,7 +244,7 @@ router.post('/:id/messages', verifyToken, requireRole('admin', 'account', 'suppo
           hasAccountNotification: role === 'support'
         }
       },
-      { new: true }
+      { returnDocument: 'after' }
     );
 
     if (!updatedClaim) {
@@ -406,58 +391,17 @@ router.post('/:id/settle', requireRole('admin', 'account'), async (req, res) => 
   }
 });
 
-router.post('/:id/messages', verifyToken, requireRole('admin', 'account', 'support'), async (req, res) => {
-  try {
-    const { text } = req.body;
-    if (!text) {
-      return res.status(400).json({ message: 'Message text is required' });
-    }
-
-    const role = req.user.role;
-    const author = role === 'support' ? 'support_user' : role === 'account' ? 'account_user' : req.user.username;
-
-    const updatedClaim = await Claim.findByIdAndUpdate(
-      req.params.id,
-      {
-        $push: {
-          messages: {
-            text,
-            author,
-            date: new Date()
-          }
-        },
-        $set: {
-          hasSupportNotification: role === 'account',
-          hasAccountNotification: role === 'support'
-        }
-      },
-      { new: true }
-    );
-
-    if (!updatedClaim) {
-      return res.status(404).json({ message: 'Claim not found' });
-    }
-
-    caseEvents.emit('CASE_UPDATED', updatedClaim);
-
-    res.status(201).json(updatedClaim.messages);
-  } catch (error) {
-    console.error('Error adding claim message:', error);
-    res.status(500).json({ message: 'Server error adding claim message' });
-  }
-});
-
 router.all('/:id/messages/read', verifyToken, requireRole('admin', 'account', 'support'), async (req, res) => {
   try {
-    const updatedClaim = await Claim.findByIdAndUpdate(
-      req.params.id,
+    const updatedClaim = await Claim.findOneAndUpdate(
+      { $or: [{ _id: req.params.id }, { claim_id: req.params.id }] },
       {
         $set: {
           'messages.$[].readBySupport': true,
           hasSupportNotification: false
         }
       },
-      { new: true }
+      { returnDocument: 'after' }
     );
     if (!updatedClaim) return res.status(404).json({ message: 'Claim not found' });
     res.status(200).json(updatedClaim.messages || []);

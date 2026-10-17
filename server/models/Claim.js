@@ -1,6 +1,7 @@
 import mongoose from 'mongoose';
 
 const claimSchema = new mongoose.Schema({
+  _id: { type: mongoose.Schema.Types.Mixed, default: () => new mongoose.Types.ObjectId() },
   claim_id: { type: String, required: true, unique: true },
   full_name: { type: String, required: true },
   staff_id: { type: String, required: true },

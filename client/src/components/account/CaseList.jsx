@@ -82,10 +82,11 @@ export default function CaseList({ setActiveTab: onNavigate }) {
     if (!text || !selectedCase || isSendingMsg) return;
     setIsSendingMsg(true);
     setChatInput('');
-    const isClaim = selectedCase._isClaim;
+    const isClaim = Boolean(selectedCase._isClaim || selectedCase.claim_id || selectedCase.claimId || (selectedCase.type === 'Staff Case'));
+    const caseId = selectedCase._id || selectedCase.id || selectedCase.claim_id || selectedCase.case_id;
     const endpoint = isClaim
-      ? `/api/claims/${selectedCase._id}/messages`
-      : `/api/cases/${selectedCase._id}/messages`;
+      ? `/api/claims/${caseId}/messages`
+      : `/api/cases/${caseId}/messages`;
     try {
       const response = await apiFetch(endpoint, {
         method: 'POST',
@@ -96,17 +97,20 @@ export default function CaseList({ setActiveTab: onNavigate }) {
       });
       if (response.ok) {
         const updatedMessages = await response.json();
-        setSelectedCase(prev => prev ? { ...prev, messages: updatedMessages } : prev);
+        setSelectedCase(prev => prev ? { ...prev, _isClaim: isClaim, messages: updatedMessages } : prev);
         if (isClaim) {
-          setClaims(prev => prev.map(c => c._id === selectedCase._id ? { ...c, messages: updatedMessages } : c));
+          setClaims(prev => prev.map(c => (c._id === caseId || c.claim_id === caseId) ? { ...c, messages: updatedMessages } : c));
         } else {
-          setCases(prev => prev.map(c => c._id === selectedCase._id ? { ...c, messages: updatedMessages } : c));
+          setCases(prev => prev.map(c => (c._id === caseId || c.case_id === caseId) ? { ...c, messages: updatedMessages } : c));
         }
       } else {
+        const errJson = await response.json().catch(() => ({}));
+        console.error('Failed to send message:', response.status, errJson);
         toast.error('メッセージの送信に失敗しました。');
         setChatInput(text);
       }
-    } catch {
+    } catch (err) {
+      console.error('Error sending message:', err);
       toast.error('エラーが発生しました。');
       setChatInput(text);
     } finally {
@@ -119,8 +123,9 @@ export default function CaseList({ setActiveTab: onNavigate }) {
     setIsEditing(false);
     setChatInput('');
 
-    const isClaim = caseObj._isClaim;
-    const endpoint = isClaim ? `/api/claims/${caseObj._id}` : `/api/cases/${caseObj._id}`;
+    const isClaim = Boolean(caseObj._isClaim || caseObj.claim_id || caseObj.claimId || (caseObj.type === 'Staff Case'));
+    const caseId = caseObj._id || caseObj.id || caseObj.claim_id || caseObj.case_id;
+    const endpoint = isClaim ? `/api/claims/${caseId}` : `/api/cases/${caseId}`;
 
     // Always fetch fresh details so messages are never hidden or lost in any situation
     apiFetch(endpoint)
@@ -128,13 +133,13 @@ export default function CaseList({ setActiveTab: onNavigate }) {
       .then(freshData => {
         if (freshData && Array.isArray(freshData.messages)) {
           setSelectedCase(prev => {
-            if (prev && prev._id === caseObj._id) {
-              return { ...prev, ...freshData, messages: freshData.messages };
+            if (prev && (prev._id === caseId || prev.claim_id === caseId || prev.case_id === caseId)) {
+              return { ...prev, ...freshData, _isClaim: isClaim, messages: freshData.messages };
             }
             return prev;
           });
           const updater = isClaim ? setClaims : setCases;
-          updater(prev => prev.map(item => item._id === caseObj._id ? { ...item, ...freshData, messages: freshData.messages } : item));
+          updater(prev => prev.map(item => (item._id === caseId || item.claim_id === caseId || item.case_id === caseId) ? { ...item, ...freshData, _isClaim: isClaim, messages: freshData.messages } : item));
         }
       })
       .catch(err => console.error('Error fetching fresh case details:', err));
