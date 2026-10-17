@@ -2,8 +2,16 @@
 set -e
 
 if [ ! -f .env ]; then
-    echo "Error: .env file not found. Please copy .env.example to .env and configure secrets."
-    exit 1
+    if [ -f /home/ubuntu/.env ]; then
+        echo "Found .env in /home/ubuntu/.env, copying to current directory..."
+        cp /home/ubuntu/.env .env
+    elif [ -f ../.env ]; then
+        echo "Found .env in parent directory, copying to current directory..."
+        cp ../.env .env
+    else
+        echo "Error: .env file not found. Please copy .env.example to .env and configure secrets."
+        exit 1
+    fi
 fi
 
 echo "Pulling latest images..."
