@@ -4,7 +4,7 @@ import { fileUrl } from '../../utils/fileUrl.js';
 import { apiFetch } from '../../utils/apiFetch.js';
 import toast from 'react-hot-toast';
 import { toastConfirm } from '../../utils/toastConfirm.jsx';
-
+import { toJP, normalizeOptionValue } from '../../utils/expenseRules.js';
 
 export default function CaseList({ setActiveTab: onNavigate }) {
   const user = JSON.parse(localStorage.getItem('user')) || { role: 'admin', username: 'admin' };
@@ -527,7 +527,10 @@ export default function CaseList({ setActiveTab: onNavigate }) {
 
   const baseFiltered = allRecords.filter(c => {
     const matchesStatus = statusFilter === 'すべてのステータス' || c.displayStatus === statusFilter;
-    const matchesType = expenseTypeFilter === 'すべての種類' || c.expense_type === expenseTypeFilter;
+    const matchesType = expenseTypeFilter === 'すべての種類' || 
+      c.expense_type === expenseTypeFilter || 
+      (c.expense_type || '').toLowerCase() === (expenseTypeFilter || '').toLowerCase() ||
+      toJP(c.expense_type) === toJP(expenseTypeFilter);
     return matchesStatus && matchesType;
   });
 
@@ -560,7 +563,8 @@ export default function CaseList({ setActiveTab: onNavigate }) {
     const matchesSearch = !q ||
       (c.displayId || '').toLowerCase().includes(q) ||
       (c.displayName || '').toLowerCase().includes(q) ||
-      (c.expense_type || '').toLowerCase().includes(q);
+      (c.expense_type || '').toLowerCase().includes(q) ||
+      toJP(c.expense_type).toLowerCase().includes(q);
     const recordDate = new Date(c.expensePeriodStart || c.expense_period_start || c.createdAt);
     const matchesDateStart = !dateFilterStart || recordDate >= new Date(dateFilterStart);
     const matchesDateEnd = !dateFilterEnd || recordDate <= new Date(dateFilterEnd + 'T23:59:59');
@@ -655,7 +659,7 @@ export default function CaseList({ setActiveTab: onNavigate }) {
             <select value={expenseTypeFilter} onChange={e => setExpenseTypeFilter(e.target.value)} className="w-full pl-4 pr-10 py-2 border border-gray-300 rounded-md text-sm appearance-none focus:outline-none focus:ring-1 focus:ring-[#162D50] text-gray-600">
               <option value="すべての種類">すべての種類</option>
               {expenseTypeOptions.map(opt => (
-                <option key={opt._id || opt.value} value={opt.value}>{opt.label}</option>
+                <option key={opt._id || opt.value} value={opt.value}>{toJP(opt.label)}</option>
               ))}
             </select>
             <ChevronDown className="w-4 h-4 absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none" />
@@ -698,7 +702,7 @@ export default function CaseList({ setActiveTab: onNavigate }) {
                 }`}>{c.displayStatus}</span>
               </div>
               <div className="font-bold text-gray-800 text-sm mb-0.5">{c.displayName}</div>
-              <div className="text-xs text-gray-500 mb-2">{c.expense_type}</div>
+              <div className="text-xs text-gray-500 mb-2">{toJP(c.expense_type)}</div>
               <div className="flex justify-between items-center mb-3">
                 <span className="text-xs text-gray-400">{c.displayDate}</span>
                 <span className="font-bold text-gray-800 text-sm">{c.currencySymbol}{c.displayTotal.toLocaleString()}</span>
@@ -763,7 +767,7 @@ export default function CaseList({ setActiveTab: onNavigate }) {
                     {c.displayDate}
                   </td>
                   <td className="py-4 px-6 text-gray-800">{c.displayName}</td>
-                  <td className="py-4 px-6 text-gray-600">{c.expense_type}</td>
+                  <td className="py-4 px-6 text-gray-600">{toJP(c.expense_type)}</td>
                   <td className="py-4 px-6 font-bold text-gray-800">
                     {c.currencySymbol}{c.displayTotal.toLocaleString()}
                   </td>
@@ -865,17 +869,17 @@ export default function CaseList({ setActiveTab: onNavigate }) {
                   <span className="text-gray-500">経費の種類</span>
                   {isEditing ? (
                     <select
-                      value={editData.expense_type || ''}
+                      value={normalizeOptionValue(expenseTypeOptions, editData.expense_type)}
                       onChange={(e) => setEditData({...editData, expense_type: e.target.value})}
                       className="border border-gray-300 rounded px-2 py-1 text-sm font-bold text-gray-800"
                     >
                       {expenseTypeOptions.map(opt => (
-                        <option key={opt._id || opt.value} value={opt.value}>{opt.label}</option>
+                        <option key={opt._id || opt.value} value={opt.value}>{toJP(opt.label)}</option>
                       ))}
                     </select>
                   ) : (
                     <span className={`font-bold ${selectedCase.supportUpdatedFields?.includes('expense_type') ? 'text-blue-600' : 'text-gray-800'}`}>
-                      {selectedCase.expense_type}
+                      {toJP(selectedCase.expense_type)}
                     </span>
                   )}
                 </div>
@@ -919,7 +923,7 @@ export default function CaseList({ setActiveTab: onNavigate }) {
                     />
                   ) : (
                     <span className={`${selectedCase.supportUpdatedFields?.includes('settlement_method') ? 'text-blue-600 font-bold' : 'text-gray-800'}`}>
-                      {selectedCase.settlement_method || 'Bank Transfer'}
+                      {toJP(selectedCase.settlement_method) || '銀行振込'}
                     </span>
                   )}
                 </div>
@@ -934,7 +938,7 @@ export default function CaseList({ setActiveTab: onNavigate }) {
                     />
                   ) : (
                     <div className={`${selectedCase.supportUpdatedFields?.includes('collection_method') ? 'text-blue-600 font-bold' : 'text-gray-800'}`}>
-                      {selectedCase.collection_method || 'Company Expense (VC Bears)'}
+                      {toJP(selectedCase.collection_method) || '会社経費（VC負担）'}
                     </div>
                   )}
                 </div>

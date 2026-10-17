@@ -1,7 +1,14 @@
 import { useState, useEffect } from 'react';
 import { apiFetch } from '../../utils/apiFetch.js';
 import { validateExpenseAmount } from '../../utils/amountHelper.js';
-import { getAutoFill, getPaymentMethod } from '../../utils/expenseRules.js';
+import { 
+  toJP, 
+  optionLabelJP, 
+  getAutoFill, 
+  getPaymentMethod, 
+  normalizeOptionValue, 
+  calculateSuggestedExpenseCost 
+} from '../../utils/expenseRules.js';
 import { getDirection, calculateInstallments } from '../../utils/paymentUtils.js';
 import { User, ChevronDown, Box, Calendar, UploadCloud, ArrowRight, Wallet, Landmark, FileText, ArrowLeft, Image, AlertTriangle, Building2 } from 'lucide-react';
 import toast from 'react-hot-toast';
@@ -15,42 +22,6 @@ import {
   loadTravelRateMatrix 
 } from '../../utils/regionHelper.js';
 import SearchableRegionSelect from '../common/SearchableRegionSelect.jsx';
-// Japanese translation map for dropdown option labels
-const optionLabelJP = {
-  'Postage': '郵便料金',
-  'Transportation Expenses / Flight Fare': '交通費 / 航空運賃',
-  'Visa Application Fee': 'ビザ申請料',
-  'Visa application fee': 'ビザ申請料',
-  'Accommodation cost': '宿泊費',
-  'Language Course Fee': '語学講習費',
-  'Waiting Dormitory Fee': '待機寮費',
-  'Hospital/ Drugs Expenses': '病院費/薬代',
-  'Hospital Fee': '病院費',
-  'Equipment / Consumable Items': '備品・消耗品',
-  'Equipment/Supplies': '備品・消耗品',
-  'Wifi': 'WIFI',
-  'WIFI': 'WIFI',
-  'others': 'その他',
-  'サポートスタッフ': 'サポートスタッフ',
-  'Support Staff': 'サポートスタッフ',
-  'VC': 'VC',
-  'Farm': 'ファーム',
-  'ファーム': 'ファーム',
-  'Dispatch destination: Farm': '派遣先: ファーム',
-  'Select for each project': 'プロジェクト毎に選択',
-  'Office': 'オフィス',
-  'Service Staff': 'サービススタッフ',
-  'Service staff': 'サービススタッフ',
-  'Staff': 'スタッフ',
-  'Host Company': 'ホスト企業',
-  'salary_addition': '給与に加算',
-  'salary_deduction': '給与から控除',
-  'client_invoice': 'クライアントへ請求',
-  'direct_transfer': '本人へ振込',
-  'bank_transfer': '銀行振込',
-  'Farm and VC Asset Transfer Agreement': 'Farm and VC Asset Transfer Agreement',
-};
-const toJP = (label) => optionLabelJP[label] ?? label;
 
 
 
@@ -252,30 +223,20 @@ export default function NewCase() {
     if (currentExpenseType === 'Postage' && (field === 'sender' || field === 'recipient' || field === 'expenseType')) {
       const senderName = field === 'sender' ? value : newCases[index].sender;
       const recipientName = field === 'recipient' ? value : newCases[index].recipient;
-      if (senderName && recipientName) {
-        let numericCost = 0;
-        const senderId = regions.find(r => r.name1 === senderName || r.name2 === senderName)?._id;
-        const recipientId = regions.find(r => r.name2 === recipientName || r.name1 === recipientName)?._id;
-        if (senderId && recipientId && postalMatrix[senderId] && postalMatrix[senderId][recipientId]) {
-          const rawCost = postalMatrix[senderId][recipientId];
-          if (rawCost === 'なし') {
-            numericCost = 0;
-          } else {
-            numericCost = typeof rawCost === 'string' ? Number(rawCost.replace(/,/g, '')) : Number(rawCost);
-          }
+      const numericCost = calculateSuggestedExpenseCost({
+        expenseType: 'Postage',
+        sender: senderName,
+        recipient: recipientName,
+        regions,
+        postalMatrix,
+        japaneseRegions,
+        prefPostalRates
+      });
+      newCases[index].suggested金額 = numericCost;
+      if (!newCases[index].expense金額 || Number(newCases[index].expense金額) === 0) {
+        if (numericCost > 0) {
+          newCases[index].expense金額 = numericCost;
         }
-        if (!numericCost || isNaN(numericCost)) {
-          numericCost = lookupPostalRate(senderName, recipientName, japaneseRegions, prefPostalRates);
-        }
-        numericCost = isNaN(numericCost) ? 0 : numericCost;
-        newCases[index].suggested金額 = numericCost;
-        if (!newCases[index].expense金額 || Number(newCases[index].expense金額) === 0) {
-          if (numericCost > 0) {
-            newCases[index].expense金額 = numericCost;
-          }
-        }
-      } else {
-        newCases[index].suggested金額 = 0;
       }
     }
 
@@ -283,34 +244,21 @@ export default function NewCase() {
       const departureName = field === 'departure' ? value : newCases[index].departure;
       const destinationName = field === 'destination' ? value : newCases[index].destination;
       const method = field === 'transportMethod' ? value : newCases[index].transportMethod;
-      if (departureName && destinationName) {
-        let numericCost = 0;
-        const departureId = regions.find(r => r.name1 === departureName || r.name2 === departureName)?._id;
-        const destinationId = regions.find(r => r.name2 === destinationName || r.name1 === destinationName)?._id;
-        if (departureId && destinationId && travelMatrix[departureId] && travelMatrix[departureId][destinationId]) {
-          const rawCost = travelMatrix[departureId][destinationId];
-          if (typeof rawCost === 'string' || typeof rawCost === 'number') {
-            numericCost = typeof rawCost === 'string' ? Number(String(rawCost).replace(/,/g, '')) : Number(rawCost);
-          } else if (rawCost && typeof rawCost === 'object') {
-            const busCost = rawCost.bus ? Number(String(rawCost.bus).replace(/,/g, '')) : 0;
-            const flightCost = rawCost.flight ? Number(String(rawCost.flight).replace(/,/g, '')) : 0;
-            if (method === 'バス') numericCost = busCost;
-            else if (method === '飛行機') numericCost = flightCost;
-            else numericCost = Math.max(busCost, flightCost);
-          }
+      const numericCost = calculateSuggestedExpenseCost({
+        expenseType: 'Transportation Expenses / Flight Fare',
+        departure: departureName,
+        destination: destinationName,
+        transportMethod: method,
+        regions,
+        travelMatrix,
+        japaneseRegions,
+        prefTravelRates
+      });
+      newCases[index].suggested金額 = numericCost;
+      if (!newCases[index].expense金額 || Number(newCases[index].expense金額) === 0) {
+        if (numericCost > 0) {
+          newCases[index].expense金額 = numericCost;
         }
-        if (!numericCost || isNaN(numericCost)) {
-          numericCost = lookupTravelRate(departureName, destinationName, method, japaneseRegions, prefTravelRates);
-        }
-        numericCost = isNaN(numericCost) ? 0 : numericCost;
-        newCases[index].suggested金額 = numericCost;
-        if (!newCases[index].expense金額 || Number(newCases[index].expense金額) === 0) {
-          if (numericCost > 0) {
-            newCases[index].expense金額 = numericCost;
-          }
-        }
-      } else {
-        newCases[index].suggested金額 = 0;
       }
     }
 
@@ -715,13 +663,7 @@ export default function NewCase() {
                     <label className="block text-sm font-bold text-gray-700 mb-1.5 sm:mb-2">立替者カテゴリ <span className="text-red-500">*</span></label>
                     <div className="relative">
                       <select 
-                        value={
-                          options.AdvancerCategory.find(opt => 
-                            opt.value === caseItem.advancerCategory ||
-                            opt.value.toLowerCase() === (caseItem.advancerCategory || '').toLowerCase() ||
-                            ((caseItem.advancerCategory || '').toLowerCase().includes('staff') && opt.value.toLowerCase().includes('staff'))
-                          )?.value || caseItem.advancerCategory || ''
-                        }
+                        value={normalizeOptionValue(options.AdvancerCategory, caseItem.advancerCategory, 'staff')}
                         onChange={(e) => updateCase(index, 'advancerCategory', e.target.value)}
                         className="w-full px-3 sm:px-4 py-2 border border-gray-300 rounded-md appearance-none focus:outline-none focus:ring-1 focus:ring-[#162D50] text-gray-700 text-sm">
                         <option value="">カテゴリを選択</option>
@@ -736,13 +678,7 @@ export default function NewCase() {
                     <label className="block text-sm font-bold text-gray-700 mb-1.5 sm:mb-2">負担先 <span className="text-red-500">*</span></label>
                     <div className="relative">
                       <select 
-                        value={
-                          options.BearingParty.find(opt => 
-                            opt.value === caseItem.bearingParty ||
-                            opt.value.toLowerCase() === (caseItem.bearingParty || '').toLowerCase() ||
-                            ((caseItem.bearingParty || '').toLowerCase().includes('farm') && opt.value.toLowerCase().includes('farm'))
-                          )?.value || caseItem.bearingParty || ''
-                        }
+                        value={normalizeOptionValue(options.BearingParty, caseItem.bearingParty, 'farm')}
                         onChange={(e) => updateCase(index, 'bearingParty', e.target.value)}
                         className="w-full px-3 sm:px-4 py-2 border border-gray-300 rounded-md appearance-none focus:outline-none focus:ring-1 focus:ring-[#162D50] text-gray-700 text-sm">
                         <option value="">負担先を選択</option>
