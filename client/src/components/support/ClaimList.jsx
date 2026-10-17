@@ -378,7 +378,7 @@ export default function ClaimList() {
           expense_period_start: caseItem.expense期間Start || caseItem.dateUsed || caseItem.dormitoryStartDate || caseItem.consultationDate || caseItem.purchaseDate || caseItem.wifiStartDate || new Date().toISOString(),
           expense_period_end: caseItem.expense期間End || caseItem.dormitoryEndDate || caseItem.expense期間Start || caseItem.dateUsed || caseItem.dormitoryStartDate || caseItem.consultationDate || caseItem.purchaseDate || caseItem.wifiStartDate || new Date().toISOString(),
           sender: caseItem.sender || "",
-          recipient: caseItem.postageTo || '',
+          recipient: caseItem.recipient || caseItem.postageTo || '',
           departure: caseItem.departure || '',
           destination: caseItem.destination || '',
           transport_method: caseItem.transportMethod || '',
@@ -405,7 +405,7 @@ export default function ClaimList() {
           registered_by_role: (JSON.parse(localStorage.getItem('user')) || {}).role || 'support'
         };
 
-        return apiFetch('/api/cases', {
+        return apiFetch('/api/claims', {
           method: 'POST',
           body: JSON.stringify(payload),
         }).then(async res => {

@@ -19,6 +19,7 @@ services:
     image: mohanc35/oms-server:latest
     restart: unless-stopped
     environment:
+      - NODE_ENV=production
       - PORT=${PORT}
       - MONGO_URI=${MONGO_URI}
       - JWT_SECRET=${JWT_SECRET}

@@ -1,3 +1,4 @@
+import { describe, it, expect } from 'vitest';
 import { calculateSettlementMetrics } from './settlementPatterns.js';
 
 describe('calculateSettlementMetrics', () => {

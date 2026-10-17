@@ -65,10 +65,11 @@ export default function NewCase() {
   });
   const [cases, setCases] = useState([{
     id: 1,
-    expenseType: '種類を選択',
-    advancerCategory: 'カテゴリを選択',
-    bearingParty: '負担先を選択',
-    expense金額: 0,
+    expenseType: '',
+    advancerCategory: '',
+    bearingParty: '',
+    expense金額: '',
+    suggested金額: 0,
     advancerName: ''
   }]);
   
@@ -230,12 +231,14 @@ export default function NewCase() {
     newCases[index][field] = value;
 
     if (field === 'expenseType') {
-      const autoFill = getAutoFill(value);
+      const autoFill = getAutoFill(value, options.AdvancerCategory, options.BearingParty);
       if (autoFill) {
         Object.assign(newCases[index], autoFill);
       } else if (value === 'others') {
-        newCases[index].advancerCategory = 'Select for each project';
-        newCases[index].bearingParty = 'Select for each project';
+        const defaultAdv = options.AdvancerCategory.find(o => o.value.includes('project'))?.value || 'Select for each project';
+        const defaultBear = options.BearingParty.find(o => o.value.includes('project'))?.value || 'Select for each project';
+        newCases[index].advancerCategory = defaultAdv;
+        newCases[index].bearingParty = defaultBear;
         newCases[index].advancerName = '';
       }
     }
@@ -251,16 +254,26 @@ export default function NewCase() {
       const recipientName = field === 'recipient' ? value : newCases[index].recipient;
       if (senderName && recipientName) {
         let numericCost = 0;
-        const senderId = regions.find(r => r.name1 === senderName)?._id;
-        const recipientId = regions.find(r => r.name2 === recipientName)?._id;
+        const senderId = regions.find(r => r.name1 === senderName || r.name2 === senderName)?._id;
+        const recipientId = regions.find(r => r.name2 === recipientName || r.name1 === recipientName)?._id;
         if (senderId && recipientId && postalMatrix[senderId] && postalMatrix[senderId][recipientId]) {
           const rawCost = postalMatrix[senderId][recipientId];
-          numericCost = typeof rawCost === 'string' ? Number(rawCost.replace(/,/g, '')) : rawCost;
+          if (rawCost === 'なし') {
+            numericCost = 0;
+          } else {
+            numericCost = typeof rawCost === 'string' ? Number(rawCost.replace(/,/g, '')) : Number(rawCost);
+          }
         }
-        if (!numericCost) {
+        if (!numericCost || isNaN(numericCost)) {
           numericCost = lookupPostalRate(senderName, recipientName, japaneseRegions, prefPostalRates);
         }
-        newCases[index].suggested金額 = numericCost || 0;
+        numericCost = isNaN(numericCost) ? 0 : numericCost;
+        newCases[index].suggested金額 = numericCost;
+        if (!newCases[index].expense金額 || Number(newCases[index].expense金額) === 0) {
+          if (numericCost > 0) {
+            newCases[index].expense金額 = numericCost;
+          }
+        }
       } else {
         newCases[index].suggested金額 = 0;
       }
@@ -272,8 +285,8 @@ export default function NewCase() {
       const method = field === 'transportMethod' ? value : newCases[index].transportMethod;
       if (departureName && destinationName) {
         let numericCost = 0;
-        const departureId = regions.find(r => r.name1 === departureName)?._id;
-        const destinationId = regions.find(r => r.name2 === destinationName)?._id;
+        const departureId = regions.find(r => r.name1 === departureName || r.name2 === departureName)?._id;
+        const destinationId = regions.find(r => r.name2 === destinationName || r.name1 === destinationName)?._id;
         if (departureId && destinationId && travelMatrix[departureId] && travelMatrix[departureId][destinationId]) {
           const rawCost = travelMatrix[departureId][destinationId];
           if (typeof rawCost === 'string' || typeof rawCost === 'number') {
@@ -286,10 +299,16 @@ export default function NewCase() {
             else numericCost = Math.max(busCost, flightCost);
           }
         }
-        if (!numericCost) {
+        if (!numericCost || isNaN(numericCost)) {
           numericCost = lookupTravelRate(departureName, destinationName, method, japaneseRegions, prefTravelRates);
         }
-        newCases[index].suggested金額 = numericCost || 0;
+        numericCost = isNaN(numericCost) ? 0 : numericCost;
+        newCases[index].suggested金額 = numericCost;
+        if (!newCases[index].expense金額 || Number(newCases[index].expense金額) === 0) {
+          if (numericCost > 0) {
+            newCases[index].expense金額 = numericCost;
+          }
+        }
       } else {
         newCases[index].suggested金額 = 0;
       }
@@ -404,7 +423,7 @@ export default function NewCase() {
           expense_period_start: caseItem.expense期間Start || caseItem.dateUsed || caseItem.dormitoryStartDate || caseItem.consultationDate || caseItem.purchaseDate || caseItem.wifiStartDate || new Date().toISOString(),
           expense_period_end: caseItem.expense期間End || caseItem.dormitoryEndDate || caseItem.expense期間Start || caseItem.dateUsed || caseItem.dormitoryStartDate || caseItem.consultationDate || caseItem.purchaseDate || caseItem.wifiStartDate || new Date().toISOString(),
           sender: caseItem.sender || "",
-          recipient: caseItem.postageTo || '',
+          recipient: caseItem.recipient || caseItem.postageTo || '',
           departure: caseItem.departure || '',
           destination: caseItem.destination || '',
           transport_method: caseItem.transportMethod || '',
@@ -696,7 +715,13 @@ export default function NewCase() {
                     <label className="block text-sm font-bold text-gray-700 mb-1.5 sm:mb-2">立替者カテゴリ <span className="text-red-500">*</span></label>
                     <div className="relative">
                       <select 
-                        value={caseItem.advancerCategory}
+                        value={
+                          options.AdvancerCategory.find(opt => 
+                            opt.value === caseItem.advancerCategory ||
+                            opt.value.toLowerCase() === (caseItem.advancerCategory || '').toLowerCase() ||
+                            ((caseItem.advancerCategory || '').toLowerCase().includes('staff') && opt.value.toLowerCase().includes('staff'))
+                          )?.value || caseItem.advancerCategory || ''
+                        }
                         onChange={(e) => updateCase(index, 'advancerCategory', e.target.value)}
                         className="w-full px-3 sm:px-4 py-2 border border-gray-300 rounded-md appearance-none focus:outline-none focus:ring-1 focus:ring-[#162D50] text-gray-700 text-sm">
                         <option value="">カテゴリを選択</option>
@@ -711,7 +736,13 @@ export default function NewCase() {
                     <label className="block text-sm font-bold text-gray-700 mb-1.5 sm:mb-2">負担先 <span className="text-red-500">*</span></label>
                     <div className="relative">
                       <select 
-                        value={caseItem.bearingParty}
+                        value={
+                          options.BearingParty.find(opt => 
+                            opt.value === caseItem.bearingParty ||
+                            opt.value.toLowerCase() === (caseItem.bearingParty || '').toLowerCase() ||
+                            ((caseItem.bearingParty || '').toLowerCase().includes('farm') && opt.value.toLowerCase().includes('farm'))
+                          )?.value || caseItem.bearingParty || ''
+                        }
                         onChange={(e) => updateCase(index, 'bearingParty', e.target.value)}
                         className="w-full px-3 sm:px-4 py-2 border border-gray-300 rounded-md appearance-none focus:outline-none focus:ring-1 focus:ring-[#162D50] text-gray-700 text-sm">
                         <option value="">負担先を選択</option>
@@ -736,10 +767,17 @@ export default function NewCase() {
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-bold text-gray-700 mb-1.5 sm:mb-2">経費金額 (¥) <span className="text-red-500">*</span></label>
+                    <div className="flex items-center justify-between mb-1.5 sm:mb-2">
+                      <label className="block text-sm font-bold text-gray-700">経費金額 (¥) <span className="text-red-500">*</span></label>
+                      {caseItem.suggested金額 > 0 && (
+                        <span className="text-xs text-blue-600 bg-blue-50 px-2 py-0.5 rounded font-medium border border-blue-200">
+                          目安: ¥{Number(caseItem.suggested金額).toLocaleString()}
+                        </span>
+                      )}
+                    </div>
                     <input 
                       type="number" 
-                      value={caseItem.expense金額} 
+                      value={caseItem.expense金額 === 0 ? '' : caseItem.expense金額} 
                       onChange={(e) => updateCase(index, 'expense金額', e.target.value)} 
                       placeholder="金額を入力"
                       className="w-full px-3 sm:px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50] text-gray-900 font-medium text-sm" 
@@ -812,11 +850,14 @@ export default function NewCase() {
           ))}
 
           {/* スタッフ情報 Section */}
-          {cases.some(c => ['Service Staff', 'Service staff', 'Staff', 'Support staff', 'Support Staff'].includes(c.advancerCategory) || ['Service Staff', 'Service staff', 'Staff', 'Support staff', 'Support Staff'].includes(c.bearingParty)) && (() => {
+          {cases.some(c => {
+            const adv = (c.advancerCategory || '').toLowerCase();
+            const bear = (c.bearingParty || '').toLowerCase();
+            return adv.includes('staff') || adv.includes('スタッフ') || bear.includes('staff') || bear.includes('スタッフ');
+          }) && (() => {
             const validEmployees = employees.filter(emp => {
-              const hasValidVisa = !emp.visaEndDate || new Date(emp.visaEndDate) >= new Date();
-              const hasWorkPlace = emp.assignedWorkPlace && emp.assignedWorkPlace.length > 0;
-              return hasValidVisa && hasWorkPlace;
+              if (emp.status === 'Resigned' || emp.status === '退職') return false;
+              return true;
             });
             return (
               <div className="bg-white border border-gray-200 rounded-lg mb-6 sm:mb-8 shadow-xs">
@@ -1076,14 +1117,23 @@ export default function NewCase() {
           <div className="flex justify-end pt-2 sm:pt-4">
             <button 
               onClick={() => {
-                const showStaffInfo = cases.some(c => ['Service staff', 'Service Staff', 'Staff', 'Support staff', 'Support Staff'].includes(c.advancerCategory) || ['Service staff', 'Service Staff', 'Staff', 'Support staff', 'Support Staff'].includes(c.bearingParty));
-                if (showStaffInfo && (!staffInfo.fullName || !staffInfo.id || !staffInfo.branchAndFarmName || staffInfo.branchAndFarmName === '配属先を選択')) {
+                const isStaffCategory = (cat) => {
+                  if (!cat) return false;
+                  const l = cat.toLowerCase();
+                  return l.includes('staff') || l.includes('スタッフ');
+                };
+                const showStaffInfo = cases.some(c => isStaffCategory(c.advancerCategory) || isStaffCategory(c.bearingParty));
+                if (showStaffInfo && (!staffInfo.fullName || !staffInfo.id)) {
                   toast.error('必要なスタッフ情報をすべて入力してください。');
+                  return;
+                }
+                if (showStaffInfo && staffInfo.availableWorkPlaces?.length > 0 && (!staffInfo.branchAndFarmName || staffInfo.branchAndFarmName === '配属先を選択')) {
+                  toast.error('スタッフの配属先を選択してください。');
                   return;
                 }
                 for (let i = 0; i < cases.length; i++) {
                   const c = cases[i];
-                  if (c.expenseType === '種類を選択' || c.advancerCategory === 'カテゴリを選択' || c.bearingParty === '負担先を選択' || !c.expense金額) {
+                  if (!c.expenseType || c.expenseType === '種類を選択' || !c.advancerCategory || c.advancerCategory === 'カテゴリを選択' || !c.bearingParty || c.bearingParty === '負担先を選択' || c.expense金額 === '' || c.expense金額 === null || c.expense金額 === undefined || Number(c.expense金額) <= 0) {
                     toast.error(`案件カテゴリ #${i+1} の必要な項目をすべて入力してください。`);
                     return;
                   }
