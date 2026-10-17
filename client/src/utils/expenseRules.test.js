@@ -1,4 +1,12 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it } from 'node:test';
+import assert from 'node:assert/strict';
+
+const expect = (actual) => ({
+  toBe: (expected) => assert.strictEqual(actual, expected),
+  not: {
+    toBeNull: () => assert.notStrictEqual(actual, null)
+  }
+});
 import { 
   toJP, 
   normalizeOptionValue, 
