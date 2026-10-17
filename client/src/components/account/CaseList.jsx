@@ -89,7 +89,10 @@ export default function CaseList({ setActiveTab: onNavigate }) {
     try {
       const response = await apiFetch(endpoint, {
         method: 'POST',
-        body: JSON.stringify({ text, author: user.role === 'support' ? 'support_user' : 'account_user' })
+        body: JSON.stringify({ 
+          text, 
+          author: user.role === 'support' ? 'support_user' : (user.role === 'admin' ? 'admin' : 'account_user') 
+        })
       });
       if (response.ok) {
         const updatedMessages = await response.json();
@@ -352,8 +355,9 @@ export default function CaseList({ setActiveTab: onNavigate }) {
   const handleUpdateStatus = async (newステータス, comment = '') => {
     if (!selectedCase) return;
 
+    const author = user.role === 'support' ? 'support_user' : (user.role === 'admin' ? 'admin' : 'account_user');
     const newMessage = comment.trim()
-      ? { text: comment.trim(), author: 'account_user', date: new Date().toISOString() }
+      ? { text: comment.trim(), author, date: new Date().toISOString() }
       : null;
 
     const isClaim = selectedCase._isClaim;
@@ -363,7 +367,13 @@ export default function CaseList({ setActiveTab: onNavigate }) {
       if (c._id === selectedCase._id) {
         const updatedMessages = c.messages ? [...c.messages] : [];
         if (newMessage) updatedMessages.push(newMessage);
-        return { ...c, status: newステータス, messages: updatedMessages, supportUpdatedFields: [] };
+        return { 
+          ...c, 
+          status: newステータス, 
+          statusMessage: comment.trim() || c.statusMessage, 
+          messages: updatedMessages, 
+          supportUpdatedFields: [] 
+        };
       }
       return c;
     };
@@ -377,12 +387,25 @@ export default function CaseList({ setActiveTab: onNavigate }) {
     setSelectedCase(prev => {
       const updatedMessages = prev.messages ? [...prev.messages] : [];
       if (newMessage) updatedMessages.push(newMessage);
-      return { ...prev, status: newステータス, messages: updatedMessages, supportUpdatedFields: [] };
+      return { 
+        ...prev, 
+        status: newステータス, 
+        statusMessage: comment.trim() || prev?.statusMessage, 
+        messages: updatedMessages, 
+        supportUpdatedFields: [] 
+      };
     });
 
     apiFetch(`${endpoint}`, {
       method: 'PATCH',
-      body: JSON.stringify({ status: newステータス, newMessage, clearSupportUpdatedFields: true, hasSupportNotification: true })
+      body: JSON.stringify({ 
+        status: newステータス, 
+        newMessage, 
+        statusMessage: comment.trim() || undefined,
+        clearSupportUpdatedFields: true, 
+        hasSupportNotification: user.role !== 'support',
+        hasAccountNotification: user.role === 'support'
+      })
     }).catch(err => console.error('Failed to update status', err));
   };
 
@@ -988,99 +1011,124 @@ export default function CaseList({ setActiveTab: onNavigate }) {
             </div>
 
             {/* STATUS MESSAGE & SHORT NOTE / REASON */}
-            {(isEditing || isCaseRegisteredBySupport(selectedCase)) && (
-              <div className="md:col-span-3 mt-4 border-t border-gray-200 pt-6">
-                {isEditing && (
-                  <div className="mb-6 w-full md:w-2/3">
-                    <h4 className="text-xs font-bold text-gray-500 mb-2 tracking-wider">短いメモを追加</h4>
-                    <textarea 
-                      value={editData.short_note || ''} 
-                      onChange={(e) => setEditData({...editData, short_note: e.target.value})}
-                      placeholder="Enter an optional note or remark to attach to this case..." 
-                      className="w-full h-[80px] px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50] resize-none text-gray-600"
-                    ></textarea>
-                  </div>
-                )}
-                {isCaseRegisteredBySupport(selectedCase) && (
-                  <div className="w-full">
-                    <h4 className="text-xs font-bold text-gray-500 mb-3 tracking-wider">理由 / メッセージ履歴</h4>
-                    <div className="border border-gray-200 rounded-xl overflow-hidden shadow-sm">
-                      {/* Legend bar */}
-                      <div className="flex items-center justify-between px-4 py-2 bg-gray-50 border-b border-gray-200">
-                        <div className="flex items-center gap-5 text-xs font-medium text-gray-600">
-                          <span className="flex items-center gap-1.5">
-                            <span className="w-2.5 h-2.5 rounded-full bg-orange-400 inline-block" />
-                            経理部門
-                          </span>
-                          <span className="flex items-center gap-1.5">
-                            <span className="w-2.5 h-2.5 rounded-full bg-blue-500 inline-block" />
-                            サポート部門
-                          </span>
-                        </div>
-                        <span className="text-xs text-gray-400">{(selectedCase.messages || []).length} 件</span>
-                      </div>
+            <div className="md:col-span-3 mt-4 border-t border-gray-200 pt-6">
+              {isEditing && (
+                <div className="mb-6 w-full md:w-2/3">
+                  <h4 className="text-xs font-bold text-gray-500 mb-2 tracking-wider">短いメモを追加</h4>
+                  <textarea 
+                    value={editData.short_note || ''} 
+                    onChange={(e) => setEditData({...editData, short_note: e.target.value})}
+                    placeholder="Enter an optional note or remark to attach to this case..." 
+                    className="w-full h-[80px] px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50] resize-none text-gray-600"
+                  ></textarea>
+                </div>
+              )}
 
-                      {/* Chat thread */}
-                      <div className="h-64 overflow-y-auto p-4 space-y-3 bg-white">
-                        {(selectedCase.messages || []).length === 0 && (
-                          <div className="flex items-center justify-center h-full text-gray-400 text-sm">
-                            メッセージはまだありません
-                          </div>
-                        )}
-                        {[...(selectedCase.messages || [])]
-                          .sort((a, b) => new Date(a.date || 0) - new Date(b.date || 0))
-                          .map((m, i) => {
-                            const isAccount = m.author === 'account_user' || m.author === '経理部門' || !m.author;
-                            const isMe = (user.role === 'account' && isAccount) || (user.role === 'support' && !isAccount);
-                            return (
-                              <div key={i} className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}>
-                                <div className={`max-w-[75%] rounded-2xl px-4 py-2.5 shadow-sm ${
-                                  isAccount
-                                    ? 'bg-orange-500 text-white rounded-tr-sm'
-                                    : 'bg-blue-500 text-white rounded-tl-sm'
-                                }`}>
-                                  <div className="text-xs font-bold mb-1 opacity-75">
-                                    {isAccount ? '経理部門' : 'サポート部門'}
-                                  </div>
-                                  <div className="text-sm whitespace-pre-wrap leading-relaxed">{m.text}</div>
-                                  <div className="text-xs mt-1.5 opacity-60 text-right">
-                                    {m.date ? new Date(m.date).toLocaleString('ja-JP', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : ''}
-                                  </div>
-                                </div>
-                              </div>
-                            );
-                          })}
-                        <div ref={chatEndRef} />
-                      </div>
+              {selectedCase.statusMessage && (
+                <div className="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-lg text-sm text-amber-900">
+                  <div className="font-bold text-xs uppercase tracking-wide mb-1 text-amber-700">ステータス変更理由 / メモ</div>
+                  <div className="whitespace-pre-wrap">{selectedCase.statusMessage}</div>
+                </div>
+              )}
 
-                      {/* Input area */}
-                      <div className="border-t border-gray-200 p-3 bg-gray-50 flex gap-2 items-end">
-                        <textarea
-                          value={chatInput}
-                          onChange={e => setChatInput(e.target.value)}
-                          onKeyDown={e => {
-                            if (e.key === 'Enter' && !e.shiftKey) {
-                              e.preventDefault();
-                              handleSendMessage();
-                            }
-                          }}
-                          placeholder="メッセージを入力… (Shift+Enter で改行)"
-                          rows={1}
-                          className="flex-1 resize-none min-h-[38px] max-h-[100px] px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#162D50] bg-white"
-                        />
-                        <button
-                          onClick={handleSendMessage}
-                          disabled={!chatInput.trim() || isSendingMsg}
-                          className="shrink-0 bg-[#162D50] hover:bg-[#0f1f3d] text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-                        >
-                          {isSendingMsg ? '…' : '送信'}
-                        </button>
-                      </div>
+              <div className="w-full">
+                <h4 className="text-xs font-bold text-gray-500 mb-3 tracking-wider">理由 / メッセージ履歴</h4>
+                <div className="border border-gray-200 rounded-xl overflow-hidden shadow-sm">
+                  {/* Legend bar */}
+                  <div className="flex items-center justify-between px-4 py-2 bg-gray-50 border-b border-gray-200">
+                    <div className="flex items-center gap-5 text-xs font-medium text-gray-600">
+                      <span className="flex items-center gap-1.5">
+                        <span className="w-2.5 h-2.5 rounded-full bg-orange-400 inline-block" />
+                        経理部門
+                      </span>
+                      <span className="flex items-center gap-1.5">
+                        <span className="w-2.5 h-2.5 rounded-full bg-blue-500 inline-block" />
+                        サポート部門
+                      </span>
+                      <span className="flex items-center gap-1.5">
+                        <span className="w-2.5 h-2.5 rounded-full bg-[#162D50] inline-block" />
+                        管理者
+                      </span>
                     </div>
+                    <span className="text-xs text-gray-400">{(selectedCase.messages || []).length} 件</span>
                   </div>
-                )}
+
+                  {/* Chat thread */}
+                  <div className="h-64 overflow-y-auto p-4 space-y-3 bg-white">
+                    {(selectedCase.messages || []).length === 0 && (
+                      <div className="flex items-center justify-center h-full text-gray-400 text-sm">
+                        メッセージはまだありません
+                      </div>
+                    )}
+                    {[...(selectedCase.messages || [])]
+                      .sort((a, b) => new Date(a.date || 0) - new Date(b.date || 0))
+                      .map((m, i) => {
+                        const authorLower = String(m.author || '').toLowerCase();
+                        const isSupport = authorLower === 'support_user' || authorLower.includes('support') || authorLower === 'サポート部門';
+                        const isAdmin = authorLower === 'admin' || authorLower === '管理者';
+                        const isAccount = !isSupport && !isAdmin;
+
+                        const isMe = (user.role === 'support' && isSupport) ||
+                                     (user.role === 'account' && isAccount) ||
+                                     (user.role === 'admin' && (isAdmin || m.author === user.username));
+
+                        const bubbleColor = isSupport 
+                          ? 'bg-blue-500 text-white' 
+                          : isAdmin 
+                            ? 'bg-[#162D50] text-white' 
+                            : 'bg-orange-500 text-white';
+
+                        const authorLabel = isSupport 
+                          ? 'サポート部門' 
+                          : isAdmin 
+                            ? '管理者' 
+                            : '経理部門';
+
+                        return (
+                          <div key={i} className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}>
+                            <div className={`max-w-[75%] rounded-2xl px-4 py-2.5 shadow-sm ${bubbleColor} ${
+                              isMe ? 'rounded-tr-sm' : 'rounded-tl-sm'
+                            }`}>
+                              <div className="text-xs font-bold mb-1 opacity-75">
+                                {authorLabel}
+                              </div>
+                              <div className="text-sm whitespace-pre-wrap leading-relaxed">{m.text}</div>
+                              <div className="text-xs mt-1.5 opacity-60 text-right">
+                                {m.date ? new Date(m.date).toLocaleString('ja-JP', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : ''}
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    <div ref={chatEndRef} />
+                  </div>
+
+                  {/* Input area */}
+                  <div className="border-t border-gray-200 p-3 bg-gray-50 flex gap-2 items-end">
+                    <textarea
+                      value={chatInput}
+                      onChange={e => setChatInput(e.target.value)}
+                      onKeyDown={e => {
+                        if (e.key === 'Enter' && !e.shiftKey) {
+                          e.preventDefault();
+                          handleSendMessage();
+                        }
+                      }}
+                      placeholder="メッセージを入力… (Shift+Enter で改行)"
+                      rows={1}
+                      className="flex-1 resize-none min-h-[38px] max-h-[100px] px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#162D50] bg-white"
+                    />
+                    <button
+                      onClick={handleSendMessage}
+                      disabled={!chatInput.trim() || isSendingMsg}
+                      className="shrink-0 bg-[#162D50] hover:bg-[#0f1f3d] text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                    >
+                      {isSendingMsg ? '…' : '送信'}
+                    </button>
+                  </div>
+                </div>
               </div>
-            )}
+            </div>
           </div>
 
           {/* アクション Buttons */}

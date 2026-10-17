@@ -79,7 +79,7 @@ export default function Dashboard({ setToken }) {
           {activeTab === 'Resignation' && <Resignation />}
           {activeTab === 'サポート部門' && <SupportDashboard setActiveTab={setActiveTab} />}
           {activeTab === 'Staff Claim Request' && <StaffClaimRequest />}
-          {activeTab === 'Claim List' && <ClaimList />}
+          {activeTab === 'Claim List' && <CaseList setActiveTab={setActiveTab} />}
           {activeTab === 'Admin New Registration' && <AdminNewRegistration setActiveTab={setActiveTab} />}
           {activeTab === 'Admin User List' && <AdminUserList setActiveTab={setActiveTab} />}
           {activeTab === 'Settings' && <Settings user={user} />}
