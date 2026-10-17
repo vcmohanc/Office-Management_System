@@ -66,3 +66,49 @@ export const calculateInstallments = (totalAmount, count, startMonth) => {
 
   return schedule;
 };
+
+/**
+ * Check if a case or claim has received payment approval (支払承認).
+ * Cases without "支払承認" must not be displayed in 支払申請一覧 (PaymentStatus) or 支払済請求書一覧 (PaymentEntry).
+ * @param {Object} c - The case or claim object.
+ * @returns {boolean}
+ */
+export const isApprovedForPayment = (c) => {
+  if (!c || c.isDeleted) return false;
+  const status = typeof c.status === 'string' ? c.status.trim() : '';
+  if (!status) return false;
+
+  // Unapproved statuses (explicit blacklist safeguard)
+  const unapprovedStatuses = [
+    'Pending', 'pending',
+    '保留中',
+    'Payment 保留中',
+    'New', 'new', 'Registered', '新た',
+    'REJECTED', 'rejected', '拒否', '却下',
+    'RETURNED_FOR_CORRECTION', '保留中 Correction', '修正依頼',
+    'RESUBMITTED', 'resubmitted', '再提出済み'
+  ];
+  if (unapprovedStatuses.includes(status)) return false;
+
+  // Approved payment statuses
+  const approvedStatuses = [
+    'APPROVED_FOR_PAYMENT',
+    'Approve for Payment',
+    '承認済 for Payment',
+    '支払承認',
+    '支払承認済',
+    '処理中',
+    'Processing',
+    'processing',
+    '完了',
+    'Completed',
+    'completed',
+    '期限切れ',
+    'Overdue',
+    'overdue'
+  ];
+
+  if (approvedStatuses.includes(status)) return true;
+  if (status.includes('支払承認') || status.includes('承認済')) return true;
+  return false;
+};

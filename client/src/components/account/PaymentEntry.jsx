@@ -8,6 +8,7 @@ import { fontBase64 } from '../../fonts/Kosugi-Regular.js';
 import { vegeiconBase64 } from '../../assets/vegeiconBase64.js';
 import toast from 'react-hot-toast';
 import { toastConfirm } from '../../utils/toastConfirm.jsx';
+import { isApprovedForPayment } from '../../utils/paymentUtils.js';
 
 import { Landmark, Users, Briefcase, ArrowRight, ArrowLeft, Building2, Building, AlertTriangle, Trash2, Download, Printer, Search, Calendar, ChevronDown, Filter, Tractor, User } from 'lucide-react';
 
@@ -807,18 +808,9 @@ const getEntityIcon = (name) => {
     return { text: 'text-gray-500', bg: 'bg-gray-500' }; // Transfer / 振替
   };
 
-    const paymentOptions = useMemo(() => {
-    const postApprovalCases = cases.filter(c => {
-      const totalTerms = c.installment_count || (c.installmentPlan ? (String(c.installmentPlan).match(/\d+/) ? parseInt(String(c.installmentPlan).match(/\d+/)[0], 10) : 1) : 1);
-      
-      if (c.status === '完了') return true;
-      if (c.paidTerms >= totalTerms && totalTerms > 0) return true;
-      
-      if (c.paidTerms > 0 && c.paidTerms < totalTerms) return true;
-      if (c.status && c.status.includes('完了')) return true;
-      
-      return ['APPROVED_FOR_PAYMENT', 'Payment 保留中', '処理中', '期限切れ', '完了'].includes(c.status) || c.status === 'Approve for Payment' || c.status === '承認済 for Payment';
-    });
+  const paymentOptions = useMemo(() => {
+    // Only show cases that have received 支払承認 (Payment Approval)
+    const postApprovalCases = cases.filter(c => isApprovedForPayment(c));
 
     const patternGroups = {};
     PATTERN_CONFIG.forEach(p => {
@@ -1376,8 +1368,9 @@ function PaymentEntryForm({ caseId, termNumber, navigate }) {
       apiFetch(`/api/cases/${caseId}/ledger`).then(res => res.json()).catch(() => null),
       apiFetch(`/api/claims`).then(res => res.json()).catch(() => [])
     ]).then(([casesObj, ledgerObj, claimsObj]) => {
-      const actualCase = (casesObj && Array.isArray(casesObj) ? casesObj.find(c => c._id === caseId || c.case_id === caseId) : null) || 
-                         (claimsObj && Array.isArray(claimsObj) ? claimsObj.find(c => c._id === caseId || c.claim_id === caseId) : null);
+      const rawCase = (casesObj && Array.isArray(casesObj) ? casesObj.find(c => c._id === caseId || c.case_id === caseId) : null) || 
+                      (claimsObj && Array.isArray(claimsObj) ? claimsObj.find(c => c._id === caseId || c.claim_id === caseId) : null);
+      const actualCase = rawCase && isApprovedForPayment(rawCase) ? rawCase : null;
       setCaseData(actualCase);
       setLedgerData(ledgerObj);
       if (actualCase) {
@@ -1389,7 +1382,7 @@ function PaymentEntryForm({ caseId, termNumber, navigate }) {
   }, [caseId]);
 
   if (loading) return <div className="p-8 text-center">Loading payment details...</div>;
-  if (!caseData) return <div className="p-8 text-center">Case not found.</div>;
+  if (!caseData) return <div className="p-8 text-center text-gray-500 font-bold">案件が見つからないか、支払承認されていません。</div>;
 
   const totalTerms = caseData.installment_count || (caseData.installmentPlan ? (caseData.installmentPlan.match(/\d+/) ? parseInt(caseData.installmentPlan.match(/\d+/)[0], 10) : 1) : 1);
   const paidTerms = caseData.paidTerms || 0;

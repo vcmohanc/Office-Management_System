@@ -7,7 +7,7 @@
     "dev": "vite",
     "build": "vite build && node compress-dist.js",
     "lint": "oxlint",
-    "test": "node --test src/utils/expenseRules.test.js",
+    "test": "node --test src/utils/expenseRules.test.js src/utils/paymentUtils.test.js",
     "preview": "vite preview"
   },
   "dependencies": {
