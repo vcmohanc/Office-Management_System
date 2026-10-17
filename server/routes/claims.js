@@ -395,4 +395,64 @@ router.post('/:id/settle', requireRole('admin', 'account'), async (req, res) => 
   }
 });
 
+router.post('/:id/messages', verifyToken, requireRole('admin', 'account', 'support'), async (req, res) => {
+  try {
+    const { text } = req.body;
+    if (!text) {
+      return res.status(400).json({ message: 'Message text is required' });
+    }
+
+    const role = req.user.role;
+    const author = role === 'support' ? 'support_user' : role === 'account' ? 'account_user' : req.user.username;
+
+    const updatedClaim = await Claim.findByIdAndUpdate(
+      req.params.id,
+      {
+        $push: {
+          messages: {
+            text,
+            author,
+            date: new Date()
+          }
+        },
+        $set: {
+          hasSupportNotification: role === 'account',
+          hasAccountNotification: role === 'support'
+        }
+      },
+      { new: true }
+    );
+
+    if (!updatedClaim) {
+      return res.status(404).json({ message: 'Claim not found' });
+    }
+
+    caseEvents.emit('CASE_UPDATED', updatedClaim);
+
+    res.status(201).json(updatedClaim.messages);
+  } catch (error) {
+    console.error('Error adding claim message:', error);
+    res.status(500).json({ message: 'Server error adding claim message' });
+  }
+});
+
+router.post('/:id/messages/read', verifyToken, requireRole('admin', 'account', 'support'), async (req, res) => {
+  try {
+    const updatedClaim = await Claim.findByIdAndUpdate(
+      req.params.id,
+      {
+        $set: {
+          'messages.$[].readBySupport': true,
+          hasSupportNotification: false
+        }
+      },
+      { new: true }
+    );
+    if (!updatedClaim) return res.status(404).json({ message: 'Claim not found' });
+    res.status(200).json({ message: 'Messages marked as read' });
+  } catch (error) {
+    res.status(500).json({ message: 'Error marking messages as read' });
+  }
+});
+
 export default router;

@@ -408,4 +408,23 @@ router.post('/:id/messages', verifyToken, requireRole('admin', 'account', 'suppo
   }
 });
 
+router.post('/:id/messages/read', verifyToken, requireRole('admin', 'account', 'support'), async (req, res) => {
+  try {
+    const updatedCase = await Case.findByIdAndUpdate(
+      req.params.id,
+      {
+        $set: {
+          'messages.$[].readBySupport': true,
+          hasSupportNotification: false
+        }
+      },
+      { new: true }
+    );
+    if (!updatedCase) return res.status(404).json({ message: 'Case not found' });
+    res.status(200).json({ message: 'Messages marked as read' });
+  } catch (error) {
+    res.status(500).json({ message: 'Error marking messages as read' });
+  }
+});
+
 export default router;

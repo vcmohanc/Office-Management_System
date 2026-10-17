@@ -43,7 +43,12 @@ function getInitials(name = '') {
 }
 
 export default function SupportDashboard({ setActiveTab }) {
-  const goTo = (tab) => setActiveTab?.(tab);
+  const goTo = (tab) => {
+    if (tab === 'Claim List' || tab === 'Case List') {
+      sessionStorage.setItem('caseListTab', 'Staff');
+    }
+    setActiveTab?.(tab);
+  };
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
