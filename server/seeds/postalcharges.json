@@ -1,0 +1,206 @@
+[
+  {
+    "departure_name1": "Hokkaido",
+    "charges": {
+      "Hokkaido": "なし",
+      "Northern Tohoku": "530",
+      "Southern Tohoku": "430",
+      "Kanto": "230",
+      "Shinetsu": "4,530",
+      "Hokuriku": "4,530",
+      "Chubu": "4,530",
+      "Kansai": "4,530",
+      "Chugoku": "4,530",
+      "Shikoku": "4,530",
+      "Kyushu": "4,530",
+      "Okinawa": "9,130"
+    }
+  },
+  {
+    "departure_name1": "Northern Tohoku",
+    "charges": {
+      "Hokkaido": "10",
+      "Northern Tohoku": "なし",
+      "Southern Tohoku": "4,530",
+      "Kanto": "530",
+      "Shinetsu": "4,530",
+      "Hokuriku": "4,530",
+      "Chubu": "4,530",
+      "Kansai": "4,530",
+      "Chugoku": "4,530",
+      "Shikoku": "4,530",
+      "Kyushu": "4,530",
+      "Okinawa": "9,130"
+    }
+  },
+  {
+    "departure_name1": "Southern Tohoku",
+    "charges": {
+      "Hokkaido": "4,530",
+      "Northern Tohoku": "4,530",
+      "Southern Tohoku": "なし",
+      "Kanto": "4,530",
+      "Shinetsu": "4,530",
+      "Hokuriku": "4,530",
+      "Chubu": "4,530",
+      "Kansai": "4,530",
+      "Chugoku": "4,530",
+      "Shikoku": "4,530",
+      "Kyushu": "4,530",
+      "Okinawa": "9,130"
+    }
+  },
+  {
+    "departure_name1": "Kanto",
+    "charges": {
+      "Hokkaido": "4,530",
+      "Northern Tohoku": "4,530",
+      "Southern Tohoku": "4,530",
+      "Kanto": "なし",
+      "Shinetsu": "4,530",
+      "Hokuriku": "4,530",
+      "Chubu": "4,530",
+      "Kansai": "4,530",
+      "Chugoku": "4,530",
+      "Shikoku": "4,530",
+      "Kyushu": "4,530",
+      "Okinawa": "9,130"
+    }
+  },
+  {
+    "departure_name1": "Shinetsu",
+    "charges": {
+      "Hokkaido": "4,530",
+      "Northern Tohoku": "4,530",
+      "Southern Tohoku": "4,530",
+      "Kanto": "4,530",
+      "Shinetsu": "なし",
+      "Hokuriku": "4,530",
+      "Chubu": "4,530",
+      "Kansai": "4,530",
+      "Chugoku": "4,530",
+      "Shikoku": "4,530",
+      "Kyushu": "4,530",
+      "Okinawa": "9,130"
+    }
+  },
+  {
+    "departure_name1": "Hokuriku",
+    "charges": {
+      "Hokkaido": "4,530",
+      "Northern Tohoku": "4,530",
+      "Southern Tohoku": "4,530",
+      "Kanto": "4,530",
+      "Shinetsu": "4,530",
+      "Hokuriku": "なし",
+      "Chubu": "4,530",
+      "Kansai": "4,530",
+      "Chugoku": "4,530",
+      "Shikoku": "4,530",
+      "Kyushu": "4,530",
+      "Okinawa": "9,130"
+    }
+  },
+  {
+    "departure_name1": "Chubu",
+    "charges": {
+      "Hokkaido": "4,530",
+      "Northern Tohoku": "4,530",
+      "Southern Tohoku": "4,530",
+      "Kanto": "4,530",
+      "Shinetsu": "4,530",
+      "Hokuriku": "4,530",
+      "Chubu": "なし",
+      "Kansai": "4,530",
+      "Chugoku": "4,530",
+      "Shikoku": "4,530",
+      "Kyushu": "4,530",
+      "Okinawa": "9,130"
+    }
+  },
+  {
+    "departure_name1": "Kansai",
+    "charges": {
+      "Hokkaido": "4,530",
+      "Northern Tohoku": "4,530",
+      "Southern Tohoku": "4,530",
+      "Kanto": "4,530",
+      "Shinetsu": "4,530",
+      "Hokuriku": "4,530",
+      "Chubu": "4,530",
+      "Kansai": "なし",
+      "Chugoku": "4,530",
+      "Shikoku": "4,530",
+      "Kyushu": "4,530",
+      "Okinawa": "9,130"
+    }
+  },
+  {
+    "departure_name1": "Chugoku",
+    "charges": {
+      "Hokkaido": "4,530",
+      "Northern Tohoku": "4,530",
+      "Southern Tohoku": "4,530",
+      "Kanto": "4,530",
+      "Shinetsu": "4,530",
+      "Hokuriku": "4,530",
+      "Chubu": "4,530",
+      "Kansai": "4,530",
+      "Chugoku": "なし",
+      "Shikoku": "4,530",
+      "Kyushu": "4,530",
+      "Okinawa": "9,130"
+    }
+  },
+  {
+    "departure_name1": "Shikoku",
+    "charges": {
+      "Hokkaido": "4,530",
+      "Northern Tohoku": "4,530",
+      "Southern Tohoku": "4,530",
+      "Kanto": "4,530",
+      "Shinetsu": "4,530",
+      "Hokuriku": "4,530",
+      "Chubu": "4,530",
+      "Kansai": "4,530",
+      "Chugoku": "4,530",
+      "Shikoku": "なし",
+      "Kyushu": "4,530",
+      "Okinawa": "9,130"
+    }
+  },
+  {
+    "departure_name1": "Kyushu",
+    "charges": {
+      "Hokkaido": "4,530",
+      "Northern Tohoku": "4,530",
+      "Southern Tohoku": "4,530",
+      "Kanto": "4,530",
+      "Shinetsu": "4,530",
+      "Hokuriku": "4,530",
+      "Chubu": "4,530",
+      "Kansai": "4,530",
+      "Chugoku": "4,530",
+      "Shikoku": "4,530",
+      "Kyushu": "なし",
+      "Okinawa": "9,130"
+    }
+  },
+  {
+    "departure_name1": "Okinawa",
+    "charges": {
+      "Hokkaido": "9,130",
+      "Northern Tohoku": "9,130",
+      "Southern Tohoku": "9,130",
+      "Kanto": "9,130",
+      "Shinetsu": "9,130",
+      "Hokuriku": "9,130",
+      "Chubu": "9,130",
+      "Kansai": "9,130",
+      "Chugoku": "9,130",
+      "Shikoku": "9,130",
+      "Kyushu": "9,130",
+      "Okinawa": "なし"
+    }
+  }
+]

@@ -1,0 +1,50 @@
+[
+  {
+    "name1": "Hokkaido",
+    "name2": "Hokkaido"
+  },
+  {
+    "name1": "Northern Tohoku",
+    "name2": "Northern Tohoku"
+  },
+  {
+    "name1": "Southern Tohoku",
+    "name2": "Southern Tohoku"
+  },
+  {
+    "name1": "Kanto",
+    "name2": "Kanto"
+  },
+  {
+    "name1": "Shinetsu",
+    "name2": "Shinetsu"
+  },
+  {
+    "name1": "Hokuriku",
+    "name2": "Hokuriku"
+  },
+  {
+    "name1": "Chubu",
+    "name2": "Chubu"
+  },
+  {
+    "name1": "Kansai",
+    "name2": "Kansai"
+  },
+  {
+    "name1": "Chugoku",
+    "name2": "Chugoku"
+  },
+  {
+    "name1": "Shikoku",
+    "name2": "Shikoku"
+  },
+  {
+    "name1": "Kyushu",
+    "name2": "Kyushu"
+  },
+  {
+    "name1": "Okinawa",
+    "name2": "Okinawa"
+  }
+]

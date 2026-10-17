@@ -1,0 +1,638 @@
+[
+  {
+    "departure_name1": "Hokkaido",
+    "charges": {
+      "Hokkaido": {
+        "bus": "100",
+        "flight": "なし"
+      },
+      "Northern Tohoku": {
+        "bus": "100",
+        "flight": "200"
+      },
+      "Southern Tohoku": {
+        "bus": "100",
+        "flight": "200"
+      },
+      "Kanto": {
+        "bus": "100",
+        "flight": "200"
+      },
+      "Shinetsu": {
+        "bus": "100",
+        "flight": "200"
+      },
+      "Hokuriku": {
+        "bus": "100",
+        "flight": "200"
+      },
+      "Chubu": {
+        "bus": "100",
+        "flight": "200"
+      },
+      "Kansai": {
+        "bus": "100",
+        "flight": "200"
+      },
+      "Chugoku": {
+        "bus": "100",
+        "flight": "200"
+      },
+      "Shikoku": {
+        "bus": "100",
+        "flight": "200"
+      },
+      "Kyushu": {
+        "bus": "100",
+        "flight": "200"
+      },
+      "Okinawa": {
+        "bus": "100",
+        "flight": "200"
+      }
+    }
+  },
+  {
+    "departure_name1": "Northern Tohoku",
+    "charges": {
+      "Hokkaido": {
+        "bus": "100",
+        "flight": "200"
+      },
+      "Northern Tohoku": {
+        "bus": "110",
+        "flight": "なし"
+      },
+      "Southern Tohoku": {
+        "bus": "100",
+        "flight": "200"
+      },
+      "Kanto": {
+        "bus": "100",
+        "flight": "200"
+      },
+      "Shinetsu": {
+        "bus": "100",
+        "flight": "200"
+      },
+      "Hokuriku": {
+        "bus": "100",
+        "flight": "200"
+      },
+      "Chubu": {
+        "bus": "100",
+        "flight": "200"
+      },
+      "Kansai": {
+        "bus": "100",
+        "flight": "200"
+      },
+      "Chugoku": {
+        "bus": "100",
+        "flight": "200"
+      },
+      "Shikoku": {
+        "bus": "100",
+        "flight": "200"
+      },
+      "Kyushu": {
+        "bus": "100",
+        "flight": "200"
+      },
+      "Okinawa": {
+        "bus": "100",
+        "flight": "200"
+      }
+    }
+  },
+  {
+    "departure_name1": "Southern Tohoku",
+    "charges": {
+      "Hokkaido": {
+        "bus": "4,530",
+        "flight": "4,530"
+      },
+      "Northern Tohoku": {
+        "bus": "4,530",
+        "flight": "4,530"
+      },
+      "Southern Tohoku": {
+        "bus": "なし",
+        "flight": "なし"
+      },
+      "Kanto": {
+        "bus": "4,530",
+        "flight": "4,530"
+      },
+      "Shinetsu": {
+        "bus": "4,530",
+        "flight": "4,530"
+      },
+      "Hokuriku": {
+        "bus": "4,530",
+        "flight": "4,530"
+      },
+      "Chubu": {
+        "bus": "4,530",
+        "flight": "4,530"
+      },
+      "Kansai": {
+        "bus": "4,530",
+        "flight": "4,530"
+      },
+      "Chugoku": {
+        "bus": "4,530",
+        "flight": "4,530"
+      },
+      "Shikoku": {
+        "bus": "4,530",
+        "flight": "4,530"
+      },
+      "Kyushu": {
+        "bus": "4,530",
+        "flight": "4,530"
+      },
+      "Okinawa": {
+        "bus": "9,130",
+        "flight": "9,130"
+      }
+    }
+  },
+  {
+    "departure_name1": "Kanto",
+    "charges": {
+      "Hokkaido": {
+        "bus": "4,530",
+        "flight": "4,530"
+      },
+      "Northern Tohoku": {
+        "bus": "4,530",
+        "flight": "4,530"
+      },
+      "Southern Tohoku": {
+        "bus": "4,530",
+        "flight": "4,530"
+      },
+      "Kanto": {
+        "bus": "なし",
+        "flight": "なし"
+      },
+      "Shinetsu": {
+        "bus": "4,530",
+        "flight": "4,530"
+      },
+      "Hokuriku": {
+        "bus": "4,530",
+        "flight": "4,530"
+      },
+      "Chubu": {
+        "bus": "4,530",
+        "flight": "4,530"
+      },
+      "Kansai": {
+        "bus": "4,530",
+        "flight": "4,530"
+      },
+      "Chugoku": {
+        "bus": "4,530",
+        "flight": "4,530"
+      },
+      "Shikoku": {
+        "bus": "4,530",
+        "flight": "4,530"
+      },
+      "Kyushu": {
+        "bus": "4,530",
+        "flight": "4,530"
+      },
+      "Okinawa": {
+        "bus": "9,130",
+        "flight": "9,130"
+      }
+    }
+  },
+  {
+    "departure_name1": "Shinetsu",
+    "charges": {
+      "Hokkaido": {
+        "bus": "4,530",
+        "flight": "4,530"
+      },
+      "Northern Tohoku": {
+        "bus": "4,530",
+        "flight": "4,530"
+      },
+      "Southern Tohoku": {
+        "bus": "4,530",
+        "flight": "4,530"
+      },
+      "Kanto": {
+        "bus": "4,530",
+        "flight": "4,530"
+      },
+      "Shinetsu": {
+        "bus": "なし",
+        "flight": "なし"
+      },
+      "Hokuriku": {
+        "bus": "4,530",
+        "flight": "4,530"
+      },
+      "Chubu": {
+        "bus": "4,530",
+        "flight": "4,530"
+      },
+      "Kansai": {
+        "bus": "4,530",
+        "flight": "4,530"
+      },
+      "Chugoku": {
+        "bus": "4,530",
+        "flight": "4,530"
+      },
+      "Shikoku": {
+        "bus": "4,530",
+        "flight": "4,530"
+      },
+      "Kyushu": {
+        "bus": "4,530",
+        "flight": "4,530"
+      },
+      "Okinawa": {
+        "bus": "9,130",
+        "flight": "9,130"
+      }
+    }
+  },
+  {
+    "departure_name1": "Hokuriku",
+    "charges": {
+      "Hokkaido": {
+        "bus": "4,530",
+        "flight": "4,530"
+      },
+      "Northern Tohoku": {
+        "bus": "4,530",
+        "flight": "4,530"
+      },
+      "Southern Tohoku": {
+        "bus": "4,530",
+        "flight": "4,530"
+      },
+      "Kanto": {
+        "bus": "4,530",
+        "flight": "4,530"
+      },
+      "Shinetsu": {
+        "bus": "4,530",
+        "flight": "4,530"
+      },
+      "Hokuriku": {
+        "bus": "なし",
+        "flight": "なし"
+      },
+      "Chubu": {
+        "bus": "4,530",
+        "flight": "4,530"
+      },
+      "Kansai": {
+        "bus": "4,530",
+        "flight": "4,530"
+      },
+      "Chugoku": {
+        "bus": "4,530",
+        "flight": "4,530"
+      },
+      "Shikoku": {
+        "bus": "4,530",
+        "flight": "4,530"
+      },
+      "Kyushu": {
+        "bus": "4,530",
+        "flight": "4,530"
+      },
+      "Okinawa": {
+        "bus": "9,130",
+        "flight": "9,130"
+      }
+    }
+  },
+  {
+    "departure_name1": "Chubu",
+    "charges": {
+      "Hokkaido": {
+        "bus": "4,530",
+        "flight": "4,530"
+      },
+      "Northern Tohoku": {
+        "bus": "4,530",
+        "flight": "4,530"
+      },
+      "Southern Tohoku": {
+        "bus": "4,530",
+        "flight": "4,530"
+      },
+      "Kanto": {
+        "bus": "4,530",
+        "flight": "4,530"
+      },
+      "Shinetsu": {
+        "bus": "4,530",
+        "flight": "4,530"
+      },
+      "Hokuriku": {
+        "bus": "4,530",
+        "flight": "4,530"
+      },
+      "Chubu": {
+        "bus": "なし",
+        "flight": "なし"
+      },
+      "Kansai": {
+        "bus": "4,530",
+        "flight": "4,530"
+      },
+      "Chugoku": {
+        "bus": "4,530",
+        "flight": "4,530"
+      },
+      "Shikoku": {
+        "bus": "4,530",
+        "flight": "4,530"
+      },
+      "Kyushu": {
+        "bus": "4,530",
+        "flight": "4,530"
+      },
+      "Okinawa": {
+        "bus": "9,130",
+        "flight": "9,130"
+      }
+    }
+  },
+  {
+    "departure_name1": "Kansai",
+    "charges": {
+      "Hokkaido": {
+        "bus": "4,530",
+        "flight": "4,530"
+      },
+      "Northern Tohoku": {
+        "bus": "4,530",
+        "flight": "4,530"
+      },
+      "Southern Tohoku": {
+        "bus": "4,530",
+        "flight": "4,530"
+      },
+      "Kanto": {
+        "bus": "4,530",
+        "flight": "4,530"
+      },
+      "Shinetsu": {
+        "bus": "4,530",
+        "flight": "4,530"
+      },
+      "Hokuriku": {
+        "bus": "4,530",
+        "flight": "4,530"
+      },
+      "Chubu": {
+        "bus": "4,530",
+        "flight": "4,530"
+      },
+      "Kansai": {
+        "bus": "なし",
+        "flight": "なし"
+      },
+      "Chugoku": {
+        "bus": "4,530",
+        "flight": "4,530"
+      },
+      "Shikoku": {
+        "bus": "4,530",
+        "flight": "4,530"
+      },
+      "Kyushu": {
+        "bus": "4,530",
+        "flight": "4,530"
+      },
+      "Okinawa": {
+        "bus": "9,130",
+        "flight": "9,130"
+      }
+    }
+  },
+  {
+    "departure_name1": "Chugoku",
+    "charges": {
+      "Hokkaido": {
+        "bus": "4,530",
+        "flight": "4,530"
+      },
+      "Northern Tohoku": {
+        "bus": "4,530",
+        "flight": "4,530"
+      },
+      "Southern Tohoku": {
+        "bus": "4,530",
+        "flight": "4,530"
+      },
+      "Kanto": {
+        "bus": "4,530",
+        "flight": "4,530"
+      },
+      "Shinetsu": {
+        "bus": "4,530",
+        "flight": "4,530"
+      },
+      "Hokuriku": {
+        "bus": "4,530",
+        "flight": "4,530"
+      },
+      "Chubu": {
+        "bus": "4,530",
+        "flight": "4,530"
+      },
+      "Kansai": {
+        "bus": "4,530",
+        "flight": "4,530"
+      },
+      "Chugoku": {
+        "bus": "なし",
+        "flight": "なし"
+      },
+      "Shikoku": {
+        "bus": "4,530",
+        "flight": "4,530"
+      },
+      "Kyushu": {
+        "bus": "4,530",
+        "flight": "4,530"
+      },
+      "Okinawa": {
+        "bus": "9,130",
+        "flight": "9,130"
+      }
+    }
+  },
+  {
+    "departure_name1": "Shikoku",
+    "charges": {
+      "Hokkaido": {
+        "bus": "4,530",
+        "flight": "4,530"
+      },
+      "Northern Tohoku": {
+        "bus": "4,530",
+        "flight": "4,530"
+      },
+      "Southern Tohoku": {
+        "bus": "4,530",
+        "flight": "4,530"
+      },
+      "Kanto": {
+        "bus": "4,530",
+        "flight": "4,530"
+      },
+      "Shinetsu": {
+        "bus": "4,530",
+        "flight": "4,530"
+      },
+      "Hokuriku": {
+        "bus": "4,530",
+        "flight": "4,530"
+      },
+      "Chubu": {
+        "bus": "4,530",
+        "flight": "4,530"
+      },
+      "Kansai": {
+        "bus": "4,530",
+        "flight": "4,530"
+      },
+      "Chugoku": {
+        "bus": "4,530",
+        "flight": "4,530"
+      },
+      "Shikoku": {
+        "bus": "なし",
+        "flight": "なし"
+      },
+      "Kyushu": {
+        "bus": "4,530",
+        "flight": "4,530"
+      },
+      "Okinawa": {
+        "bus": "9,130",
+        "flight": "9,130"
+      }
+    }
+  },
+  {
+    "departure_name1": "Kyushu",
+    "charges": {
+      "Hokkaido": {
+        "bus": "4,530",
+        "flight": "4,530"
+      },
+      "Northern Tohoku": {
+        "bus": "4,530",
+        "flight": "4,530"
+      },
+      "Southern Tohoku": {
+        "bus": "4,530",
+        "flight": "4,530"
+      },
+      "Kanto": {
+        "bus": "4,530",
+        "flight": "4,530"
+      },
+      "Shinetsu": {
+        "bus": "4,530",
+        "flight": "4,530"
+      },
+      "Hokuriku": {
+        "bus": "4,530",
+        "flight": "4,530"
+      },
+      "Chubu": {
+        "bus": "4,530",
+        "flight": "4,530"
+      },
+      "Kansai": {
+        "bus": "4,530",
+        "flight": "4,530"
+      },
+      "Chugoku": {
+        "bus": "4,530",
+        "flight": "4,530"
+      },
+      "Shikoku": {
+        "bus": "4,530",
+        "flight": "4,530"
+      },
+      "Kyushu": {
+        "bus": "なし",
+        "flight": "なし"
+      },
+      "Okinawa": {
+        "bus": "9,130",
+        "flight": "9,130"
+      }
+    }
+  },
+  {
+    "departure_name1": "Okinawa",
+    "charges": {
+      "Hokkaido": {
+        "bus": "9,130",
+        "flight": "9,130"
+      },
+      "Northern Tohoku": {
+        "bus": "9,130",
+        "flight": "9,130"
+      },
+      "Southern Tohoku": {
+        "bus": "9,130",
+        "flight": "9,130"
+      },
+      "Kanto": {
+        "bus": "9,130",
+        "flight": "9,130"
+      },
+      "Shinetsu": {
+        "bus": "9,130",
+        "flight": "9,130"
+      },
+      "Hokuriku": {
+        "bus": "9,130",
+        "flight": "9,130"
+      },
+      "Chubu": {
+        "bus": "9,130",
+        "flight": "9,130"
+      },
+      "Kansai": {
+        "bus": "9,130",
+        "flight": "9,130"
+      },
+      "Chugoku": {
+        "bus": "9,130",
+        "flight": "9,130"
+      },
+      "Shikoku": {
+        "bus": "9,130",
+        "flight": "9,130"
+      },
+      "Kyushu": {
+        "bus": "9,130",
+        "flight": "9,130"
+      },
+      "Okinawa": {
+        "bus": "なし",
+        "flight": "なし"
+      }
+    }
+  }
+]
