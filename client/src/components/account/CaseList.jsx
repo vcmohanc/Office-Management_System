@@ -119,11 +119,29 @@ export default function CaseList({ setActiveTab: onNavigate }) {
     setIsEditing(false);
     setChatInput('');
 
+    const isClaim = caseObj._isClaim;
+    const endpoint = isClaim ? `/api/claims/${caseObj._id}` : `/api/cases/${caseObj._id}`;
+
+    // Always fetch fresh details so messages are never hidden or lost in any situation
+    apiFetch(endpoint)
+      .then(res => res.ok ? res.json() : null)
+      .then(freshData => {
+        if (freshData && Array.isArray(freshData.messages)) {
+          setSelectedCase(prev => {
+            if (prev && prev._id === caseObj._id) {
+              return { ...prev, ...freshData, messages: freshData.messages };
+            }
+            return prev;
+          });
+          const updater = isClaim ? setClaims : setCases;
+          updater(prev => prev.map(item => item._id === caseObj._id ? { ...item, ...freshData, messages: freshData.messages } : item));
+        }
+      })
+      .catch(err => console.error('Error fetching fresh case details:', err));
+
     if (user.role !== 'support' && caseObj.hasAccountNotification) {
       try {
-        const isClaim = caseObj._isClaim;
-        const endpoint = isClaim ? `/api/claims/${caseObj._id}` : `/api/cases/${caseObj._id}`;
-        await apiFetch(`${endpoint}`, {
+        await apiFetch(endpoint, {
           method: 'PUT',
           body: JSON.stringify({ hasAccountNotification: false }),
         });
@@ -132,19 +150,16 @@ export default function CaseList({ setActiveTab: onNavigate }) {
         if (isClaim) setClaims(updateState);
         else setCases(updateState);
         
-        setSelectedCase(prev => ({ ...prev, hasAccountNotification: false }));
+        setSelectedCase(prev => prev ? { ...prev, hasAccountNotification: false } : prev);
       } catch (err) {
         console.error('Error clearing notification', err);
       }
     }
     
     if (user.role === 'support' && (caseObj.hasSupportNotification || (caseObj.messages && caseObj.messages.some(m => !m.readBySupport)))) {
-      const isClaim = caseObj._isClaim;
-      
       // Clear support notification flag
       if (caseObj.hasSupportNotification) {
-        const updateEndpoint = isClaim ? `/api/claims/${caseObj._id}` : `/api/cases/${caseObj._id}`;
-        apiFetch(updateEndpoint, {
+        apiFetch(endpoint, {
           method: 'PUT',
           body: JSON.stringify({ hasSupportNotification: false })
         }).catch(err => console.error('Failed to clear support notification', err));
@@ -152,22 +167,22 @@ export default function CaseList({ setActiveTab: onNavigate }) {
         const updateState = (items) => items.map(c => c._id === caseObj._id ? { ...c, hasSupportNotification: false } : c);
         if (isClaim) setClaims(updateState);
         else setCases(updateState);
-        setSelectedCase(prev => ({ ...prev, hasSupportNotification: false }));
+        setSelectedCase(prev => prev ? { ...prev, hasSupportNotification: false } : prev);
       }
 
-      // Mark messages as read
+      // Mark messages as read safely without ever overwriting messages with undefined
       if (caseObj.messages && caseObj.messages.some(m => !m.readBySupport)) {
-        const msgEndpoint = isClaim ? `/api/claims/${caseObj._id}/messages/read` : `/api/cases/${caseObj._id}/messages/read`;
-        const apiUrl = import.meta.env.VITE_API_URL || '';
-        fetch(`${apiUrl}${msgEndpoint}`, {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' }
+        const msgEndpoint = `${endpoint}/messages/read`;
+        apiFetch(msgEndpoint, {
+          method: 'POST'
         })
-        .then(res => res.json())
-        .then(updatedCase => {
-          const updater = isClaim ? setClaims : setCases;
-          updater(prev => prev.map(item => item._id === caseObj._id ? { ...item, messages: updatedCase.messages } : item));
-          setSelectedCase(prev => ({ ...prev, messages: updatedCase.messages }));
+        .then(res => res.ok ? res.json() : null)
+        .then(resMessages => {
+          if (Array.isArray(resMessages) && resMessages.length > 0) {
+            const updater = isClaim ? setClaims : setCases;
+            updater(prev => prev.map(item => item._id === caseObj._id ? { ...item, messages: resMessages } : item));
+            setSelectedCase(prev => prev && prev._id === caseObj._id ? { ...prev, messages: resMessages } : prev);
+          }
         })
         .catch(err => console.error('Failed to mark messages as read', err));
       }
@@ -595,6 +610,16 @@ export default function CaseList({ setActiveTab: onNavigate }) {
   });
 
   useEffect(() => {
+    if (selectedCase?._id) {
+      sessionStorage.setItem('openCaseDetailId', selectedCase._id);
+      sessionStorage.setItem('openCaseIsClaim', selectedCase._isClaim ? 'true' : 'false');
+    } else {
+      sessionStorage.removeItem('openCaseDetailId');
+      sessionStorage.removeItem('openCaseIsClaim');
+    }
+  }, [selectedCase?._id, selectedCase?._isClaim]);
+
+  useEffect(() => {
     setLoading(true);
     Promise.all([
       apiFetch('/api/cases').then(res => res.json()).catch(() => []),
@@ -607,6 +632,29 @@ export default function CaseList({ setActiveTab: onNavigate }) {
       const types = optionsData.filter(opt => opt.type === 'ExpenseType');
       setExpenseTypeOptions(types);
       setLoading(false);
+
+      // Restore and refresh currently open case detail (e.g. after refresh)
+      const savedCaseId = sessionStorage.getItem('openCaseDetailId');
+      const savedIsClaim = sessionStorage.getItem('openCaseIsClaim') === 'true';
+      if (savedCaseId) {
+        const found = (savedIsClaim ? claimsData : casesData).find(x => x._id === savedCaseId);
+        if (found) {
+          setSelectedCase({
+            ...found,
+            _isClaim: savedIsClaim,
+            type: savedIsClaim ? 'Staff Case' : (found.case_type || 'Office Case'),
+            displayId: savedIsClaim ? (found.claim_id || found.claimId || `#CLM-${(found._id || '').slice(-6).toUpperCase()}`) : (found.case_id || found.caseId || `#CAS-${(found._id || '').slice(-6).toUpperCase()}`),
+            displayDate: new Date(found.expensePeriodStart || found.expense_period_start || found.createdAt).toLocaleDateString('en-US'),
+            displayName: savedIsClaim ? (found.fullName || found.full_name || 'N/A') : (found.staffName || found.staff_name || 'N/A'),
+            displayTotal: savedIsClaim ? (found.expenseAmount || found.expense_amount || found.totalExpense金額 || found.total_expense_amount || 0) : (found.finalTotal || found.totalExpense || found.total_expense || found.final_total_amount || 0),
+            currencySymbol: found.currency === 'JPY' ? '¥' : '$',
+            expense_type: found.expenseType || found.expense_type || 'N/A',
+            registered_by: found.registered_by || (savedIsClaim ? 'support_user' : 'account_user'),
+            registered_by_role: found.registered_by_role || (savedIsClaim ? 'support' : 'account'),
+            messages: found.messages || []
+          });
+        }
+      }
     });
   }, []);
 
@@ -868,6 +916,13 @@ export default function CaseList({ setActiveTab: onNavigate }) {
                   Edit
                 </button>
               )}
+              <button 
+                onClick={() => setSelectedCase(null)} 
+                className="p-1.5 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-md transition-colors ml-1 cursor-pointer" 
+                title="閉じる"
+              >
+                <X className="w-5 h-5" />
+              </button>
             </div>
           </div>
           
