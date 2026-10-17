@@ -10,6 +10,7 @@ import { Search, ChevronDown, Calendar, Download, Building, Landmark, AlertCircl
 import toast from 'react-hot-toast';
 import { PAYMENT_METHODS } from '../../utils/paymentMethodMapping.js';
 import { toastConfirm } from '../../utils/toastConfirm.jsx';
+import { isApprovedForPayment } from '../../utils/paymentUtils.js';
 
 export default function PaymentStatus() {
   const { caseId } = useParams();
@@ -422,7 +423,7 @@ export default function PaymentStatus() {
       const allCases = [...mappedCases, ...mappedClaims];
       setCases(allCases);
       if (caseId) {
-        const found = allCases.find(c => c._id === caseId || c.case_id === caseId);
+        const found = allCases.find(c => (c._id === caseId || c.case_id === caseId) && isApprovedForPayment(c));
         if (found) {
           setSelectedCase(found);
           set表示ingDetails(true);
@@ -438,14 +439,8 @@ export default function PaymentStatus() {
     });
   }, []);
 
-  // Exclude cases that are 'Pending', 'New', 'Rejected', etc.
-  const excludedStatuses = [
-    'Pending', 'Payment 保留中', '保留中', 
-    'New', 'Registered', '新た',
-    'REJECTED', '拒否', 
-    'RETURNED_FOR_CORRECTION', '保留中 Correction'
-  ];
-  const postApprovalCases = cases.filter(c => c && !c.isDeleted && !excludedStatuses.includes(c.status));
+  // Only show cases that have received 支払承認 (Payment Approval)
+  const postApprovalCases = cases.filter(c => isApprovedForPayment(c));
 
   const getStatusJapanese = (status) => {
     switch (status) {
