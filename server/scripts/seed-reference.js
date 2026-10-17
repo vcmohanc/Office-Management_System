@@ -63,7 +63,7 @@ async function run() {
   await mongoose.connect(MONGO_URI);
   console.log('Connected to MongoDB\n');
 
-  // 1. Options — upsert by (type, value)
+  // 1. Options — upsert by (type, value) and prune stale options
   const optionsData = readSeed('options.json');
   if (optionsData) {
     let inserted = 0, updated = 0;
@@ -76,7 +76,22 @@ async function run() {
       if (result.upsertedCount) inserted++;
       else if (result.modifiedCount) updated++;
     }
-    console.log(`  Options: ${inserted} inserted, ${updated} updated`);
+
+    // Prune stale options that are not in options.json
+    const validTypes = [...new Set(optionsData.map(o => o.type))];
+    const existing = await Option.find({ type: { $in: validTypes } }).lean();
+    const validKeys = new Set(optionsData.map(o => `${o.type}:::${o.value}`));
+    const idsToDelete = existing
+      .filter(o => !validKeys.has(`${o.type}:::${o.value}`))
+      .map(o => o._id);
+
+    let deleted = 0;
+    if (idsToDelete.length > 0) {
+      const delResult = await Option.deleteMany({ _id: { $in: idsToDelete } });
+      deleted = delResult.deletedCount;
+    }
+
+    console.log(`  Options: ${inserted} inserted, ${updated} updated, ${deleted} stale deleted`);
   }
 
   // 2. Regions — upsert by (name1, name2)

@@ -86,12 +86,6 @@ export default function Sidebar({ activeTab, setActiveTab, openMenus, toggleMenu
     if (user.role === 'support' && item.name === 'サポート部門') return true;
     
     return false;
-  }).map(item => {
-    // Do not show sub-items for Admin
-    if (!user || user.role === 'admin') {
-      return { ...item, subItems: undefined };
-    }
-    return item;
   });
 
   const handleLogout = () => {
