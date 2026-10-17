@@ -207,8 +207,16 @@ export default function ClaimList() {
     newCases[index][field] = value;
 
     if (field === 'expenseType') {
-      const autoFill = getAutoFill(value);
-      Object.assign(newCases[index], autoFill);
+      const autoFill = getAutoFill(value, options.AdvancerCategory, options.BearingParty);
+      if (autoFill) {
+        Object.assign(newCases[index], autoFill);
+      } else if (value === 'others') {
+        const defaultAdv = options.AdvancerCategory.find(o => o.value.includes('project'))?.value || 'Select for each project';
+        const defaultBear = options.BearingParty.find(o => o.value.includes('project'))?.value || 'Select for each project';
+        newCases[index].advancerCategory = defaultAdv;
+        newCases[index].bearingParty = defaultBear;
+        newCases[index].advancerName = '';
+      }
     }
 
     if (field === 'advancerCategory' || field === 'bearingParty') {
@@ -228,10 +236,16 @@ export default function ClaimList() {
           const rawCost = postalMatrix[senderId][recipientId];
           numericCost = typeof rawCost === 'string' ? Number(rawCost.replace(/,/g, '')) : rawCost;
         }
-        if (!numericCost) {
+        if (!numericCost || isNaN(numericCost)) {
           numericCost = lookupPostalRate(senderName, recipientName, japaneseRegions, prefPostalRates);
         }
-        newCases[index].suggested金額 = numericCost || 0;
+        numericCost = isNaN(numericCost) ? 0 : numericCost;
+        newCases[index].suggested金額 = numericCost;
+        if (!newCases[index].expense金額 || Number(newCases[index].expense金額) === 0) {
+          if (numericCost > 0) {
+            newCases[index].expense金額 = numericCost;
+          }
+        }
       } else {
         newCases[index].suggested金額 = 0;
       }
@@ -243,8 +257,8 @@ export default function ClaimList() {
       const method = field === 'transportMethod' ? value : newCases[index].transportMethod;
       if (departureName && destinationName) {
         let numericCost = 0;
-        const departureId = regions.find(r => r.name1 === departureName)?._id;
-        const destinationId = regions.find(r => r.name2 === destinationName)?._id;
+        const departureId = regions.find(r => r.name1 === departureName || r.name2 === departureName)?._id;
+        const destinationId = regions.find(r => r.name2 === destinationName || r.name1 === destinationName)?._id;
         if (departureId && destinationId && travelMatrix[departureId] && travelMatrix[departureId][destinationId]) {
           const rawCost = travelMatrix[departureId][destinationId];
           if (typeof rawCost === 'string' || typeof rawCost === 'number') {
@@ -257,10 +271,16 @@ export default function ClaimList() {
             else numericCost = Math.max(busCost, flightCost);
           }
         }
-        if (!numericCost) {
+        if (!numericCost || isNaN(numericCost)) {
           numericCost = lookupTravelRate(departureName, destinationName, method, japaneseRegions, prefTravelRates);
         }
-        newCases[index].suggested金額 = numericCost || 0;
+        numericCost = isNaN(numericCost) ? 0 : numericCost;
+        newCases[index].suggested金額 = numericCost;
+        if (!newCases[index].expense金額 || Number(newCases[index].expense金額) === 0) {
+          if (numericCost > 0) {
+            newCases[index].expense金額 = numericCost;
+          }
+        }
       } else {
         newCases[index].suggested金額 = 0;
       }
@@ -678,7 +698,13 @@ export default function ClaimList() {
               <label className="block text-sm font-bold text-gray-700 mb-2">立替者カテゴリ <span className="text-red-500">*</span></label>
               <div className="relative">
                 <select 
-                  value={caseItem.advancerCategory}
+                  value={
+                    options.AdvancerCategory.find(opt => 
+                      opt.value === caseItem.advancerCategory ||
+                      opt.value.toLowerCase() === (caseItem.advancerCategory || '').toLowerCase() ||
+                      ((caseItem.advancerCategory || '').toLowerCase().includes('staff') && opt.value.toLowerCase().includes('staff'))
+                    )?.value || caseItem.advancerCategory || ''
+                  }
                   onChange={(e) => updateCase(index, 'advancerCategory', e.target.value)} className={`w-full px-4 py-2 border border-gray-300 rounded-md appearance-none focus:outline-none focus:ring-1 focus:ring-[#162D50] text-gray-600`}>
                   <option value="">カテゴリを選択</option>
                   {options.AdvancerCategory.map((opt) => (
@@ -692,7 +718,13 @@ export default function ClaimList() {
               <label className="block text-sm font-bold text-gray-700 mb-2">負担先 <span className="text-red-500">*</span></label>
               <div className="relative">
                 <select 
-                  value={caseItem.bearingParty}
+                  value={
+                    options.BearingParty.find(opt => 
+                      opt.value === caseItem.bearingParty ||
+                      opt.value.toLowerCase() === (caseItem.bearingParty || '').toLowerCase() ||
+                      ((caseItem.bearingParty || '').toLowerCase().includes('farm') && opt.value.toLowerCase().includes('farm'))
+                    )?.value || caseItem.bearingParty || ''
+                  }
                   onChange={(e) => updateCase(index, 'bearingParty', e.target.value)} className={`w-full px-4 py-2 border border-gray-300 rounded-md appearance-none focus:outline-none focus:ring-1 focus:ring-[#162D50] text-gray-600`}>
                   <option value="">負担先を選択</option>
                   {options.BearingParty.map((opt) => (

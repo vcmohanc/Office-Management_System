@@ -24,7 +24,8 @@ for i in $(seq 1 20); do
 done
 
 echo "Running database seed (skips existing records)..."
-sudo docker compose exec -T server node scripts/seedB2B.js && echo "  Seed complete." || echo "  Seed skipped or already up to date."
+sudo docker compose exec -T server node scripts/seedB2B.js && echo "  B2B seed complete." || echo "  B2B seed skipped or already up to date."
+sudo docker compose exec -T server node scripts/seed-reference.js && echo "  Reference data seed complete." || echo "  Reference data seed skipped or already up to date."
 
 echo "Cleaning up old images..."
 sudo docker image prune -f
