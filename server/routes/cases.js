@@ -70,7 +70,9 @@ router.get('/', verifyToken, requireRole('admin', 'account', 'support'), async (
 
 router.get('/:id', verifyToken, requireRole('admin', 'account', 'support'), async (req, res) => {
   try {
-    const caseItem = await Case.findById(req.params.id);
+    const caseItem = await Case.findOne({
+      $or: [{ _id: req.params.id }, { case_id: req.params.id }]
+    });
     if (!caseItem) return res.status(404).json({ message: 'Case not found' });
     res.json(caseItem);
   } catch (error) {
@@ -324,27 +326,12 @@ router.delete('/:id', requireRole('admin', 'account'), async (req, res) => {
   }
 });
 
-router.patch('/:id/messages/read', requireRole('admin', 'account', 'support'), async (req, res) => {
-  try {
-    const updatedCase = await Case.findOneAndUpdate(
-      { _id: req.params.id },
-      { $set: { "messages.$[].readBySupport": true } },
-      { new: true }
-    );
-    if (!updatedCase) {
-      return res.status(404).json({ message: 'Case not found' });
-    }
-    res.json(updatedCase);
-  } catch (error) {
-    console.error('Error updating read status:', error);
-    res.status(500).json({ message: 'Server error updating read status' });
-  }
-});
-
 router.post('/:id/deduct-term', requireRole('admin', 'account'), async (req, res) => {
   try {
     const caseId = req.params.id;
-    const existingCase = await Case.findById(caseId);
+    const existingCase = await Case.findOne({
+      $or: [{ _id: caseId }, { case_id: caseId }]
+    });
     if (!existingCase) {
       return res.status(404).json({ message: 'Case not found' });
     }
@@ -388,8 +375,8 @@ router.post('/:id/messages', verifyToken, requireRole('admin', 'account', 'suppo
     const role = req.user.role;
     const author = role === 'support' ? 'support_user' : role === 'account' ? 'account_user' : req.user.username;
 
-    const updatedCase = await Case.findByIdAndUpdate(
-      req.params.id,
+    const updatedCase = await Case.findOneAndUpdate(
+      { $or: [{ _id: req.params.id }, { case_id: req.params.id }] },
       {
         $push: {
           messages: {
@@ -403,7 +390,7 @@ router.post('/:id/messages', verifyToken, requireRole('admin', 'account', 'suppo
           hasAccountNotification: role === 'support'
         }
       },
-      { new: true }
+      { returnDocument: 'after' }
     );
 
     if (!updatedCase) {
@@ -421,15 +408,15 @@ router.post('/:id/messages', verifyToken, requireRole('admin', 'account', 'suppo
 
 router.all('/:id/messages/read', verifyToken, requireRole('admin', 'account', 'support'), async (req, res) => {
   try {
-    const updatedCase = await Case.findByIdAndUpdate(
-      req.params.id,
+    const updatedCase = await Case.findOneAndUpdate(
+      { $or: [{ _id: req.params.id }, { case_id: req.params.id }] },
       {
         $set: {
           'messages.$[].readBySupport': true,
           hasSupportNotification: false
         }
       },
-      { new: true }
+      { returnDocument: 'after' }
     );
     if (!updatedCase) return res.status(404).json({ message: 'Case not found' });
     res.status(200).json(updatedCase.messages || []);
