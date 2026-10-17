@@ -19,6 +19,17 @@ router.get('/', verifyToken, requireRole('admin', 'account', 'support'), async (
   }
 });
 
+router.get('/:id', verifyToken, requireRole('admin', 'account', 'support'), async (req, res) => {
+  try {
+    const claim = await Claim.findById(req.params.id);
+    if (!claim) return res.status(404).json({ message: 'Claim not found' });
+    res.json(claim);
+  } catch (error) {
+    console.error('Error fetching claim:', error);
+    res.status(500).json({ message: 'Server error fetching claim' });
+  }
+});
+
 const claimSchemaZod = z.object({
   full_name: z.string().min(1, 'Full name is required'),
   staff_id: z.string().min(1, 'Staff ID is required'),
@@ -436,7 +447,7 @@ router.post('/:id/messages', verifyToken, requireRole('admin', 'account', 'suppo
   }
 });
 
-router.post('/:id/messages/read', verifyToken, requireRole('admin', 'account', 'support'), async (req, res) => {
+router.all('/:id/messages/read', verifyToken, requireRole('admin', 'account', 'support'), async (req, res) => {
   try {
     const updatedClaim = await Claim.findByIdAndUpdate(
       req.params.id,
@@ -449,7 +460,7 @@ router.post('/:id/messages/read', verifyToken, requireRole('admin', 'account', '
       { new: true }
     );
     if (!updatedClaim) return res.status(404).json({ message: 'Claim not found' });
-    res.status(200).json({ message: 'Messages marked as read' });
+    res.status(200).json(updatedClaim.messages || []);
   } catch (error) {
     res.status(500).json({ message: 'Error marking messages as read' });
   }

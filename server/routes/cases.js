@@ -67,6 +67,17 @@ router.get('/', verifyToken, requireRole('admin', 'account', 'support'), async (
     res.status(500).json({ message: 'Server error fetching cases' });
   }
 });
+
+router.get('/:id', verifyToken, requireRole('admin', 'account', 'support'), async (req, res) => {
+  try {
+    const caseItem = await Case.findById(req.params.id);
+    if (!caseItem) return res.status(404).json({ message: 'Case not found' });
+    res.json(caseItem);
+  } catch (error) {
+    console.error('Error fetching case:', error);
+    res.status(500).json({ message: 'Error fetching case' });
+  }
+});
 router.post('/', requireRole('admin', 'account', 'support'), async (req, res) => {
   try {
     // Validate request
@@ -408,7 +419,7 @@ router.post('/:id/messages', verifyToken, requireRole('admin', 'account', 'suppo
   }
 });
 
-router.post('/:id/messages/read', verifyToken, requireRole('admin', 'account', 'support'), async (req, res) => {
+router.all('/:id/messages/read', verifyToken, requireRole('admin', 'account', 'support'), async (req, res) => {
   try {
     const updatedCase = await Case.findByIdAndUpdate(
       req.params.id,
@@ -421,7 +432,7 @@ router.post('/:id/messages/read', verifyToken, requireRole('admin', 'account', '
       { new: true }
     );
     if (!updatedCase) return res.status(404).json({ message: 'Case not found' });
-    res.status(200).json({ message: 'Messages marked as read' });
+    res.status(200).json(updatedCase.messages || []);
   } catch (error) {
     res.status(500).json({ message: 'Error marking messages as read' });
   }
