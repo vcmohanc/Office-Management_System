@@ -34,7 +34,11 @@ export default function Header({ activeTab, user, setActiveTab, setMobileMenuOpe
     '経理部門': '経理部門',
     '人事部門': '人事部門',
     '事業部門': '事業部門',
-    'サポート部門': 'サポート部門'
+    'サポート部門': 'サポート部門',
+    'Support User Management': 'サポート担当管理',
+    'Support User Registration': 'サポート担当登録',
+    'Admin User List': 'システムアカウント管理',
+    'Admin New Registration': '新規アカウント登録'
   };
 
   const displayTab = tabLabels[activeTab] || activeTab;

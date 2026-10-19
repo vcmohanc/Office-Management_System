@@ -4,7 +4,7 @@ import {
   ChevronDown, Eye, Edit, Search, Filter, Download, Printer,
   X, Calendar, Briefcase, Hash, Clock, Building2, MapPin,
   Phone, Mail, FileText, ShieldCheck, RefreshCw, Link2,
-  BellRing, EyeOff,
+  BellRing, EyeOff, UserPlus,
 } from 'lucide-react';
 import { apiFetch } from '../../utils/apiFetch.js';
 
@@ -52,7 +52,7 @@ const isEmpOffice = (e) =>
   e.staffType === 'Office Staff' ||
   (Array.isArray(e.department) ? e.department.some(isOffice) : isOffice(e.department || ''));
 
-export default function HRDashboard() {
+export default function HRDashboard({ setParentActiveTab }) {
   const [employees, setEmployees] = useState([]);
   const [partners, setPartners] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -305,105 +305,116 @@ export default function HRDashboard() {
   ];
 
   return (
-    <div className="flex flex-col space-y-6 pb-10">
+    <div className="flex flex-col space-y-4 sm:space-y-6 pb-8 sm:pb-12 max-w-full overflow-hidden">
 
       {/* ── Hero Header ── */}
-      <div className="relative bg-gradient-to-r from-[#162D50] to-[#1e4080] rounded-2xl p-6 overflow-hidden">
-        <div className="absolute -top-8 -right-8 w-40 h-40 rounded-full bg-white/5" />
-        <div className="absolute top-4 right-24 w-20 h-20 rounded-full bg-white/5" />
-        <div className="absolute -bottom-6 right-8 w-28 h-28 rounded-full bg-white/5" />
-        <div className="relative flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="relative bg-gradient-to-r from-[#162D50] to-[#1e4080] rounded-xl sm:rounded-2xl p-4 sm:p-6 overflow-hidden">
+        <div className="absolute -top-8 -right-8 w-40 h-40 rounded-full bg-white/5 pointer-events-none" />
+        <div className="absolute top-4 right-24 w-20 h-20 rounded-full bg-white/5 pointer-events-none" />
+        <div className="absolute -bottom-6 right-8 w-28 h-28 rounded-full bg-white/5 pointer-events-none" />
+        <div className="relative flex flex-col lg:flex-row lg:items-center justify-between gap-4">
           <div>
-            <p className="text-blue-200 text-xs font-semibold uppercase tracking-widest mb-1">人材管理・採用</p>
-            <h2 className="text-2xl font-bold text-white leading-tight">人事部門</h2>
-            <p className="text-blue-200 text-sm mt-1">スタッフの在籍・配属・オンボーディング状況を管理します。</p>
+            <p className="text-blue-200 text-[11px] sm:text-xs font-semibold uppercase tracking-widest mb-1">人材管理・採用</p>
+            <h2 className="text-xl sm:text-2xl font-bold text-white leading-tight">人事部門</h2>
+            <p className="text-blue-200 text-xs sm:text-sm mt-1">スタッフの在籍・配属・オンボーディング状況を管理します。</p>
           </div>
-          <div className="flex items-center gap-2 shrink-0">
-            <button onClick={fetchStaff} className="flex items-center gap-2 px-3 py-2 rounded-lg border border-white/40 text-white text-sm hover:bg-white/10 transition-colors">
-              <RefreshCw className="w-4 h-4" />
+          <div className="flex items-center gap-2 shrink-0 flex-wrap w-full lg:w-auto">
+            <button 
+              onClick={() => setParentActiveTab && setParentActiveTab('Support User Management')}
+              className="w-full sm:w-auto flex items-center justify-center gap-2 px-3.5 sm:px-4 py-2 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white text-xs sm:text-sm font-semibold transition-all shadow-md hover:shadow-lg transform active:scale-95 cursor-pointer"
+              title="サポート部門ユーザーの確認・登録・編集・削除 (CRUD)"
+            >
+              <UserPlus className="w-4 h-4 shrink-0" />
+              <span>サポート部門ユーザー管理</span>
             </button>
-            <button onClick={handleExportCSV} className="flex items-center gap-2 px-4 py-2 rounded-lg border border-white/40 text-white text-sm font-medium hover:bg-white/10 transition-colors">
-              <Download className="w-4 h-4" /><span>エクスポート</span>
-            </button>
-            <button onClick={handlePrint} className="flex items-center gap-2 px-4 py-2 rounded-lg bg-white text-[#162D50] text-sm font-semibold hover:bg-blue-50 transition-colors shadow-sm">
-              <Printer className="w-4 h-4" /><span>印刷</span>
-            </button>
+            <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
+              <button onClick={fetchStaff} className="flex-1 sm:flex-initial flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg border border-white/40 text-white text-xs sm:text-sm hover:bg-white/10 transition-colors cursor-pointer" title="更新">
+                <RefreshCw className="w-4 h-4 shrink-0" />
+                <span className="inline sm:hidden">更新</span>
+              </button>
+              <button onClick={handleExportCSV} className="flex-1 sm:flex-initial flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg border border-white/40 text-white text-xs sm:text-sm font-medium hover:bg-white/10 transition-colors cursor-pointer">
+                <Download className="w-4 h-4 shrink-0" /><span>エクスポート</span>
+              </button>
+              <button onClick={handlePrint} className="flex-1 sm:flex-initial flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-white text-[#162D50] text-xs sm:text-sm font-semibold hover:bg-blue-50 transition-colors shadow-sm cursor-pointer">
+                <Printer className="w-4 h-4 shrink-0" /><span>印刷</span>
+              </button>
+            </div>
           </div>
         </div>
       </div>
 
       {/* ── KPI Strip (6 cards) ── */}
-      <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-4">
-        <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5 flex items-center gap-4">
-          <div className="w-10 h-10 rounded-lg bg-[#162D50]/10 flex items-center justify-center shrink-0">
-            <Users className="w-5 h-5 text-[#162D50]" />
+      <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-6 gap-2.5 sm:gap-4">
+        <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-3.5 sm:p-5 flex items-center gap-2.5 sm:gap-4">
+          <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-lg bg-[#162D50]/10 flex items-center justify-center shrink-0">
+            <Users className="w-4 h-4 sm:w-5 sm:h-5 text-[#162D50]" />
           </div>
-          <div>
-            <p className="text-2xl font-bold text-[#162D50]">{totalStaff}</p>
-            <p className="text-xs text-gray-500 font-medium mt-0.5">全スタッフ数</p>
-          </div>
-        </div>
-        <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5 flex items-center gap-4">
-          <div className="w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center shrink-0">
-            <Building className="w-5 h-5 text-blue-600" />
-          </div>
-          <div>
-            <p className="text-2xl font-bold text-[#162D50]">{hakenStaff}</p>
-            <p className="text-xs text-gray-500 font-medium mt-0.5">派遣スタッフ</p>
+          <div className="min-w-0">
+            <p className="text-xl sm:text-2xl font-bold text-[#162D50] truncate">{totalStaff}</p>
+            <p className="text-[11px] sm:text-xs text-gray-500 font-medium mt-0.5 truncate">全スタッフ数</p>
           </div>
         </div>
-        <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5 flex items-center gap-4">
-          <div className="w-10 h-10 rounded-lg bg-emerald-50 flex items-center justify-center shrink-0">
-            <UserCheck className="w-5 h-5 text-emerald-600" />
+        <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-3.5 sm:p-5 flex items-center gap-2.5 sm:gap-4">
+          <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-lg bg-blue-50 flex items-center justify-center shrink-0">
+            <Building className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600" />
           </div>
-          <div>
-            <p className="text-2xl font-bold text-[#162D50]">{officeStaff}</p>
-            <p className="text-xs text-gray-500 font-medium mt-0.5">内勤スタッフ</p>
-          </div>
-        </div>
-        <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5 flex items-center gap-4">
-          <div className="w-10 h-10 rounded-lg bg-amber-50 flex items-center justify-center shrink-0">
-            <AlertTriangle className="w-5 h-5 text-amber-500" />
-          </div>
-          <div>
-            <p className={`text-2xl font-bold ${pendingCount > 0 ? 'text-amber-600' : 'text-[#162D50]'}`}>{pendingCount}</p>
-            <p className="text-xs text-gray-500 font-medium mt-0.5">確認保留中</p>
+          <div className="min-w-0">
+            <p className="text-xl sm:text-2xl font-bold text-[#162D50] truncate">{hakenStaff}</p>
+            <p className="text-[11px] sm:text-xs text-gray-500 font-medium mt-0.5 truncate">派遣スタッフ</p>
           </div>
         </div>
-        <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5 flex items-center gap-4">
-          <div className="w-10 h-10 rounded-lg bg-indigo-50 flex items-center justify-center shrink-0">
-            <Building2 className="w-5 h-5 text-indigo-600" />
+        <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-3.5 sm:p-5 flex items-center gap-2.5 sm:gap-4">
+          <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-lg bg-emerald-50 flex items-center justify-center shrink-0">
+            <UserCheck className="w-4 h-4 sm:w-5 sm:h-5 text-emerald-600" />
           </div>
-          <div>
-            <p className="text-2xl font-bold text-[#162D50]">{activeB2BCount}</p>
-            <p className="text-xs text-gray-500 font-medium mt-0.5">B2Bパートナー</p>
+          <div className="min-w-0">
+            <p className="text-xl sm:text-2xl font-bold text-[#162D50] truncate">{officeStaff}</p>
+            <p className="text-[11px] sm:text-xs text-gray-500 font-medium mt-0.5 truncate">内勤スタッフ</p>
+          </div>
+        </div>
+        <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-3.5 sm:p-5 flex items-center gap-2.5 sm:gap-4">
+          <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-lg bg-amber-50 flex items-center justify-center shrink-0">
+            <AlertTriangle className="w-4 h-4 sm:w-5 sm:h-5 text-amber-500" />
+          </div>
+          <div className="min-w-0">
+            <p className={`text-xl sm:text-2xl font-bold truncate ${pendingCount > 0 ? 'text-amber-600' : 'text-[#162D50]'}`}>{pendingCount}</p>
+            <p className="text-[11px] sm:text-xs text-gray-500 font-medium mt-0.5 truncate">確認保留中</p>
+          </div>
+        </div>
+        <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-3.5 sm:p-5 flex items-center gap-2.5 sm:gap-4">
+          <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-lg bg-indigo-50 flex items-center justify-center shrink-0">
+            <Building2 className="w-4 h-4 sm:w-5 sm:h-5 text-indigo-600" />
+          </div>
+          <div className="min-w-0">
+            <p className="text-xl sm:text-2xl font-bold text-[#162D50] truncate">{activeB2BCount}</p>
+            <p className="text-[11px] sm:text-xs text-gray-500 font-medium mt-0.5 truncate">B2Bパートナー</p>
           </div>
         </div>
         <div
-          className={`bg-white rounded-xl border shadow-sm p-5 flex items-center gap-4 cursor-pointer transition-all ${
+          className={`bg-white rounded-xl border shadow-sm p-3.5 sm:p-5 flex items-center gap-2.5 sm:gap-4 cursor-pointer transition-all ${
             visaExpiredStaff.length > 0 ? 'border-red-200 hover:border-red-300' : 'border-gray-100'
           }`}
           onClick={() => { if (visaExpiredStaff.length > 0) { setShowExpiredVisa(v => !v); setExpiredAlertDismissed(false); } }}
           title={visaExpiredStaff.length > 0 ? 'クリックして期限切れスタッフを表示/非表示' : undefined}
         >
-          <div className={`w-10 h-10 rounded-lg flex items-center justify-center shrink-0 ${visaExpiredStaff.length > 0 ? 'bg-red-50' : visaExpiringSoon > 0 ? 'bg-orange-50' : 'bg-gray-50'}`}>
-            <ShieldCheck className={`w-5 h-5 ${visaExpiredStaff.length > 0 ? 'text-red-600' : visaExpiringSoon > 0 ? 'text-orange-500' : 'text-gray-400'}`} />
+          <div className={`w-9 h-9 sm:w-10 sm:h-10 rounded-lg flex items-center justify-center shrink-0 ${visaExpiredStaff.length > 0 ? 'bg-red-50' : visaExpiringSoon > 0 ? 'bg-orange-50' : 'bg-gray-50'}`}>
+            <ShieldCheck className={`w-4 h-4 sm:w-5 sm:h-5 ${visaExpiredStaff.length > 0 ? 'text-red-600' : visaExpiringSoon > 0 ? 'text-orange-500' : 'text-gray-400'}`} />
           </div>
           <div className="min-w-0">
             <div className="flex items-baseline gap-1.5">
               {visaExpiredStaff.length > 0 && (
-                <span className="text-2xl font-bold text-red-600">{visaExpiredStaff.length}</span>
+                <span className="text-xl sm:text-2xl font-bold text-red-600">{visaExpiredStaff.length}</span>
               )}
               {visaExpiringSoon > 0 && (
-                <span className={`font-bold ${visaExpiredStaff.length > 0 ? 'text-sm text-orange-400' : 'text-2xl text-orange-500'}`}>
+                <span className={`font-bold ${visaExpiredStaff.length > 0 ? 'text-xs sm:text-sm text-orange-400' : 'text-xl sm:text-2xl text-orange-500'}`}>
                   {visaExpiredStaff.length > 0 ? `+${visaExpiringSoon}` : visaExpiringSoon}
                 </span>
               )}
               {visaExpiredStaff.length === 0 && visaExpiringSoon === 0 && (
-                <span className="text-2xl font-bold text-[#162D50]">0</span>
+                <span className="text-xl sm:text-2xl font-bold text-[#162D50]">0</span>
               )}
             </div>
-            <p className="text-xs text-gray-500 font-medium mt-0.5 truncate">
+            <p className="text-[11px] sm:text-xs text-gray-500 font-medium mt-0.5 truncate">
               {visaExpiredStaff.length > 0 ? '期限切れ / 間近' : 'ビザ期限間近'}
             </p>
           </div>
@@ -412,18 +423,18 @@ export default function HRDashboard() {
 
       {/* ── Expired Visa Alert Banner ── */}
       {visaExpiredStaff.length > 0 && !expiredAlertDismissed && (
-        <div className="bg-red-50 border border-red-200 rounded-xl px-5 py-4 flex items-start gap-3">
-          <div className="w-8 h-8 rounded-full bg-red-100 flex items-center justify-center shrink-0 mt-0.5">
-            <BellRing className="w-4 h-4 text-red-600" />
+        <div className="bg-red-50 border border-red-200 rounded-xl p-3.5 sm:px-5 sm:py-4 flex items-start gap-2.5 sm:gap-3">
+          <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-red-100 flex items-center justify-center shrink-0 mt-0.5">
+            <BellRing className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-red-600" />
           </div>
           <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 mb-1">
-              <p className="text-sm font-bold text-red-800">
+            <div className="flex items-center gap-2 mb-1 flex-wrap">
+              <p className="text-xs sm:text-sm font-bold text-red-800">
                 ビザ期限切れ — {visaExpiredStaff.length}名のスタッフが対応必要です
               </p>
-              <span className="text-xs bg-red-600 text-white font-bold px-2 py-0.5 rounded-full animate-pulse">要対応</span>
+              <span className="text-[10px] sm:text-xs bg-red-600 text-white font-bold px-2 py-0.5 rounded-full animate-pulse">要対応</span>
             </div>
-            <p className="text-xs text-red-600 mb-2">
+            <p className="text-[11px] sm:text-xs text-red-600 mb-2">
               以下のスタッフのビザが失効しています。速やかに更新手続きを行ってください。
             </p>
             <div className="flex flex-wrap gap-1.5">
@@ -431,10 +442,10 @@ export default function HRDashboard() {
                 <button
                   key={emp._id}
                   onClick={() => { setViewStaff(emp); }}
-                  className="flex items-center gap-1.5 bg-white border border-red-200 hover:border-red-400 text-red-700 text-xs font-semibold px-2.5 py-1 rounded-full transition-colors"
+                  className="flex items-center gap-1.5 bg-white border border-red-200 hover:border-red-400 text-red-700 text-[11px] sm:text-xs font-semibold px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-full transition-colors cursor-pointer"
                 >
                   <span className="w-1.5 h-1.5 rounded-full bg-red-500 shrink-0" />
-                  {emp.romajiName || emp.katakanaName || 'N/A'}
+                  <span className="truncate max-w-[120px] sm:max-w-none">{emp.romajiName || emp.katakanaName || 'N/A'}</span>
                   <span className="text-red-400 font-normal">
                     {emp.visaEndDate ? `（${Math.abs(Math.ceil((new Date(emp.visaEndDate) - Date.now()) / 86400000))}日超過）` : ''}
                   </span>
@@ -446,14 +457,14 @@ export default function HRDashboard() {
             </div>
             <button
               onClick={() => { setShowExpiredVisa(true); setExpiredAlertDismissed(true); }}
-              className="mt-2.5 text-xs font-semibold text-red-700 hover:text-red-900 underline underline-offset-2"
+              className="mt-2.5 text-xs font-semibold text-red-700 hover:text-red-900 underline underline-offset-2 cursor-pointer inline-block"
             >
               名簿で期限切れスタッフを表示する →
             </button>
           </div>
           <button
             onClick={() => setExpiredAlertDismissed(true)}
-            className="p-1 rounded-lg hover:bg-red-100 text-red-400 hover:text-red-600 transition-colors shrink-0"
+            className="p-1 rounded-lg hover:bg-red-100 text-red-400 hover:text-red-600 transition-colors shrink-0 cursor-pointer"
             title="閉じる"
           >
             <X className="w-4 h-4" />
@@ -463,29 +474,39 @@ export default function HRDashboard() {
 
       {/* ── B2B Farm Placement Panel ── */}
       <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
-        <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
-          <div className="flex items-center gap-2.5">
-            <Link2 className="w-4 h-4 text-[#162D50]" />
-            <h3 className="text-sm font-bold text-[#162D50]">B2Bファーム配置状況</h3>
-            <span className="text-xs text-gray-400 font-normal">カードをクリックして絞り込み</span>
+        <div className="px-4 sm:px-6 py-3 sm:py-4 border-b border-gray-100 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+          <div className="flex items-center gap-2 flex-wrap">
+            <Link2 className="w-4 h-4 text-[#162D50] shrink-0" />
+            <h3 className="text-xs sm:text-sm font-bold text-[#162D50]">B2Bファーム配置状況</h3>
+            <span className="text-[11px] sm:text-xs text-gray-400 font-normal">カードをクリックして絞り込み</span>
           </div>
-          {partnerFilter && (
-            <button onClick={() => setPartnerFilter(null)} className="text-xs text-[#162D50] hover:underline font-medium">
-              絞り込みを解除
+          <div className="flex items-center gap-2 sm:gap-3 flex-wrap justify-between sm:justify-end">
+            <button
+              onClick={() => setParentActiveTab && setParentActiveTab('Support User Management')}
+              className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-lg bg-[#162D50] hover:bg-[#1f3f6e] text-white text-xs font-semibold transition-colors shadow-xs cursor-pointer"
+              title="サポート部門ユーザー一覧"
+            >
+              <UserPlus className="w-3.5 h-3.5 shrink-0" />
+              <span>サポート担当一覧</span>
             </button>
-          )}
+            {partnerFilter && (
+              <button onClick={() => setPartnerFilter(null)} className="text-xs text-[#162D50] hover:underline font-medium cursor-pointer">
+                絞り込みを解除
+              </button>
+            )}
+          </div>
         </div>
-        <div className="p-4 flex gap-3 overflow-x-auto pb-5">
+        <div className="p-3 sm:p-4 flex gap-2.5 sm:gap-3 overflow-x-auto pb-4 scroll-smooth">
           {/* All */}
           <button
             onClick={() => setPartnerFilter(null)}
-            className={`flex flex-col items-start p-4 rounded-xl border-2 min-w-[140px] shrink-0 transition-all ${
+            className={`flex flex-col items-start p-3 sm:p-4 rounded-xl border-2 min-w-[130px] sm:min-w-[140px] shrink-0 transition-all cursor-pointer ${
               partnerFilter === null ? 'border-[#162D50] bg-[#162D50]/5' : 'border-gray-100 bg-gray-50 hover:border-gray-200'
             }`}
           >
-            <p className="text-xs font-semibold text-gray-500 mb-2">全配属</p>
-            <p className="text-2xl font-bold text-[#162D50]">{hakenStaff}</p>
-            <p className="text-xs text-gray-400 mt-1">派遣スタッフ計</p>
+            <p className="text-[11px] sm:text-xs font-semibold text-gray-500 mb-1 sm:mb-2">全配属</p>
+            <p className="text-xl sm:text-2xl font-bold text-[#162D50]">{hakenStaff}</p>
+            <p className="text-[11px] sm:text-xs text-gray-400 mt-1">派遣スタッフ計</p>
           </button>
 
           {/* Per-partner cards */}
@@ -493,22 +514,22 @@ export default function HRDashboard() {
             <button
               key={pc._id}
               onClick={() => setPartnerFilter(partnerFilter === pc._id ? null : pc._id)}
-              className={`flex flex-col items-start p-4 rounded-xl border-2 min-w-[160px] shrink-0 transition-all text-left ${
+              className={`flex flex-col items-start p-3 sm:p-4 rounded-xl border-2 min-w-[150px] sm:min-w-[160px] shrink-0 transition-all text-left cursor-pointer ${
                 partnerFilter === pc._id ? 'border-[#162D50] bg-[#162D50]/5' : 'border-gray-100 bg-white hover:border-gray-200'
               }`}
             >
-              <div className="flex items-center justify-between w-full mb-1">
-                <span className="text-xs font-semibold text-gray-700 truncate max-w-[100px]">{pc.partner_name}</span>
-                <span className={`text-xs px-1.5 py-0.5 rounded-full font-medium shrink-0 ${B2B_STATUS_PILL[pc.status] || 'bg-gray-100 text-gray-500'}`}>
+              <div className="flex items-center justify-between w-full mb-1 gap-1">
+                <span className="text-xs font-semibold text-gray-700 truncate max-w-[90px] sm:max-w-[100px]">{pc.partner_name}</span>
+                <span className={`text-[10px] sm:text-xs px-1.5 py-0.5 rounded-full font-medium shrink-0 ${B2B_STATUS_PILL[pc.status] || 'bg-gray-100 text-gray-500'}`}>
                   {pc.status === 'Active' ? '稼働中' : pc.status === 'Expiring Soon' ? '期限間近' : pc.status === 'Pending' ? '保留中' : pc.status}
                 </span>
               </div>
-              <p className="text-2xl font-bold text-[#162D50]">{pc.staffCount}</p>
-              <p className="text-xs text-gray-400 mt-1 truncate w-full">{pc.industry}</p>
+              <p className="text-xl sm:text-2xl font-bold text-[#162D50]">{pc.staffCount}</p>
+              <p className="text-[11px] sm:text-xs text-gray-400 mt-1 truncate w-full">{pc.industry}</p>
               {pc.contract_end_date && (() => {
                 const d = Math.ceil((new Date(pc.contract_end_date) - Date.now()) / 86400000);
                 return d <= 60 && d >= 0 ? (
-                  <p className="text-xs text-orange-500 font-medium mt-1">契約{d}日後</p>
+                  <p className="text-[10px] sm:text-xs text-orange-500 font-medium mt-1">契約{d}日後</p>
                 ) : null;
               })()}
             </button>
@@ -518,13 +539,13 @@ export default function HRDashboard() {
           {unassignedCount > 0 && (
             <button
               onClick={() => setPartnerFilter(partnerFilter === 'unassigned' ? null : 'unassigned')}
-              className={`flex flex-col items-start p-4 rounded-xl border-2 min-w-[140px] shrink-0 transition-all ${
+              className={`flex flex-col items-start p-3 sm:p-4 rounded-xl border-2 min-w-[130px] sm:min-w-[140px] shrink-0 transition-all cursor-pointer ${
                 partnerFilter === 'unassigned' ? 'border-orange-400 bg-orange-50' : 'border-gray-100 bg-gray-50 hover:border-orange-200'
               }`}
             >
-              <p className="text-xs font-semibold text-orange-500 mb-2">未配属</p>
-              <p className="text-2xl font-bold text-orange-600">{unassignedCount}</p>
-              <p className="text-xs text-gray-400 mt-1">配属先なし</p>
+              <p className="text-[11px] sm:text-xs font-semibold text-orange-500 mb-1 sm:mb-2">未配属</p>
+              <p className="text-xl sm:text-2xl font-bold text-orange-600">{unassignedCount}</p>
+              <p className="text-[11px] sm:text-xs text-gray-400 mt-1">配属先なし</p>
             </button>
           )}
 
@@ -539,15 +560,15 @@ export default function HRDashboard() {
       {/* ── Staff Table ── */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
         {/* Header bar */}
-        <div className="px-6 py-4 border-b border-gray-100 bg-gray-50 flex flex-col md:flex-row md:items-center justify-between gap-3">
-          <div className="flex items-center gap-2.5 flex-wrap">
-            <Handshake className="w-5 h-5 text-[#162D50]" />
-            <h3 className="text-base font-bold text-[#162D50]">スタッフ名簿</h3>
+        <div className="px-4 sm:px-6 py-3.5 sm:py-4 border-b border-gray-100 bg-gray-50 flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+          <div className="flex items-center gap-2 flex-wrap">
+            <Handshake className="w-5 h-5 text-[#162D50] shrink-0" />
+            <h3 className="text-sm sm:text-base font-bold text-[#162D50]">スタッフ名簿</h3>
             <span className="px-2 py-0.5 rounded-full bg-[#162D50]/10 text-[#162D50] text-xs font-semibold">{filteredEmployees.length}</span>
             {visaExpiredStaff.length > 0 && (
               <span className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-red-100 text-red-700 text-xs font-semibold">
-                <EyeOff className="w-3 h-3" />
-                期限切れ {visaExpiredStaff.length}名 非表示
+                <EyeOff className="w-3 h-3 shrink-0" />
+                <span className="hidden sm:inline">期限切れ</span> {visaExpiredStaff.length}名 非表示
               </span>
             )}
             {partnerFilter && partnerFilter !== 'unassigned' && (() => {
@@ -556,23 +577,23 @@ export default function HRDashboard() {
             })()}
             {partnerFilter === 'unassigned' && <span className="px-2 py-0.5 rounded-full bg-orange-100 text-orange-600 text-xs font-semibold">未配属</span>}
           </div>
-          <div className="flex flex-wrap items-center gap-2">
-            <div className="relative">
+          <div className="flex flex-wrap items-center gap-2 w-full lg:w-auto">
+            <div className="relative flex-1 sm:flex-initial">
               <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400" />
               <input
                 type="text"
                 placeholder="名前・ID・配属先で検索..."
                 value={searchQuery}
                 onChange={e => setSearchQuery(e.target.value)}
-                className="pl-8 pr-3 py-1.5 border border-gray-200 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-[#162D50]/30 w-48"
+                className="pl-8 pr-3 py-1.5 border border-gray-200 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-[#162D50]/30 w-full sm:w-44 md:w-52"
               />
             </div>
-            <div className="relative">
+            <div className="relative flex-1 sm:flex-initial">
               <Filter className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400" />
               <select
                 value={statusFilter}
                 onChange={e => setStatusFilter(e.target.value)}
-                className="pl-8 pr-7 py-1.5 border border-gray-200 rounded-lg text-xs appearance-none focus:outline-none focus:ring-2 focus:ring-[#162D50]/30 bg-white"
+                className="w-full pl-8 pr-7 py-1.5 border border-gray-200 rounded-lg text-xs appearance-none focus:outline-none focus:ring-2 focus:ring-[#162D50]/30 bg-white cursor-pointer"
               >
                 <option value="All">すべてのステータス</option>
                 <option value="Active">アクティブ</option>
@@ -582,40 +603,42 @@ export default function HRDashboard() {
               </select>
               <ChevronDown className="w-3.5 h-3.5 absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
             </div>
-            {visaExpiredStaff.length > 0 && (
-              <button
-                onClick={() => setShowExpiredVisa(v => !v)}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors ${
-                  showExpiredVisa
-                    ? 'bg-red-50 border-red-300 text-red-700 hover:bg-red-100'
-                    : 'border-red-200 text-red-600 hover:bg-red-50'
-                }`}
-              >
-                {showExpiredVisa ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
-                <span>{showExpiredVisa ? '期限切れ非表示' : `期限切れ表示 (${visaExpiredStaff.length})`}</span>
+            <div className="flex items-center gap-1.5 w-full sm:w-auto flex-wrap">
+              {visaExpiredStaff.length > 0 && (
+                <button
+                  onClick={() => setShowExpiredVisa(v => !v)}
+                  className={`flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors cursor-pointer ${
+                    showExpiredVisa
+                      ? 'bg-red-50 border-red-300 text-red-700 hover:bg-red-100'
+                      : 'border-red-200 text-red-600 hover:bg-red-50'
+                  }`}
+                >
+                  {showExpiredVisa ? <Eye className="w-3.5 h-3.5 shrink-0" /> : <EyeOff className="w-3.5 h-3.5 shrink-0" />}
+                  <span>{showExpiredVisa ? '期限切れ非表示' : `期限切れ (${visaExpiredStaff.length})`}</span>
+                </button>
+              )}
+              <button onClick={handleExportCSV} className="flex-1 sm:flex-initial flex items-center justify-center gap-1.5 px-3 py-1.5 border border-gray-200 rounded-lg text-xs font-medium text-gray-600 hover:bg-gray-50 transition-colors cursor-pointer">
+                <Download className="w-3.5 h-3.5 shrink-0" /><span>CSV</span>
               </button>
-            )}
-            <button onClick={handleExportCSV} className="flex items-center gap-1.5 px-3 py-1.5 border border-gray-200 rounded-lg text-xs font-medium text-gray-600 hover:bg-gray-50 transition-colors">
-              <Download className="w-3.5 h-3.5" /><span>CSV</span>
-            </button>
-            <button onClick={handlePrint} className="flex items-center gap-1.5 px-3 py-1.5 bg-[#162D50] text-white rounded-lg text-xs font-medium hover:bg-[#0f1f38] transition-colors">
-              <Printer className="w-3.5 h-3.5" /><span>印刷</span>
-            </button>
+              <button onClick={handlePrint} className="flex-1 sm:flex-initial flex items-center justify-center gap-1.5 px-3 py-1.5 bg-[#162D50] text-white rounded-lg text-xs font-medium hover:bg-[#0f1f38] transition-colors cursor-pointer">
+                <Printer className="w-3.5 h-3.5 shrink-0" /><span>印刷</span>
+              </button>
+            </div>
           </div>
         </div>
 
         {/* Tabs */}
-        <div className="flex border-b border-gray-200 bg-white px-6 pt-1 gap-1">
+        <div className="flex border-b border-gray-200 bg-white px-4 sm:px-6 pt-1 gap-1 overflow-x-auto scrollbar-none">
           {TABS.map(tab => (
             <button
               key={tab.key}
               onClick={() => { setActiveTab(tab.key); setPartnerFilter(null); }}
-              className={`flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium transition-colors border-b-2 ${
+              className={`flex items-center gap-1.5 px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm font-medium transition-colors border-b-2 whitespace-nowrap cursor-pointer ${
                 activeTab === tab.key ? 'border-[#162D50] text-[#162D50]' : 'border-transparent text-gray-500 hover:text-gray-700'
               }`}
             >
               {tab.label}
-              <span className={`px-1.5 py-0.5 rounded-full text-xs font-semibold ${
+              <span className={`px-1.5 py-0.5 rounded-full text-[11px] sm:text-xs font-semibold ${
                 activeTab === tab.key ? 'bg-[#162D50]/10 text-[#162D50]' : 'bg-gray-100 text-gray-500'
               }`}>{tab.count}</span>
             </button>
@@ -624,24 +647,24 @@ export default function HRDashboard() {
 
         {/* Table */}
         <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse">
+          <table className="w-full min-w-[580px] md:min-w-full text-left border-collapse">
             <thead>
               <tr className="border-b border-gray-100 bg-white">
-                <th className="py-3 px-4 text-xs font-bold text-gray-400 uppercase tracking-wider w-10">S.N.</th>
-                <th className="py-3 px-4 text-xs font-bold text-gray-400 uppercase tracking-wider">スタッフID</th>
-                <th className="py-3 px-4 text-xs font-bold text-gray-400 uppercase tracking-wider">氏名 / 配属先</th>
-                <th className="py-3 px-4 text-xs font-bold text-gray-400 uppercase tracking-wider hidden md:table-cell">部署</th>
-                <th className="py-3 px-4 text-xs font-bold text-gray-400 uppercase tracking-wider hidden lg:table-cell">ビザ期限</th>
-                <th className="py-3 px-4 text-xs font-bold text-gray-400 uppercase tracking-wider">オンボーディング</th>
-                <th className="py-3 px-4 text-xs font-bold text-gray-400 uppercase tracking-wider text-center">アクション</th>
+                <th className="py-3 px-3 sm:px-4 text-[11px] sm:text-xs font-bold text-gray-400 uppercase tracking-wider w-10 hidden sm:table-cell">S.N.</th>
+                <th className="py-3 px-3 sm:px-4 text-[11px] sm:text-xs font-bold text-gray-400 uppercase tracking-wider hidden md:table-cell">スタッフID</th>
+                <th className="py-3 px-3 sm:px-4 text-[11px] sm:text-xs font-bold text-gray-400 uppercase tracking-wider">氏名 / 配属先</th>
+                <th className="py-3 px-3 sm:px-4 text-[11px] sm:text-xs font-bold text-gray-400 uppercase tracking-wider hidden lg:table-cell">部署</th>
+                <th className="py-3 px-3 sm:px-4 text-[11px] sm:text-xs font-bold text-gray-400 uppercase tracking-wider hidden lg:table-cell">ビザ期限</th>
+                <th className="py-3 px-3 sm:px-4 text-[11px] sm:text-xs font-bold text-gray-400 uppercase tracking-wider">オンボーディング</th>
+                <th className="py-3 px-3 sm:px-4 text-[11px] sm:text-xs font-bold text-gray-400 uppercase tracking-wider text-center">アクション</th>
               </tr>
             </thead>
-            <tbody className="text-sm">
+            <tbody className="text-xs sm:text-sm">
               {loading ? (
                 Array.from({ length: 5 }).map((_, i) => (
                   <tr key={i} className="border-b border-gray-100">
                     {[10,20,36,24,16,20,12].map((w, j) => (
-                      <td key={j} className="py-4 px-4">
+                      <td key={j} className="py-3.5 px-3 sm:px-4">
                         <div className={`h-3 w-${w} rounded bg-gray-200 animate-pulse`} />
                       </td>
                     ))}
@@ -654,7 +677,7 @@ export default function HRDashboard() {
                       <Users className="w-10 h-10 text-gray-200" />
                       <p className="text-sm font-medium">スタッフの記録が見つかりません。</p>
                       {(searchQuery || statusFilter !== 'All' || partnerFilter) && (
-                        <button onClick={() => { setSearchQuery(''); setStatusFilter('All'); setPartnerFilter(null); }} className="text-xs text-[#162D50] hover:underline">
+                        <button onClick={() => { setSearchQuery(''); setStatusFilter('All'); setPartnerFilter(null); }} className="text-xs text-[#162D50] hover:underline cursor-pointer">
                           絞り込みをリセット
                         </button>
                       )}
@@ -668,56 +691,60 @@ export default function HRDashboard() {
                   const linkedPartner = getLinkedPartner(emp);
                   const workplace = Array.isArray(emp.assignedWorkPlace) ? emp.assignedWorkPlace.filter(Boolean)[0] : null;
                   const expired = isVisaExpired(emp);
+                  const staffCode = emp.staffId ? emp.staffId.replace(/[#-]/g, '') : `STF${emp._id?.slice(-6).toUpperCase()}`;
                   return (
                     <tr key={emp._id} className={`border-b transition-colors ${expired ? 'bg-red-50/60 border-red-100 hover:bg-red-50' : 'border-gray-100 bg-white hover:bg-gray-50/70'}`}>
-                      <td className="py-3.5 px-4 text-gray-400 text-sm">{index + 1}</td>
-                      <td className="py-3.5 px-4 text-gray-500 font-medium text-sm font-mono">
-                        {emp.staffId ? emp.staffId.replace(/[#-]/g, '') : `STF${emp._id?.slice(-6).toUpperCase()}`}
+                      <td className="py-3 px-3 sm:px-4 text-gray-400 text-xs hidden sm:table-cell">{index + 1}</td>
+                      <td className="py-3 px-3 sm:px-4 text-gray-500 font-medium text-xs font-mono hidden md:table-cell">
+                        {staffCode}
                       </td>
-                      <td className="py-3.5 px-4">
-                        <div className="flex items-center gap-3">
+                      <td className="py-3 px-3 sm:px-4">
+                        <div className="flex items-center gap-2.5 sm:gap-3">
                           <span className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0 ${avatarClass}`}>
                             {initials}
                           </span>
-                          <div>
-                            <p className="font-semibold text-[#162D50] text-sm leading-snug">
+                          <div className="min-w-0">
+                            <p className="font-semibold text-[#162D50] text-xs sm:text-sm leading-snug truncate">
                               {emp.romajiName || emp.katakanaName || 'N/A'}
                             </p>
+                            <span className="text-[10px] text-gray-400 font-mono md:hidden block">
+                              {staffCode}
+                            </span>
                             {workplace ? (
-                              <p className="text-xs flex items-center gap-1 mt-0.5">
+                              <p className="text-[11px] sm:text-xs flex items-center gap-1 mt-0.5 truncate">
                                 <MapPin className="w-3 h-3 shrink-0" />
-                                <span className={`font-medium ${linkedPartner ? 'text-indigo-600' : 'text-gray-400'}`}>
+                                <span className={`font-medium truncate ${linkedPartner ? 'text-indigo-600' : 'text-gray-400'}`}>
                                   {workplace}
                                 </span>
                                 {linkedPartner && (
-                                  <span className={`px-1.5 py-0.5 rounded-full text-xs ${B2B_STATUS_PILL[linkedPartner.status] || 'bg-gray-100 text-gray-500'}`}>
+                                  <span className={`px-1.5 py-0.5 rounded-full text-[10px] shrink-0 ${B2B_STATUS_PILL[linkedPartner.status] || 'bg-gray-100 text-gray-500'}`}>
                                     {linkedPartner.status === 'Active' ? '稼働中' : linkedPartner.status === 'Expiring Soon' ? '期限間近' : linkedPartner.status}
                                   </span>
                                 )}
                               </p>
                             ) : !isEmpOffice(emp) ? (
-                              <p className="text-xs text-orange-400 mt-0.5">配属先未設定</p>
+                              <p className="text-[11px] sm:text-xs text-orange-400 mt-0.5">配属先未設定</p>
                             ) : null}
                           </div>
                         </div>
                       </td>
-                      <td className="py-3.5 px-4 text-gray-500 text-xs hidden md:table-cell">
+                      <td className="py-3 px-3 sm:px-4 text-gray-500 text-xs hidden lg:table-cell">
                         {Array.isArray(emp.department) ? emp.department.join(', ') : emp.department || '—'}
                       </td>
-                      <td className="py-3.5 px-4 hidden lg:table-cell">{getVisaCell(emp)}</td>
-                      <td className="py-3.5 px-4">{getStatusBadge(getEmpStatus(emp))}</td>
-                      <td className="py-3.5 px-4 text-center">
-                        <div className="flex justify-center items-center gap-1.5">
+                      <td className="py-3 px-3 sm:px-4 hidden lg:table-cell">{getVisaCell(emp)}</td>
+                      <td className="py-3 px-3 sm:px-4">{getStatusBadge(getEmpStatus(emp))}</td>
+                      <td className="py-3 px-3 sm:px-4 text-center">
+                        <div className="flex justify-center items-center gap-1 sm:gap-1.5">
                           <button
                             onClick={() => setViewStaff(emp)}
-                            className="p-1.5 rounded-lg text-gray-400 hover:text-blue-600 hover:bg-blue-50 transition-colors"
+                            className="p-1.5 rounded-lg text-gray-400 hover:text-blue-600 hover:bg-blue-50 transition-colors cursor-pointer"
                             title="詳細を見る"
                           >
                             <Eye className="w-4 h-4" />
                           </button>
                           <button
                             onClick={() => handleEditClick(emp)}
-                            className="p-1.5 rounded-lg text-gray-400 hover:text-emerald-600 hover:bg-emerald-50 transition-colors"
+                            className="p-1.5 rounded-lg text-gray-400 hover:text-emerald-600 hover:bg-emerald-50 transition-colors cursor-pointer"
                             title="編集"
                           >
                             <Edit className="w-4 h-4" />
@@ -741,24 +768,24 @@ export default function HRDashboard() {
           ? Math.ceil((new Date(viewStaff.visaEndDate) - Date.now()) / 86400000)
           : null;
         return (
-          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden flex flex-col max-h-[90vh]">
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-2.5 sm:p-4">
+            <div className="bg-white rounded-xl sm:rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden flex flex-col max-h-[92vh] sm:max-h-[90vh]">
               {/* Header */}
-              <div className="relative bg-gradient-to-r from-[#162D50] to-[#1e4080] px-6 py-5 overflow-hidden shrink-0">
-                <div className="absolute -top-6 -right-6 w-24 h-24 rounded-full bg-white/5" />
-                <div className="absolute top-2 right-16 w-12 h-12 rounded-full bg-white/5" />
+              <div className="relative bg-gradient-to-r from-[#162D50] to-[#1e4080] px-4 sm:px-6 py-4 sm:py-5 overflow-hidden shrink-0">
+                <div className="absolute -top-6 -right-6 w-24 h-24 rounded-full bg-white/5 pointer-events-none" />
+                <div className="absolute top-2 right-16 w-12 h-12 rounded-full bg-white/5 pointer-events-none" />
                 <div className="flex items-start justify-between relative">
-                  <div className="flex items-center gap-3">
-                    <div className={`w-12 h-12 rounded-xl flex items-center justify-center text-base font-bold shrink-0 ${AVATAR_COLORS[0]}`}>
+                  <div className="flex items-center gap-2.5 sm:gap-3">
+                    <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center text-sm sm:text-base font-bold shrink-0 ${AVATAR_COLORS[0]}`}>
                       {getInitials(viewStaff)}
                     </div>
-                    <div>
-                      <h3 className="text-base font-bold text-white">{viewStaff.romajiName || viewStaff.katakanaName || 'N/A'}</h3>
-                      <p className="text-blue-200 text-xs mt-0.5">{viewStaff.katakanaName}</p>
-                      <div className="mt-1.5">{getStatusBadge(getEmpStatus(viewStaff))}</div>
+                    <div className="min-w-0">
+                      <h3 className="text-sm sm:text-base font-bold text-white truncate">{viewStaff.romajiName || viewStaff.katakanaName || 'N/A'}</h3>
+                      <p className="text-blue-200 text-xs mt-0.5 truncate">{viewStaff.katakanaName}</p>
+                      <div className="mt-1">{getStatusBadge(getEmpStatus(viewStaff))}</div>
                     </div>
                   </div>
-                  <button onClick={() => setViewStaff(null)} className="p-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white transition-colors">
+                  <button onClick={() => setViewStaff(null)} className="p-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white transition-colors cursor-pointer shrink-0">
                     <X className="w-4 h-4" />
                   </button>
                 </div>
@@ -869,13 +896,13 @@ export default function HRDashboard() {
               </div>
 
               {/* Footer */}
-              <div className="flex items-center justify-end gap-2 px-5 py-4 border-t border-gray-100 bg-gray-50 shrink-0">
-                <button onClick={() => setViewStaff(null)} className="px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-100 rounded-xl transition-colors">
+              <div className="flex items-center justify-end gap-2 px-4 sm:px-5 py-3 sm:py-4 border-t border-gray-100 bg-gray-50 shrink-0">
+                <button onClick={() => setViewStaff(null)} className="px-4 py-2 text-xs sm:text-sm font-medium text-gray-600 hover:bg-gray-100 rounded-xl transition-colors cursor-pointer">
                   閉じる
                 </button>
                 <button
                   onClick={() => { handleEditClick(viewStaff); setViewStaff(null); }}
-                  className="px-4 py-2 text-sm font-semibold bg-[#162D50] hover:bg-[#0f1f38] text-white rounded-xl transition-colors"
+                  className="px-4 py-2 text-xs sm:text-sm font-semibold bg-[#162D50] hover:bg-[#0f1f38] text-white rounded-xl transition-colors cursor-pointer"
                 >
                   編集する
                 </button>
@@ -887,19 +914,28 @@ export default function HRDashboard() {
 
       {/* ── Edit Modal ── */}
       {isEditOpen && selectedStaff && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full overflow-hidden flex flex-col max-h-[90vh]">
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-2.5 sm:p-4">
+          <div className="bg-white rounded-xl sm:rounded-2xl shadow-2xl max-w-lg w-full overflow-hidden flex flex-col max-h-[92vh] sm:max-h-[90vh]">
             {/* Header */}
-            <div className="relative bg-gradient-to-r from-[#162D50] to-[#1e4080] px-6 py-5 overflow-hidden shrink-0">
-              <div className="absolute -top-6 -right-6 w-24 h-24 rounded-full bg-white/5" />
-              <div className="relative">
-                <p className="text-blue-200 text-xs font-semibold uppercase tracking-widest mb-0.5">人事アクション</p>
-                <h3 className="text-lg font-bold text-white">スタッフ情報の更新</h3>
-                <p className="text-blue-200 text-sm mt-0.5">対象: {selectedStaff.romajiName || selectedStaff.katakanaName}</p>
+            <div className="relative bg-gradient-to-r from-[#162D50] to-[#1e4080] px-4 sm:px-6 py-4 sm:py-5 overflow-hidden shrink-0">
+              <div className="absolute -top-6 -right-6 w-24 h-24 rounded-full bg-white/5 pointer-events-none" />
+              <div className="flex items-start justify-between relative">
+                <div>
+                  <p className="text-blue-200 text-xs font-semibold uppercase tracking-widest mb-0.5">人事アクション</p>
+                  <h3 className="text-base sm:text-lg font-bold text-white">スタッフ情報の更新</h3>
+                  <p className="text-blue-200 text-xs sm:text-sm mt-0.5 truncate">対象: {selectedStaff.romajiName || selectedStaff.katakanaName}</p>
+                </div>
+                <button 
+                  onClick={() => setIsEditOpen(false)} 
+                  disabled={isSubmitting}
+                  className="p-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white transition-colors cursor-pointer shrink-0"
+                >
+                  <X className="w-4 h-4" />
+                </button>
               </div>
             </div>
 
-            <div className="overflow-y-auto flex-1 p-6 space-y-6">
+            <div className="overflow-y-auto flex-1 p-4 sm:p-6 space-y-4 sm:space-y-6">
               {/* Onboarding Status */}
               <div>
                 <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">オンボーディングステータス</p>
@@ -976,18 +1012,18 @@ export default function HRDashboard() {
             </div>
 
             {/* Footer */}
-            <div className="px-6 py-4 border-t border-gray-100 bg-gray-50 flex justify-end gap-2 shrink-0">
+            <div className="px-4 sm:px-6 py-3 sm:py-4 border-t border-gray-100 bg-gray-50 flex justify-end gap-2 shrink-0">
               <button
                 onClick={() => setIsEditOpen(false)}
                 disabled={isSubmitting}
-                className="px-5 py-2.5 rounded-xl text-sm font-semibold text-gray-600 hover:bg-gray-200 transition-colors"
+                className="px-4 sm:px-5 py-2 sm:py-2.5 rounded-xl text-xs sm:text-sm font-semibold text-gray-600 hover:bg-gray-200 transition-colors cursor-pointer"
               >
                 キャンセル
               </button>
               <button
                 onClick={handleSaveChanges}
                 disabled={isSubmitting}
-                className={`px-5 py-2.5 rounded-xl text-sm font-semibold text-white transition-all shadow-sm ${isSubmitting ? 'bg-gray-400 cursor-not-allowed' : 'bg-[#162D50] hover:bg-[#0f1f38]'}`}
+                className={`px-4 sm:px-5 py-2 sm:py-2.5 rounded-xl text-xs sm:text-sm font-semibold text-white transition-all shadow-sm cursor-pointer ${isSubmitting ? 'bg-gray-400 cursor-not-allowed' : 'bg-[#162D50] hover:bg-[#0f1f38]'}`}
               >
                 {isSubmitting ? '保存中...' : '変更を保存'}
               </button>

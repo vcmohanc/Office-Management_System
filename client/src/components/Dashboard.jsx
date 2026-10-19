@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Sidebar from './layout/Sidebar';
 import Header from './layout/Header';
 import DashboardHome from './dashboard/DashboardHome';
@@ -31,6 +31,15 @@ export default function Dashboard({ setToken }) {
     if (user.role === 'support') return 'サポート部門';
     return 'B2B部門';
   });
+
+  // Guard: if non-admin user lands on generic 'Dashboard', route to their department dashboard
+  useEffect(() => {
+    if (activeTab === 'Dashboard' && user.role && user.role !== 'admin') {
+      if (user.role === 'hr') setActiveTab('人事部門');
+      else if (user.role === 'account') setActiveTab('経理部門');
+      else if (user.role === 'support') setActiveTab('サポート部門');
+    }
+  }, [activeTab, user.role]);
   const [openMenus, setOpenMenus] = useState({});
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
@@ -65,9 +74,14 @@ export default function Dashboard({ setToken }) {
         </div>
 
         <div className="flex-1 overflow-auto p-2.5 sm:p-4 md:p-6 lg:p-8 print:overflow-visible print:p-0">
-          {activeTab === 'Dashboard' && <DashboardHome setActiveTab={setActiveTab} />}
+          {activeTab === 'Dashboard' && (
+            user.role === 'hr' ? <HRDashboard setParentActiveTab={setActiveTab} /> :
+            user.role === 'account' ? <AccountDashboard /> :
+            user.role === 'support' ? <SupportDashboard setActiveTab={setActiveTab} /> :
+            <DashboardHome setActiveTab={setActiveTab} />
+          )}
           {activeTab === '経理部門' && <AccountDashboard />}
-          {activeTab === '人事部門' && <HRDashboard />}
+          {activeTab === '人事部門' && <HRDashboard setParentActiveTab={setActiveTab} />}
           {activeTab === 'New Case' && <NewCase setActiveTab={setActiveTab} />}
           {activeTab === 'Case List' && <CaseList setActiveTab={setActiveTab} />}
           {activeTab === 'Payment Entry' && <PaymentEntry />}
@@ -80,12 +94,14 @@ export default function Dashboard({ setToken }) {
           {activeTab === 'サポート部門' && <SupportDashboard setActiveTab={setActiveTab} />}
           {activeTab === 'Staff Claim Request' && <StaffClaimRequest />}
           {activeTab === 'Claim List' && <CaseList setActiveTab={setActiveTab} />}
-          {activeTab === 'Admin New Registration' && <AdminNewRegistration setActiveTab={setActiveTab} />}
+          {activeTab === 'Admin New Registration' && <AdminNewRegistration setActiveTab={setActiveTab} initialRole="account" fromTab="Dashboard" />}
+          {(activeTab === 'Support User Management' || activeTab === 'サポート担当管理') && <AdminUserList setActiveTab={setActiveTab} filterRole="support" fromTab="人事部門" />}
+          {(activeTab === 'Support User Registration' || activeTab === 'サポート担当登録') && <AdminNewRegistration setActiveTab={setActiveTab} initialRole="support" fromTab="Support User Management" lockRole="support" />}
           {activeTab === 'Admin User List' && <AdminUserList setActiveTab={setActiveTab} />}
           {activeTab === 'Settings' && <Settings user={user} />}
           {activeTab === 'Expense SetUp' && <ExpenseSetup />}
           {activeTab === 'B2B部門' && <B2BDashboard />}
-          {activeTab !== 'Dashboard' && activeTab !== '経理部門' && activeTab !== '人事部門' && activeTab !== 'New Case' && activeTab !== 'Case List' && activeTab !== 'Payment Entry' && activeTab !== 'Paid Status' && activeTab !== 'Staff Registration' && activeTab !== 'Staff List' && activeTab !== 'Assign Work Place' && activeTab !== 'Visa Management' && activeTab !== 'Resignation' && activeTab !== 'サポート部門' && activeTab !== 'Staff Claim Request' && activeTab !== 'Claim List' && activeTab !== 'Admin New Registration' && activeTab !== 'Admin User List' && activeTab !== 'Settings' && activeTab !== 'Expense SetUp' && activeTab !== 'B2B部門' && (
+          {activeTab !== 'Dashboard' && activeTab !== '経理部門' && activeTab !== '人事部門' && activeTab !== 'New Case' && activeTab !== 'Case List' && activeTab !== 'Payment Entry' && activeTab !== 'Paid Status' && activeTab !== 'Staff Registration' && activeTab !== 'Staff List' && activeTab !== 'Assign Work Place' && activeTab !== 'Visa Management' && activeTab !== 'Resignation' && activeTab !== 'サポート部門' && activeTab !== 'Staff Claim Request' && activeTab !== 'Claim List' && activeTab !== 'Admin New Registration' && activeTab !== 'Support User Registration' && activeTab !== 'サポート担当登録' && activeTab !== 'Support User Management' && activeTab !== 'サポート担当管理' && activeTab !== 'Admin User List' && activeTab !== 'Settings' && activeTab !== 'Expense SetUp' && activeTab !== 'B2B部門' && (
             <div className="flex items-center justify-center h-full text-gray-400">
               <p>{activeTab} のコンテンツはまだ実装されていません。</p>
             </div>
