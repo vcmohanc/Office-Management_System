@@ -1,5 +1,6 @@
 import express from 'express';
 import B2BPartner from '../models/B2BPartner.js';
+import User from '../models/User.js';
 import { requireRole } from '../middleware/auth.js';
 
 const router = express.Router();
@@ -42,12 +43,29 @@ router.get('/engagements', async (req, res) => {
 
     if (status && typeof status === 'string') query.status = status;
 
+    // Scope for support users: only their assigned partners
+    if (req.user && req.user.role === 'support') {
+      const userDoc = await User.findById(req.user.id);
+      if (userDoc && Array.isArray(userDoc.assignedPartners) && userDoc.assignedPartners.length > 0) {
+        query.partner_name = { $in: userDoc.assignedPartners };
+      }
+    }
+
     if (search && typeof search === 'string') {
       const sanitizedSearch = search.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-      query.$or = [
+      const searchConditions = [
         { partner_name: { $regex: sanitizedSearch, $options: 'i' } },
         { industry: { $regex: sanitizedSearch, $options: 'i' } },
       ];
+      if (query.partner_name) {
+        query.$and = [
+          { partner_name: query.partner_name },
+          { $or: searchConditions }
+        ];
+        delete query.partner_name;
+      } else {
+        query.$or = searchConditions;
+      }
     }
 
     const parsedPage = Math.max(parseInt(page, 10) || 1, 1);
@@ -63,6 +81,24 @@ router.get('/engagements', async (req, res) => {
   } catch (error) {
     console.error('Error fetching B2B engagements:', error);
     res.status(500).json({ message: 'Server error fetching engagements' });
+  }
+});
+
+// GET /api/b2b/partners (all partners)
+router.get('/partners', async (req, res) => {
+  try {
+    const query = {};
+    if (req.user && req.user.role === 'support') {
+      const userDoc = await User.findById(req.user.id);
+      if (userDoc && Array.isArray(userDoc.assignedPartners) && userDoc.assignedPartners.length > 0) {
+        query.partner_name = { $in: userDoc.assignedPartners };
+      }
+    }
+    const partners = await B2BPartner.find(query).sort({ partner_name: 1 });
+    res.json(partners);
+  } catch (error) {
+    console.error('Error fetching B2B partners:', error);
+    res.status(500).json({ message: 'Server error fetching partners' });
   }
 });
 

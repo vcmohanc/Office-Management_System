@@ -9,6 +9,7 @@ import { expenseRules } from '../utils/expenseRules.js';
 import { caseEvents } from '../events.js';
 import * as ledgerController from '../controllers/settlementLedgerController.js';
 import { generateLedgerForCase } from '../utils/calc_settlement.js';
+import User from '../models/User.js';
 
 const router = express.Router();
 
@@ -60,7 +61,28 @@ const caseSchemaZod = z.object({
 
 router.get('/', verifyToken, requireRole('admin', 'account', 'support'), async (req, res) => {
   try {
-    const cases = await Case.find().sort({ createdAt: -1 });
+    let query = {};
+    if (req.user.role === 'support') {
+      const currentUser = await User.findById(req.user.id).select('assignedPartners assignedBranches username').lean();
+      const assigned = currentUser?.assignedPartners || req.user.assignedPartners || [];
+      const branches = currentUser?.assignedBranches || req.user.assignedBranches || [];
+      const allAssigned = [...assigned, ...branches].filter(Boolean);
+
+      query = {
+        $or: [
+          { registered_by: req.user.username },
+          ...(currentUser?.username ? [{ registered_by: currentUser.username }] : []),
+          ...(allAssigned.length > 0 ? [
+            { partner_name: { $in: allAssigned } },
+            { partner_id: { $in: allAssigned } },
+            { branch_farm_name: { $in: allAssigned } },
+            { location: { $in: allAssigned } }
+          ] : [])
+        ]
+      };
+    }
+
+    const cases = await Case.find(query).sort({ createdAt: -1 });
     res.json(cases);
   } catch (error) {
     console.error('Error fetching cases:', error);
@@ -74,6 +96,27 @@ router.get('/:id', verifyToken, requireRole('admin', 'account', 'support'), asyn
       $or: [{ _id: req.params.id }, { case_id: req.params.id }]
     });
     if (!caseItem) return res.status(404).json({ message: 'Case not found' });
+
+    // Enforce data isolation for support role
+    if (req.user.role === 'support') {
+      const currentUser = await User.findById(req.user.id).select('assignedPartners assignedBranches username').lean();
+      const assigned = currentUser?.assignedPartners || req.user.assignedPartners || [];
+      const branches = currentUser?.assignedBranches || req.user.assignedBranches || [];
+      const allAssigned = [...assigned, ...branches].filter(Boolean);
+
+      const isOwner = caseItem.registered_by === req.user.username || caseItem.registered_by === currentUser?.username;
+      const isAssigned = allAssigned.length > 0 && (
+        allAssigned.includes(caseItem.partner_name) ||
+        allAssigned.includes(caseItem.partner_id) ||
+        allAssigned.includes(caseItem.branch_farm_name) ||
+        allAssigned.includes(caseItem.location)
+      );
+
+      if (!isOwner && !isAssigned) {
+        return res.status(403).json({ error: 'Forbidden: you do not have permission to access this case' });
+      }
+    }
+
     res.json(caseItem);
   } catch (error) {
     console.error('Error fetching case:', error);

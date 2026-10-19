@@ -56,8 +56,8 @@ function write(filename, data) {
 // ── Export ────────────────────────────────────────────────────────────────────
 
 async function run() {
-  await mongoose.connect(MONGO_URI);
-  console.log('Connected to MongoDB\n');
+  await mongoose.connect(MONGO_URI, { dbName: 'office_manage_system' });
+  console.log('Connected to MongoDB (office_manage_system)\n');
 
   // 1. Options — no cross-references
   const options = await Option.find({}).lean();

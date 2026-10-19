@@ -60,8 +60,8 @@ function readSeed(filename) {
 // ── Seed ──────────────────────────────────────────────────────────────────────
 
 async function run() {
-  await mongoose.connect(MONGO_URI);
-  console.log('Connected to MongoDB\n');
+  await mongoose.connect(MONGO_URI, { dbName: 'office_manage_system' });
+  console.log('Connected to MongoDB (office_manage_system)\n');
 
   // 1. Options — upsert by (type, value) and prune stale options
   const optionsData = readSeed('options.json');

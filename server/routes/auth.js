@@ -19,7 +19,7 @@ const authLimiter = rateLimit({
 // Register (admin-only — requires a valid admin JWT)
 router.post('/register', authLimiter, verifyToken, requireRole('admin'), async (req, res) => {
   try {
-    const { username, password, role } = req.body;
+    const { username, password, role, assignedPartners, assignedBranches } = req.body;
     if (!username || typeof username !== 'string' || username.trim().length < 3) {
       return res.status(400).json({ error: 'Username must be at least 3 characters' });
     }
@@ -38,12 +38,14 @@ router.post('/register', authLimiter, verifyToken, requireRole('admin'), async (
     const newUser = new User({ 
       username, 
       password: hashedPassword,
-      role: role || 'employee'
+      role: role || 'employee',
+      assignedPartners: Array.isArray(assignedPartners) ? assignedPartners.filter(Boolean) : [],
+      assignedBranches: Array.isArray(assignedBranches) ? assignedBranches.filter(Boolean) : []
     });
     await newUser.save();
 
     console.info(`[SECURITY AUDIT] New user registered: "${username}" (role: ${newUser.role}) by admin "${req.user?.username}"`);
-    res.status(201).json({ message: 'User registered successfully' });
+    res.status(201).json({ message: 'User registered successfully', user: newUser });
   } catch (error) {
     console.error('Server Error:', error);
     res.status(500).json({ error: 'Internal Server Error' });
@@ -71,13 +73,29 @@ router.post('/login', authLimiter, async (req, res) => {
     }
 
     const token = jwt.sign(
-      { id: user._id, role: user.role, username: user.username, tokenVersion: user.tokenVersion },
+      { 
+        id: user._id, 
+        role: user.role, 
+        username: user.username, 
+        tokenVersion: user.tokenVersion,
+        assignedPartners: user.assignedPartners || [],
+        assignedBranches: user.assignedBranches || []
+      },
       process.env.JWT_SECRET,
       { expiresIn: '1d' }
     );
 
     console.info(`[SECURITY AUDIT] Successful login: user "${user.username}" (role: ${user.role}) from IP: ${req.ip}`);
-    res.json({ token, user: { username: user.username, role: user.role } });
+    res.json({ 
+      token, 
+      user: { 
+        id: user._id,
+        username: user.username, 
+        role: user.role,
+        assignedPartners: user.assignedPartners || [],
+        assignedBranches: user.assignedBranches || []
+      } 
+    });
   } catch (error) {
     console.error('Server Error:', error);
     res.status(500).json({ error: 'Internal Server Error' });
@@ -158,7 +176,7 @@ router.put('/users/:id', verifyToken, async (req, res) => {
       return res.status(403).json({ error: 'Forbidden: you can only edit your own account' });
     }
 
-    const { username, role, password } = req.body;
+    const { username, role, password, assignedPartners, assignedBranches } = req.body;
 
     // Prevent role escalation by non-admins (even on their own account)
     if (role && !isAdmin) {
@@ -177,6 +195,8 @@ router.put('/users/:id', verifyToken, async (req, res) => {
     const updateFields = {
       ...(username && { username }),
       ...(role && isAdmin && { role }),   // role only settable by admin
+      ...(assignedPartners !== undefined && isAdmin && { assignedPartners: Array.isArray(assignedPartners) ? assignedPartners.filter(Boolean) : [] }),
+      ...(assignedBranches !== undefined && isAdmin && { assignedBranches: Array.isArray(assignedBranches) ? assignedBranches.filter(Boolean) : [] }),
     };
 
     let incFields = {};
