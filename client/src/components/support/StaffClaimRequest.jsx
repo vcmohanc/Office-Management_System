@@ -130,9 +130,23 @@ export default function StaffClaimRequest() {
   }, []);
 
   useEffect(() => {
-    apiFetch('/api/b2b/engagements?limit=100')
-      .then(r => r.json())
-      .then(d => { if (d.data) setPartners(d.data); })
+    const storedUser = JSON.parse(localStorage.getItem('user') || '{}');
+    apiFetch('/api/b2b/partners')
+      .then(r => r.ok ? r.json() : [])
+      .then(data => {
+        if (Array.isArray(data) && data.length > 0) return data;
+        return apiFetch('/api/b2b/engagements?limit=100')
+          .then(r => r.json())
+          .then(res => res.data || []);
+      })
+      .then(partnerList => {
+        if (storedUser.role === 'support' && Array.isArray(storedUser.assignedPartners) && storedUser.assignedPartners.length > 0) {
+          const scoped = partnerList.filter(p => storedUser.assignedPartners.includes(p.partner_name));
+          setPartners(scoped.length > 0 ? scoped : partnerList);
+        } else {
+          setPartners(partnerList);
+        }
+      })
       .catch(() => {});
   }, []);
 

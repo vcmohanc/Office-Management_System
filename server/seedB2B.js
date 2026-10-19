@@ -265,8 +265,8 @@ async function seed() {
   try {
     const uri = process.env.MONGO_URI || process.env.MONGODB_URI;
     if (!uri) throw new Error('MONGO_URI not set in .env');
-    await mongoose.connect(uri);
-    console.log('Connected to MongoDB');
+    await mongoose.connect(uri, { dbName: 'office_manage_system' });
+    console.log('Connected to MongoDB (office_manage_system)');
 
     const seedNames = partners.map(p => p.partner_name);
     const deleted = await B2BPartner.deleteMany({ partner_name: { $in: seedNames } });

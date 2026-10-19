@@ -434,8 +434,8 @@ const partners = [
 ];
 
 async function seed() {
-  await mongoose.connect(MONGO_URI);
-  console.log('Connected to MongoDB');
+  await mongoose.connect(MONGO_URI, { dbName: 'office_manage_system' });
+  console.log('Connected to MongoDB (office_manage_system)');
 
   let inserted = 0;
   let skipped = 0;

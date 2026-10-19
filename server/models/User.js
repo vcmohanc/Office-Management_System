@@ -5,6 +5,8 @@ const userSchema = new mongoose.Schema({
   password: { type: String, required: true },
   role: { type: String, default: 'employee' },
   tokenVersion: { type: Number, default: 0 },
+  assignedPartners: [{ type: String, trim: true }],
+  assignedBranches: [{ type: String, trim: true }],
 }, { timestamps: true });
 
 export default mongoose.model('User', userSchema);

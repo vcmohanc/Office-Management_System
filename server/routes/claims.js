@@ -6,12 +6,35 @@ import { validateBackendExpenseAmount } from '../utils/amountHelper.js';
 import { expenseRules } from '../utils/expenseRules.js';
 import { caseEvents } from '../events.js';
 import Settlement from '../models/Settlement.js';
+import User from '../models/User.js';
 
 const router = express.Router();
 
 router.get('/', verifyToken, requireRole('admin', 'account', 'support'), async (req, res) => {
   try {
-    const claims = await Claim.find().sort({ createdAt: -1 });
+    let query = {};
+    if (req.user.role === 'support') {
+      const currentUser = await User.findById(req.user.id).select('assignedPartners assignedBranches username').lean();
+      const assigned = currentUser?.assignedPartners || req.user.assignedPartners || [];
+      const branches = currentUser?.assignedBranches || req.user.assignedBranches || [];
+      const allAssigned = [...assigned, ...branches].filter(Boolean);
+
+      // Support user sees their own registered claims OR claims matching their assigned partners/branches
+      query = {
+        $or: [
+          { registered_by: req.user.username },
+          ...(currentUser?.username ? [{ registered_by: currentUser.username }] : []),
+          ...(allAssigned.length > 0 ? [
+            { partner_name: { $in: allAssigned } },
+            { partner_id: { $in: allAssigned } },
+            { branch_farm_name: { $in: allAssigned } },
+            { location: { $in: allAssigned } }
+          ] : [])
+        ]
+      };
+    }
+
+    const claims = await Claim.find(query).sort({ createdAt: -1 });
     res.json(claims);
   } catch (error) {
     console.error('Error fetching claims:', error);
@@ -25,6 +48,27 @@ router.get('/:id', verifyToken, requireRole('admin', 'account', 'support'), asyn
       $or: [{ _id: req.params.id }, { claim_id: req.params.id }]
     });
     if (!claim) return res.status(404).json({ message: 'Claim not found' });
+
+    // Enforce data isolation for support role
+    if (req.user.role === 'support') {
+      const currentUser = await User.findById(req.user.id).select('assignedPartners assignedBranches username').lean();
+      const assigned = currentUser?.assignedPartners || req.user.assignedPartners || [];
+      const branches = currentUser?.assignedBranches || req.user.assignedBranches || [];
+      const allAssigned = [...assigned, ...branches].filter(Boolean);
+
+      const isOwner = claim.registered_by === req.user.username || claim.registered_by === currentUser?.username;
+      const isAssigned = allAssigned.length > 0 && (
+        allAssigned.includes(claim.partner_name) ||
+        allAssigned.includes(claim.partner_id) ||
+        allAssigned.includes(claim.branch_farm_name) ||
+        allAssigned.includes(claim.location)
+      );
+
+      if (!isOwner && !isAssigned) {
+        return res.status(403).json({ error: 'Forbidden: you do not have permission to access this claim' });
+      }
+    }
+
     res.json(claim);
   } catch (error) {
     console.error('Error fetching claim:', error);

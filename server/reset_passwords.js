@@ -25,7 +25,7 @@ if (!TARGET_PASSWORD || TARGET_PASSWORD.length < 12) {
   process.exit(1);
 }
 
-mongoose.connect('mongodb://localhost:27017/office_manage_system').then(async () => {
+mongoose.connect('mongodb://localhost:27017/office_manage_system', { dbName: 'office_manage_system' }).then(async () => {
   const hash = await bcrypt.hash(TARGET_PASSWORD, 12);
   const result = await User.updateMany({}, { password: hash });
   console.log(`Reset ${result.modifiedCount} user(s). Password was set from RESET_PASSWORD env var (not logged).`);

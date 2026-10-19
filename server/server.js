@@ -133,9 +133,11 @@ app.use('/api/resignations', verifyToken, resignationRoutes);
 app.get('/api/events', verifyFileToken, sseHandler);
 
 // MongoDB Connection
-mongoose.connect(process.env.MONGO_URI || 'mongodb://localhost:27017/office_manage_system')
+mongoose.connect(process.env.MONGO_URI || 'mongodb://localhost:27017/office_manage_system', {
+  dbName: 'office_manage_system',
+})
   .then(() => {
-    console.log('Connected to MongoDB');
+    console.log('Connected to MongoDB (office_manage_system)');
     app.listen(PORT, () => {
       console.log(`Server running on port ${PORT}`);
     });

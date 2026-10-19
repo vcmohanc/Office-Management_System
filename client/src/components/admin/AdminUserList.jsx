@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   Shield, ArrowLeft, Edit2, Eye, X, Check, Search,
   Users, UserCheck, Briefcase, HeadphonesIcon, Key,
-  Calendar, RefreshCw, User, ChevronDown,
+  Calendar, RefreshCw, User, ChevronDown, Building2, MapPin, CheckSquare, Square, Tag,
 } from 'lucide-react';
 import { apiFetch } from '../../utils/apiFetch.js';
 import toast from 'react-hot-toast';
@@ -41,13 +41,19 @@ export default function AdminUserList({ setActiveTab }) {
   const [search, setSearch]         = useState('');
   const [roleFilter, setRoleFilter] = useState('all');
 
+  const [partners, setPartners]     = useState([]);
+  const [partnerSearch, setPartnerSearch] = useState('');
+
   const [viewUser, setViewUser]     = useState(null);
   const [editUser, setEditUser]     = useState(null);
-  const [editForm, setEditForm]     = useState({ username: '', role: '', password: '' });
+  const [editForm, setEditForm]     = useState({ username: '', role: '', password: '', assignedPartners: [], assignedBranches: [] });
   const [saving, setSaving]         = useState(false);
   const [showPwd, setShowPwd]       = useState(false);
 
-  useEffect(() => { fetchUsers(); }, []);
+  useEffect(() => { 
+    fetchUsers(); 
+    fetchPartners();
+  }, []);
 
   const fetchUsers = async () => {
     setLoading(true);
@@ -63,11 +69,67 @@ export default function AdminUserList({ setActiveTab }) {
     }
   };
 
+  const fetchPartners = async () => {
+    try {
+      const res = await apiFetch('/api/b2b/partners');
+      const data = res.ok ? await res.json() : [];
+      if (Array.isArray(data) && data.length > 0) {
+        setPartners(data);
+      } else {
+        const engRes = await apiFetch('/api/b2b/engagements?limit=100');
+        const engData = engRes.ok ? await engRes.json() : { data: [] };
+        setPartners(engData.data || []);
+      }
+    } catch (e) {
+      console.error('Error fetching partners in AdminUserList:', e);
+    }
+  };
+
   const openEdit = (user) => {
     setEditUser(user);
-    setEditForm({ username: user.username, role: user.role, password: '' });
+    setEditForm({
+      username: user.username,
+      role: user.role,
+      password: '',
+      assignedPartners: Array.isArray(user.assignedPartners) ? [...user.assignedPartners] : [],
+      assignedBranches: Array.isArray(user.assignedBranches) ? [...user.assignedBranches] : []
+    });
+    setPartnerSearch('');
     setShowPwd(false);
   };
+
+  const toggleEditPartner = (pName) => {
+    setEditForm(prev => {
+      const cur = prev.assignedPartners || [];
+      const next = cur.includes(pName) ? cur.filter(p => p !== pName) : [...cur, pName];
+      return { ...prev, assignedPartners: next };
+    });
+  };
+
+  const handleSelectAllPartners = () => {
+    setEditForm(prev => ({
+      ...prev,
+      assignedPartners: filteredPartnersForEdit.map(p => p.partner_name)
+    }));
+  };
+
+  const handleDeselectAllPartners = () => {
+    setEditForm(prev => ({
+      ...prev,
+      assignedPartners: []
+    }));
+  };
+
+  const filteredPartnersForEdit = useMemo(() => {
+    const q = partnerSearch.toLowerCase().trim();
+    if (!q) return partners;
+    return partners.filter(p => {
+      const matchName = (p.partner_name || '').toLowerCase().includes(q);
+      const matchInd = (p.industry || '').toLowerCase().includes(q);
+      const matchBranches = Array.isArray(p.workplaceCategories) && p.workplaceCategories.some(b => b.toLowerCase().includes(q));
+      return matchName || matchInd || matchBranches;
+    });
+  }, [partners, partnerSearch]);
 
   const saveEdit = async () => {
     if (!editForm.username.trim()) { toast.error('ユーザー名は必須です'); return; }
@@ -75,9 +137,31 @@ export default function AdminUserList({ setActiveTab }) {
       toast.error('パスワードは8文字以上で入力してください');
       return;
     }
+    if (editForm.role === 'support' && (!editForm.assignedPartners || editForm.assignedPartners.length === 0)) {
+      toast.error('サポート部門には少なくとも1つの担当ビジネスパートナーを選択してください');
+      return;
+    }
+
     setSaving(true);
     try {
-      const body = { username: editForm.username.trim(), role: editForm.role };
+      const assignedBranches = [];
+      if (editForm.role === 'support' && Array.isArray(editForm.assignedPartners)) {
+        editForm.assignedPartners.forEach(pName => {
+          const p = partners.find(pt => pt.partner_name === pName);
+          if (p && Array.isArray(p.workplaceCategories)) {
+            p.workplaceCategories.forEach(w => {
+              if (!assignedBranches.includes(w)) assignedBranches.push(w);
+            });
+          }
+        });
+      }
+
+      const body = {
+        username: editForm.username.trim(),
+        role: editForm.role,
+        assignedPartners: editForm.role === 'support' ? editForm.assignedPartners : [],
+        assignedBranches: editForm.role === 'support' ? assignedBranches : []
+      };
       if (editForm.password) body.password = editForm.password;
 
       const res  = await apiFetch(`/api/auth/users/${editUser._id}`, {
@@ -238,6 +322,7 @@ export default function AdminUserList({ setActiveTab }) {
                 <tr className="border-b border-gray-100 bg-gray-50">
                   <th className="py-3.5 px-6 text-xs font-bold text-gray-500 uppercase tracking-wider">アカウント</th>
                   <th className="py-3.5 px-6 text-xs font-bold text-gray-500 uppercase tracking-wider">部門 / 権限</th>
+                  <th className="py-3.5 px-6 text-xs font-bold text-gray-500 uppercase tracking-wider">担当取引先 / 提携先</th>
                   <th className="py-3.5 px-6 text-xs font-bold text-gray-500 uppercase tracking-wider">登録日</th>
                   <th className="py-3.5 px-6 text-xs font-bold text-gray-500 uppercase tracking-wider text-right">操作</th>
                 </tr>
@@ -258,6 +343,31 @@ export default function AdminUserList({ setActiveTab }) {
                     </td>
                     <td className="py-4 px-6">
                       <RoleBadge role={user.role} />
+                    </td>
+                    <td className="py-4 px-6">
+                      {user.role === 'support' ? (
+                        user.assignedPartners && user.assignedPartners.length > 0 ? (
+                          <div className="flex flex-wrap items-center gap-1.5 max-w-xs">
+                            {user.assignedPartners.slice(0, 2).map((p, pIdx) => (
+                              <span key={pIdx} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-medium bg-emerald-50 text-emerald-800 border border-emerald-200">
+                                <Building2 className="w-3 h-3 text-emerald-600 shrink-0" />
+                                <span className="truncate max-w-[120px]">{p}</span>
+                              </span>
+                            ))}
+                            {user.assignedPartners.length > 2 && (
+                              <span className="text-xs font-semibold px-1.5 py-0.5 rounded bg-gray-100 text-gray-600">
+                                +{user.assignedPartners.length - 2}
+                              </span>
+                            )}
+                          </div>
+                        ) : (
+                          <span className="text-xs text-amber-600 font-medium bg-amber-50 px-2 py-0.5 rounded border border-amber-200">
+                            全取引先 (未設定)
+                          </span>
+                        )
+                      ) : (
+                        <span className="text-xs text-gray-400">—</span>
+                      )}
                     </td>
                     <td className="py-4 px-6">
                       <div className="flex items-center gap-1.5 text-sm text-gray-500">
@@ -351,6 +461,26 @@ export default function AdminUserList({ setActiveTab }) {
                 <p className="text-xs text-amber-600">セキュリティ上の理由でパスワードは表示されません。変更が必要な場合は「編集」から更新してください。</p>
               </div>
 
+              {viewUser.role === 'support' && (
+                <div className="bg-gray-50 rounded-xl p-4">
+                  <p className="text-xs text-gray-500 mb-1.5 flex items-center gap-1.5 font-medium">
+                    <Building2 className="w-3.5 h-3.5 text-[#162D50]" /> 担当ビジネスパートナー / 支店 ({viewUser.assignedPartners?.length || 0}件)
+                  </p>
+                  {viewUser.assignedPartners && viewUser.assignedPartners.length > 0 ? (
+                    <div className="flex flex-wrap gap-1.5 mt-2 max-h-36 overflow-y-auto">
+                      {viewUser.assignedPartners.map((p, i) => (
+                        <span key={i} className="inline-flex items-center gap-1 px-2.5 py-1 bg-white border border-gray-200 shadow-xs text-gray-800 text-xs rounded-lg font-medium">
+                          <Building2 className="w-3 h-3 text-[#162D50]" />
+                          {p}
+                        </span>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-xs text-amber-600 font-medium mt-1">全取引先 (未制限)</p>
+                  )}
+                </div>
+              )}
+
               <div className="flex gap-2 pt-2">
                 <button
                   onClick={() => { setViewUser(null); openEdit(viewUser); }}
@@ -374,8 +504,8 @@ export default function AdminUserList({ setActiveTab }) {
       {editUser && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => !saving && setEditUser(null)} />
-          <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
-            <div className="px-6 py-5 border-b border-gray-100 flex items-center justify-between">
+          <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden">
+            <div className="px-6 py-5 border-b border-gray-100 flex items-center justify-between shrink-0">
               <div>
                 <h2 className="text-lg font-bold text-gray-900">アカウント編集</h2>
                 <p className="text-xs text-gray-400 mt-0.5">「{editUser.username}」の情報を変更</p>
@@ -388,7 +518,7 @@ export default function AdminUserList({ setActiveTab }) {
               </button>
             </div>
 
-            <div className="p-6 space-y-5">
+            <div className="p-6 space-y-5 overflow-y-auto flex-1">
               {/* Username */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1.5">
@@ -423,6 +553,121 @@ export default function AdminUserList({ setActiveTab }) {
                   </select>
                 </div>
               </div>
+
+              {/* Support Partner Assignment Section */}
+              {editForm.role === 'support' && (
+                <div className="pt-2 border-t border-gray-100">
+                  <div className="flex items-center justify-between mb-2">
+                    <label className="block text-sm font-bold text-gray-800 flex items-center gap-1.5">
+                      <Building2 className="w-4 h-4 text-[#162D50]" />
+                      担当ビジネスパートナー / 支店（複数選択可）
+                      <span className="text-red-500">*</span>
+                    </label>
+                    <span className="text-xs bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded-full font-bold">
+                      選択中: {editForm.assignedPartners?.length || 0}件
+                    </span>
+                  </div>
+                  <p className="text-xs text-gray-500 mb-3">
+                    このサポート担当者が管理・閲覧できるビジネスパートナー（支店・提携先）を選択してください。
+                  </p>
+
+                  {/* Search and Select/Clear controls */}
+                  <div className="flex flex-col sm:flex-row gap-2 mb-3">
+                    <div className="relative flex-1">
+                      <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                      <input
+                        type="text"
+                        value={partnerSearch}
+                        onChange={(e) => setPartnerSearch(e.target.value)}
+                        placeholder="取引先名・業種・支店名で絞り込み..."
+                        className="w-full pl-9 pr-3 py-1.5 text-xs border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-[#162D50]"
+                      />
+                      {partnerSearch && (
+                        <button
+                          type="button"
+                          onClick={() => setPartnerSearch('')}
+                          className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                        >
+                          <X className="w-3.5 h-3.5" />
+                        </button>
+                      )}
+                    </div>
+                    <div className="flex gap-2">
+                      <button
+                        type="button"
+                        onClick={handleSelectAllPartners}
+                        className="px-2.5 py-1 text-xs font-semibold bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors flex items-center gap-1"
+                      >
+                        <CheckSquare className="w-3.5 h-3.5" />
+                        すべて選択
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleDeselectAllPartners}
+                        className="px-2.5 py-1 text-xs font-semibold bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors flex items-center gap-1"
+                      >
+                        <Square className="w-3.5 h-3.5" />
+                        全解除
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Partner cards list */}
+                  <div className="border border-gray-200 rounded-xl overflow-hidden max-h-56 overflow-y-auto divide-y divide-gray-100 bg-gray-50/50">
+                    {partners.length === 0 ? (
+                      <div className="p-6 text-center text-xs text-gray-400">
+                        ビジネスパートナー情報を読み込み中...
+                      </div>
+                    ) : filteredPartnersForEdit.length === 0 ? (
+                      <div className="p-6 text-center text-xs text-gray-400">
+                        一致する取引先が見つかりません
+                      </div>
+                    ) : (
+                      filteredPartnersForEdit.map((partner) => {
+                        const isSelected = (editForm.assignedPartners || []).includes(partner.partner_name);
+                        return (
+                          <div
+                            key={partner._id || partner.partner_name}
+                            onClick={() => toggleEditPartner(partner.partner_name)}
+                            className={`p-3 flex items-start gap-3 cursor-pointer transition-colors ${
+                              isSelected ? 'bg-indigo-50/80 hover:bg-indigo-50' : 'bg-white hover:bg-gray-50'
+                            }`}
+                          >
+                            <input
+                              type="checkbox"
+                              checked={isSelected}
+                              onChange={() => {}}
+                              className="mt-0.5 h-4 w-4 rounded border-gray-300 text-[#162D50] focus:ring-[#162D50]"
+                            />
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center justify-between gap-2">
+                                <span className="text-xs font-bold text-gray-900 truncate">
+                                  {partner.partner_name}
+                                </span>
+                                {partner.industry && (
+                                  <span className="text-[10px] bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded font-medium shrink-0">
+                                    {partner.industry}
+                                  </span>
+                                )}
+                              </div>
+                              {Array.isArray(partner.workplaceCategories) && partner.workplaceCategories.length > 0 && (
+                                <div className="flex flex-wrap gap-1 mt-1">
+                                  {partner.workplaceCategories.map((w, wIdx) => (
+                                    <span key={wIdx} className="text-[10px] bg-emerald-50 text-emerald-700 px-1.5 py-0.2 rounded border border-emerald-100 flex items-center gap-0.5">
+                                      <MapPin className="w-2.5 h-2.5" />
+                                      {w}
+                                    </span>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })
+                    )}
+                  </div>
+                </div>
+              )}
 
               {/* Password */}
               <div>
@@ -459,11 +704,11 @@ export default function AdminUserList({ setActiveTab }) {
               </div>
             </div>
 
-            <div className="px-6 pb-6 flex gap-3">
+            <div className="px-6 py-4 border-t border-gray-100 flex gap-3 shrink-0 bg-gray-50">
               <button
                 onClick={() => !saving && setEditUser(null)}
                 disabled={saving}
-                className="flex-1 py-2.5 border border-gray-200 text-gray-600 text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50"
+                className="flex-1 py-2.5 border border-gray-200 text-gray-600 text-sm font-medium rounded-lg hover:bg-white transition-colors disabled:opacity-50"
               >
                 キャンセル
               </button>
