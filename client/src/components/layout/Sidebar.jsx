@@ -18,6 +18,7 @@ import {
   UserMinus,
   List,
   UserPlus,
+  UserCheck,
   FileText,
   ClipboardList,
   Calendar,
@@ -59,6 +60,12 @@ export default function Sidebar({ activeTab, setActiveTab, openMenus, toggleMenu
         { name: 'Resignation', label: '退職', icon: UserMinus }
       ]
     },
+    { 
+      name: 'Support User Management', 
+      label: 'サポート担当管理', 
+      icon: UserCheck,
+      isSeparate: true
+    },
     { name: '事業部門', label: '事業部門', icon: Briefcase },
     { 
       name: 'サポート部門', 
@@ -81,7 +88,7 @@ export default function Sidebar({ activeTab, setActiveTab, openMenus, toggleMenu
     
     // Other roles see their department and Settings
     if (item.name === 'Settings') return true;
-    if (user.role === 'hr' && item.name === '人事部門') return true;
+    if (user.role === 'hr' && (item.name === '人事部門' || item.name === 'Support User Management' || item.name === 'サポート担当管理' || item.name === 'Support User Registration' || item.name === 'サポート担当登録')) return true;
     if (user.role === 'account' && (item.name === '経理部門' || item.name === 'Expense SetUp')) return true;
     if (user.role === 'support' && item.name === 'サポート部門') return true;
     
@@ -151,6 +158,9 @@ export default function Sidebar({ activeTab, setActiveTab, openMenus, toggleMenu
 
               return (
                 <div key={item.name} className="flex flex-col">
+                  {item.isSeparate && (
+                    <div className="my-2 border-t border-gray-200/90 mx-1" />
+                  )}
                   <button
                     onClick={() => {
                       setActiveTab(item.name);
@@ -161,7 +171,7 @@ export default function Sidebar({ activeTab, setActiveTab, openMenus, toggleMenu
                         ? 'bg-[#162D50] text-white font-bold'
                         : 'text-[#4A5568] hover:bg-gray-100'
                     }`}
-                    title={isCollapsed ? item.name : undefined}
+                    title={isCollapsed ? (item.label || item.name) : undefined}
                   >
                     <div className="flex items-center">
                       <Icon className={`w-5 h-5 ${isCollapsed ? 'md:mr-0 mr-3' : 'mr-3'} ${isActive ? 'text-white' : 'text-gray-500'}`} />
