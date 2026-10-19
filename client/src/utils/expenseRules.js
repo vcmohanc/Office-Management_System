@@ -102,6 +102,13 @@ export const optionLabelJP = {
   'Bank Transfer': '銀行振込',
   'Company Expense (VC Bears)': '会社経費（VC負担）',
   'Farm and VC Asset Transfer Agreement': 'Farm and VC Asset Transfer Agreement',
+  '給与控除': '給与控除',
+  '給与振込': '給与振込',
+  '請求書発行': '請求書発行',
+  '自動引落': '自動引落',
+  '相殺処理': '相殺処理',
+  '直接集金': '直接集金',
+  '農場への直接回収': '農場への直接回収',
 
   // Statuses
   'Pending': '保留中',
@@ -121,6 +128,46 @@ export const toJP = (label) => {
   if (!label) return '';
   return optionLabelJP[label] ?? label;
 };
+
+/**
+ * Sorts a list of expense types so that 'Others' / 'others' / 'その他'
+ * always appears at the very end of the list.
+ * Supports array of option objects ({ label, value, ... }) or array of strings.
+ *
+ * @param {Array} optionsList
+ * @returns {Array} sorted array with 'その他' placed at the end
+ */
+export function sortExpenseTypes(optionsList = []) {
+  if (!Array.isArray(optionsList) || optionsList.length === 0) return [];
+
+  const isOthers = (opt) => {
+    if (!opt) return false;
+    const val = typeof opt === 'string' ? opt : (opt.value || opt.label || '');
+    const lbl = typeof opt === 'string' ? opt : (opt.label || '');
+    const vLower = String(val).trim().toLowerCase();
+    const lLower = String(lbl).trim().toLowerCase();
+    const jp = typeof opt === 'string' ? toJP(opt) : toJP(opt.label || opt.value || '');
+    return (
+      vLower === 'others' || vLower === 'other' || vLower === 'その他' ||
+      lLower === 'others' || lLower === 'other' || lLower === 'その他' ||
+      jp === 'その他'
+    );
+  };
+
+  const normal = [];
+  const others = [];
+
+  for (const opt of optionsList) {
+    if (isOthers(opt)) {
+      others.push(opt);
+    } else {
+      normal.push(opt);
+    }
+  }
+
+  return [...normal, ...others];
+}
+
 
 /**
  * Normalizes an option value against the active list of options from the DB,
@@ -288,4 +335,104 @@ export function calculateSuggestedExpenseCost({
   }
 
   return 0;
+}
+
+/**
+ * Standard Payment Processing Type options for select inputs.
+ */
+export const PAYMENT_PROCESSING_OPTIONS = [
+  { value: 'salary_deduction', label: '給与控除 (Salary deduction)' },
+  { value: 'salary_addition', label: '給与に加算 (Addition to salary)' },
+  { value: 'client_invoice', label: '請求書発行・顧客へ請求 (Invoice from client company)' },
+  { value: 'direct_transfer', label: '本人へ振込・銀行振込 (Transfer to person concerned)' },
+];
+
+/**
+ * Dependency mapping: Payment Processing Type (支払処理タイプ) → Allowed Collection Methods (回収方法).
+ */
+export const PAYMENT_TO_COLLECTION_MAP = {
+  'salary_deduction': [
+    { value: '給与控除', label: '給与控除 (Deduction from salary)' },
+    { value: '自動引落', label: '自動引落 (Automatic Debit)' }
+  ],
+  'salary_addition': [
+    { value: '給与振込', label: '給与振込 (Payroll Transfer)' },
+    { value: '銀行振込', label: '銀行振込 (Bank Transfer)' }
+  ],
+  'client_invoice': [
+    { value: '請求書発行', label: '請求書発行 (Invoice Issuance)' },
+    { value: '銀行振込', label: '銀行振込 (Bank Transfer)' },
+    { value: '相殺処理', label: '相殺処理 (Offset / Settlement)' }
+  ],
+  'direct_transfer': [
+    { value: '銀行振込', label: '銀行振込 (Bank Transfer)' },
+    { value: '直接集金', label: '直接集金 (Direct Collection)' },
+    { value: '給与控除', label: '給与控除 (Deduction from salary)' }
+  ]
+};
+
+/**
+ * Collection methods specific to VC <-> Farm host company transactions.
+ */
+export const HOST_COMPANY_COLLECTION_METHODS = [
+  { value: '銀行振込', label: '銀行振込 (Bank Transfer)' },
+  { value: '農場への直接回収', label: '農場への直接回収 (Direct collection to Farm)' }
+];
+
+/**
+ * Returns available Collection Methods (回収方法) based on Payment Processing Type and optional Advancer / Bearer pairing.
+ * When pairing matches VC and Farm, restricts methods directly to 銀行振込 (Bank Transfer) or 農場への直接回収 (Direct collection to Farm).
+ * @param {string} paymentType
+ * @param {string} [advancer]
+ * @param {string} [bearer]
+ * @returns {Array<{value: string, label: string}>}
+ */
+export function getAvailableCollectionMethods(paymentType = '', advancer = '', bearer = '') {
+  if (advancer && bearer && isHostCompanyPairing(advancer, bearer)) {
+    return HOST_COMPANY_COLLECTION_METHODS;
+  }
+
+  if (!paymentType) return [];
+  const pt = String(paymentType).trim();
+  const normalizedKey = pt.toLowerCase().replace(/[\s-]/g, '_');
+
+  if (PAYMENT_TO_COLLECTION_MAP[normalizedKey]) {
+    return PAYMENT_TO_COLLECTION_MAP[normalizedKey];
+  }
+  if (normalizedKey.includes('deduction') || normalizedKey.includes('控除')) {
+    return PAYMENT_TO_COLLECTION_MAP['salary_deduction'];
+  }
+  if (normalizedKey.includes('addition') || normalizedKey.includes('加算') || normalizedKey.includes('給与')) {
+    return PAYMENT_TO_COLLECTION_MAP['salary_addition'];
+  }
+  if (normalizedKey.includes('invoice') || normalizedKey.includes('請求')) {
+    return PAYMENT_TO_COLLECTION_MAP['client_invoice'];
+  }
+  if (normalizedKey.includes('transfer') || normalizedKey.includes('振込')) {
+    return PAYMENT_TO_COLLECTION_MAP['direct_transfer'];
+  }
+
+  // Fallback default
+  return [
+    { value: '給与控除', label: '給与控除 (Deduction from salary)' },
+    { value: '銀行振込', label: '銀行振込 (Bank Transfer)' },
+    { value: '請求書発行', label: '請求書発行 (Invoice Issuance)' }
+  ];
+}
+
+/**
+ * Checks whether the pairing of Advancer Category and Expense Bearer represents
+ * a transaction between VC and Farm (e.g. VC → Farm or Farm → VC).
+ * @param {string} advancer - Advancer category
+ * @param {string} bearer - Expense bearer (burden party)
+ * @returns {boolean}
+ */
+export function isHostCompanyPairing(advancer = '', bearer = '') {
+  const a = String(advancer || '').trim().toLowerCase();
+  const b = String(bearer || '').trim().toLowerCase();
+
+  const isVC = (val) => val === 'vc';
+  const isFarm = (val) => val.includes('farm') || val.includes('ファーム');
+
+  return (isVC(a) && isFarm(b)) || (isFarm(a) && isVC(b));
 }

@@ -55,3 +55,25 @@ export const expenseRules = {
     advancerName: 'Farm and VC Asset Transfer Agreement'
   }
 };
+
+export const isHostCompanyPairing = (advancer = '', bearer = '') => {
+  const a = String(advancer || '').trim().toLowerCase();
+  const b = String(bearer || '').trim().toLowerCase();
+
+  const isVC = (val) => val === 'vc';
+  const isFarm = (val) => val.includes('farm') || val.includes('ファーム');
+
+  return (isVC(a) && isFarm(b)) || (isFarm(a) && isVC(b));
+};
+
+export const HOST_COMPANY_COLLECTION_METHODS = [
+  '銀行振込',
+  '農場への直接回収'
+];
+
+export const isValidCollectionMethodForPairing = (collectionMethod = '', advancer = '', bearer = '') => {
+  if (isHostCompanyPairing(advancer, bearer)) {
+    return HOST_COMPANY_COLLECTION_METHODS.includes(collectionMethod);
+  }
+  return true;
+};

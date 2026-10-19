@@ -9,6 +9,7 @@ import { vegeiconBase64 } from '../../assets/vegeiconBase64.js';
 import toast from 'react-hot-toast';
 import { toastConfirm } from '../../utils/toastConfirm.jsx';
 import { isApprovedForPayment } from '../../utils/paymentUtils.js';
+import { sortExpenseTypes } from '../../utils/expenseRules.js';
 
 import { Landmark, Users, Briefcase, ArrowRight, ArrowLeft, Building2, Building, AlertTriangle, Trash2, Download, Printer, Search, Calendar, ChevronDown, Filter, Tractor, User } from 'lucide-react';
 
@@ -1017,7 +1018,7 @@ const getEntityIcon = (name) => {
                     className="appearance-none pl-3 pr-8 py-2 border border-gray-300 rounded-lg text-sm text-gray-700 bg-white focus:ring-blue-500 focus:border-blue-500 cursor-pointer"
                   >
                     <option value="All">全ての経費の種類</option>
-                    {selectedOption.expenseTypes.map((type, idx) => (
+                    {sortExpenseTypes(selectedOption.expenseTypes).map((type, idx) => (
                       <option key={idx} value={type}>{type}</option>
                     ))}
                   </select>
