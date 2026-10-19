@@ -3,7 +3,7 @@ import { z } from 'zod';
 import Claim from '../models/Claim.js';
 import { verifyToken, requireRole } from '../middleware/auth.js';
 import { validateBackendExpenseAmount } from '../utils/amountHelper.js';
-import { expenseRules } from '../utils/expenseRules.js';
+import { expenseRules, isHostCompanyPairing, isValidCollectionMethodForPairing } from '../utils/expenseRules.js';
 import { caseEvents } from '../events.js';
 import Settlement from '../models/Settlement.js';
 import User from '../models/User.js';
@@ -32,6 +32,10 @@ router.get('/', verifyToken, requireRole('admin', 'account', 'support'), async (
           ] : [])
         ]
       };
+    }
+
+    if (req.query.isHostCompanyCase !== undefined) {
+      query.isHostCompanyCase = req.query.isHostCompanyCase === 'true';
     }
 
     const claims = await Claim.find(query).sort({ createdAt: -1 });
@@ -111,6 +115,7 @@ const claimSchemaZod = z.object({
   installment_count: z.number().min(1),
   collection_start_month: z.string().min(1, 'Collection start month is required'),
   monthly_deduction: z.number().min(0),
+  isHostCompanyCase: z.boolean().optional(),
   hasAccountNotification: z.boolean().optional(),
   supportUpdatedFields: z.array(z.string()).optional(),
   registered_by: z.string().optional().nullable(),
@@ -162,6 +167,16 @@ router.post('/', requireRole('admin', 'support'), async (req, res) => {
     const sequenceNumber = nextCount.toString().padStart(4, '0');
     const claim_id = `CLM-${year}-${sequenceNumber}`;
 
+    const hostCompanyPairing = isHostCompanyPairing(validatedData.advancer_category, validatedData.bearing_party);
+    if (hostCompanyPairing) {
+      validatedData.isHostCompanyCase = true;
+      if (validatedData.collection_method && !isValidCollectionMethodForPairing(validatedData.collection_method, validatedData.advancer_category, validatedData.bearing_party)) {
+        return res.status(400).json({ 
+          message: 'ホスト会社案件（VC ↔ Farm）の回収方法は「銀行振込」または「農場への直接回収」である必要があります。' 
+        });
+      }
+    }
+
     const newClaim = new Claim({
       ...validatedData,
       claim_id,
@@ -198,6 +213,23 @@ router.delete('/:id', requireRole('admin', 'account'), async (req, res) => {
 router.put('/:id', requireRole('admin', 'account', 'support'), async (req, res) => {
   try {
     const validatedData = claimSchemaZod.partial().parse(req.body);
+    if (validatedData.advancer_category || validatedData.bearing_party || validatedData.collection_method) {
+      const existing = await Claim.findById(req.params.id);
+      if (existing) {
+        const adv = validatedData.advancer_category || existing.advancer_category;
+        const bear = validatedData.bearing_party || existing.bearing_party;
+        const col = validatedData.collection_method || existing.collection_method;
+        if (isHostCompanyPairing(adv, bear)) {
+          validatedData.isHostCompanyCase = true;
+          if (col && !isValidCollectionMethodForPairing(col, adv, bear)) {
+            return res.status(400).json({ 
+              message: 'ホスト会社案件（VC ↔ Farm）の回収方法は「銀行振込」または「農場への直接回収」である必要があります。' 
+            });
+          }
+        }
+      }
+    }
+
     const updatedClaim = await Claim.findByIdAndUpdate(
       req.params.id,
       validatedData,

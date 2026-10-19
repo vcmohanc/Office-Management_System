@@ -4,7 +4,13 @@ import { fileUrl } from '../../utils/fileUrl.js';
 import { apiFetch } from '../../utils/apiFetch.js';
 import toast from 'react-hot-toast';
 import { toastConfirm } from '../../utils/toastConfirm.jsx';
-import { toJP, normalizeOptionValue } from '../../utils/expenseRules.js';
+import { 
+  toJP, 
+  normalizeOptionValue, 
+  sortExpenseTypes, 
+  isHostCompanyPairing, 
+  getAvailableCollectionMethods 
+} from '../../utils/expenseRules.js';
 
 export default function CaseList({ setActiveTab: onNavigate }) {
   const user = JSON.parse(localStorage.getItem('user')) || { role: 'admin', username: 'admin' };
@@ -523,34 +529,40 @@ export default function CaseList({ setActiveTab: onNavigate }) {
   };
 
   // Map Cases
-  const mappedCases = cases.filter(filterOld拒否).map(c => ({
-    ...c,
-    _isClaim: false,
-    type: c.case_type || 'Office Case',
-    displayId: c.case_id || c.caseId || `#CAS-${(c._id || '').slice(-6).toUpperCase()}`,
-    displayDate: new Date(c.expensePeriodStart || c.expense_period_start || c.createdAt).toLocaleDateString('en-US'),
-    displayName: c.staffName || c.staff_name || 'N/A',
-    displayTotal: c.finalTotal || c.totalExpense || c.total_expense || c.final_total_amount || 0,
-    currencySymbol: c.currency === 'JPY' ? '¥' : '$',
-    expense_type: c.expenseType || c.expense_type || 'N/A',
-    registered_by: c.registered_by || 'account_user',
-    registered_by_role: c.registered_by_role || 'account',
-  }));
+  const mappedCases = cases.filter(filterOld拒否).map(c => {
+    const isHost = c.isHostCompanyCase || c.case_type === 'Host Company Case' || isHostCompanyPairing(c.advancer_category || c.advancerCategory, c.bearing_party || c.bearingParty);
+    return {
+      ...c,
+      _isClaim: false,
+      type: isHost ? 'Host Company Case' : (c.case_type || 'Office Case'),
+      displayId: c.case_id || c.caseId || `#CAS-${(c._id || '').slice(-6).toUpperCase()}`,
+      displayDate: new Date(c.expensePeriodStart || c.expense_period_start || c.createdAt).toLocaleDateString('en-US'),
+      displayName: c.staffName || c.staff_name || 'N/A',
+      displayTotal: c.finalTotal || c.totalExpense || c.total_expense || c.final_total_amount || 0,
+      currencySymbol: c.currency === 'JPY' ? '¥' : '$',
+      expense_type: c.expenseType || c.expense_type || 'N/A',
+      registered_by: c.registered_by || 'account_user',
+      registered_by_role: c.registered_by_role || 'account',
+    };
+  });
 
   // Map Claims
-  const mappedClaims = claims.filter(filterOld拒否).map(c => ({
-    ...c,
-    _isClaim: true,
-    type: 'Staff Case',
-    displayId: c.claim_id || c.claimId || `#CLM-${(c._id || '').slice(-6).toUpperCase()}`,
-    displayDate: new Date(c.expensePeriodStart || c.expense_period_start || c.createdAt).toLocaleDateString('en-US'),
-    displayName: c.fullName || c.full_name || 'N/A',
-    displayTotal: c.expenseAmount || c.expense_amount || c.totalExpense金額 || c.total_expense_amount || 0,
-    currencySymbol: c.currency === 'JPY' ? '¥' : '$',
-    expense_type: c.expenseType || c.expense_type || 'N/A',
-    registered_by: c.registered_by || 'support_user',
-    registered_by_role: c.registered_by_role || 'support',
-  }));
+  const mappedClaims = claims.filter(filterOld拒否).map(c => {
+    const isHost = c.isHostCompanyCase || c.case_type === 'Host Company Case' || isHostCompanyPairing(c.advancer_category || c.advancerCategory, c.bearing_party || c.bearingParty);
+    return {
+      ...c,
+      _isClaim: true,
+      type: isHost ? 'Host Company Case' : 'Staff Case',
+      displayId: c.claim_id || c.claimId || `#CLM-${(c._id || '').slice(-6).toUpperCase()}`,
+      displayDate: new Date(c.expensePeriodStart || c.expense_period_start || c.createdAt).toLocaleDateString('en-US'),
+      displayName: c.fullName || c.full_name || 'N/A',
+      displayTotal: c.expenseAmount || c.expense_amount || c.totalExpense金額 || c.total_expense_amount || 0,
+      currencySymbol: c.currency === 'JPY' ? '¥' : '$',
+      expense_type: c.expenseType || c.expense_type || 'N/A',
+      registered_by: c.registered_by || 'support_user',
+      registered_by_role: c.registered_by_role || 'support',
+    };
+  });
 
   const getDisplayStatus = (status) => {
     if (['Pending', 'New', 'Registered', '保留中'].includes(status)) return '新た';
@@ -634,7 +646,7 @@ export default function CaseList({ setActiveTab: onNavigate }) {
       setCases(casesData);
       setClaims(claimsData);
       
-      const types = optionsData.filter(opt => opt.type === 'ExpenseType');
+      const types = sortExpenseTypes(optionsData.filter(opt => opt.type === 'ExpenseType'));
       setExpenseTypeOptions(types);
       setLoading(false);
 
@@ -644,10 +656,11 @@ export default function CaseList({ setActiveTab: onNavigate }) {
       if (savedCaseId) {
         const found = (savedIsClaim ? claimsData : casesData).find(x => x._id === savedCaseId);
         if (found) {
+          const isHost = found.isHostCompanyCase || found.case_type === 'Host Company Case' || isHostCompanyPairing(found.advancer_category || found.advancerCategory, found.bearing_party || found.bearingParty);
           setSelectedCase({
             ...found,
             _isClaim: savedIsClaim,
-            type: savedIsClaim ? 'Staff Case' : (found.case_type || 'Office Case'),
+            type: isHost ? 'Host Company Case' : (savedIsClaim ? 'Staff Case' : (found.case_type || 'Office Case')),
             displayId: savedIsClaim ? (found.claim_id || found.claimId || `#CLM-${(found._id || '').slice(-6).toUpperCase()}`) : (found.case_id || found.caseId || `#CAS-${(found._id || '').slice(-6).toUpperCase()}`),
             displayDate: new Date(found.expensePeriodStart || found.expense_period_start || found.createdAt).toLocaleDateString('en-US'),
             displayName: savedIsClaim ? (found.fullName || found.full_name || 'N/A') : (found.staffName || found.staff_name || 'N/A'),
@@ -734,7 +747,7 @@ export default function CaseList({ setActiveTab: onNavigate }) {
           <div className="relative">
             <select value={expenseTypeFilter} onChange={e => setExpenseTypeFilter(e.target.value)} className="w-full pl-4 pr-10 py-2 border border-gray-300 rounded-md text-sm appearance-none focus:outline-none focus:ring-1 focus:ring-[#162D50] text-gray-600">
               <option value="すべての種類">すべての種類</option>
-              {expenseTypeOptions.map(opt => (
+              {sortExpenseTypes(expenseTypeOptions).map(opt => (
                 <option key={opt._id || opt.value} value={opt.value}>{toJP(opt.label)}</option>
               ))}
             </select>
@@ -1013,12 +1026,34 @@ export default function CaseList({ setActiveTab: onNavigate }) {
                 <div>
                   <div className="text-gray-500 mb-1">Recovery Method:</div>
                   {isEditing ? (
-                    <input 
-                      type="text"
-                      value={editData.collection_method || ''}
-                      onChange={(e) => setEditData({...editData, collection_method: e.target.value})}
-                      className="border border-gray-300 rounded px-2 py-1 text-sm text-gray-800 w-full"
-                    />
+                    (() => {
+                      const paymentType = selectedCase.payment_process_types || selectedCase.payment_process_type || selectedCase.advancerName || '';
+                      const advancer = selectedCase.advancer_category || selectedCase.advancerCategory || '';
+                      const bearer = selectedCase.bearing_party || selectedCase.bearingParty || '';
+                      const available = getAvailableCollectionMethods(paymentType, advancer, bearer);
+                      return available.length > 0 ? (
+                        <div className="relative">
+                          <select 
+                            value={editData.collection_method || ''}
+                            onChange={(e) => setEditData({...editData, collection_method: e.target.value})}
+                            className="border border-gray-300 rounded px-2 py-1 text-sm text-gray-800 w-full appearance-none bg-white pr-7"
+                          >
+                            <option value="">回収方法を選択</option>
+                            {available.map(opt => (
+                              <option key={opt.value} value={opt.value}>{opt.label}</option>
+                            ))}
+                          </select>
+                          <ChevronDown className="w-3.5 h-3.5 absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none" />
+                        </div>
+                      ) : (
+                        <input 
+                          type="text"
+                          value={editData.collection_method || ''}
+                          onChange={(e) => setEditData({...editData, collection_method: e.target.value})}
+                          className="border border-gray-300 rounded px-2 py-1 text-sm text-gray-800 w-full"
+                        />
+                      );
+                    })()
                   ) : (
                     <div className={`${selectedCase.supportUpdatedFields?.includes('collection_method') ? 'text-blue-600 font-bold' : 'text-gray-800'}`}>
                       {toJP(selectedCase.collection_method) || '会社経費（VC負担）'}

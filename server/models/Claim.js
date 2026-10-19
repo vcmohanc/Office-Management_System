@@ -57,6 +57,7 @@ const claimSchema = new mongoose.Schema({
   supportUpdatedFields: [{ type: String }],
   consentRecorded: { type: Boolean, default: false },
   consentDate: { type: Date },
+  isHostCompanyCase: { type: Boolean, default: false },
   registered_by: { type: String, default: 'support_user' },
   registered_by_role: { type: String, default: 'support' }
 }, { timestamps: true });

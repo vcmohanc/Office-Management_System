@@ -7,7 +7,11 @@ import {
   getAutoFill, 
   getPaymentMethod, 
   normalizeOptionValue, 
-  calculateSuggestedExpenseCost 
+  calculateSuggestedExpenseCost,
+  sortExpenseTypes,
+  getAvailableCollectionMethods,
+  isHostCompanyPairing,
+  PAYMENT_PROCESSING_OPTIONS
 } from '../../utils/expenseRules.js';
 import { getDirection, calculateInstallments } from '../../utils/paymentUtils.js';
 import { User, ChevronDown, Box, Calendar, UploadCloud, ArrowRight, Wallet, Landmark, FileText, ArrowLeft, Image, AlertTriangle, Building2 } from 'lucide-react';
@@ -82,6 +86,7 @@ export default function NewCase() {
           return acc;
         }, { 拠点: [], ExpenseType: [], AdvancerCategory: [], BearingParty: [] });
 
+        groupedOptions.ExpenseType = sortExpenseTypes(groupedOptions.ExpenseType);
         setOptions(groupedOptions);
 
         const empResponse = await apiFetch('/api/employees');
@@ -196,6 +201,29 @@ export default function NewCase() {
       if (total > 0) setIncludeBalance(true);
     });
   }, [staffInfo.id]);
+
+  // Auto-Update Dependency: 支払処理タイプ / 立替者・負担先ペアリング → 回収方法 *
+  useEffect(() => {
+    const paymentType = cases[0]?.advancerName || '';
+    const advancer = cases[0]?.advancerCategory || '';
+    const bearer = cases[0]?.bearingParty || '';
+    const available = getAvailableCollectionMethods(paymentType, advancer, bearer);
+    if (available.length > 0) {
+      const isValid = available.some(opt => opt.value === collectionMethod);
+      if (!isValid) {
+        setCollectionMethod(available[0].value);
+      }
+    } else {
+      setCollectionMethod('');
+    }
+
+    // Restrict to single payment (一括払い) for Host Company (VC <-> Farm) transactions
+    if (isHostCompanyPairing(advancer, bearer) && installmentCount !== 1) {
+      setInstallmentCount(1);
+    }
+  }, [cases[0]?.advancerName, cases[0]?.advancerCategory, cases[0]?.bearingParty]);
+
+
 
   const updateCase = (index, field, value) => {
     const newCases = [...cases];
@@ -352,8 +380,11 @@ export default function NewCase() {
   const handle送信 = async () => {
     try {
       const submissions = cases.map(caseItem => {
+        const isHost = isHostCompanyPairing(caseItem.advancerCategory, caseItem.bearingParty);
+        const resolvedCollectionMethod = collectionMethod || (direction === 'DEDUCT' ? '給与控除' : '銀行振込');
         const payload = {
-          case_type: 'Office Case',
+          case_type: isHost ? 'Host Company Case' : 'Office Case',
+          isHostCompanyCase: isHost,
           staff_name: staffInfo.fullName || "N/A",
           staff_id: staffInfo.id || "N/A",
           location: staffInfo.location || "N/A",
@@ -387,10 +418,10 @@ export default function NewCase() {
           expected_settlement_date: expectedSettlementDate || new Date().toISOString(),
           payroll_month: payrollMonth,
           settlement_note: settlementNote,
-          collection_method: direction === 'DEDUCT' ? '給与控除' : collectionMethod,
+          collection_method: resolvedCollectionMethod,
           installment_plan: installmentCount === 1 ? '一括払い' : `${installmentCount}回払い`,
           installment_count: installmentCount,
-            monthly_deduction: 0,
+          monthly_deduction: 0,
           collection_start_month: collectionStartMonth || "TBD",
           installment_schedule: installmentSchedule,
           labor_consent: laborConsent,
@@ -652,7 +683,7 @@ export default function NewCase() {
                         onChange={(e) => updateCase(index, 'expenseType', e.target.value)}
                         className="w-full px-3 sm:px-4 py-2 border border-gray-300 rounded-md appearance-none focus:outline-none focus:ring-1 focus:ring-[#162D50] text-gray-700 text-sm">
                         <option value="">種類を選択</option>
-                        {options.ExpenseType.filter(opt => !['Drugs'].includes(opt.value)).map((opt) => (
+                        {sortExpenseTypes(options.ExpenseType.filter(opt => !['Drugs'].includes(opt.value))).map((opt) => (
                           <option key={opt._id} value={opt.value}>{toJP(opt.label)}</option>
                         ))}
                       </select>
@@ -694,13 +725,18 @@ export default function NewCase() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mb-6 sm:mb-8">
                   <div>
                     <label className="block text-sm font-bold text-gray-700 mb-1.5 sm:mb-2">支払処理タイプ <span className="text-red-500">*</span></label>
-                    <input 
-                      type="text" 
-                      placeholder="名前を入力" 
-                      value={toJP(caseItem.advancerName)}
-                      onChange={(e) => updateCase(index, 'advancerName', e.target.value)}
-                      className="w-full px-3 sm:px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50] text-sm" 
-                    />
+                    <div className="relative">
+                      <select 
+                        value={caseItem.advancerName || ''}
+                        onChange={(e) => updateCase(index, 'advancerName', e.target.value)}
+                        className="w-full px-3 sm:px-4 py-2 border border-gray-300 rounded-md appearance-none focus:outline-none focus:ring-1 focus:ring-[#162D50] text-gray-700 text-sm">
+                        <option value="">支払処理タイプを選択</option>
+                        {PAYMENT_PROCESSING_OPTIONS.map((opt) => (
+                          <option key={opt.value} value={opt.value}>{opt.label}</option>
+                        ))}
+                      </select>
+                      <ChevronDown className="w-4 h-4 absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 pointer-events-none" />
+                    </div>
                   </div>
                   <div>
                     <div className="flex items-center justify-between mb-1.5 sm:mb-2">
@@ -1197,29 +1233,54 @@ export default function NewCase() {
                     <FileText className="w-4 h-4 mr-2 shrink-0" />
                     <span>負担先からの回収 (Collection from responsible party)</span>
                   </div>
-                  <span className="self-start sm:self-auto bg-red-100 text-red-800 text-xs font-medium px-2.5 py-1 rounded border border-red-400">
-                    Employee-borne (負担先: {cases[0].bearingParty}) → 給与控除
+                  <span className={`self-start sm:self-auto text-xs font-medium px-2.5 py-1 rounded border ${isHostCompanyPairing(cases[0]?.advancerCategory, cases[0]?.bearingParty) ? 'bg-purple-100 text-purple-800 border-purple-400' : 'bg-red-100 text-red-800 border-red-400'}`}>
+                    {isHostCompanyPairing(cases[0]?.advancerCategory, cases[0]?.bearingParty) 
+                      ? `ホスト会社案件 (${cases[0]?.advancerCategory} ↔ ${cases[0]?.bearingParty})`
+                      : `Employee-borne (負担先: ${cases[0]?.bearingParty}) → 給与控除`}
                   </span>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6 mb-6 sm:mb-8">
                   <div>
                     <label className="block text-sm font-bold text-gray-700 mb-1.5 sm:mb-2">回収方法 <span className="text-red-500">*</span></label>
                     <div className="relative">
-                      <select disabled value="給与控除" className="w-full px-3 sm:px-4 py-2 border border-gray-300 rounded-md bg-gray-100 text-gray-600 appearance-none text-sm">
-                        <option value="給与控除">給与控除 (Deduction from salary)</option>
-                      </select>
+                      {(() => {
+                        const available = getAvailableCollectionMethods(
+                          cases[0]?.advancerName || 'salary_deduction',
+                          cases[0]?.advancerCategory || '',
+                          cases[0]?.bearingParty || ''
+                        );
+                        return (
+                          <select 
+                            value={collectionMethod} 
+                            onChange={e => setCollectionMethod(e.target.value)} 
+                            className="w-full px-3 sm:px-4 py-2 border border-gray-300 rounded-md bg-white text-gray-700 appearance-none text-sm focus:outline-none focus:ring-1 focus:ring-[#162D50]">
+                            {available.map(opt => (
+                              <option key={opt.value} value={opt.value}>{opt.label}</option>
+                            ))}
+                          </select>
+                        );
+                      })()}
                       <ChevronDown className="w-4 h-4 absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 pointer-events-none" />
                     </div>
                   </div>
                   <div>
                     <label className="block text-sm font-bold text-gray-700 mb-1.5 sm:mb-2">分割回数 (Installments) <span className="text-red-500">*</span></label>
                     <div className="relative">
-                      <select value={installmentCount} onChange={e => setInstallmentCount(Number(e.target.value))} className="w-full px-3 sm:px-4 py-2 border border-gray-300 rounded-md appearance-none focus:outline-none focus:ring-1 focus:ring-[#162D50] text-gray-600 text-sm">
-                        <option value={1}>一括払い (Lump-sum)</option>
-                        {[...Array(5)].map((_, i) => (
-                          <option key={i+2} value={i+2}>{i+2}回払い</option>
-                        ))}
-                      </select>
+                      {isHostCompanyPairing(cases[0]?.advancerCategory, cases[0]?.bearingParty) ? (
+                        <select 
+                          value={1} 
+                          disabled 
+                          className="w-full px-3 sm:px-4 py-2 border border-gray-300 rounded-md appearance-none bg-gray-100 text-gray-700 text-sm cursor-not-allowed">
+                          <option value={1}>一括払い (Single Payment / Lump-sum)</option>
+                        </select>
+                      ) : (
+                        <select value={installmentCount} onChange={e => setInstallmentCount(Number(e.target.value))} className="w-full px-3 sm:px-4 py-2 border border-gray-300 rounded-md appearance-none focus:outline-none focus:ring-1 focus:ring-[#162D50] text-gray-600 text-sm">
+                          <option value={1}>一括払い (Lump-sum)</option>
+                          {[...Array(5)].map((_, i) => (
+                            <option key={i+2} value={i+2}>{i+2}回払い</option>
+                          ))}
+                        </select>
+                      )}
                       <ChevronDown className="w-4 h-4 absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 pointer-events-none" />
                     </div>
                   </div>

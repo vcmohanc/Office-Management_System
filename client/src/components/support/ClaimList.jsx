@@ -7,7 +7,11 @@ import {
   getAutoFill, 
   getPaymentMethod, 
   normalizeOptionValue, 
-  calculateSuggestedExpenseCost 
+  calculateSuggestedExpenseCost,
+  sortExpenseTypes,
+  PAYMENT_PROCESSING_OPTIONS,
+  getAvailableCollectionMethods,
+  isHostCompanyPairing
 } from '../../utils/expenseRules.js';
 import { getDirection, calculateInstallments } from '../../utils/paymentUtils.js';
 import { User, ChevronDown, Box, Calendar, UploadCloud, ArrowRight, Wallet, Landmark, FileText, ArrowLeft, Image, AlertTriangle, Building2 } from 'lucide-react';
@@ -90,6 +94,7 @@ export default function ClaimList() {
           return acc;
         }, { 拠点: [], ExpenseType: [], AdvancerCategory: [], BearingParty: [] });
 
+        groupedOptions.ExpenseType = sortExpenseTypes(groupedOptions.ExpenseType);
         setOptions(groupedOptions);
 
         const empResponse = await apiFetch('/api/employees');
@@ -144,6 +149,27 @@ export default function ClaimList() {
       .then(d => { if (d.data) setPartners(d.data); })
       .catch(() => {});
   }, []);
+
+  // Auto-Update Dependency: 支払処理タイプ / 立替者・負担先ペアリング → 回収方法 *
+  useEffect(() => {
+    const paymentType = cases[0]?.advancerName || '';
+    const advancer = cases[0]?.advancerCategory || '';
+    const bearer = cases[0]?.bearingParty || '';
+    const available = getAvailableCollectionMethods(paymentType, advancer, bearer);
+    if (available.length > 0) {
+      const isValid = available.some(opt => opt.value === collectionMethod);
+      if (!isValid) {
+        setCollectionMethod(available[0].value);
+      }
+    } else {
+      setCollectionMethod('');
+    }
+
+    // Restrict to single payment (一括払い) for Host Company (VC <-> Farm) transactions
+    if (isHostCompanyPairing(advancer, bearer) && installmentCount !== 1) {
+      setInstallmentCount(1);
+    }
+  }, [cases[0]?.advancerName, cases[0]?.advancerCategory, cases[0]?.bearingParty]);
 
   useEffect(() => {
     const hasFarm = cases.some(c => ['Farm', 'ファーム'].includes(c.advancerCategory) || ['Farm', 'ファーム'].includes(c.bearingParty));
@@ -331,8 +357,10 @@ export default function ClaimList() {
   const handle送信 = async () => {
     try {
       const submissions = cases.map(caseItem => {
+        const isHost = isHostCompanyPairing(caseItem.advancerCategory, caseItem.bearingParty);
         const payload = {
-          case_type: 'Office Case',
+          case_type: isHost ? 'Host Company Case' : 'Office Case',
+          isHostCompanyCase: isHost,
           full_name: staffInfo.fullName || "N/A",
           staff_id: staffInfo.id || "N/A",
           location: staffInfo.location || "N/A",
@@ -639,7 +667,7 @@ export default function ClaimList() {
                   onChange={(e) => updateCase(index, 'expenseType', e.target.value)}
                   className="w-full px-4 py-2 border border-gray-300 rounded-md appearance-none focus:outline-none focus:ring-1 focus:ring-[#162D50] text-gray-600">
                   <option value="">種類を選択</option>
-                  {options.ExpenseType.filter(opt => !['Drugs'].includes(opt.value)).map((opt) => (
+                  {sortExpenseTypes(options.ExpenseType.filter(opt => !['Drugs'].includes(opt.value))).map((opt) => (
                     <option key={opt._id} value={opt.value}>{toJP(opt.label)}</option>
                   ))}
                 </select>
@@ -679,12 +707,19 @@ export default function ClaimList() {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mb-6 sm:mb-8">
             <div>
               <label className="block text-sm font-bold text-gray-700 mb-2">支払処理タイプ <span className="text-red-500">*</span></label>
-              <input 
-                type="text" 
-                placeholder="名前を入力" 
-                value={toJP(caseItem.advancerName)}
-                onChange={(e) => updateCase(index, 'advancerName', e.target.value)} className={`w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50]`} 
-              />
+              <div className="relative">
+                <select 
+                  value={caseItem.advancerName || ''}
+                  onChange={(e) => updateCase(index, 'advancerName', e.target.value)}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-md appearance-none focus:outline-none focus:ring-1 focus:ring-[#162D50] text-sm text-gray-700 bg-white"
+                >
+                  <option value="">支払処理タイプを選択</option>
+                  {PAYMENT_PROCESSING_OPTIONS.map((opt) => (
+                    <option key={opt.value} value={opt.value}>{opt.label}</option>
+                  ))}
+                </select>
+                <ChevronDown className="w-4 h-4 absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 pointer-events-none" />
+              </div>
             </div>
             <div>
               <label className="block text-sm font-bold text-gray-700 mb-2">経費金額 (¥) <span className="text-red-500">*</span></label>
@@ -1164,29 +1199,54 @@ export default function ClaimList() {
                     <FileText className="w-4 h-4 mr-2" />
                     負担先からの回収 (Collection from the party responsible)
                   </div>
-                  <span className="bg-red-100 text-red-800 text-xs font-medium px-2.5 py-0.5 rounded border border-red-400">
-                    Employee-borne (負担先: {cases[0].bearingParty}) → deducted from salary
+                  <span className={`text-xs font-medium px-2.5 py-0.5 rounded border ${isHostCompanyPairing(cases[0]?.advancerCategory, cases[0]?.bearingParty) ? 'bg-purple-100 text-purple-800 border-purple-400' : 'bg-red-100 text-red-800 border-red-400'}`}>
+                    {isHostCompanyPairing(cases[0]?.advancerCategory, cases[0]?.bearingParty) 
+                      ? `ホスト会社案件 (${cases[0]?.advancerCategory} ↔ ${cases[0]?.bearingParty})`
+                      : `Employee-borne (負担先: ${cases[0]?.bearingParty}) → deducted from salary`}
                   </span>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6 mb-6 sm:mb-8">
                   <div>
                     <label className="block text-sm font-bold text-gray-700 mb-2">回収方法 <span className="text-red-500">*</span></label>
                     <div className="relative">
-                      <select disabled value="給与控除" className="w-full px-4 py-2 border border-gray-300 rounded-md bg-gray-100 text-gray-600 appearance-none">
-                        <option value="給与控除">給与控除 (Deduction from salary)</option>
-                      </select>
+                      {(() => {
+                        const available = getAvailableCollectionMethods(
+                          cases[0]?.advancerName || 'salary_deduction',
+                          cases[0]?.advancerCategory || '',
+                          cases[0]?.bearingParty || ''
+                        );
+                        return (
+                          <select 
+                            value={collectionMethod} 
+                            onChange={e => setCollectionMethod(e.target.value)} 
+                            className="w-full px-4 py-2 border border-gray-300 rounded-md bg-white text-gray-700 appearance-none text-sm focus:outline-none focus:ring-1 focus:ring-[#162D50]">
+                            {available.map(opt => (
+                              <option key={opt.value} value={opt.value}>{opt.label}</option>
+                            ))}
+                          </select>
+                        );
+                      })()}
                       <ChevronDown className="w-4 h-4 absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 pointer-events-none" />
                     </div>
                   </div>
                   <div>
                     <label className="block text-sm font-bold text-gray-700 mb-2">分割回数 (Installments) <span className="text-red-500">*</span></label>
                     <div className="relative">
-                      <select value={installmentCount} onChange={e => setInstallmentCount(Number(e.target.value))} className="w-full px-4 py-2 border border-gray-300 rounded-md appearance-none focus:outline-none focus:ring-1 focus:ring-[#162D50] text-gray-600">
-                        <option value={1}>一括払い (Lump-sum)</option>
-                        {[...Array(5)].map((_, i) => (
-                          <option key={i+2} value={i+2}>{i+2}回払い</option>
-                        ))}
-                      </select>
+                      {isHostCompanyPairing(cases[0]?.advancerCategory, cases[0]?.bearingParty) ? (
+                        <select 
+                          value={1} 
+                          disabled 
+                          className="w-full px-4 py-2 border border-gray-300 rounded-md appearance-none bg-gray-100 text-gray-700 text-sm cursor-not-allowed">
+                          <option value={1}>一括払い (Single Payment / Lump-sum)</option>
+                        </select>
+                      ) : (
+                        <select value={installmentCount} onChange={e => setInstallmentCount(Number(e.target.value))} className="w-full px-4 py-2 border border-gray-300 rounded-md appearance-none focus:outline-none focus:ring-1 focus:ring-[#162D50] text-gray-600">
+                          <option value={1}>一括払い (Lump-sum)</option>
+                          {[...Array(5)].map((_, i) => (
+                            <option key={i+2} value={i+2}>{i+2}回払い</option>
+                          ))}
+                        </select>
+                      )}
                       <ChevronDown className="w-4 h-4 absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 pointer-events-none" />
                     </div>
                   </div>

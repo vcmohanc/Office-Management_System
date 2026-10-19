@@ -106,13 +106,13 @@
   },
   {
     "type": "ExpenseType",
-    "label": "others",
-    "value": "others"
+    "label": "Drugs",
+    "value": "Drugs"
   },
   {
     "type": "ExpenseType",
-    "label": "Drugs",
-    "value": "Drugs"
+    "label": "others",
+    "value": "others"
   },
   {
     "type": "POSTAL_RATE_MATRIX",

@@ -11,6 +11,7 @@ import toast from 'react-hot-toast';
 import { PAYMENT_METHODS } from '../../utils/paymentMethodMapping.js';
 import { toastConfirm } from '../../utils/toastConfirm.jsx';
 import { isApprovedForPayment } from '../../utils/paymentUtils.js';
+import { sortExpenseTypes, isHostCompanyPairing } from '../../utils/expenseRules.js';
 
 export default function PaymentStatus() {
   const { caseId } = useParams();
@@ -45,10 +46,11 @@ export default function PaymentStatus() {
 
     sse.addEventListener('CASE_REGISTERED', (e) => {
       const c = JSON.parse(e.data);
+      const isHost = c.isHostCompanyCase || c.case_type === 'Host Company Case' || isHostCompanyPairing(c.advancer_category || c.advancerCategory, c.bearing_party || c.bearingParty);
       if (c.claim_id) {
         setCases(prev => [{
           ...c,
-          advancerCategory: 'Staff',
+          advancerCategory: isHost ? 'Host Company' : 'Staff',
           finalTotal: c.expenseAmount || c.expense_amount || c.totalExpenseAmount || c.total_expense_amount || 0,
           staffId: c.staffId || c.staff_id || 'N/A',
           staffName: c.fullName || c.full_name || 'N/A',
@@ -59,7 +61,7 @@ export default function PaymentStatus() {
       } else {
         setCases(prev => [{
           ...c,
-          advancerCategory: c.advancerCategory || 'Office',
+          advancerCategory: isHost ? 'Host Company' : (c.advancerCategory || 'Office'),
           finalTotal: c.finalTotal || c.totalExpense || c.final_total_amount || 0,
           staffId: c.staffId || c.staff_id || 'N/A',
           staffName: c.staffName || c.staff_name || 'N/A',
@@ -72,10 +74,11 @@ export default function PaymentStatus() {
 
     sse.addEventListener('CASE_UPDATED', (e) => {
       const c = JSON.parse(e.data);
+      const isHost = c.isHostCompanyCase || c.case_type === 'Host Company Case' || isHostCompanyPairing(c.advancer_category || c.advancerCategory, c.bearing_party || c.bearingParty);
       if (c.claim_id) {
         setCases(prev => prev.map(item => item._id === c._id ? {
           ...c,
-          advancerCategory: 'Staff',
+          advancerCategory: isHost ? 'Host Company' : 'Staff',
           finalTotal: c.expenseAmount || c.expense_amount || c.totalExpenseAmount || c.total_expense_amount || 0,
           staffId: c.staffId || c.staff_id || 'N/A',
           staffName: c.fullName || c.full_name || 'N/A',
@@ -86,7 +89,7 @@ export default function PaymentStatus() {
       } else {
         setCases(prev => prev.map(item => item._id === c._id ? {
           ...c,
-          advancerCategory: c.advancerCategory || 'Office',
+          advancerCategory: isHost ? 'Host Company' : (c.advancerCategory || 'Office'),
           finalTotal: c.finalTotal || c.totalExpense || c.final_total_amount || 0,
           staffId: c.staffId || c.staff_id || 'N/A',
           staffName: c.staffName || c.staff_name || 'N/A',
@@ -398,27 +401,33 @@ export default function PaymentStatus() {
       apiFetch('/api/options').then(res => res.json()).catch(() => [])
     ]).then(([casesData, claimsData, optionsData]) => {
       const toArr = (d) => Array.isArray(d) ? d : (Array.isArray(d?.data) ? d.data : []);
-      const mappedCases = toArr(casesData).map(c => ({
-        ...c,
-        advancerCategory: c.advancerCategory || 'Office',
-        finalTotal: c.finalTotal || c.totalExpense || c.final_total_amount || 0,
-        staffId: c.staffId || c.staff_id || 'N/A',
-        staffName: c.staffName || c.staff_name || 'N/A',
-        expenseType: c.expenseType || c.expense_type || 'N/A',
-        expense期間Start: c.expense期間Start || c.expense_period_start || c.createdAt,
-        expense期間End: c.expense期間End || c.expense_period_end || c.createdAt
-      }));
+      const mappedCases = toArr(casesData).map(c => {
+        const isHost = c.isHostCompanyCase || c.case_type === 'Host Company Case' || isHostCompanyPairing(c.advancer_category || c.advancerCategory, c.bearing_party || c.bearingParty);
+        return {
+          ...c,
+          advancerCategory: isHost ? 'Host Company' : (c.advancerCategory || 'Office'),
+          finalTotal: c.finalTotal || c.totalExpense || c.final_total_amount || 0,
+          staffId: c.staffId || c.staff_id || 'N/A',
+          staffName: c.staffName || c.staff_name || 'N/A',
+          expenseType: c.expenseType || c.expense_type || 'N/A',
+          expense期間Start: c.expense期間Start || c.expense_period_start || c.createdAt,
+          expense期間End: c.expense期間End || c.expense_period_end || c.createdAt
+        };
+      });
 
-      const mappedClaims = toArr(claimsData).map(c => ({
-        ...c,
-        advancerCategory: 'Staff',
-        finalTotal: c.expenseAmount || c.expense_amount || c.totalExpenseAmount || c.total_expense_amount || 0,
-        staffId: c.staffId || c.staff_id || 'N/A',
-        staffName: c.fullName || c.full_name || 'N/A',
-        expenseType: c.expenseType || c.expense_type || 'Claim',
-        expense期間Start: c.expense期間Start || c.expense_period_start || c.createdAt,
-        expense期間End: c.expense期間End || c.expense_period_end || c.createdAt,
-      }));
+      const mappedClaims = toArr(claimsData).map(c => {
+        const isHost = c.isHostCompanyCase || c.case_type === 'Host Company Case' || isHostCompanyPairing(c.advancer_category || c.advancerCategory, c.bearing_party || c.bearingParty);
+        return {
+          ...c,
+          advancerCategory: isHost ? 'Host Company' : 'Staff',
+          finalTotal: c.expenseAmount || c.expense_amount || c.totalExpenseAmount || c.total_expense_amount || 0,
+          staffId: c.staffId || c.staff_id || 'N/A',
+          staffName: c.fullName || c.full_name || 'N/A',
+          expenseType: c.expenseType || c.expense_type || 'Claim',
+          expense期間Start: c.expense期間Start || c.expense_period_start || c.createdAt,
+          expense期間End: c.expense期間End || c.expense_period_end || c.createdAt,
+        };
+      });
 
       const allCases = [...mappedCases, ...mappedClaims];
       setCases(allCases);
@@ -430,7 +439,7 @@ export default function PaymentStatus() {
         }
       }
       
-      const types = toArr(optionsData).filter(opt => opt.type === 'ExpenseType');
+      const types = sortExpenseTypes(toArr(optionsData).filter(opt => opt.type === 'ExpenseType'));
       setExpenseTypeOptions(types);
       setLoading(false);
     }).catch(err => {
@@ -856,7 +865,7 @@ export default function PaymentStatus() {
               <div className="relative">
                 <select value={expenseTypeFilter} onChange={e => setExpenseTypeFilter(e.target.value)} className="w-full pl-4 pr-10 py-2 border border-gray-300 rounded-md text-sm appearance-none focus:outline-none focus:ring-1 focus:ring-[#162D50] text-gray-600">
                   <option value="すべての種類">すべての種類</option>
-                  {expenseTypeOptions.map(opt => (
+                  {sortExpenseTypes(expenseTypeOptions).map(opt => (
                     <option key={opt._id || opt.value} value={opt.value}>{getExpenseTypeJapanese(opt.value)}</option>
                   ))}
                 </select>
@@ -1782,7 +1791,7 @@ export default function PaymentStatus() {
           <div className="relative">
             <select value={expenseTypeFilter} onChange={e => setExpenseTypeFilter(e.target.value)} className="w-full pl-4 pr-10 py-2 border border-gray-300 rounded-md text-sm appearance-none focus:outline-none focus:ring-1 focus:ring-[#162D50] text-gray-600">
               <option value="すべての種類">すべての種類</option>
-              {expenseTypeOptions.map(opt => (
+              {sortExpenseTypes(expenseTypeOptions).map(opt => (
                 <option key={opt._id || opt.value} value={opt.value}>{getExpenseTypeJapanese(opt.value)}</option>
               ))}
             </select>

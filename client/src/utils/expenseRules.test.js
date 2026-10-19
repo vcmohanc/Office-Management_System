@@ -12,7 +12,9 @@ import {
   normalizeOptionValue, 
   getAutoFill, 
   getPaymentMethod, 
-  calculateSuggestedExpenseCost 
+  calculateSuggestedExpenseCost,
+  getAvailableCollectionMethods,
+  isHostCompanyPairing
 } from './expenseRules.js';
 
 describe('expenseRules utils', () => {
@@ -189,6 +191,65 @@ describe('expenseRules utils', () => {
         sender: 'Tokyo',
         recipient: 'Osaka'
       })).toBe(0);
+    });
+  });
+
+  describe('getAvailableCollectionMethods helper', () => {
+    it('returns salary deduction options when payment type is salary_deduction', () => {
+      const methods = getAvailableCollectionMethods('salary_deduction');
+      assert.ok(methods.some(m => m.value === '給与控除'));
+      assert.ok(methods.some(m => m.value === '自動引落'));
+      assert.ok(!methods.some(m => m.value === '直接集金'));
+    });
+
+    it('returns invoice options when payment type is client_invoice', () => {
+      const methods = getAvailableCollectionMethods('client_invoice');
+      assert.ok(methods.some(m => m.value === '請求書発行'));
+      assert.ok(methods.some(m => m.value === '相殺処理'));
+    });
+
+    it('returns direct transfer options when payment type is direct_transfer', () => {
+      const methods = getAvailableCollectionMethods('direct_transfer');
+      assert.ok(methods.some(m => m.value === '直接集金'));
+      assert.ok(methods.some(m => m.value === '銀行振込'));
+    });
+
+    it('restricts options directly to 銀行振込 and 農場への直接回収 when pairing is VC <-> Farm', () => {
+      const vcToFarm = getAvailableCollectionMethods('salary_deduction', 'VC', 'Farm');
+      assert.strictEqual(vcToFarm.length, 2);
+      assert.strictEqual(vcToFarm[0].value, '銀行振込');
+      assert.strictEqual(vcToFarm[1].value, '農場への直接回収');
+
+      const farmToVc = getAvailableCollectionMethods('client_invoice', 'Farm', 'VC');
+      assert.strictEqual(farmToVc.length, 2);
+      assert.strictEqual(farmToVc[0].value, '銀行振込');
+      assert.strictEqual(farmToVc[1].value, '農場への直接回収');
+      assert.ok(!farmToVc.some(m => m.value === '給与控除'));
+      assert.ok(!farmToVc.some(m => m.value === '請求書発行'));
+    });
+
+    it('returns empty array when payment type is empty and not host company pairing', () => {
+      assert.deepStrictEqual(getAvailableCollectionMethods(''), []);
+    });
+  });
+
+  describe('isHostCompanyPairing helper', () => {
+    it('returns true for VC -> Farm', () => {
+      assert.strictEqual(isHostCompanyPairing('VC', 'Farm'), true);
+      assert.strictEqual(isHostCompanyPairing('VC', 'ファーム'), true);
+      assert.strictEqual(isHostCompanyPairing('VC', 'Dispatch destination: Farm'), true);
+    });
+
+    it('returns true for Farm -> VC', () => {
+      assert.strictEqual(isHostCompanyPairing('Farm', 'VC'), true);
+      assert.strictEqual(isHostCompanyPairing('ファーム', 'VC'), true);
+      assert.strictEqual(isHostCompanyPairing('Dispatch destination: Farm', 'VC'), true);
+    });
+
+    it('returns false for other combinations', () => {
+      assert.strictEqual(isHostCompanyPairing('Service Staff', 'VC'), false);
+      assert.strictEqual(isHostCompanyPairing('VC', 'Service Staff'), false);
+      assert.strictEqual(isHostCompanyPairing('Support Staff', 'Farm'), false);
     });
   });
 });

@@ -5,7 +5,7 @@ import Case from '../models/Case.js';
 import Settlement from '../models/Settlement.js';
 import { verifyToken, requireRole } from '../middleware/auth.js';
 import { validateBackendExpenseAmount } from '../utils/amountHelper.js';
-import { expenseRules } from '../utils/expenseRules.js';
+import { expenseRules, isHostCompanyPairing, isValidCollectionMethodForPairing } from '../utils/expenseRules.js';
 import { caseEvents } from '../events.js';
 import * as ledgerController from '../controllers/settlementLedgerController.js';
 import { generateLedgerForCase } from '../utils/calc_settlement.js';
@@ -53,6 +53,7 @@ const caseSchemaZod = z.object({
   installment_count: z.number().min(1),
   collection_start_month: z.string().min(1),
   monthly_deduction: z.number().min(0),
+  isHostCompanyCase: z.boolean().optional(),
   hasAccountNotification: z.boolean().optional(),
   supportUpdatedFields: z.array(z.string()).optional(),
   registered_by: z.string().optional().nullable(),
@@ -80,6 +81,13 @@ router.get('/', verifyToken, requireRole('admin', 'account', 'support'), async (
           ] : [])
         ]
       };
+    }
+
+    if (req.query.case_type) {
+      query.case_type = req.query.case_type;
+    }
+    if (req.query.isHostCompanyCase !== undefined) {
+      query.isHostCompanyCase = req.query.isHostCompanyCase === 'true';
     }
 
     const cases = await Case.find(query).sort({ createdAt: -1 });
@@ -171,6 +179,19 @@ router.post('/', requireRole('admin', 'account', 'support'), async (req, res) =>
       validatedData.case_id = `CAS-${year}-${sequenceNumber}`;
     }
 
+    const hostCompanyPairing = isHostCompanyPairing(validatedData.advancer_category, validatedData.bearing_party);
+    if (hostCompanyPairing) {
+      validatedData.isHostCompanyCase = true;
+      validatedData.case_type = 'Host Company Case';
+      if (validatedData.collection_method && !isValidCollectionMethodForPairing(validatedData.collection_method, validatedData.advancer_category, validatedData.bearing_party)) {
+        return res.status(400).json({ 
+          message: 'ホスト会社案件（VC ↔ Farm）の回収方法は「銀行振込」または「農場への直接回収」である必要があります。' 
+        });
+      }
+    } else if (validatedData.isHostCompanyCase === undefined) {
+      validatedData.isHostCompanyCase = validatedData.case_type === 'Host Company Case';
+    }
+
     const newCase = new Case({
       ...validatedData,
       registered_by: req.user?.username || validatedData.registered_by || 'account_user',
@@ -196,6 +217,25 @@ router.post('/', requireRole('admin', 'account', 'support'), async (req, res) =>
 router.put('/:id', requireRole('admin', 'account', 'support'), async (req, res) => {
   try {
     const validatedData = caseSchemaZod.partial().parse(req.body);
+
+    if (validatedData.advancer_category || validatedData.bearing_party || validatedData.collection_method) {
+      const existing = await Case.findById(req.params.id);
+      if (existing) {
+        const adv = validatedData.advancer_category || existing.advancer_category;
+        const bear = validatedData.bearing_party || existing.bearing_party;
+        const col = validatedData.collection_method || existing.collection_method;
+        if (isHostCompanyPairing(adv, bear)) {
+          validatedData.isHostCompanyCase = true;
+          validatedData.case_type = 'Host Company Case';
+          if (col && !isValidCollectionMethodForPairing(col, adv, bear)) {
+            return res.status(400).json({ 
+              message: 'ホスト会社案件（VC ↔ Farm）の回収方法は「銀行振込」または「農場への直接回収」である必要があります。' 
+            });
+          }
+        }
+      }
+    }
+
     const updatedCase = await Case.findByIdAndUpdate(
       req.params.id,
       validatedData,
