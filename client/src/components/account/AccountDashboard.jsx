@@ -1,9 +1,10 @@
-import React, { useState, useEffect } from 'react';
-import { Wallet, TrendingUp, TrendingDown, Clipboard, CheckCircle, Landmark, User, ArrowRight, Building, Building2, X, ChevronDown, ChevronUp, Trash2 } from 'lucide-react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { Wallet, TrendingUp, TrendingDown, Clipboard, CheckCircle, Landmark, User, ArrowRight, Building, Building2, X, ChevronDown, ChevronUp, Trash2, ArrowUpRight, Clock } from 'lucide-react';
 import { apiFetch } from '../../utils/apiFetch.js';
 import { PATTERN_CONFIG, toPartyJP, toFlowTypeJP } from '../../utils/settlementPatterns.js';
+import { toJP } from '../../utils/expenseRules.js';
 
-export default function AccountDashboard() {
+export default function AccountDashboard({ setActiveTab }) {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [showBreakdown, setShowBreakdown] = useState(false);
@@ -12,19 +13,52 @@ export default function AccountDashboard() {
   const [deletingId, setDeletingId] = useState(null);
   const [confirmId, setConfirmId] = useState(null);
 
+  const fetchDashboardData = useCallback(async () => {
+    try {
+      const res = await apiFetch('/api/dashboard/account');
+      if (res.ok) setData(await res.json());
+    } catch (error) {
+      console.error('Error fetching dashboard data:', error);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
   useEffect(() => {
-    const fetchDashboardData = async () => {
+    fetchDashboardData();
+
+    // SSE real-time sync for live updates when cases/claims are registered or updated
+    const token = localStorage.getItem('token');
+    const apiUrl = import.meta.env.VITE_API_URL || '';
+    let sse = null;
+    let reconnectTimer = null;
+
+    const connectSSE = () => {
       try {
-        const res = await apiFetch('/api/dashboard/account');
-        if (res.ok) setData(await res.json());
-      } catch (error) {
-        console.error('Error fetching dashboard data:', error);
-      } finally {
-        setLoading(false);
+        sse = new EventSource(`${apiUrl}/api/events?token=${token}`);
+        sse.addEventListener('CASE_REGISTERED', () => fetchDashboardData());
+        sse.addEventListener('CASE_UPDATED', () => fetchDashboardData());
+        sse.onerror = () => {
+          if (sse) sse.close();
+          clearTimeout(reconnectTimer);
+          reconnectTimer = setTimeout(connectSSE, 5000);
+        };
+      } catch (err) {
+        console.error('SSE connection error:', err);
       }
     };
-    fetchDashboardData();
-  }, []);
+
+    connectSSE();
+
+    // Periodic 20s background refresh to guarantee freshness
+    const interval = setInterval(fetchDashboardData, 20000);
+
+    return () => {
+      if (sse) sse.close();
+      clearTimeout(reconnectTimer);
+      clearInterval(interval);
+    };
+  }, [fetchDashboardData]);
 
   const handleToggleBreakdown = async () => {
     if (showBreakdown) { setShowBreakdown(false); return; }
@@ -151,12 +185,22 @@ export default function AccountDashboard() {
           </p>
         </div>
 
-        {/* Card 2 — Pending Settlements */}
-        <div className="bg-white rounded-xl p-5 border border-gray-100 shadow-sm">
+        {/* Card 2 — Pending Settlements (clickable) */}
+        <div
+          onClick={() => {
+            sessionStorage.setItem('caseListTab', 'All');
+            setActiveTab?.('Case List');
+          }}
+          className="bg-white rounded-xl p-5 border border-gray-100 shadow-sm cursor-pointer hover:border-amber-300 hover:shadow-md transition-all group"
+          title="クリックして案件一覧を表示"
+        >
           <div className="flex justify-between items-start mb-4">
-            <div className="w-8 h-8 rounded-lg bg-amber-50 flex items-center justify-center">
+            <div className="w-8 h-8 rounded-lg bg-amber-50 group-hover:bg-amber-100 transition-colors flex items-center justify-center">
               <Clipboard className={`w-4 h-4 ${summaryMetrics.pendingSettlements > 0 ? 'text-amber-500' : 'text-gray-400'}`} />
             </div>
+            <span className="text-xs text-amber-600 font-semibold flex items-center gap-0.5 group-hover:translate-x-0.5 transition-transform">
+              案件一覧へ →
+            </span>
           </div>
           <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">
             保留中の決済
@@ -168,7 +212,7 @@ export default function AccountDashboard() {
               summaryMetrics.pendingSettlements
             )}
           </p>
-          <p className="text-xs font-medium text-gray-500">承認待ちの案件</p>
+          <p className="text-xs font-medium text-gray-500">承認待ちの案件 · クリックで一覧表示</p>
         </div>
 
         {/* Card 3 — Recovery This Period (clickable) */}
@@ -324,6 +368,104 @@ export default function AccountDashboard() {
           )}
         </div>
       )}
+
+      {/* ── Pending Cases Section ── */}
+      <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between px-5 py-4 border-b border-gray-100 gap-2">
+          <div className="flex items-center gap-2.5">
+            <div className="w-2.5 h-2.5 rounded-full bg-amber-500 animate-pulse"></div>
+            <h3 className="font-bold text-[#162D50] text-base">承認待ち案件一覧</h3>
+            <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-amber-100 text-amber-800">
+              {data?.pendingCases?.length || summaryMetrics.pendingSettlements || 0} 件
+            </span>
+          </div>
+          <button
+            onClick={() => {
+              sessionStorage.setItem('caseListTab', 'All');
+              setActiveTab?.('Case List');
+            }}
+            className="text-xs font-bold text-[#162D50] hover:text-blue-700 flex items-center gap-1 transition-colors self-start sm:self-auto cursor-pointer"
+          >
+            すべての案件一覧を見る <ArrowUpRight className="w-3.5 h-3.5" />
+          </button>
+        </div>
+
+        {loading ? (
+          <div className="p-8 text-center text-sm text-gray-400">
+            <div className="inline-block w-5 h-5 border-2 border-gray-300 border-t-[#162D50] rounded-full animate-spin mb-2" />
+            <p>読み込み中...</p>
+          </div>
+        ) : !data?.pendingCases || data.pendingCases.length === 0 ? (
+          <div className="p-8 text-center text-sm text-gray-400">
+            現在、承認待ちの案件はありません。
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-left">
+              <thead>
+                <tr className="bg-gray-50 border-b border-gray-100 text-[11px] font-bold text-gray-500 uppercase tracking-wider">
+                  <th className="px-4 py-3">案件ID</th>
+                  <th className="px-4 py-3">区分</th>
+                  <th className="px-4 py-3">スタッフ名</th>
+                  <th className="px-4 py-3">経費の種類</th>
+                  <th className="px-4 py-3 text-right">金額</th>
+                  <th className="px-4 py-3">申請日</th>
+                  <th className="px-4 py-3">ステータス</th>
+                  <th className="px-4 py-3 text-right">アクション</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100 text-sm">
+                {data.pendingCases.map((c) => (
+                  <tr key={c.id || c.displayId} className="hover:bg-gray-50 transition-colors">
+                    <td className="px-4 py-3 font-semibold text-[#162D50] font-mono text-xs">
+                      {c.displayId}
+                    </td>
+                    <td className="px-4 py-3">
+                      <span className={`text-[10px] px-2 py-0.5 rounded font-semibold whitespace-nowrap ${
+                        c.type === 'Staff Case' ? 'bg-blue-50 text-blue-700 border border-blue-200' :
+                        c.type === 'Host Company Case' ? 'bg-purple-50 text-purple-700 border border-purple-200' :
+                        'bg-gray-100 text-gray-700 border border-gray-200'
+                      }`}>
+                        {c.type === 'Staff Case' ? 'スタッフ' : c.type === 'Host Company Case' ? 'ホスト会社' : 'オフィス'}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 font-medium text-gray-800">
+                      {c.staffName}
+                    </td>
+                    <td className="px-4 py-3 text-gray-600">
+                      {toJP(c.expenseType)}
+                    </td>
+                    <td className="px-4 py-3 font-bold text-gray-800 text-right">
+                      {formatCurrency(c.amount || 0)}
+                    </td>
+                    <td className="px-4 py-3 text-xs text-gray-500 whitespace-nowrap">
+                      {c.date ? new Date(c.date).toLocaleDateString('ja-JP') : '-'}
+                    </td>
+                    <td className="px-4 py-3">
+                      <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-blue-100 text-blue-700 border border-blue-200">
+                        新た
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 text-right whitespace-nowrap">
+                      <button
+                        onClick={() => {
+                          sessionStorage.setItem('openCaseDetailId', String(c.id));
+                          sessionStorage.setItem('openCaseIsClaim', c.isClaim ? 'true' : 'false');
+                          sessionStorage.setItem('caseListTab', 'All');
+                          setActiveTab?.('Case List');
+                        }}
+                        className="text-xs font-bold text-white bg-[#162D50] hover:bg-[#0f1f3d] px-3 py-1.5 rounded-md transition-colors inline-flex items-center gap-1 shadow-xs cursor-pointer"
+                      >
+                        確認・承認 <ArrowRight className="w-3 h-3" />
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
 
       {/* ── Legend ── */}
       <div className="flex gap-3 flex-wrap items-center">

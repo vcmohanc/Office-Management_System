@@ -47,52 +47,98 @@ export default function CaseList({ setActiveTab: onNavigate }) {
   const [claims, setClaims] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // SSE Subscription
+  // SSE Subscription & dynamic synchronization
   useEffect(() => {
     const token = localStorage.getItem('token');
     const apiUrl = import.meta.env.VITE_API_URL || '';
-    const sse = new EventSource(`${apiUrl}/api/events?token=${token}`);
+    let sse = null;
+    let reconnectTimer = null;
 
-    sse.addEventListener('CASE_REGISTERED', (e) => {
-      const newRecord = JSON.parse(e.data);
-      if (newRecord.claim_id) {
-        setClaims(prev => [newRecord, ...prev]);
-      } else {
-        setCases(prev => [newRecord, ...prev]);
+    const connectSSE = () => {
+      try {
+        sse = new EventSource(`${apiUrl}/api/events?token=${token}`);
+
+        sse.addEventListener('CASE_REGISTERED', (e) => {
+          try {
+            const newRecord = JSON.parse(e.data);
+            if (newRecord.claim_id) {
+              setClaims(prev => {
+                if (prev.some(p => p._id === newRecord._id || p.claim_id === newRecord.claim_id)) return prev;
+                return [newRecord, ...prev];
+              });
+            } else {
+              setCases(prev => {
+                if (prev.some(p => p._id === newRecord._id || p.case_id === newRecord.case_id)) return prev;
+                return [newRecord, ...prev];
+              });
+            }
+          } catch (err) {
+            console.error('Error handling CASE_REGISTERED:', err);
+          }
+        });
+
+        sse.addEventListener('CASE_UPDATED', (e) => {
+          try {
+            const updatedRecord = JSON.parse(e.data);
+            const isClaimRec = Boolean(updatedRecord.claim_id || updatedRecord.claimId);
+            const matchId = (item) => (
+              item && (
+                item._id === updatedRecord._id ||
+                (item.claim_id && item.claim_id === updatedRecord.claim_id) ||
+                (item.case_id && item.case_id === updatedRecord.case_id)
+              )
+            );
+
+            if (isClaimRec) {
+              setClaims(prev => prev.map(c => matchId(c) ? { ...c, ...updatedRecord, _isClaim: true } : c));
+            } else {
+              setCases(prev => prev.map(c => matchId(c) ? { ...c, ...updatedRecord, _isClaim: false } : c));
+            }
+            // Refresh open detail panel so new messages appear immediately
+            setSelectedCase(prev => {
+              if (prev && matchId(prev)) {
+                return { 
+                  ...prev, 
+                  ...updatedRecord, 
+                  _isClaim: prev._isClaim !== undefined ? prev._isClaim : isClaimRec,
+                  messages: updatedRecord.messages || prev.messages 
+                };
+              }
+              return prev;
+            });
+          } catch (err) {
+            console.error('Error handling CASE_UPDATED:', err);
+          }
+        });
+
+        sse.onerror = () => {
+          if (sse) sse.close();
+          clearTimeout(reconnectTimer);
+          reconnectTimer = setTimeout(connectSSE, 5000);
+        };
+      } catch (err) {
+        console.error('Failed to connect SSE:', err);
       }
-    });
+    };
 
-    sse.addEventListener('CASE_UPDATED', (e) => {
-      const updatedRecord = JSON.parse(e.data);
-      const isClaimRec = Boolean(updatedRecord.claim_id || updatedRecord.claimId);
-      const matchId = (item) => (
-        item && (
-          item._id === updatedRecord._id ||
-          (item.claim_id && item.claim_id === updatedRecord.claim_id) ||
-          (item.case_id && item.case_id === updatedRecord.case_id)
-        )
-      );
+    connectSSE();
 
-      if (isClaimRec) {
-        setClaims(prev => prev.map(c => matchId(c) ? { ...c, ...updatedRecord, _isClaim: true } : c));
-      } else {
-        setCases(prev => prev.map(c => matchId(c) ? { ...c, ...updatedRecord, _isClaim: false } : c));
-      }
-      // Refresh open detail panel so new messages appear immediately
-      setSelectedCase(prev => {
-        if (prev && matchId(prev)) {
-          return { 
-            ...prev, 
-            ...updatedRecord, 
-            _isClaim: prev._isClaim !== undefined ? prev._isClaim : isClaimRec,
-            messages: updatedRecord.messages || prev.messages 
-          };
-        }
-        return prev;
+    // Periodic dynamic polling sync (every 15s) to guarantee freshness across all sessions
+    const syncInterval = setInterval(() => {
+      Promise.all([
+        apiFetch('/api/cases').then(res => res.json()).catch(() => null),
+        apiFetch('/api/claims').then(res => res.json()).catch(() => null)
+      ]).then(([cData, clData]) => {
+        if (Array.isArray(cData)) setCases(cData);
+        if (Array.isArray(clData)) setClaims(clData);
       });
-    });
+    }, 15000);
 
-    return () => sse.close();
+    return () => {
+      if (sse) sse.close();
+      clearTimeout(reconnectTimer);
+      clearInterval(syncInterval);
+    };
   }, []);
   
   // Use sessionStorage to set initial tab, then clear it
@@ -102,7 +148,7 @@ export default function CaseList({ setActiveTab: onNavigate }) {
       sessionStorage.removeItem('caseListTab');
       return savedTab;
     }
-    return user.role === 'support' ? 'Staff' : 'Office';
+    return user.role === 'support' ? 'Staff' : 'All';
   });
 
   const [statusFilter, setStatusFilter] = useState('すべてのステータス');
@@ -678,6 +724,8 @@ export default function CaseList({ setActiveTab: onNavigate }) {
   const officeCasesCount = baseFiltered.filter(c => c.type === 'Office Case').length;
   const staffCasesCount = baseFiltered.filter(c => c.type === 'Staff Case').length;
   const hostCompanyCasesCount = baseFiltered.filter(c => c.type === 'Host Company Case').length;
+  const allCasesCount = officeCasesCount + staffCasesCount + hostCompanyCasesCount;
+
   const hasOfficeNotification = mappedCases.some(c => 
     c.type === 'Office Case' && (
       (user.role === 'support' && (c.registered_by === user.username) && (c.hasSupportNotification || (c.messages && c.messages.some(m => !m.readBySupport)))) ||
@@ -698,8 +746,9 @@ export default function CaseList({ setActiveTab: onNavigate }) {
   );
 
   const filteredRecords = baseFiltered.filter(c => {
-    const activeCaseType = activeTab + ' Case';
-    const matchesTab = c.type === activeCaseType || (activeTab === 'Host Company' && c.type === 'Host Company Case');
+    const matchesTab = activeTab === 'All' ||
+      c.type === activeTab + ' Case' || 
+      (activeTab === 'Host Company' && c.type === 'Host Company Case');
     const q = searchQuery.toLowerCase();
     const matchesSearch = !q ||
       (c.displayId || '').toLowerCase().includes(q) ||
@@ -768,6 +817,19 @@ export default function CaseList({ setActiveTab: onNavigate }) {
       
       {/* Top Tabs */}
       <div className="bg-[#F2F4F7] p-1 rounded-md flex space-x-1 mb-4 border border-gray-200">
+        {user.role !== 'support' && (
+          <button 
+            onClick={() => setActiveTab('All')}
+            className={`relative flex-1 py-1.5 sm:py-2 text-xs sm:text-sm font-bold rounded-md transition-colors ${activeTab === 'All' ? 'text-white bg-[#0A192F] shadow-sm' : 'text-gray-500 hover:bg-gray-200'}`}>
+            すべて <span className={`ml-2 px-2 py-0.5 rounded-full text-xs ${activeTab === 'All' ? 'bg-white text-[#0A192F]' : 'bg-gray-200 text-gray-600'}`}>{allCasesCount}</span>
+            {(hasOfficeNotification || hasStaffNotification || hasHostCompanyNotification) && (
+              <span className="absolute top-2 right-4 flex h-3 w-3" title="New updates available">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
+              </span>
+            )}
+          </button>
+        )}
         {user.role !== 'support' && (
           <button 
             onClick={() => setActiveTab('Office')}
@@ -937,7 +999,20 @@ export default function CaseList({ setActiveTab: onNavigate }) {
             ) : (
               filteredRecords.map(c => (
                 <tr key={c._id} className="border-b border-gray-100 hover:bg-gray-50">
-                  <td className="py-4 px-6 text-gray-600">{c.displayId}</td>
+                  <td className="py-4 px-6 text-gray-600">
+                    <div className="flex items-center gap-2">
+                      <span className="font-semibold text-[#162D50]">{c.displayId}</span>
+                      {activeTab === 'All' && (
+                        <span className={`text-[10px] px-1.5 py-0.5 rounded font-semibold whitespace-nowrap ${
+                          c.type === 'Staff Case' ? 'bg-blue-50 text-blue-700 border border-blue-200' :
+                          c.type === 'Host Company Case' ? 'bg-purple-50 text-purple-700 border border-purple-200' :
+                          'bg-gray-100 text-gray-700 border border-gray-200'
+                        }`}>
+                          {c.type === 'Staff Case' ? 'スタッフ' : c.type === 'Host Company Case' ? 'ホスト会社' : 'オフィス'}
+                        </span>
+                      )}
+                    </div>
+                  </td>
                   <td className="py-4 px-6 text-gray-600">
                     {c.displayDate}
                   </td>

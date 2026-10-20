@@ -76,11 +76,11 @@ export default function Dashboard({ setToken }) {
         <div className="flex-1 overflow-auto p-2.5 sm:p-4 md:p-6 lg:p-8 print:overflow-visible print:p-0">
           {activeTab === 'Dashboard' && (
             user.role === 'hr' ? <HRDashboard setParentActiveTab={setActiveTab} /> :
-            user.role === 'account' ? <AccountDashboard /> :
+            user.role === 'account' ? <AccountDashboard setActiveTab={setActiveTab} /> :
             user.role === 'support' ? <SupportDashboard setActiveTab={setActiveTab} /> :
             <DashboardHome setActiveTab={setActiveTab} />
           )}
-          {activeTab === '経理部門' && <AccountDashboard />}
+          {activeTab === '経理部門' && <AccountDashboard setActiveTab={setActiveTab} />}
           {activeTab === '人事部門' && <HRDashboard setParentActiveTab={setActiveTab} />}
           {activeTab === 'New Case' && <NewCase setActiveTab={setActiveTab} />}
           {activeTab === 'Case List' && <CaseList setActiveTab={setActiveTab} />}

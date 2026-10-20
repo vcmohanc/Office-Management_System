@@ -13,7 +13,7 @@ export const compressionMiddleware = (req, res, next) => {
   // When q-values tie, the first in this array wins.
   const method = accept.encoding(['zstd', 'br', 'gzip', 'identity']);
 
-  if (!method || method === 'identity') {
+  if (!method || method === 'identity' || req.path === '/api/events') {
     return next();
   }
 
