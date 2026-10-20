@@ -13,6 +13,19 @@ import User from '../models/User.js';
 
 const router = express.Router();
 
+export const buildCaseQuery = (id) => {
+  if (mongoose.Types.ObjectId.isValid(id)) {
+    return {
+      $or: [
+        { _id: new mongoose.Types.ObjectId(id) },
+        { _id: id },
+        { case_id: id }
+      ]
+    };
+  }
+  return { case_id: id };
+};
+
 router.get('/:caseId/ledger', requireRole('admin', 'account'), ledgerController.getLedger);
 router.put('/:caseId/terms/:termNo/pay', requireRole('admin', 'account'), ledgerController.payTerm);
 router.put('/:caseId/terms/:termNo/amount', requireRole('admin', 'account'), ledgerController.updateTermAmount);
@@ -25,6 +38,10 @@ const caseSchemaZod = z.object({
   staff_id: z.string().min(1),
   location: z.string().min(1),
   branch_farm_name: z.string().optional().nullable().or(z.literal('')),
+  partner_id: z.string().optional().nullable().or(z.literal('')),
+  partner_name: z.string().optional().nullable().or(z.literal('')),
+  partner_industry: z.string().optional().nullable().or(z.literal('')),
+  hostCompany: z.string().optional().nullable().or(z.literal('')),
   visa_status: z.string().optional().nullable().or(z.literal('')),
   visa_available_time: z.coerce.date().optional().nullable().or(z.literal('')),
   expense_type: z.string().min(1),
@@ -55,6 +72,13 @@ const caseSchemaZod = z.object({
   monthly_deduction: z.number().min(0),
   isHostCompanyCase: z.boolean().optional(),
   hasAccountNotification: z.boolean().optional(),
+  hasSupportNotification: z.boolean().optional(),
+  messages: z.array(z.object({
+    text: z.string(),
+    date: z.coerce.date().optional(),
+    author: z.string().optional(),
+    readBySupport: z.boolean().optional()
+  })).optional(),
   supportUpdatedFields: z.array(z.string()).optional(),
   registered_by: z.string().optional().nullable(),
   registered_by_role: z.string().optional().nullable()
@@ -64,23 +88,9 @@ router.get('/', verifyToken, requireRole('admin', 'account', 'support'), async (
   try {
     let query = {};
     if (req.user.role === 'support') {
-      const currentUser = await User.findById(req.user.id).select('assignedPartners assignedBranches username').lean();
-      const assigned = currentUser?.assignedPartners || req.user.assignedPartners || [];
-      const branches = currentUser?.assignedBranches || req.user.assignedBranches || [];
-      const allAssigned = [...assigned, ...branches].filter(Boolean);
-
-      query = {
-        $or: [
-          { registered_by: req.user.username },
-          ...(currentUser?.username ? [{ registered_by: currentUser.username }] : []),
-          ...(allAssigned.length > 0 ? [
-            { partner_name: { $in: allAssigned } },
-            { partner_id: { $in: allAssigned } },
-            { branch_farm_name: { $in: allAssigned } },
-            { location: { $in: allAssigned } }
-          ] : [])
-        ]
-      };
+      const currentUser = await User.findById(req.user.id).select('username').lean();
+      const usernames = [req.user.username, currentUser?.username].filter(Boolean);
+      query.registered_by = { $in: usernames };
     }
 
     if (req.query.case_type) {
@@ -100,27 +110,16 @@ router.get('/', verifyToken, requireRole('admin', 'account', 'support'), async (
 
 router.get('/:id', verifyToken, requireRole('admin', 'account', 'support'), async (req, res) => {
   try {
-    const caseItem = await Case.findOne({
-      $or: [{ _id: req.params.id }, { case_id: req.params.id }]
-    });
+    const caseItem = await Case.findOne(buildCaseQuery(req.params.id));
     if (!caseItem) return res.status(404).json({ message: 'Case not found' });
 
-    // Enforce data isolation for support role
+    // Enforce data isolation for support role: only own registered cases
     if (req.user.role === 'support') {
-      const currentUser = await User.findById(req.user.id).select('assignedPartners assignedBranches username').lean();
-      const assigned = currentUser?.assignedPartners || req.user.assignedPartners || [];
-      const branches = currentUser?.assignedBranches || req.user.assignedBranches || [];
-      const allAssigned = [...assigned, ...branches].filter(Boolean);
+      const currentUser = await User.findById(req.user.id).select('username').lean();
+      const usernames = [req.user.username, currentUser?.username].filter(Boolean);
+      const isOwner = usernames.includes(caseItem.registered_by);
 
-      const isOwner = caseItem.registered_by === req.user.username || caseItem.registered_by === currentUser?.username;
-      const isAssigned = allAssigned.length > 0 && (
-        allAssigned.includes(caseItem.partner_name) ||
-        allAssigned.includes(caseItem.partner_id) ||
-        allAssigned.includes(caseItem.branch_farm_name) ||
-        allAssigned.includes(caseItem.location)
-      );
-
-      if (!isOwner && !isAssigned) {
+      if (!isOwner) {
         return res.status(403).json({ error: 'Forbidden: you do not have permission to access this case' });
       }
     }
@@ -219,7 +218,7 @@ router.put('/:id', requireRole('admin', 'account', 'support'), async (req, res) 
     const validatedData = caseSchemaZod.partial().parse(req.body);
 
     if (validatedData.advancer_category || validatedData.bearing_party || validatedData.collection_method) {
-      const existing = await Case.findById(req.params.id);
+      const existing = await Case.findOne(buildCaseQuery(req.params.id));
       if (existing) {
         const adv = validatedData.advancer_category || existing.advancer_category;
         const bear = validatedData.bearing_party || existing.bearing_party;
@@ -236,8 +235,8 @@ router.put('/:id', requireRole('admin', 'account', 'support'), async (req, res) 
       }
     }
 
-    const updatedCase = await Case.findByIdAndUpdate(
-      req.params.id,
+    const updatedCase = await Case.findOneAndUpdate(
+      buildCaseQuery(req.params.id),
       validatedData,
       { new: true, runValidators: true }
     );
@@ -282,8 +281,8 @@ router.patch('/:id/status', requireRole('admin', 'account', 'support'), async (r
       updateQuery.$push = { messages: { text, date, author } };
     }
 
-    const updatedCase = await Case.findByIdAndUpdate(
-      req.params.id,
+    const updatedCase = await Case.findOneAndUpdate(
+      buildCaseQuery(req.params.id),
       updateQuery,
       { new: true }
     );
@@ -323,7 +322,7 @@ router.post('/:id/settle', requireRole('admin', 'account'), async (req, res) => 
     const processedBy = req.user.username;
 
     // Verify case exists
-    const existingCase = await Case.findById(caseId);
+    const existingCase = await Case.findOne(buildCaseQuery(caseId));
     if (!existingCase) {
       return res.status(404).json({ message: 'Case not found' });
     }
@@ -398,7 +397,7 @@ router.post('/:id/settle', requireRole('admin', 'account'), async (req, res) => 
 router.delete('/:id', requireRole('admin', 'account'), async (req, res) => {
   try {
     const caseId = req.params.id;
-    const deletedCase = await Case.findByIdAndDelete(caseId);
+    const deletedCase = await Case.findOneAndDelete(buildCaseQuery(caseId));
     if (!deletedCase) {
       return res.status(404).json({ message: 'Case not found' });
     }
@@ -412,9 +411,7 @@ router.delete('/:id', requireRole('admin', 'account'), async (req, res) => {
 router.post('/:id/deduct-term', requireRole('admin', 'account'), async (req, res) => {
   try {
     const caseId = req.params.id;
-    const existingCase = await Case.findOne({
-      $or: [{ _id: caseId }, { case_id: caseId }]
-    });
+    const existingCase = await Case.findOne(buildCaseQuery(caseId));
     if (!existingCase) {
       return res.status(404).json({ message: 'Case not found' });
     }
@@ -459,7 +456,7 @@ router.post('/:id/messages', verifyToken, requireRole('admin', 'account', 'suppo
     const author = role === 'support' ? 'support_user' : role === 'account' ? 'account_user' : req.user.username;
 
     const updatedCase = await Case.findOneAndUpdate(
-      { $or: [{ _id: req.params.id }, { case_id: req.params.id }] },
+      buildCaseQuery(req.params.id),
       {
         $push: {
           messages: {
@@ -469,7 +466,7 @@ router.post('/:id/messages', verifyToken, requireRole('admin', 'account', 'suppo
           }
         },
         $set: {
-          hasSupportNotification: role === 'account',
+          hasSupportNotification: role !== 'support',
           hasAccountNotification: role === 'support'
         }
       },
@@ -492,7 +489,7 @@ router.post('/:id/messages', verifyToken, requireRole('admin', 'account', 'suppo
 router.all('/:id/messages/read', verifyToken, requireRole('admin', 'account', 'support'), async (req, res) => {
   try {
     const updatedCase = await Case.findOneAndUpdate(
-      { $or: [{ _id: req.params.id }, { case_id: req.params.id }] },
+      buildCaseQuery(req.params.id),
       {
         $set: {
           'messages.$[].readBySupport': true,

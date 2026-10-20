@@ -11,7 +11,8 @@ import {
   sortExpenseTypes,
   PAYMENT_PROCESSING_OPTIONS,
   getAvailableCollectionMethods,
-  isHostCompanyPairing
+  isHostCompanyPairing,
+  isFarmParty
 } from '../../utils/expenseRules.js';
 import { getDirection, calculateInstallments } from '../../utils/paymentUtils.js';
 import { User, ChevronDown, Box, Calendar, UploadCloud, ArrowRight, Wallet, Landmark, FileText, ArrowLeft, Image, AlertTriangle, Building2 } from 'lucide-react';
@@ -156,7 +157,7 @@ export default function StaffClaimRequest() {
   }, []);
 
   useEffect(() => {
-    const hasFarm = cases.some(c => ['Farm', 'ファーム'].includes(c.advancerCategory) || ['Farm', 'ファーム'].includes(c.bearingParty));
+    const hasFarm = cases.some(c => isFarmParty(c.advancerCategory) || isFarmParty(c.bearingParty));
     if (!hasFarm) {
       setPartnerInfo({ partnerId: '', partnerName: '', industry: '', status: '', contactName: '', contactEmail: '', contactPhone: '', website: '' });
       setPartnerSearch('');
@@ -219,7 +220,7 @@ export default function StaffClaimRequest() {
 
   useEffect(() => {
     const branchName = staffInfo.branchAndFarmName;
-    const hasFarm = cases.some(c => ['Farm', 'ファーム'].includes(c.advancerCategory) || ['Farm', 'ファーム'].includes(c.bearingParty));
+    const hasFarm = cases.some(c => isFarmParty(c.advancerCategory) || isFarmParty(c.bearingParty));
     if (!hasFarm || !branchName || branchName === '配属先を選択' || partners.length === 0) return;
     // Match by workplaceCategories (exact key match); sort Active + High priority first
     const matched = partners
@@ -432,7 +433,7 @@ export default function StaffClaimRequest() {
           collection_method: direction === 'DEDUCT' ? '給与控除' : collectionMethod,
           installment_count: installmentCount,
             monthly_deduction: 0,
-          collection_start_month: collectionStartMonth || "TBD",
+          collection_start_month: collectionStartMonth || payrollMonth || (expectedSettlementDate ? expectedSettlementDate.slice(0, 7) : new Date().toISOString().slice(0, 7)),
           installment_schedule: installmentSchedule,
           labor_consent: laborConsent,
           status: '保留中',
@@ -925,7 +926,7 @@ export default function StaffClaimRequest() {
           })()}
 
           {/* パートナー名 Section */}
-          {cases.some(c => ['Farm', 'ファーム'].includes(c.advancerCategory) || ['Farm', 'ファーム'].includes(c.bearingParty)) && (() => {
+          {cases.some(c => isFarmParty(c.advancerCategory) || isFarmParty(c.bearingParty)) && (() => {
             const currentWorkplace = staffInfo.branchAndFarmName;
             const workplaceMatched = currentWorkplace
               ? partners.filter(p => Array.isArray(p.workplaceCategories) && p.workplaceCategories.includes(currentWorkplace))

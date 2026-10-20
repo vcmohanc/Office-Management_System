@@ -67,11 +67,27 @@ export const PARTY_JP = {
   'Service Staff': 'サービススタッフ',
   'Support Staff': 'サポートスタッフ',
   'Farm': 'ファーム',
+  'Host Company': 'ホスト企業・農場',
+  'Dispatch destination: Farm': 'ファーム',
   'Office': 'オフィス',
   'Staff': 'スタッフ'
 };
 
-export const toPartyJP = (name) => PARTY_JP[name] || name;
+export const normalizeParty = (party = '') => {
+  if (!party) return '';
+  const p = String(party).trim().toLowerCase();
+  if (p === 'vc' || p.includes('vc fund') || p === 'vc') return 'VC';
+  if (p.includes('service staff') || p === 'servicestaff' || p.includes('サービススタッフ') || p === 'staff' || p === 'スタッフ') return 'Service Staff';
+  if (p.includes('support staff') || p === 'supportstaff' || p.includes('サポートスタッフ')) return 'Support Staff';
+  if (p.includes('farm') || p.includes('ファーム') || p.includes('host company') || p.includes('ホスト') || p.includes('dispatch destination')) return 'Farm';
+  if (p.includes('office') || p.includes('オフィス')) return 'VC';
+  return party;
+};
+
+export const toPartyJP = (name) => {
+  const norm = normalizeParty(name);
+  return PARTY_JP[name] || PARTY_JP[norm] || name;
+};
 
 export const FLOW_TYPE_JP = {
   'Reimburse': '精算',
@@ -100,10 +116,12 @@ export const EXPENSE_TYPE_TO_PATTERN_ID = {
 
   // PTN-3
   'Equipment / Consumables': 'PTN-3',
-  '機材費': 'PTN-3', // Note: AccountDashboard uses this for Support Staff but spec says Farm
-  '過払い回収': 'PTN-3', // existing app fallback mapping
+  '機材費': 'PTN-3',
+  '過払い回収': 'PTN-3',
   '返金': 'PTN-3',
   'Wi-Fi': 'PTN-3',
+  'Wifi': 'PTN-3',
+  'WIFI': 'PTN-3',
 
   // PTN-4
   'Other': 'PTN-4',
@@ -112,22 +130,73 @@ export const EXPENSE_TYPE_TO_PATTERN_ID = {
 
   // PTN-5
   'Hospital fees / Medicine': 'PTN-5',
-  'relocation costs': 'PTN-5', // Fallback from screenshot
+  '病院代 / 薬代': 'PTN-5',
+  'relocation costs': 'PTN-5',
 };
 
 export function getPatternForExpense(expenseType) {
-  const patternId = EXPENSE_TYPE_TO_PATTERN_ID[expenseType] || 'PTN-4'; // Default to PTN-4 ('Other') if not found
-  return PATTERN_CONFIG.find(p => p.id === patternId);
+  const patternId = EXPENSE_TYPE_TO_PATTERN_ID[expenseType] || 'PTN-4';
+  return PATTERN_CONFIG.find(p => p.id === patternId) || PATTERN_CONFIG[3];
 }
 
-export function getPatternByParties(advancerCategory, bearingParty) {
-  if (!advancerCategory || !bearingParty) return null;
-  const adv = advancerCategory.toLowerCase();
-  const br = bearingParty.toLowerCase();
-  return PATTERN_CONFIG.find(p => 
-    (p.advancer.toLowerCase() === adv || (p.advancerJP && p.advancerJP.toLowerCase() === adv)) &&
-    (p.bearer.toLowerCase() === br || (p.bearerJP && p.bearerJP.toLowerCase() === br))
-  );
+export function getPatternByParties(advancerCategory = '', bearingParty = '') {
+  const adv = normalizeParty(advancerCategory);
+  const br = normalizeParty(bearingParty);
+
+  if (!adv && !br) return PATTERN_CONFIG[0];
+
+  // Canonical pairs:
+  // PTN-1: Service Staff -> VC
+  if (adv === 'Service Staff' && br === 'VC') return PATTERN_CONFIG.find(p => p.id === 'PTN-1');
+  // PTN-2: VC -> Service Staff
+  if (adv === 'VC' && br === 'Service Staff') return PATTERN_CONFIG.find(p => p.id === 'PTN-2');
+  // PTN-3: VC -> Farm (or Farm -> VC)
+  if ((adv === 'VC' && br === 'Farm') || (adv === 'Farm' && br === 'VC')) return PATTERN_CONFIG.find(p => p.id === 'PTN-3');
+  // PTN-4: Support Staff -> VC (or VC -> Support Staff)
+  if ((adv === 'Support Staff' && br === 'VC') || (adv === 'VC' && br === 'Support Staff')) return PATTERN_CONFIG.find(p => p.id === 'PTN-4');
+  // PTN-5: Farm -> Service Staff
+  if (adv === 'Farm' && br === 'Service Staff') return PATTERN_CONFIG.find(p => p.id === 'PTN-5');
+
+  // General match across PATTERN_CONFIG
+  const directMatch = PATTERN_CONFIG.find(p => {
+    const pAdv = normalizeParty(p.advancer);
+    const pBr = normalizeParty(p.bearer);
+    return (pAdv === adv && pBr === br) || (pAdv === br && pBr === adv);
+  });
+
+  return directMatch || PATTERN_CONFIG[0];
+}
+
+export function getPatternForCase(c) {
+  if (!c) return PATTERN_CONFIG[0];
+  const adv = normalizeParty(c.advancerCategory || c.advancer_category);
+  const br = normalizeParty(c.bearingParty || c.bearing_party || c.bearer);
+
+  // If distinct parties are present
+  if (adv && br && adv !== br) {
+    const p = getPatternByParties(adv, br);
+    if (p) return p;
+  }
+
+  // Fallback to expense type mapping if parties are identical or missing
+  const expType = c.expenseType || c.expense_type;
+  if (expType) {
+    const p = getPatternForExpense(expType);
+    if (p) return p;
+  }
+
+  if (adv || br) {
+    const p = getPatternByParties(adv, br);
+    if (p) return p;
+  }
+
+  return PATTERN_CONFIG[0];
+}
+
+export function getPartiesDisplayJP(advancer, bearer) {
+  const advJP = toPartyJP(advancer) || 'VC';
+  const brJP = toPartyJP(bearer) || 'VC';
+  return { advJP, brJP, display: `${advJP} → ${brJP}` };
 }
 
 export function calculateSettlementMetrics(records) {

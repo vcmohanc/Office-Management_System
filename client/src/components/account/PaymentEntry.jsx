@@ -506,19 +506,20 @@ export default function PaymentEntry() {
       const installPlanLabel = record.originalCase?.installmentPlan || `${record.totalTerms} ヶ月`;
       const termDisplay = record.totalTerms > 1
         ? `第${record.paidTerms + 1}回 / 全${record.totalTerms}回`
-        : (isStaff ? '1 / 1' : 'N/A');
-      const startMonthDisplay = record.originalCase?.collection_start_month
-        || record.originalCase?.collectionStartMonth
-        || record.originalCase?.payroll_month
-        || record.originalCase?.payrollMonth
-        || record.startDate
-        || 'N/A';
+        : (isStaff ? '1 / 1' : '—');
+      const rawStart = record.originalCase?.collection_start_month;
+      const startMonthDisplay = (rawStart && rawStart !== 'TBD' && rawStart !== 'N/A' ? rawStart : null)
+        || (record.originalCase?.collectionStartMonth && record.originalCase?.collectionStartMonth !== 'TBD' ? record.originalCase?.collectionStartMonth : null)
+        || (record.originalCase?.payroll_month && record.originalCase?.payroll_month !== 'TBD' ? record.originalCase?.payroll_month : null)
+        || (record.originalCase?.expected_settlement_date ? String(record.originalCase.expected_settlement_date).slice(0, 7) : null)
+        || (record.startDate ? String(record.startDate).slice(0, 7) : null)
+        || '—';
       const settlementMethod = (terms.length > 0 ? terms[0].paymentMethod : null)
         || record.originalCase?.settlement_method
         || record.originalCase?.settlementMethod
         || record.originalCase?.collection_method
         || record.originalCase?.collectionMethod
-        || 'N/A';
+        || '—';
 
       curY = doc.lastAutoTable.finalY + secGap;
       doc.setFont('Kosugi', 'normal');
@@ -531,7 +532,7 @@ export default function PaymentEntry() {
         margin,
         body: [
           ['回収・精算方法', settlementMethod, '分割払いプラン', isStaff ? '一括払い' : installPlanLabel],
-          ['開始月',         startMonthDisplay, '現在の期間',    termDisplay],
+          [record.totalTerms > 1 ? '回収開始月' : '精算対象月', startMonthDisplay, '現在の期間', termDisplay],
         ],
         theme: 'grid',
         styles: sharedStyles,

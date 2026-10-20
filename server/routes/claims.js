@@ -1,4 +1,5 @@
 import express from 'express';
+import mongoose from 'mongoose';
 import { z } from 'zod';
 import Claim from '../models/Claim.js';
 import { verifyToken, requireRole } from '../middleware/auth.js';
@@ -10,28 +11,26 @@ import User from '../models/User.js';
 
 const router = express.Router();
 
+export const buildClaimQuery = (id) => {
+  if (mongoose.Types.ObjectId.isValid(id)) {
+    return {
+      $or: [
+        { _id: new mongoose.Types.ObjectId(id) },
+        { _id: id },
+        { claim_id: id }
+      ]
+    };
+  }
+  return { claim_id: id };
+};
+
 router.get('/', verifyToken, requireRole('admin', 'account', 'support'), async (req, res) => {
   try {
     let query = {};
     if (req.user.role === 'support') {
-      const currentUser = await User.findById(req.user.id).select('assignedPartners assignedBranches username').lean();
-      const assigned = currentUser?.assignedPartners || req.user.assignedPartners || [];
-      const branches = currentUser?.assignedBranches || req.user.assignedBranches || [];
-      const allAssigned = [...assigned, ...branches].filter(Boolean);
-
-      // Support user sees their own registered claims OR claims matching their assigned partners/branches
-      query = {
-        $or: [
-          { registered_by: req.user.username },
-          ...(currentUser?.username ? [{ registered_by: currentUser.username }] : []),
-          ...(allAssigned.length > 0 ? [
-            { partner_name: { $in: allAssigned } },
-            { partner_id: { $in: allAssigned } },
-            { branch_farm_name: { $in: allAssigned } },
-            { location: { $in: allAssigned } }
-          ] : [])
-        ]
-      };
+      const currentUser = await User.findById(req.user.id).select('username').lean();
+      const usernames = [req.user.username, currentUser?.username].filter(Boolean);
+      query.registered_by = { $in: usernames };
     }
 
     if (req.query.isHostCompanyCase !== undefined) {
@@ -48,27 +47,16 @@ router.get('/', verifyToken, requireRole('admin', 'account', 'support'), async (
 
 router.get('/:id', verifyToken, requireRole('admin', 'account', 'support'), async (req, res) => {
   try {
-    const claim = await Claim.findOne({
-      $or: [{ _id: req.params.id }, { claim_id: req.params.id }]
-    });
+    const claim = await Claim.findOne(buildClaimQuery(req.params.id));
     if (!claim) return res.status(404).json({ message: 'Claim not found' });
 
-    // Enforce data isolation for support role
+    // Enforce data isolation for support role: only own registered claims
     if (req.user.role === 'support') {
-      const currentUser = await User.findById(req.user.id).select('assignedPartners assignedBranches username').lean();
-      const assigned = currentUser?.assignedPartners || req.user.assignedPartners || [];
-      const branches = currentUser?.assignedBranches || req.user.assignedBranches || [];
-      const allAssigned = [...assigned, ...branches].filter(Boolean);
+      const currentUser = await User.findById(req.user.id).select('username').lean();
+      const usernames = [req.user.username, currentUser?.username].filter(Boolean);
+      const isOwner = usernames.includes(claim.registered_by);
 
-      const isOwner = claim.registered_by === req.user.username || claim.registered_by === currentUser?.username;
-      const isAssigned = allAssigned.length > 0 && (
-        allAssigned.includes(claim.partner_name) ||
-        allAssigned.includes(claim.partner_id) ||
-        allAssigned.includes(claim.branch_farm_name) ||
-        allAssigned.includes(claim.location)
-      );
-
-      if (!isOwner && !isAssigned) {
+      if (!isOwner) {
         return res.status(403).json({ error: 'Forbidden: you do not have permission to access this claim' });
       }
     }
@@ -117,6 +105,13 @@ const claimSchemaZod = z.object({
   monthly_deduction: z.number().min(0),
   isHostCompanyCase: z.boolean().optional(),
   hasAccountNotification: z.boolean().optional(),
+  hasSupportNotification: z.boolean().optional(),
+  messages: z.array(z.object({
+    text: z.string(),
+    date: z.coerce.date().optional(),
+    author: z.string().optional(),
+    readBySupport: z.boolean().optional()
+  })).optional(),
   supportUpdatedFields: z.array(z.string()).optional(),
   registered_by: z.string().optional().nullable(),
   registered_by_role: z.string().optional().nullable()
@@ -200,7 +195,7 @@ router.post('/', requireRole('admin', 'support'), async (req, res) => {
 router.delete('/:id', requireRole('admin', 'account'), async (req, res) => {
   try {
     const claimId = req.params.id;
-    const deletedClaim = await Claim.findByIdAndDelete(claimId);
+    const deletedClaim = await Claim.findOneAndDelete(buildClaimQuery(claimId));
     if (!deletedClaim) {
       return res.status(404).json({ message: 'Claim not found' });
     }
@@ -214,7 +209,7 @@ router.put('/:id', requireRole('admin', 'account', 'support'), async (req, res) 
   try {
     const validatedData = claimSchemaZod.partial().parse(req.body);
     if (validatedData.advancer_category || validatedData.bearing_party || validatedData.collection_method) {
-      const existing = await Claim.findById(req.params.id);
+      const existing = await Claim.findOne(buildClaimQuery(req.params.id));
       if (existing) {
         const adv = validatedData.advancer_category || existing.advancer_category;
         const bear = validatedData.bearing_party || existing.bearing_party;
@@ -230,8 +225,8 @@ router.put('/:id', requireRole('admin', 'account', 'support'), async (req, res) 
       }
     }
 
-    const updatedClaim = await Claim.findByIdAndUpdate(
-      req.params.id,
+    const updatedClaim = await Claim.findOneAndUpdate(
+      buildClaimQuery(req.params.id),
       validatedData,
       { new: true, runValidators: true }
     );
@@ -276,8 +271,8 @@ router.patch('/:id/status', requireRole('admin', 'account', 'support'), async (r
       updateQuery.$push = { messages: { text, date, author } };
     }
 
-    const updatedClaim = await Claim.findByIdAndUpdate(
-      req.params.id,
+    const updatedClaim = await Claim.findOneAndUpdate(
+      buildClaimQuery(req.params.id),
       updateQuery,
       { new: true }
     );
@@ -306,7 +301,7 @@ router.post('/:id/messages', verifyToken, requireRole('admin', 'account', 'suppo
     const author = role === 'support' ? 'support_user' : role === 'account' ? 'account_user' : req.user.username;
 
     const updatedClaim = await Claim.findOneAndUpdate(
-      { $or: [{ _id: req.params.id }, { claim_id: req.params.id }] },
+      buildClaimQuery(req.params.id),
       {
         $push: {
           messages: {
@@ -316,7 +311,7 @@ router.post('/:id/messages', verifyToken, requireRole('admin', 'account', 'suppo
           }
         },
         $set: {
-          hasSupportNotification: role === 'account',
+          hasSupportNotification: role !== 'support',
           hasAccountNotification: role === 'support'
         }
       },
@@ -339,7 +334,7 @@ router.post('/:id/messages', verifyToken, requireRole('admin', 'account', 'suppo
 router.post('/:id/deduct-term', requireRole('admin', 'account'), async (req, res) => {
   try {
     const claimId = req.params.id;
-    const existingClaim = await Claim.findById(claimId);
+    const existingClaim = await Claim.findOne(buildClaimQuery(claimId));
     if (!existingClaim) {
       return res.status(404).json({ message: 'Claim not found' });
     }
@@ -394,7 +389,7 @@ router.post('/:id/settle', requireRole('admin', 'account'), async (req, res) => 
     }
 
     // Verify claim exists
-    const existingClaim = await Claim.findById(claimId);
+    const existingClaim = await Claim.findOne(buildClaimQuery(claimId));
     if (!existingClaim) {
       return res.status(404).json({ message: 'Claim not found' });
     }
@@ -470,7 +465,7 @@ router.post('/:id/settle', requireRole('admin', 'account'), async (req, res) => 
 router.all('/:id/messages/read', verifyToken, requireRole('admin', 'account', 'support'), async (req, res) => {
   try {
     const updatedClaim = await Claim.findOneAndUpdate(
-      { $or: [{ _id: req.params.id }, { claim_id: req.params.id }] },
+      buildClaimQuery(req.params.id),
       {
         $set: {
           'messages.$[].readBySupport': true,

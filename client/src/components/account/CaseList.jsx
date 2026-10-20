@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Search, ChevronDown, Calendar, FileText, AlertTriangle, Image, Edit, X, Download } from 'lucide-react';
+import { Search, ChevronDown, Calendar, FileText, AlertTriangle, Image, Edit, X, Download, MessageSquare, Send } from 'lucide-react';
 import { fileUrl } from '../../utils/fileUrl.js';
 import { apiFetch } from '../../utils/apiFetch.js';
 import toast from 'react-hot-toast';
@@ -9,8 +9,36 @@ import {
   normalizeOptionValue, 
   sortExpenseTypes, 
   isHostCompanyPairing, 
+  isFarmParty,
   getAvailableCollectionMethods 
 } from '../../utils/expenseRules.js';
+
+const getCaseTargetTab = (c) => {
+  if (!c) return 'Office';
+  const isHost = Boolean(
+    c.isHostCompanyCase ||
+    c.case_type === 'Host Company Case' ||
+    isHostCompanyPairing(c.advancer_category || c.advancerCategory, c.bearing_party || c.bearingParty) ||
+    isFarmParty(c.advancer_category || c.advancerCategory) ||
+    isFarmParty(c.bearing_party || c.bearingParty)
+  );
+  if (isHost) return 'Host Company';
+  const rawAdv = String(c.advancer_category || c.advancerCategory || '').trim().toLowerCase();
+  if (
+    rawAdv.includes('staff') ||
+    rawAdv.includes('スタッフ') ||
+    rawAdv.includes('service') ||
+    rawAdv.includes('support') ||
+    c.claim_id ||
+    c.claimId ||
+    c._isClaim ||
+    c.type === 'Staff Case' ||
+    c.case_type === 'Staff Case'
+  ) {
+    return 'Staff';
+  }
+  return 'Office';
+};
 
 export default function CaseList({ setActiveTab: onNavigate }) {
   const user = JSON.parse(localStorage.getItem('user')) || { role: 'admin', username: 'admin' };
@@ -36,15 +64,29 @@ export default function CaseList({ setActiveTab: onNavigate }) {
 
     sse.addEventListener('CASE_UPDATED', (e) => {
       const updatedRecord = JSON.parse(e.data);
-      if (updatedRecord.claim_id) {
-        setClaims(prev => prev.map(c => c._id === updatedRecord._id ? { ...updatedRecord, _isClaim: true } : c));
+      const isClaimRec = Boolean(updatedRecord.claim_id || updatedRecord.claimId);
+      const matchId = (item) => (
+        item && (
+          item._id === updatedRecord._id ||
+          (item.claim_id && item.claim_id === updatedRecord.claim_id) ||
+          (item.case_id && item.case_id === updatedRecord.case_id)
+        )
+      );
+
+      if (isClaimRec) {
+        setClaims(prev => prev.map(c => matchId(c) ? { ...c, ...updatedRecord, _isClaim: true } : c));
       } else {
-        setCases(prev => prev.map(c => c._id === updatedRecord._id ? { ...updatedRecord, _isClaim: false } : c));
+        setCases(prev => prev.map(c => matchId(c) ? { ...c, ...updatedRecord, _isClaim: false } : c));
       }
       // Refresh open detail panel so new messages appear immediately
       setSelectedCase(prev => {
-        if (prev && prev._id === updatedRecord._id) {
-          return { ...prev, ...updatedRecord };
+        if (prev && matchId(prev)) {
+          return { 
+            ...prev, 
+            ...updatedRecord, 
+            _isClaim: prev._isClaim !== undefined ? prev._isClaim : isClaimRec,
+            messages: updatedRecord.messages || prev.messages 
+          };
         }
         return prev;
       });
@@ -94,13 +136,31 @@ export default function CaseList({ setActiveTab: onNavigate }) {
       ? `/api/claims/${caseId}/messages`
       : `/api/cases/${caseId}/messages`;
     try {
-      const response = await apiFetch(endpoint, {
+      let response = await apiFetch(endpoint, {
         method: 'POST',
         body: JSON.stringify({ 
           text, 
           author: user.role === 'support' ? 'support_user' : (user.role === 'admin' ? 'admin' : 'account_user') 
         })
       });
+
+      // If not found, attempt fallback to the alternative endpoint
+      if (!response.ok && response.status === 404) {
+        const altEndpoint = isClaim
+          ? `/api/cases/${caseId}/messages`
+          : `/api/claims/${caseId}/messages`;
+        const altResponse = await apiFetch(altEndpoint, {
+          method: 'POST',
+          body: JSON.stringify({ 
+            text, 
+            author: user.role === 'support' ? 'support_user' : (user.role === 'admin' ? 'admin' : 'account_user') 
+          })
+        });
+        if (altResponse.ok) {
+          response = altResponse;
+        }
+      }
+
       if (response.ok) {
         const updatedMessages = await response.json();
         setSelectedCase(prev => prev ? { ...prev, _isClaim: isClaim, messages: updatedMessages } : prev);
@@ -135,7 +195,14 @@ export default function CaseList({ setActiveTab: onNavigate }) {
 
     // Always fetch fresh details so messages are never hidden or lost in any situation
     apiFetch(endpoint)
-      .then(res => res.ok ? res.json() : null)
+      .then(async res => {
+        if (!res.ok && res.status === 404) {
+          const altEndpoint = isClaim ? `/api/cases/${caseId}` : `/api/claims/${caseId}`;
+          const altRes = await apiFetch(altEndpoint);
+          return altRes.ok ? altRes.json() : null;
+        }
+        return res.ok ? res.json() : null;
+      })
       .then(freshData => {
         if (freshData && Array.isArray(freshData.messages)) {
           setSelectedCase(prev => {
@@ -314,13 +381,14 @@ export default function CaseList({ setActiveTab: onNavigate }) {
       payload.hasSupportNotification = true;
     }
 
+    const noteAuthor = user.role === 'support' ? 'support_user' : (user.role === 'admin' ? 'admin' : 'account_user');
     if (editData.short_note && editData.short_note.trim() !== '') {
       payload.messages = [
         ...(selectedCase.messages || []),
         {
-          text: editData.short_note,
+          text: editData.short_note.trim(),
           date: new Date().toISOString(),
-          author: user.username === 'account_user' ? '経理部門' : (user.username || '経理部門')
+          author: noteAuthor
         }
       ];
       if (user.role !== 'support') {
@@ -343,7 +411,16 @@ export default function CaseList({ setActiveTab: onNavigate }) {
           : `/api/cases/${selectedCase._id}/status`;
         await apiFetch(statusEndpoint, {
           method: 'PATCH',
-          body: JSON.stringify({ status: newStatus, hasAccountNotification: true, clearSupportUpdatedFields: true })
+          body: JSON.stringify({ 
+            status: newStatus, 
+            hasAccountNotification: true, 
+            clearSupportUpdatedFields: true,
+            newMessage: editData.short_note?.trim() ? {
+              text: editData.short_note.trim(),
+              date: new Date().toISOString(),
+              author: noteAuthor
+            } : undefined
+          })
         });
 
         const mappedUpdated = {
@@ -422,17 +499,23 @@ export default function CaseList({ setActiveTab: onNavigate }) {
       };
     });
 
-    apiFetch(`${endpoint}`, {
-      method: 'PATCH',
-      body: JSON.stringify({ 
-        status: newステータス, 
-        newMessage, 
-        statusMessage: comment.trim() || undefined,
-        clearSupportUpdatedFields: true, 
-        hasSupportNotification: user.role !== 'support',
-        hasAccountNotification: user.role === 'support'
-      })
-    }).catch(err => console.error('Failed to update status', err));
+    try {
+      const res = await apiFetch(`${endpoint}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ 
+          status: newステータス, 
+          newMessage, 
+          statusMessage: comment.trim() || undefined,
+          clearSupportUpdatedFields: true, 
+          hasSupportNotification: user.role !== 'support',
+          hasAccountNotification: user.role === 'support'
+        })
+      });
+      return res;
+    } catch (err) {
+      console.error('Failed to update status', err);
+      toast.error('ステータスの更新に失敗しました');
+    }
   };
 
   const openActionModal = (type) => {
@@ -559,7 +642,7 @@ export default function CaseList({ setActiveTab: onNavigate }) {
       displayTotal: c.expenseAmount || c.expense_amount || c.totalExpense金額 || c.total_expense_amount || 0,
       currencySymbol: c.currency === 'JPY' ? '¥' : '$',
       expense_type: c.expenseType || c.expense_type || 'N/A',
-      registered_by: c.registered_by || 'support_user',
+      registered_by: c.registered_by || c.registeredBy || '',
       registered_by_role: c.registered_by_role || 'support',
     };
   });
@@ -575,7 +658,10 @@ export default function CaseList({ setActiveTab: onNavigate }) {
   const allRecords = [...mappedCases, ...mappedClaims]
     .filter(c => {
       if (c.status && c.status.includes('完了')) return false;
-      if (user.role === 'support') return true;
+      if (user.role === 'support') {
+        const reg = c.registered_by || c.registeredBy;
+        return reg === user.username;
+      }
       return !['APPROVED_FOR_PAYMENT', 'Approve for Payment', '支払承認', '承認済 for Payment', 'Payment 保留中', '処理中', 'Processing', 'processing', 'Completed', 'completed'].includes(c.status);
     })
     .map(c => ({ ...c, displayStatus: getDisplayStatus(c.status) }));
@@ -594,19 +680,19 @@ export default function CaseList({ setActiveTab: onNavigate }) {
   const hostCompanyCasesCount = baseFiltered.filter(c => c.type === 'Host Company Case').length;
   const hasOfficeNotification = mappedCases.some(c => 
     c.type === 'Office Case' && (
-      (user.role === 'support' && (c.hasSupportNotification || (c.messages && c.messages.some(m => !m.readBySupport)))) ||
+      (user.role === 'support' && (c.registered_by === user.username) && (c.hasSupportNotification || (c.messages && c.messages.some(m => !m.readBySupport)))) ||
       (user.role !== 'support' && c.hasAccountNotification)
     )
   );
 
   const hasStaffNotification = mappedClaims.some(c => 
-    (user.role === 'support' && (c.hasSupportNotification || (c.messages && c.messages.some(m => !m.readBySupport)))) ||
+    (user.role === 'support' && (c.registered_by === user.username) && (c.hasSupportNotification || (c.messages && c.messages.some(m => !m.readBySupport)))) ||
     (user.role !== 'support' && c.hasAccountNotification)
   );
 
   const hasHostCompanyNotification = mappedCases.some(c => 
     c.type === 'Host Company Case' && (
-      (user.role === 'support' && (c.hasSupportNotification || (c.messages && c.messages.some(m => !m.readBySupport)))) ||
+      (user.role === 'support' && (c.registered_by === user.username) && (c.hasSupportNotification || (c.messages && c.messages.some(m => !m.readBySupport)))) ||
       (user.role !== 'support' && c.hasAccountNotification)
     )
   );
@@ -1119,109 +1205,147 @@ export default function CaseList({ setActiveTab: onNavigate }) {
                 </div>
               )}
 
-              {selectedCase.statusMessage && (
-                <div className="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-lg text-sm text-amber-900">
-                  <div className="font-bold text-xs uppercase tracking-wide mb-1 text-amber-700">ステータス変更理由 / メモ</div>
-                  <div className="whitespace-pre-wrap">{selectedCase.statusMessage}</div>
-                </div>
-              )}
-
               <div className="w-full">
-                <h4 className="text-xs font-bold text-gray-500 mb-3 tracking-wider">理由 / メッセージ履歴</h4>
-                <div className="border border-gray-200 rounded-xl overflow-hidden shadow-sm">
-                  {/* Legend bar */}
-                  <div className="flex items-center justify-between px-4 py-2 bg-gray-50 border-b border-gray-200">
-                    <div className="flex items-center gap-5 text-xs font-medium text-gray-600">
-                      <span className="flex items-center gap-1.5">
-                        <span className="w-2.5 h-2.5 rounded-full bg-orange-400 inline-block" />
-                        経理部門
-                      </span>
-                      <span className="flex items-center gap-1.5">
-                        <span className="w-2.5 h-2.5 rounded-full bg-blue-500 inline-block" />
-                        サポート部門
-                      </span>
-                      <span className="flex items-center gap-1.5">
-                        <span className="w-2.5 h-2.5 rounded-full bg-[#162D50] inline-block" />
-                        管理者
-                      </span>
-                    </div>
-                    <span className="text-xs text-gray-400">{(selectedCase.messages || []).length} 件</span>
-                  </div>
-
-                  {/* Chat thread */}
-                  <div className="h-64 overflow-y-auto p-4 space-y-3 bg-white">
-                    {(selectedCase.messages || []).length === 0 && (
-                      <div className="flex items-center justify-center h-full text-gray-400 text-sm">
-                        メッセージはまだありません
+                {(() => {
+                  const allMessages = [...(selectedCase.messages || [])];
+                  if (selectedCase.statusMessage && !allMessages.some(m => m.text === selectedCase.statusMessage)) {
+                    allMessages.unshift({
+                      text: selectedCase.statusMessage,
+                      author: 'account_user',
+                      date: selectedCase.updatedAt || selectedCase.createdAt
+                    });
+                  }
+                  return (
+                    <>
+                      <div className="flex items-center justify-between mb-3">
+                        <div className="flex items-center gap-2">
+                          <MessageSquare className="w-4 h-4 text-[#162D50]" />
+                          <h4 className="text-xs font-bold text-gray-700 tracking-wider">
+                            理由 / メッセージ履歴（経理部門 ↔ サポート部門）
+                          </h4>
+                        </div>
+                        <span className="text-xs text-gray-500 font-medium bg-gray-100 px-2 py-0.5 rounded-full">
+                          {allMessages.length} 件
+                        </span>
                       </div>
-                    )}
-                    {[...(selectedCase.messages || [])]
-                      .sort((a, b) => new Date(a.date || 0) - new Date(b.date || 0))
-                      .map((m, i) => {
-                        const authorLower = String(m.author || '').toLowerCase();
-                        const isSupport = authorLower === 'support_user' || authorLower.includes('support') || authorLower === 'サポート部門';
-                        const isAdmin = authorLower === 'admin' || authorLower === '管理者';
-                        const isAccount = !isSupport && !isAdmin;
 
-                        const isMe = (user.role === 'support' && isSupport) ||
-                                     (user.role === 'account' && isAccount) ||
-                                     (user.role === 'admin' && (isAdmin || m.author === user.username));
-
-                        const bubbleColor = isSupport 
-                          ? 'bg-blue-500 text-white' 
-                          : isAdmin 
-                            ? 'bg-[#162D50] text-white' 
-                            : 'bg-orange-500 text-white';
-
-                        const authorLabel = isSupport 
-                          ? 'サポート部門' 
-                          : isAdmin 
-                            ? '管理者' 
-                            : '経理部門';
-
-                        return (
-                          <div key={i} className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}>
-                            <div className={`max-w-[75%] rounded-2xl px-4 py-2.5 shadow-sm ${bubbleColor} ${
-                              isMe ? 'rounded-tr-sm' : 'rounded-tl-sm'
-                            }`}>
-                              <div className="text-xs font-bold mb-1 opacity-75">
-                                {authorLabel}
-                              </div>
-                              <div className="text-sm whitespace-pre-wrap leading-relaxed">{m.text}</div>
-                              <div className="text-xs mt-1.5 opacity-60 text-right">
-                                {m.date ? new Date(m.date).toLocaleString('ja-JP', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : ''}
-                              </div>
-                            </div>
+                      <div className="border border-gray-200 rounded-xl overflow-hidden shadow-sm bg-white">
+                        {/* Legend bar */}
+                        <div className="flex items-center justify-between px-4 py-2 bg-gray-50 border-b border-gray-200">
+                          <div className="flex items-center gap-5 text-xs font-medium text-gray-600">
+                            <span className="flex items-center gap-1.5">
+                              <span className="w-2.5 h-2.5 rounded-full bg-orange-400 inline-block" />
+                              経理部門
+                            </span>
+                            <span className="flex items-center gap-1.5">
+                              <span className="w-2.5 h-2.5 rounded-full bg-blue-500 inline-block" />
+                              サポート部門
+                            </span>
+                            <span className="flex items-center gap-1.5">
+                              <span className="w-2.5 h-2.5 rounded-full bg-[#162D50] inline-block" />
+                              管理者
+                            </span>
                           </div>
-                        );
-                      })}
-                    <div ref={chatEndRef} />
-                  </div>
+                        </div>
 
-                  {/* Input area */}
-                  <div className="border-t border-gray-200 p-3 bg-gray-50 flex gap-2 items-end">
-                    <textarea
-                      value={chatInput}
-                      onChange={e => setChatInput(e.target.value)}
-                      onKeyDown={e => {
-                        if (e.key === 'Enter' && !e.shiftKey) {
-                          e.preventDefault();
-                          handleSendMessage();
-                        }
-                      }}
-                      placeholder="メッセージを入力… (Shift+Enter で改行)"
-                      rows={1}
-                      className="flex-1 resize-none min-h-[38px] max-h-[100px] px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#162D50] bg-white"
-                    />
-                    <button
-                      onClick={handleSendMessage}
-                      disabled={!chatInput.trim() || isSendingMsg}
-                      className="shrink-0 bg-[#162D50] hover:bg-[#0f1f3d] text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-                    >
-                      {isSendingMsg ? '…' : '送信'}
-                    </button>
-                  </div>
-                </div>
+                        {/* Chat thread */}
+                        <div className="h-72 overflow-y-auto p-4 space-y-3 bg-[#F9FAFB]">
+                          {allMessages.length === 0 && (
+                            <div className="flex flex-col items-center justify-center h-full text-gray-400 text-sm gap-1">
+                              <MessageSquare className="w-8 h-8 text-gray-300 mb-1" />
+                              <span>メッセージはまだありません</span>
+                              <span className="text-xs text-gray-400">経理部門とサポート部門の連絡や確認事項を送信できます</span>
+                            </div>
+                          )}
+                          {[...allMessages]
+                            .sort((a, b) => new Date(a.date || 0) - new Date(b.date || 0))
+                            .map((m, i) => {
+                              const authorLower = String(m.author || '').toLowerCase();
+                              const isSupport = authorLower === 'support_user' || authorLower.includes('support') || authorLower === 'サポート部門';
+                              const isAdmin = authorLower === 'admin' || authorLower === '管理者';
+                              const isAccount = !isSupport && !isAdmin;
+
+                              const isMe = (user.role === 'support' && isSupport) ||
+                                           (user.role === 'account' && isAccount) ||
+                                           (user.role === 'admin' && (isAdmin || m.author === user.username));
+
+                              const authorLabel = isSupport 
+                                ? (isMe ? 'サポート部門 (あなた)' : 'サポート部門')
+                                : isAdmin 
+                                  ? (isMe ? '管理者 (あなた)' : '管理者')
+                                  : (isMe ? '経理部門 (あなた)' : '経理部門');
+
+                              return (
+                                <div key={i} className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}>
+                                  <div className={`max-w-[75%] rounded-2xl p-3.5 shadow-sm transition-all ${
+                                    isMe 
+                                      ? (isSupport ? 'bg-blue-600 text-white rounded-tr-sm' : isAdmin ? 'bg-[#162D50] text-white rounded-tr-sm' : 'bg-orange-500 text-white rounded-tr-sm')
+                                      : (isSupport 
+                                          ? 'bg-blue-50 border border-blue-200 text-blue-950 rounded-tl-sm'
+                                          : isAdmin
+                                            ? 'bg-slate-100 border border-slate-300 text-slate-900 rounded-tl-sm'
+                                            : 'bg-orange-50 border border-orange-200 text-orange-950 rounded-tl-sm')
+                                  }`}>
+                                    <div className="flex items-center justify-between gap-3 mb-1">
+                                      <span className={`text-[11px] font-bold tracking-wide uppercase px-1.5 py-0.5 rounded ${
+                                        isMe 
+                                          ? 'bg-white/20 text-white' 
+                                          : isSupport
+                                            ? 'bg-blue-200/60 text-blue-800'
+                                            : isAdmin
+                                              ? 'bg-slate-200 text-slate-800'
+                                              : 'bg-orange-200/60 text-orange-800'
+                                      }`}>
+                                        {authorLabel}
+                                      </span>
+                                    </div>
+                                    <div className="text-sm whitespace-pre-wrap leading-relaxed">
+                                      {m.text}
+                                    </div>
+                                    <div className={`text-[10px] mt-1.5 text-right ${isMe ? 'text-white/70' : 'text-gray-500'}`}>
+                                      {m.date ? new Date(m.date).toLocaleString('ja-JP', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : ''}
+                                    </div>
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          <div ref={chatEndRef} />
+                        </div>
+
+                        {/* Input area */}
+                        <div className="border-t border-gray-200 p-3 bg-gray-50 flex gap-2 items-end">
+                          <textarea
+                            value={chatInput}
+                            onChange={e => setChatInput(e.target.value)}
+                            onKeyDown={e => {
+                              if (e.key === 'Enter' && !e.shiftKey) {
+                                e.preventDefault();
+                                handleSendMessage();
+                              }
+                            }}
+                            placeholder={
+                              user.role === 'support' 
+                                ? '経理部門へのメッセージを入力… (Shift+Enter で改行)' 
+                                : user.role === 'account' 
+                                  ? 'サポート部門へのメッセージを入力… (Shift+Enter で改行)' 
+                                  : 'メッセージを入力… (Shift+Enter で改行)'
+                            }
+                            rows={1}
+                            className="flex-1 resize-none min-h-[38px] max-h-[100px] px-3.5 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#162D50] bg-white text-gray-800"
+                          />
+                          <button
+                            onClick={handleSendMessage}
+                            disabled={!chatInput.trim() || isSendingMsg}
+                            className="shrink-0 flex items-center gap-1.5 bg-[#162D50] hover:bg-[#0f1f3d] text-white px-4 py-2 rounded-lg text-sm font-semibold transition-colors disabled:opacity-40 disabled:cursor-not-allowed shadow-sm"
+                          >
+                            <Send className="w-3.5 h-3.5" />
+                            {isSendingMsg ? '…' : '送信'}
+                          </button>
+                        </div>
+                      </div>
+                    </>
+                  );
+                })()}
               </div>
             </div>
           </div>
@@ -1251,8 +1375,13 @@ export default function CaseList({ setActiveTab: onNavigate }) {
                   修正依頼
                 </button>
                 <button 
-                  onClick={() => {
-                    handleUpdateStatus('APPROVED_FOR_PAYMENT');
+                  onClick={async () => {
+                    const targetTab = getCaseTargetTab(selectedCase);
+                    try {
+                      sessionStorage.setItem('activePaymentTab', targetTab);
+                    } catch (_) {}
+                    await handleUpdateStatus('APPROVED_FOR_PAYMENT');
+                    toast.success('支払承認を完了しました');
                     if (typeof onNavigate === 'function') {
                       onNavigate('Paid Status');
                     }
