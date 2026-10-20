@@ -200,13 +200,33 @@ router.get('/account', verifyToken, requireRole('admin', 'account'), async (req,
       activeAdvancesMoM = 100;
     }
 
+    const pendingCases = allRecords
+      .filter(c => !completedStatuses.includes(c.status) && !['APPROVED_FOR_PAYMENT', 'Approve for Payment', '支払承認', '承認済 for Payment'].includes(c.status))
+      .sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0))
+      .slice(0, 10)
+      .map(c => {
+        const isClaim = Boolean(c.claim_id || c.claimId || c.staff_id || c.full_name);
+        return {
+          id: c._id,
+          displayId: c.claim_id || c.case_id || (isClaim ? `CLM-${(c._id || '').toString().slice(-6).toUpperCase()}` : `CAS-${(c._id || '').toString().slice(-6).toUpperCase()}`),
+          staffName: c.full_name || c.staff_name || c.staffName || 'N/A',
+          expenseType: c.expense_type || c.expenseType || 'N/A',
+          amount: c.finalTotal || c.total_expense_amount || c.final_total_amount || 0,
+          date: c.expense_period_start || c.createdAt,
+          status: c.status || 'Pending',
+          type: c.case_type || (isClaim ? 'Staff Case' : 'Office Case'),
+          isClaim
+        };
+      });
+
     res.json({
       totalActiveAdvances,
       pendingSettlements,
       recoveredThisPeriod,
       overallRecoveryRate,
       activeAdvancesMoM,
-      patternMetrics
+      patternMetrics,
+      pendingCases
     });
   } catch (error) {
     console.error('Error fetching account dashboard data:', error);

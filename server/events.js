@@ -11,6 +11,7 @@ export const sseHandler = (req, res) => {
   res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
   res.setHeader('Referrer-Policy', 'no-referrer');
   res.setHeader('Connection', 'keep-alive');
+  res.setHeader('X-Accel-Buffering', 'no');
 
   res.write(': connected\n\n');
 
@@ -24,23 +25,38 @@ export const sseHandler = (req, res) => {
 
   clients.push(newClient);
 
+  // Heartbeat ping every 20 seconds to prevent reverse-proxy / Nginx timeouts
+  const heartbeat = setInterval(() => {
+    try {
+      res.write(': ping\n\n');
+    } catch {
+      clearInterval(heartbeat);
+    }
+  }, 20000);
+
   req.on('close', () => {
+    clearInterval(heartbeat);
     clients = clients.filter(client => client.id !== clientId);
   });
 };
 
-caseEvents.on('CASE_REGISTERED', (data) => {
+const safeBroadcast = (eventName, data) => {
+  const payload = `event: ${eventName}\ndata: ${JSON.stringify(data)}\n\n`;
   clients
     .filter(c => CASE_BROADCAST_ROLES.includes(c.role))
     .forEach(client => {
-      client.res.write(`event: CASE_REGISTERED\ndata: ${JSON.stringify(data)}\n\n`);
+      try {
+        client.res.write(payload);
+      } catch (err) {
+        console.error(`Error sending SSE event ${eventName} to client ${client.id}:`, err);
+      }
     });
+};
+
+caseEvents.on('CASE_REGISTERED', (data) => {
+  safeBroadcast('CASE_REGISTERED', data);
 });
 
 caseEvents.on('CASE_UPDATED', (data) => {
-  clients
-    .filter(c => CASE_BROADCAST_ROLES.includes(c.role))
-    .forEach(client => {
-      client.res.write(`event: CASE_UPDATED\ndata: ${JSON.stringify(data)}\n\n`);
-    });
+  safeBroadcast('CASE_UPDATED', data);
 });
