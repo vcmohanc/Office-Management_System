@@ -81,13 +81,17 @@ const upload = multer({
 // The old router-level (err, req, res, next) pattern is unreliable in this stack.
 router.post('/', requireRole('admin', 'account', 'support'), (req, res) => {
   upload.array('files', 10)(req, res, async (err) => {
-    // Handle multer-level errors inline (file size, type, count limits)
+    // Handle multer-level errors inline (file size, type, count limits, permissions)
     if (err) {
       if (err.code === 'LIMIT_FILE_SIZE') {
         return res.status(400).json({ message: 'ファイルサイズが大きすぎます。1ファイルの最大サイズは5MBです。' });
       }
       if (err.code === 'INVALID_FILE_TYPE') {
         return res.status(400).json({ message: err.message });
+      }
+      if (err.code === 'EACCES') {
+        console.error('Permission error on uploads directory:', err);
+        return res.status(500).json({ message: 'アップロードディレクトリへのアクセス権限がありません。サーバー管理者にご連絡ください。' });
       }
       console.error('Multer error:', err);
       return res.status(400).json({ message: err.message || 'アップロードエラーが発生しました。' });
