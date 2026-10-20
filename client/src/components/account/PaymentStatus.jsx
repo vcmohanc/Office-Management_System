@@ -6,12 +6,302 @@ import autoTable from 'jspdf-autotable';
 import { fontBase64 } from '../../fonts/Kosugi-Regular.js';
 import { vegeiconBase64 } from '../../assets/vegeiconBase64.js';
 
-import { Search, ChevronDown, Calendar, Download, Building, Landmark, AlertCircle, AlertTriangle, ArrowRight, ArrowLeft, Printer, Trash2 } from 'lucide-react';
+import { Search, ChevronDown, Calendar, Download, Building, Landmark, AlertCircle, AlertTriangle, ArrowRight, ArrowLeft, Printer, Trash2, MapPin, Briefcase, Phone, Mail } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { PAYMENT_METHODS } from '../../utils/paymentMethodMapping.js';
 import { toastConfirm } from '../../utils/toastConfirm.jsx';
 import { isApprovedForPayment } from '../../utils/paymentUtils.js';
-import { sortExpenseTypes, isHostCompanyPairing } from '../../utils/expenseRules.js';
+import { sortExpenseTypes, isHostCompanyPairing, isFarmParty, PAYMENT_PROCESSING_OPTIONS } from '../../utils/expenseRules.js';
+
+export const getPaymentProcessLabel = (val) => {
+  if (!val) return '—';
+  const v = String(val).trim();
+  const match = PAYMENT_PROCESSING_OPTIONS.find(
+    o => o.value === v || o.value.toLowerCase() === v.toLowerCase()
+  );
+  if (match) return match.label;
+
+  const low = v.toLowerCase();
+  if (low.includes('deduction') || low.includes('控除')) return '給与控除 (Salary deduction)';
+  if (low.includes('addition') || low.includes('加算')) return '給与に加算 (Addition to salary)';
+  if (low.includes('invoice') || low.includes('請求')) return '請求書発行・顧客へ請求 (Invoice from client company)';
+  if (low.includes('transfer') || low.includes('振込')) return '本人へ振込・銀行振込 (Transfer to person concerned)';
+  return val;
+};
+
+export const getAgreedTermsConfig = (c) => {
+  const ptRaw = String(c?.payment_process_type || c?.payment_process_types || c?.advancerName || '').trim().toLowerCase();
+  const totalTerms = c?.installment_count || (c?.installment_plan ? (parseInt((c.installment_plan.match(/\d+/) || ['1'])[0], 10) || 1) : 1);
+  const paid = c?.paidTerms || 0;
+  const isMultiTerm = totalTerms > 1;
+
+  const isSalaryAddition = ptRaw === 'salary_addition' || ptRaw.includes('addition') || ptRaw.includes('加算');
+  const isSalaryDeduction = ptRaw === 'salary_deduction' || ptRaw.includes('deduction') || ptRaw.includes('控除');
+  const isClientInvoice = ptRaw === 'client_invoice' || ptRaw.includes('invoice') || ptRaw.includes('請求');
+  const isDirectTransfer = ptRaw === 'direct_transfer' || ptRaw.includes('transfer') || ptRaw.includes('振込');
+
+  // Month resolution
+  const m = c?.collection_start_month || c?.collectionStartMonth || c?.payroll_month || c?.payrollMonth;
+  const monthValue = (m && m !== 'TBD' && m !== 'N/A') ? m : '—';
+
+  if (isSalaryAddition) {
+    return {
+      planLabel: '支給形態',
+      planNode: (
+        <span className="inline-flex items-center px-2.5 py-0.5 rounded text-xs font-bold bg-emerald-50 text-emerald-800 border border-emerald-200">
+          一括支給 (給与加算)
+        </span>
+      ),
+      monthLabel: '支給対象月',
+      monthValue,
+      termLabel: '精算区分',
+      termNode: (
+        <span className="inline-flex items-center px-2.5 py-0.5 rounded text-xs font-semibold bg-gray-100 text-gray-700 border border-gray-200">
+          一括精算 (1回完了)
+        </span>
+      ),
+    };
+  }
+
+  if (isSalaryDeduction) {
+    if (isMultiTerm) {
+      return {
+        planLabel: '分割控除プラン',
+        planNode: (
+          <span className="inline-flex items-center px-2.5 py-0.5 rounded text-xs font-bold bg-amber-50 text-amber-800 border border-amber-200 font-mono">
+            {totalTerms}回分割控除
+          </span>
+        ),
+        monthLabel: '回収開始月',
+        monthValue,
+        termLabel: '回収進捗',
+        termNode: (
+          <span className="inline-flex items-center px-2.5 py-0.5 rounded text-xs font-bold bg-blue-50 text-blue-800 border border-blue-200 font-mono">
+            第 {paid + 1} 回 / 全 {totalTerms} 回
+          </span>
+        ),
+      };
+    }
+    return {
+      planLabel: '控除形態',
+      planNode: (
+        <span className="inline-flex items-center px-2.5 py-0.5 rounded text-xs font-bold bg-purple-50 text-purple-800 border border-purple-200">
+          一括控除 (当月給与)
+        </span>
+      ),
+      monthLabel: '控除対象月',
+      monthValue,
+      termLabel: '精算区分',
+      termNode: (
+        <span className="inline-flex items-center px-2.5 py-0.5 rounded text-xs font-semibold bg-gray-100 text-gray-700 border border-gray-200">
+          一括精算 (1回完了)
+        </span>
+      ),
+    };
+  }
+
+  if (isClientInvoice) {
+    return {
+      planLabel: '請求形態',
+      planNode: (
+        <span className="inline-flex items-center px-2.5 py-0.5 rounded text-xs font-bold bg-indigo-50 text-indigo-800 border border-indigo-200">
+          一括請求 (顧客請求)
+        </span>
+      ),
+      monthLabel: '請求対象月',
+      monthValue,
+      termLabel: '精算区分',
+      termNode: (
+        <span className="inline-flex items-center px-2.5 py-0.5 rounded text-xs font-semibold bg-gray-100 text-gray-700 border border-gray-200">
+          一括請求 (1回完了)
+        </span>
+      ),
+    };
+  }
+
+  if (isDirectTransfer) {
+    return {
+      planLabel: '振込形態',
+      planNode: (
+        <span className="inline-flex items-center px-2.5 py-0.5 rounded text-xs font-bold bg-sky-50 text-sky-800 border border-sky-200">
+          一括振込 (銀行振込)
+        </span>
+      ),
+      monthLabel: '振込対象月',
+      monthValue,
+      termLabel: '精算区分',
+      termNode: (
+        <span className="inline-flex items-center px-2.5 py-0.5 rounded text-xs font-semibold bg-gray-100 text-gray-700 border border-gray-200">
+          一括精算 (1回完了)
+        </span>
+      ),
+    };
+  }
+
+  // Fallback
+  if (isMultiTerm) {
+    return {
+      planLabel: '分割払いプラン',
+      planNode: (
+        <span className="inline-flex items-center px-2.5 py-0.5 rounded text-xs font-bold bg-amber-50 text-amber-800 border border-amber-200 font-mono">
+          {totalTerms}回払い
+        </span>
+      ),
+      monthLabel: '回収開始月',
+      monthValue,
+      termLabel: '現在の期間',
+      termNode: (
+        <span className="inline-flex items-center px-2.5 py-0.5 rounded text-xs font-bold bg-blue-50 text-blue-800 border border-blue-200 font-mono">
+          第 {paid + 1} 回 / 全 {totalTerms} 回
+        </span>
+      ),
+    };
+  }
+
+  return {
+    planLabel: '精算形態',
+    planNode: (
+      <span className="inline-flex items-center px-2.5 py-0.5 rounded text-xs font-bold bg-gray-100 text-gray-800 border border-gray-300">
+        一括精算
+      </span>
+    ),
+    monthLabel: '精算対象月',
+    monthValue,
+    termLabel: '精算区分',
+    termNode: (
+      <span className="inline-flex items-center px-2.5 py-0.5 rounded text-xs font-semibold bg-gray-100 text-gray-700 border border-gray-200">
+        一括精算 (1回完了)
+      </span>
+    ),
+  };
+};
+
+export const getPaymentMethodsForProcessType = (processType = '', isHost = false) => {
+  if (isHost) {
+    return [
+      { value: '銀行振込', label: '銀行振込 (Bank Transfer)' },
+      { value: '小口現金', label: '小口現金 (Petty Cash)' },
+      { value: '小切手', label: '小切手 (Check)' },
+      { value: 'Cash', label: '現金 (Cash)' },
+    ];
+  }
+
+  const pt = String(processType).trim().toLowerCase();
+  if (pt === 'salary_deduction' || pt.includes('deduction') || pt.includes('控除')) {
+    return [
+      { value: '給与控除', label: '給与控除 (Deduction from salary)' },
+    ];
+  }
+  if (pt === 'salary_addition' || pt.includes('addition') || pt.includes('加算')) {
+    return [
+      { value: '給与に加算', label: '給与に加算 (Addition to salary)' },
+      { value: '給与振込', label: '給与振込 (Payroll Transfer)' },
+      { value: '銀行振込', label: '銀行振込 (Bank Transfer)' },
+    ];
+  }
+  if (pt === 'client_invoice' || pt.includes('invoice') || pt.includes('請求')) {
+    return [
+      { value: '銀行振込', label: '銀行振込 (Bank Transfer)' },
+      { value: '法人カード', label: '法人カード (Corporate Card)' },
+      { value: '小口現金', label: '小口現金 (Petty Cash)' },
+      { value: '小切手', label: '小切手 (Check)' },
+    ];
+  }
+  if (pt === 'direct_transfer' || pt.includes('transfer') || pt.includes('振込')) {
+    return [
+      { value: '銀行振込', label: '銀行振込 (Bank Transfer)' },
+      { value: '小口現金', label: '小口現金 (Petty Cash)' },
+      { value: '小切手', label: '小切手 (Check)' },
+      { value: 'Cash', label: '現金 (Cash)' },
+    ];
+  }
+
+  return PAYMENT_METHODS;
+};
+
+const normalizeCaseRecord = (c, partners = []) => {
+  const isHost = Boolean(
+    c.isHostCompanyCase ||
+    c.case_type === 'Host Company Case' ||
+    isHostCompanyPairing(c.advancer_category || c.advancerCategory, c.bearing_party || c.bearingParty) ||
+    isFarmParty(c.advancer_category || c.advancerCategory) ||
+    isFarmParty(c.bearing_party || c.bearingParty)
+  );
+
+  const matchedPartner = partners.find(p => 
+    (c.partner_id && (p._id === c.partner_id || p.partner_id === c.partner_id)) ||
+    (c.partner_name && p.partner_name === c.partner_name) ||
+    (c.branch_farm_name && p.partner_name === c.branch_farm_name) ||
+    (c.branch_farm_name && Array.isArray(p.workplaceCategories) && p.workplaceCategories.includes(c.branch_farm_name))
+  );
+
+  const fallbackFarm = isHost ? 'Hokkaido Fresh Farm Co.' : '';
+  const farmName = c.partner_name || c.partnerName || c.hostCompany || matchedPartner?.partner_name || (c.branch_farm_name && c.branch_farm_name !== 'N/A' ? c.branch_farm_name : '') || fallbackFarm;
+  const farmLocation = (c.location && c.location !== 'N/A' ? c.location : '') || (c.branch_farm_name && c.branch_farm_name !== 'N/A' ? c.branch_farm_name : '') || matchedPartner?.address || matchedPartner?.location || (isHost ? '北海道札幌市 / 農業拠点' : '');
+  const farmIndustry = c.partner_industry || c.partnerIndustry || matchedPartner?.industry || (isHost ? 'Agriculture & Farming (農業・林業)' : '');
+
+  const rawAdv = String(c.advancer_category || c.advancerCategory || '').trim().toLowerCase();
+  let advancerCategory = 'Office';
+  if (isHost) {
+    advancerCategory = 'Host Company';
+  } else if (
+    rawAdv.includes('staff') ||
+    rawAdv.includes('スタッフ') ||
+    rawAdv.includes('service') ||
+    rawAdv.includes('support') ||
+    c.claim_id ||
+    c.claimId ||
+    c._isClaim ||
+    c.type === 'Staff Case' ||
+    c.case_type === 'Staff Case'
+  ) {
+    advancerCategory = 'Staff';
+  } else {
+    advancerCategory = 'Office';
+  }
+
+  const paymentProcessType = c.payment_process_type || c.payment_process_types || c.paymentProcessType || c.advancerName || '';
+
+  const rawStartMonth = c.collection_start_month || c.collectionStartMonth || c.payroll_month || c.payrollMonth || '';
+  let cleanStartMonth = rawStartMonth;
+  if (!cleanStartMonth || cleanStartMonth === 'TBD' || cleanStartMonth === 'N/A') {
+    if (c.payroll_month && c.payroll_month !== 'TBD') {
+      cleanStartMonth = c.payroll_month;
+    } else if (c.expected_settlement_date || c.expectedSettlementDate) {
+      try {
+        cleanStartMonth = new Date(c.expected_settlement_date || c.expectedSettlementDate).toISOString().slice(0, 7);
+      } catch (_) {}
+    } else if (c.expense_period_start || c.expense期間Start || c.createdAt) {
+      try {
+        cleanStartMonth = new Date(c.expense_period_start || c.expense期間Start || c.createdAt).toISOString().slice(0, 7);
+      } catch (_) {}
+    } else {
+      cleanStartMonth = new Date().toISOString().slice(0, 7);
+    }
+  }
+
+  return {
+    ...c,
+    isHostCompanyCase: isHost,
+    advancerCategory,
+    payment_process_type: paymentProcessType,
+    paymentProcessType,
+    collection_start_month: cleanStartMonth,
+    collectionStartMonth: cleanStartMonth,
+    farmName,
+    farmLocation,
+    farmIndustry,
+    contactName: matchedPartner?.contact_name || c.contact_name || '',
+    contactEmail: matchedPartner?.contact_email || c.contact_email || '',
+    contactPhone: matchedPartner?.contact_phone || c.contact_phone || '',
+    finalTotal: c.finalTotal || c.totalExpense || c.final_total_amount || c.expenseAmount || c.expense_amount || c.totalExpenseAmount || c.total_expense_amount || 0,
+    staffId: c.staffId || c.staff_id || 'N/A',
+    staffName: c.staffName || c.staff_name || c.fullName || c.full_name || 'N/A',
+    expenseType: c.expenseType || c.expense_type || (c.claim_id ? 'Claim' : 'N/A'),
+    expense期間Start: c.expense期間Start || c.expense_period_start || c.createdAt,
+    expense期間End: c.expense期間End || c.expense_period_end || c.createdAt
+  };
+};
 
 export default function PaymentStatus() {
   const { caseId } = useParams();
@@ -19,8 +309,26 @@ export default function PaymentStatus() {
   const [viewingDetails, set表示ingDetails] = useState(false);
   const [selectedCase, setSelectedCase] = useState(null);
   const [selectedBatchCases, setSelectedBatchCases] = useState([]);
-  const [activePaymentTab, setActivePaymentTab] = useState('Office');
+  const [activePaymentTab, setActivePaymentTab] = useState(() => {
+    try {
+      const saved = sessionStorage.getItem('activePaymentTab');
+      if (saved && ['Office', 'Staff', 'Host Company'].includes(saved)) {
+        return saved;
+      }
+    } catch (_) {}
+    return 'Office';
+  });
+
+  const handleTabChange = (tab) => {
+    setActivePaymentTab(tab);
+    try {
+      sessionStorage.setItem('activePaymentTab', tab);
+    } catch (_) {}
+  };
+
   const [cases, setCases] = useState([]);
+  const [partners, setPartners] = useState([]);
+  const partnersRef = useRef([]);
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState('すべてのステータス');
   const [expenseTypeFilter, setExpenseTypeFilter] = useState('すべての種類');
@@ -46,58 +354,21 @@ export default function PaymentStatus() {
 
     sse.addEventListener('CASE_REGISTERED', (e) => {
       const c = JSON.parse(e.data);
-      const isHost = c.isHostCompanyCase || c.case_type === 'Host Company Case' || isHostCompanyPairing(c.advancer_category || c.advancerCategory, c.bearing_party || c.bearingParty);
-      if (c.claim_id) {
-        setCases(prev => [{
-          ...c,
-          advancerCategory: isHost ? 'Host Company' : 'Staff',
-          finalTotal: c.expenseAmount || c.expense_amount || c.totalExpenseAmount || c.total_expense_amount || 0,
-          staffId: c.staffId || c.staff_id || 'N/A',
-          staffName: c.fullName || c.full_name || 'N/A',
-          expenseType: c.expenseType || c.expense_type || 'Claim',
-          expense期間Start: c.expense期間Start || c.expense_period_start || c.createdAt,
-          expense期間End: c.expense期間End || c.expense_period_end || c.createdAt,
-        }, ...prev]);
-      } else {
-        setCases(prev => [{
-          ...c,
-          advancerCategory: isHost ? 'Host Company' : (c.advancerCategory || 'Office'),
-          finalTotal: c.finalTotal || c.totalExpense || c.final_total_amount || 0,
-          staffId: c.staffId || c.staff_id || 'N/A',
-          staffName: c.staffName || c.staff_name || 'N/A',
-          expenseType: c.expenseType || c.expense_type || 'N/A',
-          expense期間Start: c.expense期間Start || c.expense_period_start || c.createdAt,
-          expense期間End: c.expense期間End || c.expense_period_end || c.createdAt
-        }, ...prev]);
-      }
+      const normalized = normalizeCaseRecord(c, partnersRef.current);
+      setCases(prev => [normalized, ...prev]);
     });
 
     sse.addEventListener('CASE_UPDATED', (e) => {
       const c = JSON.parse(e.data);
-      const isHost = c.isHostCompanyCase || c.case_type === 'Host Company Case' || isHostCompanyPairing(c.advancer_category || c.advancerCategory, c.bearing_party || c.bearingParty);
-      if (c.claim_id) {
-        setCases(prev => prev.map(item => item._id === c._id ? {
-          ...c,
-          advancerCategory: isHost ? 'Host Company' : 'Staff',
-          finalTotal: c.expenseAmount || c.expense_amount || c.totalExpenseAmount || c.total_expense_amount || 0,
-          staffId: c.staffId || c.staff_id || 'N/A',
-          staffName: c.fullName || c.full_name || 'N/A',
-          expenseType: c.expenseType || c.expense_type || 'Claim',
-          expense期間Start: c.expense期間Start || c.expense_period_start || c.createdAt,
-          expense期間End: c.expense期間End || c.expense_period_end || c.createdAt,
-        } : item));
-      } else {
-        setCases(prev => prev.map(item => item._id === c._id ? {
-          ...c,
-          advancerCategory: isHost ? 'Host Company' : (c.advancerCategory || 'Office'),
-          finalTotal: c.finalTotal || c.totalExpense || c.final_total_amount || 0,
-          staffId: c.staffId || c.staff_id || 'N/A',
-          staffName: c.staffName || c.staff_name || 'N/A',
-          expenseType: c.expenseType || c.expense_type || 'N/A',
-          expense期間Start: c.expense期間Start || c.expense_period_start || c.createdAt,
-          expense期間End: c.expense期間End || c.expense_period_end || c.createdAt
-        } : item));
-      }
+      const normalized = normalizeCaseRecord(c, partnersRef.current);
+      setCases(prev => {
+        const exists = prev.some(item => item._id === c._id);
+        if (exists) {
+          return prev.map(item => item._id === c._id ? { ...item, ...normalized } : item);
+        }
+        return [normalized, ...prev];
+      });
+      setSelectedCase(prev => (prev && prev._id === c._id) ? { ...prev, ...normalized } : prev);
     });
 
     return () => sse.close();
@@ -131,65 +402,69 @@ export default function PaymentStatus() {
   }, [selectedCase, selectedBatchCases, paymentMethod]);
 
   useEffect(() => {
-    if (selectedCase) {
-      // Auto-populate 支払方法 based on agreed terms
-      let method = '';
-      if (selectedCase.advancerCategory === 'Staff') {
-        const rawMethod = selectedCase.settlement_method || selectedCase.settlementMethod || '';
-        const collectionMethod = selectedCase.collection_method || selectedCase.collectionMethod || '';
-        
-        if (collectionMethod.includes('給与控除') || collectionMethod.includes('Deduction')) method = '給与控除';
-        else if (rawMethod === 'Cash' || rawMethod === 'Petty Cash' || rawMethod === '小口現金') method = '小口現金';
-        else if (rawMethod.includes('Bank') || rawMethod.includes('銀行')) method = '銀行振込';
-        else if (rawMethod.includes('Salary') || rawMethod.includes('Payroll') || rawMethod.includes('給与')) {
-          if (rawMethod.includes('加算')) method = '給与に加算';
-          else method = '給与振込';
-        }
-        else if (rawMethod.includes('Check') || rawMethod.includes('小切手')) method = '小切手';
-        else method = rawMethod;
-      } else {
-        const rawMethod = selectedCase.settlement_method || selectedCase.settlementMethod || '';
-        if (rawMethod === 'Cash' || rawMethod.includes('現金')) method = 'Cash';
-        else if (rawMethod.includes('Bank') || rawMethod.includes('銀行')) method = '銀行振込';
-        else if (rawMethod.includes('Salary') || rawMethod.includes('Payroll') || rawMethod.includes('給与')) {
-          if (rawMethod.includes('加算') || rawMethod.includes('Addition')) method = '給与に加算';
-          else method = '給与控除';
-        }
-        else if (rawMethod.includes('Card') || rawMethod.includes('法人カード')) method = '法人カード';
-        else method = rawMethod;
-      }
-      
-      const validOptions = PAYMENT_METHODS.map(m => m.value);
-        
-      if (validOptions.includes(method)) {
-        setPaymentMethod(method);
-      } else {
-        setPaymentMethod(''); // Reset if not matching
-      }
+    if (!selectedCase) return;
 
-      // Auto-fill destination details
-      const newDestDetails = {};
-      if (method === '銀行振込') {
-        const bankInfo = selectedCase.bankInfo || {};
-        newDestDetails.bankName = bankInfo.bankName || selectedCase.bankName || '';
-        newDestDetails.branchCode = bankInfo.branchCode || selectedCase.branchCode || '';
-        newDestDetails.accountNumber = bankInfo.accountNumber || selectedCase.accountNumber || '';
-      }
-      if (method === '給与控除' || method === '給与振込' || method === '給与に加算') {
-        const paidTerms = selectedCase.paidTerms || 0;
-        let targetMonth = new Date().toISOString().slice(0, 7);
-        if (selectedCase.installment_schedule && selectedCase.installment_schedule.length > paidTerms) {
-           targetMonth = selectedCase.installment_schedule[paidTerms].month;
-        } else if (selectedCase.collection_start_month || selectedCase.collectionStartMonth) {
-           targetMonth = selectedCase.collection_start_month || selectedCase.collectionStartMonth;
-        } else if (selectedCase.payroll_month || selectedCase.payrollMonth) {
-           targetMonth = selectedCase.payroll_month || selectedCase.payrollMonth;
-        }
-        newDestDetails.payroll期間 = targetMonth;
-      }
-      set目的地Details(newDestDetails);
+    const isHost = Boolean(
+      selectedCase.isHostCompanyCase ||
+      selectedCase.case_type === 'Host Company Case' ||
+      activePaymentTab === 'Host Company'
+    );
+
+    const processType = selectedCase.payment_process_type || selectedCase.payment_process_types || selectedCase.advancerName || '';
+    const pt = String(processType).trim().toLowerCase();
+    const availableMethods = getPaymentMethodsForProcessType(processType, isHost);
+
+    let method = '';
+    if (isHost) {
+      // Host Company / Farm cases: B2B payment methods only (bank transfer, petty cash, check, cash)
+      const colMethod = selectedCase.collection_method || selectedCase.collectionMethod || selectedCase.settlement_method || selectedCase.settlementMethod || '';
+      if (colMethod.includes('現金') || colMethod.includes('Cash') || colMethod.includes('小口')) method = '小口現金';
+      else if (colMethod.includes('小切手') || colMethod.includes('Check')) method = '小切手';
+      else method = '銀行振込';
+    } else if (pt === 'salary_deduction' || pt.includes('deduction') || pt.includes('控除')) {
+      method = '給与控除';
+    } else if (pt === 'salary_addition' || pt.includes('addition') || pt.includes('加算')) {
+      const setMethod = selectedCase.settlement_method || selectedCase.settlementMethod || '';
+      if (setMethod.includes('振込') && !setMethod.includes('給与')) method = '銀行振込';
+      else if (setMethod.includes('給与振込') || setMethod.includes('Payroll')) method = '給与振込';
+      else method = '給与に加算';
+    } else if (pt === 'client_invoice' || pt.includes('invoice') || pt.includes('請求')) {
+      method = '銀行振込';
+    } else if (pt === 'direct_transfer' || pt.includes('transfer') || pt.includes('振込')) {
+      method = '銀行振込';
+    } else {
+      method = availableMethods[0]?.value || '銀行振込';
     }
-  }, [selectedCase]);
+
+    const isValid = availableMethods.some(m => m.value === method);
+    const finalMethod = isValid ? method : (availableMethods[0]?.value || '');
+    setPaymentMethod(finalMethod);
+
+    // Auto-fill destination details
+    const newDestDetails = {};
+    if (finalMethod === '銀行振込') {
+      const bankInfo = selectedCase.bankInfo || {};
+      newDestDetails.bankName = bankInfo.bankName || selectedCase.bankName || selectedCase.bank_name || '';
+      newDestDetails.branchCode = bankInfo.branchCode || selectedCase.branchCode || selectedCase.branch_code || '';
+      newDestDetails.accountNumber = bankInfo.accountNumber || selectedCase.accountNumber || selectedCase.account_number || '';
+    } else if (finalMethod === '給与控除' || finalMethod === '給与振込' || finalMethod === '給与に加算') {
+      const paidTerms = selectedCase.paidTerms || 0;
+      let targetMonth = new Date().toISOString().slice(0, 7);
+      if (selectedCase.installment_schedule && selectedCase.installment_schedule.length > paidTerms) {
+        targetMonth = selectedCase.installment_schedule[paidTerms].month || targetMonth;
+      } else if (selectedCase.collection_start_month || selectedCase.collectionStartMonth) {
+        targetMonth = selectedCase.collection_start_month || selectedCase.collectionStartMonth;
+      } else if (selectedCase.payroll_month || selectedCase.payrollMonth) {
+        targetMonth = selectedCase.payroll_month || selectedCase.payrollMonth;
+      }
+      newDestDetails.payroll期間 = targetMonth;
+    } else if (finalMethod === 'Cash' || finalMethod === '小口現金') {
+      newDestDetails.receiverName = isHost 
+        ? (selectedCase.contactName || selectedCase.farmName || '') 
+        : (selectedCase.staffName || '');
+    }
+    set目的地Details(newDestDetails);
+  }, [selectedCase, activePaymentTab]);
 
   useEffect(() => {
     if (selectedCase) {
@@ -213,7 +488,10 @@ export default function PaymentStatus() {
       return;
     }
 
-    const headers = ['案件ID', '期間', '経費の種類', '残額', 'ステータス', '立替者カテゴリ', 'スタッフ名'];
+    const isHostExport = activePaymentTab === 'Host Company';
+    const headers = isHostExport
+      ? ['案件ID', '期間', '農場/ホスト企業名', '所在地/拠点', '経費の種類', '残額', 'ステータス', '回収条件']
+      : ['案件ID', '期間', '経費の種類', '残額', 'ステータス', '立替者カテゴリ', 'スタッフ名'];
     const csvRows = [headers.join(',')];
 
     for (const row of dataToエクスポート) {
@@ -231,16 +509,30 @@ export default function PaymentStatus() {
       const status = row.status || 'N/A';
       const advancerCategory = row.advancerCategory || 'N/A';
       const staffName = row.staffName || row.advancerName || 'N/A';
+      const farmName = row.farmName || '提携農場';
+      const farmLocation = row.farmLocation || '—';
+      const collectionMethod = row.collection_method || row.collectionMethod || row.settlement_method || 'N/A';
 
-      const csvRow = [
-        `"${caseId}"`,
-        `"${period}"`,
-        `"${expenseType}"`,
-        `"${Math.round(remainingAmount)}"`,
-        `"${status}"`,
-        `"${advancerCategory}"`,
-        `"${staffName}"`
-      ];
+      const csvRow = isHostExport
+        ? [
+            `"${caseId}"`,
+            `"${period}"`,
+            `"${farmName}"`,
+            `"${farmLocation}"`,
+            `"${expenseType}"`,
+            `"${Math.round(remainingAmount)}"`,
+            `"${status}"`,
+            `"${collectionMethod}"`
+          ]
+        : [
+            `"${caseId}"`,
+            `"${period}"`,
+            `"${expenseType}"`,
+            `"${Math.round(remainingAmount)}"`,
+            `"${status}"`,
+            `"${advancerCategory}"`,
+            `"${staffName}"`
+          ];
       csvRows.push(csvRow.join(','));
     }
 
@@ -249,7 +541,7 @@ export default function PaymentStatus() {
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.setAttribute('href', url);
-    link.setAttribute('download', `payment_export_${new Date().toISOString().slice(0, 10)}.csv`);
+    link.setAttribute('download', `${isHostExport ? 'farm_cases_payment' : 'payment_export'}_${new Date().toISOString().slice(0, 10)}.csv`);
     link.style.visibility = 'hidden';
     document.body.appendChild(link);
     link.click();
@@ -398,36 +690,16 @@ export default function PaymentStatus() {
     Promise.all([
       apiFetch('/api/cases').then(res => res.json()).catch(() => []),
       apiFetch('/api/claims').then(res => res.json()).catch(() => []),
-      apiFetch('/api/options').then(res => res.json()).catch(() => [])
-    ]).then(([casesData, claimsData, optionsData]) => {
+      apiFetch('/api/options').then(res => res.json()).catch(() => []),
+      apiFetch('/api/b2b/engagements?limit=100').then(res => res.json()).catch(() => ({ data: [] }))
+    ]).then(([casesData, claimsData, optionsData, partnersData]) => {
       const toArr = (d) => Array.isArray(d) ? d : (Array.isArray(d?.data) ? d.data : []);
-      const mappedCases = toArr(casesData).map(c => {
-        const isHost = c.isHostCompanyCase || c.case_type === 'Host Company Case' || isHostCompanyPairing(c.advancer_category || c.advancerCategory, c.bearing_party || c.bearingParty);
-        return {
-          ...c,
-          advancerCategory: isHost ? 'Host Company' : (c.advancerCategory || 'Office'),
-          finalTotal: c.finalTotal || c.totalExpense || c.final_total_amount || 0,
-          staffId: c.staffId || c.staff_id || 'N/A',
-          staffName: c.staffName || c.staff_name || 'N/A',
-          expenseType: c.expenseType || c.expense_type || 'N/A',
-          expense期間Start: c.expense期間Start || c.expense_period_start || c.createdAt,
-          expense期間End: c.expense期間End || c.expense_period_end || c.createdAt
-        };
-      });
+      const partnersList = toArr(partnersData);
+      setPartners(partnersList);
+      partnersRef.current = partnersList;
 
-      const mappedClaims = toArr(claimsData).map(c => {
-        const isHost = c.isHostCompanyCase || c.case_type === 'Host Company Case' || isHostCompanyPairing(c.advancer_category || c.advancerCategory, c.bearing_party || c.bearingParty);
-        return {
-          ...c,
-          advancerCategory: isHost ? 'Host Company' : 'Staff',
-          finalTotal: c.expenseAmount || c.expense_amount || c.totalExpenseAmount || c.total_expense_amount || 0,
-          staffId: c.staffId || c.staff_id || 'N/A',
-          staffName: c.fullName || c.full_name || 'N/A',
-          expenseType: c.expenseType || c.expense_type || 'Claim',
-          expense期間Start: c.expense期間Start || c.expense_period_start || c.createdAt,
-          expense期間End: c.expense期間End || c.expense_period_end || c.createdAt,
-        };
-      });
+      const mappedCases = toArr(casesData).map(c => normalizeCaseRecord(c, partnersList));
+      const mappedClaims = toArr(claimsData).map(c => normalizeCaseRecord(c, partnersList));
 
       const allCases = [...mappedCases, ...mappedClaims];
       setCases(allCases);
@@ -498,6 +770,23 @@ export default function PaymentStatus() {
   const staffCasesCount = postApprovalCases.filter(c => c.advancerCategory === 'Staff').length;
   const hostCompanyCasesCount = postApprovalCases.filter(c => c.advancerCategory === 'Host Company').length;
 
+  // Auto-switch tab on initial load if active tab has no records but another tab does
+  const hasAutoSwitchedRef = useRef(false);
+  useEffect(() => {
+    if (loading || hasAutoSwitchedRef.current || postApprovalCases.length === 0) return;
+    const currentCount = postApprovalCases.filter(c => c.advancerCategory === activePaymentTab || (!c.advancerCategory && activePaymentTab === 'Office')).length;
+    if (currentCount === 0) {
+      if (staffCasesCount > 0) {
+        handleTabChange('Staff');
+      } else if (officeCasesCount > 0) {
+        handleTabChange('Office');
+      } else if (hostCompanyCasesCount > 0) {
+        handleTabChange('Host Company');
+      }
+    }
+    hasAutoSwitchedRef.current = true;
+  }, [loading, postApprovalCases.length, activePaymentTab, staffCasesCount, officeCasesCount, hostCompanyCasesCount]);
+
   const filteredCases = postApprovalCases.filter(c => {
     const matchesTab = c.advancerCategory === activePaymentTab || (!c.advancerCategory && activePaymentTab === 'Office');
     const matchesStatus = statusFilter === 'すべてのステータス' || c.status === statusFilter;
@@ -506,6 +795,10 @@ export default function PaymentStatus() {
     const matchesSearch = !q ||
       (c.staffId || '').toLowerCase().includes(q) ||
       (c.staffName || '').toLowerCase().includes(q) ||
+      (c.farmName || '').toLowerCase().includes(q) ||
+      (c.farmLocation || '').toLowerCase().includes(q) ||
+      (c.branch_farm_name || '').toLowerCase().includes(q) ||
+      (c.partner_name || '').toLowerCase().includes(q) ||
       (c.case_id || c.caseId || '').toLowerCase().includes(q) ||
       (c._id || '').toLowerCase().includes(q);
     const recordDate = new Date(c.expense期間Start || c.createdAt);
@@ -527,13 +820,28 @@ export default function PaymentStatus() {
 
   const totalOfficePayment = postApprovalCases.filter(c => c.advancerCategory === 'Office').reduce((sum, c) => sum + get残りBalance(c), 0);
   const totalStaffPayment = postApprovalCases.filter(c => c.advancerCategory === 'Staff').reduce((sum, c) => sum + get残りBalance(c), 0);
+  const totalHostPayment = postApprovalCases.filter(c => c.advancerCategory === 'Host Company').reduce((sum, c) => sum + get残りBalance(c), 0);
   const pendingCount = postApprovalCases.filter(c => c.status === 'Payment 保留中' || c.status === 'APPROVED_FOR_PAYMENT').length;
   const processingCount = postApprovalCases.filter(c => c.status === '処理中').length;
   const completedCount = postApprovalCases.filter(c => c.status === '完了').length;
   const overdueCount = postApprovalCases.filter(c => c.status === '期限切れ').length;
 
   if (selectedCase) {
-    const personCases = postApprovalCases.filter(c => c.staffId === selectedCase.staffId && (c.advancerCategory === activePaymentTab || (!c.advancerCategory && activePaymentTab === 'Office')));
+    const isHostCase = selectedCase.advancerCategory === 'Host Company' || selectedCase.isHostCompanyCase;
+    const personCases = postApprovalCases.filter(c => {
+      if (isHostCase) {
+        const farmKey = selectedCase.partner_id || selectedCase.partner_name || selectedCase.farmName;
+        if (farmKey) {
+          return c.advancerCategory === 'Host Company' && (
+            c.partner_id === farmKey ||
+            c.partner_name === farmKey ||
+            c.farmName === farmKey
+          );
+        }
+        return c.advancerCategory === 'Host Company';
+      }
+      return c.staffId === selectedCase.staffId && (c.advancerCategory === activePaymentTab || (!c.advancerCategory && activePaymentTab === 'Office'));
+    });
     const personTotalOfficePayment = personCases.filter(c => c.advancerCategory === 'Office').reduce((sum, c) => sum + get残りBalance(c), 0);
     const personTotalStaffPayment = personCases.filter(c => c.advancerCategory === 'Staff').reduce((sum, c) => sum + get残りBalance(c), 0);
     const person保留中Count = personCases.filter(c => c.status === 'Payment 保留中' || c.status === 'APPROVED_FOR_PAYMENT').length;
@@ -548,6 +856,8 @@ export default function PaymentStatus() {
       const matchesSearch = !q ||
         (c.staffId || '').toLowerCase().includes(q) ||
         (c.staffName || '').toLowerCase().includes(q) ||
+        (c.farmName || '').toLowerCase().includes(q) ||
+        (c.farmLocation || '').toLowerCase().includes(q) ||
         (c.case_id || c.caseId || c._id || '').toLowerCase().includes(q);
       return matchesStatus && matchesType && matchesDateStart && matchesDateEnd && matchesSearch;
     });
@@ -617,7 +927,7 @@ export default function PaymentStatus() {
         doc.setTextColor(255, 255, 255);
         doc.text('OFFICE MANAGEMENT SYSTEM', 11 + Math.round(headerH * 0.7) + 3, headerH * 0.42);
 
-        const title = selectedCase.advancerCategory === 'Staff' ? 'Reimbursement Receipt' : 'Settlement Ledger';
+        const title = isHostCase ? 'Farm Case Settlement Ledger' : (selectedCase.advancerCategory === 'Staff' ? 'Reimbursement Receipt' : 'Settlement Ledger');
         doc.setFont('Kosugi', 'normal');
         doc.setFontSize(fs(8));
         doc.setTextColor(180, 200, 230);
@@ -683,10 +993,10 @@ export default function PaymentStatus() {
         autoTable(doc, {
           startY: curY + titleGap,
           margin,
-          head: [['Payee', 'Payee ID', 'Base Claim 金額']],
+          head: [isHostCase ? ['Farm / Host Company', 'Location / Branch', 'Base Claim 金額'] : ['Payee', 'Payee ID', 'Base Claim 金額']],
           body: [[
-            selectedCase.staffName || selectedCase.advancerName || 'N/A',
-            selectedCase.staffId || 'N/A',
+            isHostCase ? (selectedCase.farmName || '提携農場') : (selectedCase.staffName || selectedCase.advancerName || 'N/A'),
+            isHostCase ? (selectedCase.farmLocation || '—') : (selectedCase.staffId || 'N/A'),
             `JPY ${batchTotalBaseClaim.toLocaleString()}`
           ]],
           theme: 'grid',
@@ -735,12 +1045,12 @@ export default function PaymentStatus() {
           autoTable(doc, {
             startY: curY + titleGap,
             margin,
-            head: [['Collection Method', 'Installment Plan', 'Start Month', 'Current Term']],
+            head: [['Collection Method', 'Installment Plan', selectedCaseTotalTerms > 1 ? 'Start Month' : 'Settlement Month', 'Current Term']],
             body: [[
-              selectedCase.collection_method || selectedCase.collectionMethod || 'N/A',
-              selectedCase.installment_plan || selectedCase.installmentPlan || 'N/A',
-              selectedCase.collection_start_month || selectedCase.collectionStartMonth || 'N/A',
-              selectedCaseTotalTerms > 1 ? `Term ${selectedCaseCurrentTerm} of ${selectedCaseTotalTerms}` : 'N/A'
+              selectedCase.collection_method || selectedCase.collectionMethod || '—',
+              selectedCase.installment_plan || selectedCase.installmentPlan || (selectedCaseTotalTerms > 1 ? `${selectedCaseTotalTerms}回払い` : '一括払い'),
+              (selectedCase.collection_start_month && selectedCase.collection_start_month !== 'TBD') ? selectedCase.collection_start_month : (selectedCase.payroll_month || '—'),
+              selectedCaseTotalTerms > 1 ? `Term ${selectedCaseCurrentTerm} of ${selectedCaseTotalTerms}` : '1 / 1'
             ]],
             theme: 'grid',
             styles: sharedStyles,
@@ -833,10 +1143,65 @@ export default function PaymentStatus() {
           支払リストに戻る
         </button>
 
-        <div className="mb-6 print:hidden">
-          <h2 className="text-2xl font-bold text-[#162D50] mb-1">スタッフ名: {selectedCase.staffName}</h2>
-          <p className="text-gray-500 text-sm">スタッフID: {selectedCase.staffId}</p>
-        </div>
+        {isHostCase ? (
+          <div className="mb-6 print:hidden bg-gradient-to-r from-emerald-50 via-teal-50 to-white border border-emerald-200 rounded-lg p-5 shadow-sm">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+              <div>
+                <div className="flex items-center gap-2 mb-1.5">
+                  <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 border border-emerald-300 flex items-center gap-1">
+                    <Building className="w-3.5 h-3.5" />
+                    ホスト会社 / 提携農場
+                  </span>
+                  <span className="text-xs font-mono text-gray-500">
+                    {selectedCase.case_id || selectedCase.caseId || (`#CAS-${selectedCase._id.slice(-6).toUpperCase()}`)}
+                  </span>
+                </div>
+                <h2 className="text-2xl font-bold text-[#162D50] flex items-center gap-2">
+                  {selectedCase.farmName || '提携農場'}
+                </h2>
+                <div className="flex flex-wrap items-center gap-x-5 gap-y-1.5 text-xs text-gray-600 mt-2">
+                  <span className="flex items-center gap-1">
+                    <MapPin className="w-3.5 h-3.5 text-emerald-600" />
+                    <strong>所在地 / 拠点:</strong> {selectedCase.farmLocation || '—'}
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <Briefcase className="w-3.5 h-3.5 text-gray-500" />
+                    <strong>業種:</strong> {selectedCase.farmIndustry || '農業・林業'}
+                  </span>
+                  {selectedCase.contactName && (
+                    <span><strong>担当者:</strong> {selectedCase.contactName}</span>
+                  )}
+                  {selectedCase.contactPhone && (
+                    <span className="flex items-center gap-1">
+                      <Phone className="w-3.5 h-3.5 text-gray-500" />
+                      {selectedCase.contactPhone}
+                    </span>
+                  )}
+                  {selectedCase.contactEmail && (
+                    <span className="flex items-center gap-1">
+                      <Mail className="w-3.5 h-3.5 text-gray-500" />
+                      {selectedCase.contactEmail}
+                    </span>
+                  )}
+                </div>
+              </div>
+              <div className="flex md:flex-col items-end justify-between md:justify-center border-t md:border-t-0 md:border-l border-emerald-200 pt-3 md:pt-0 md:pl-6">
+                <div className="text-xs text-gray-500">取引ペアリング</div>
+                <div className="text-sm font-bold text-[#162D50]">
+                  {selectedCase.advancer_category || selectedCase.advancerCategory || 'VC'} ↔ {selectedCase.bearing_party || selectedCase.bearingParty || 'Farm'}
+                </div>
+                <div className="text-[11px] text-emerald-700 bg-emerald-100/70 px-2 py-0.5 rounded mt-1 font-medium">
+                  ホスト会社直接精算
+                </div>
+              </div>
+            </div>
+          </div>
+        ) : (
+          <div className="mb-6 print:hidden">
+            <h2 className="text-2xl font-bold text-[#162D50] mb-1">スタッフ名: {selectedCase.staffName}</h2>
+            <p className="text-gray-500 text-sm">スタッフID: {selectedCase.staffId}</p>
+          </div>
+        )}
 
         <div className="print:hidden space-y-6">
           {/* Filter Bar */}
@@ -844,7 +1209,7 @@ export default function PaymentStatus() {
             <div className="flex-1">
               <label className="block text-xs font-bold text-gray-600 mb-1">検索</label>
               <div className="relative">
-                <input type="text" placeholder="案件ID、スタッフ名を検索..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)} className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-[#162D50]" />
+                <input type="text" placeholder={isHostCase ? "案件ID、農場名、拠点を検索..." : "案件ID、スタッフ名を検索..."} value={searchQuery} onChange={e => setSearchQuery(e.target.value)} className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-[#162D50]" />
                 <Search className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
               </div>
             </div>
@@ -897,7 +1262,9 @@ export default function PaymentStatus() {
         {/* Payment History Section */}
         <div className="mt-6 print:hidden">
           <div className="px-0 py-3 mb-3">
-            <h3 className="text-lg font-bold text-[#162D50]">支払履歴および関連案件</h3>
+            <h3 className="text-lg font-bold text-[#162D50]">
+              {isHostCase ? '農場案件・支払履歴' : '支払履歴および関連案件'}
+            </h3>
           </div>
           {/* Mobile cards */}
           <div className="block sm:hidden space-y-3">
@@ -925,6 +1292,12 @@ export default function PaymentStatus() {
                       {getStatusJapanese(c.status)}
                     </span>
                   </div>
+                  {isHostCase && (
+                    <div className="text-xs font-bold text-gray-800 mb-1 flex items-center gap-1">
+                      <Building className="w-3 h-3 text-emerald-600 shrink-0" />
+                      {c.farmName}
+                    </div>
+                  )}
                   <div className="text-xs text-gray-500 mb-1">{getExpenseTypeJapanese(c.expenseType)}</div>
                   <div className="flex justify-between items-center mb-2">
                     <span className="text-xs text-gray-400">
@@ -956,6 +1329,7 @@ export default function PaymentStatus() {
                   </th>
                   <th className="py-3 px-6">案件ID</th>
                   <th className="py-3 px-6">期間</th>
+                  {isHostCase && <th className="py-3 px-6">農場名 / 拠点</th>}
                   <th className="py-3 px-6">経費の種類</th>
                   <th className="py-3 px-6">残額</th>
                   <th className="py-3 px-6">ステータス</th>
@@ -964,7 +1338,7 @@ export default function PaymentStatus() {
               </thead>
               <tbody className="divide-y divide-gray-100 text-sm">
                 {filteredPersonCases.length === 0 ? (
-                  <tr><td colSpan="6" className="py-4 px-6 text-center text-gray-500">フィルターに一致する案件が見つかりません。</td></tr>
+                  <tr><td colSpan={isHostCase ? "8" : "7"} className="py-4 px-6 text-center text-gray-500">フィルターに一致する案件が見つかりません。</td></tr>
                 ) : (
                   filteredPersonCases.map(c => (
                   <tr key={c._id} className={`hover:bg-gray-50 transition-colors ${selectedBatchCases.some(item => item._id === c._id) ? 'bg-blue-50' : ''}`}>
@@ -978,6 +1352,15 @@ export default function PaymentStatus() {
                     </td>
                     <td className="py-4 px-6 font-medium text-[#162D50]">#CAS-{c._id.slice(-6).toUpperCase()}</td>
                     <td className="py-4 px-6 text-gray-600">{c.expense期間Start ? new Date(c.expense期間Start).toLocaleDateString() : 'N/A'} - {c.expense期間End ? new Date(c.expense期間End).toLocaleDateString() : 'N/A'}</td>
+                    {isHostCase && (
+                      <td className="py-4 px-6">
+                        <div className="font-semibold text-gray-800 text-xs flex items-center gap-1">
+                          <Building className="w-3 h-3 text-emerald-700 shrink-0" />
+                          <span>{c.farmName || '提携農場'}</span>
+                        </div>
+                        <div className="text-[11px] text-gray-400 mt-0.5">{c.farmLocation || '—'}</div>
+                      </td>
+                    )}
                     <td className="py-4 px-6 text-gray-600">{getExpenseTypeJapanese(c.expenseType)}</td>
                     <td className="py-4 px-6 font-bold text-[#162D50]">{c.currency === 'JPY' ? '¥' : '$'}{Math.round(get残りBalance(c)).toLocaleString()}</td>
                     <td className="py-4 px-6">
@@ -1018,7 +1401,7 @@ export default function PaymentStatus() {
                 <div>
                   <div className="text-white font-bold tracking-[0.25em] uppercase text-sm">OFFICE MANAGEMENT SYSTEM</div>
                   <div className="text-[#B0C4DE] text-[10px] tracking-widest mt-0.5">
-                    {selectedCase.advancerCategory === 'Staff' ? '経費精算領収書' : '精算台帳'}
+                    {isHostCase ? 'ホスト会社・農場精算台帳' : (selectedCase.advancerCategory === 'Staff' ? '経費精算領収書' : '精算台帳')}
                   </div>
                 </div>
               </div>
@@ -1044,7 +1427,7 @@ export default function PaymentStatus() {
                 <img src={vegeiconBase64} alt="Logo" className="h-14 w-14 object-contain" />
               </div>
               <h3 className="text-2xl font-bold tracking-widest uppercase mb-2">
-                {selectedCase.advancerCategory === 'Staff' ? '経費精算領収書' : '精算台帳'}
+                {isHostCase ? 'ホスト会社・農場精算台帳' : (selectedCase.advancerCategory === 'Staff' ? '経費精算領収書' : '精算台帳')}
               </h3>
               <p className="font-mono text-sm tracking-widest">
                 {selectedBatchCases.length} 件選択中
@@ -1062,9 +1445,20 @@ export default function PaymentStatus() {
               {/* Header Details */}
               <div className="grid grid-cols-2 gap-8 print:gap-4 border-b border-dashed border-[#162D50] pb-8 print:pb-4">
                 <div>
-                  <label className="block text-xs font-bold uppercase tracking-widest mb-1 text-gray-500">{selectedCase.advancerCategory === 'Staff' ? '従業員' : '支払先'}</label>
-                  <div className="font-mono text-xl">{selectedCase.staffName || selectedCase.advancerName || 'N/A'}</div>
-                  {selectedCase.staffId && <div className="font-mono text-xs text-gray-500 mt-1">ID: {selectedCase.staffId}</div>}
+                  <label className="block text-xs font-bold uppercase tracking-widest mb-1 text-gray-500">
+                    {isHostCase ? '対象農場 / ホスト企業' : (selectedCase.advancerCategory === 'Staff' ? '従業員' : '支払先')}
+                  </label>
+                  <div className="font-mono text-xl">
+                    {isHostCase ? (selectedCase.farmName || '提携農場') : (selectedCase.staffName || selectedCase.advancerName || 'N/A')}
+                  </div>
+                  {isHostCase ? (
+                    <div className="font-mono text-xs text-gray-500 mt-1 flex items-center gap-1">
+                      <MapPin className="w-3 h-3 text-gray-400" />
+                      拠点: {selectedCase.farmLocation || '農場拠点'}
+                    </div>
+                  ) : (
+                    selectedCase.staffId && <div className="font-mono text-xs text-gray-500 mt-1">ID: {selectedCase.staffId}</div>
+                  )}
                 </div>
                 <div className="text-right">
                   <label className="block text-xs font-bold uppercase tracking-widest mb-1 text-gray-500">基本請求金額</label>
@@ -1113,6 +1507,7 @@ export default function PaymentStatus() {
                     const totalTerms = c.installment_count || (c.installment_plan ? (parseInt((c.installment_plan.match(/\d+/) || ['1'])[0], 10) || 1) : 1);
                     const paid = c.paidTerms || 0;
                     const schedule = c.installment_schedule || c.installmentSchedule;
+                    const termsConfig = getAgreedTermsConfig(c);
                     return (
                       <div key={c._id} className="rounded border border-gray-200 bg-gray-50 p-3 print:p-2">
                         {/* Case ID header row */}
@@ -1125,41 +1520,41 @@ export default function PaymentStatus() {
                             {getExpenseTypeJapanese(c.expenseType) || c.expenseType || '—'}
                           </span>
                         </div>
-                        {/* 4-column terms grid */}
-                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                        {/* 5-column terms grid */}
+                        <div className="grid grid-cols-2 sm:grid-cols-5 gap-4">
+                          <div>
+                            <label className="block text-[10px] font-bold uppercase tracking-widest mb-1 text-gray-400">支払処理タイプ</label>
+                            <div className="font-mono text-sm font-semibold text-[#162D50]">
+                              {getPaymentProcessLabel(c.payment_process_type || c.payment_process_types || c.advancerName)}
+                            </div>
+                          </div>
                           <div>
                             <label className="block text-[10px] font-bold uppercase tracking-widest mb-1 text-gray-400">回収・精算方法</label>
-                            <div className="font-mono text-sm">
-                              {c.collection_method || c.collectionMethod || c.settlement_method || c.settlementMethod || 'N/A'}
+                            <div className="font-mono text-sm text-gray-800">
+                              {c.collection_method || c.collectionMethod || c.settlement_method || c.settlementMethod || '—'}
                             </div>
                           </div>
                           <div>
-                            <label className="block text-[10px] font-bold uppercase tracking-widest mb-1 text-gray-400">分割払いプラン</label>
-                            <div className="font-mono text-sm">
-                              {(() => {
-                                const n = c.installment_count || c.installmentCount;
-                                if (n && n > 1) return `${n}回払い`;
-                                const plan = c.installment_plan || c.installmentPlan;
-                                if (plan) return plan;
-                                return '一括払い';
-                              })()}
+                            <label className="block text-[10px] font-bold uppercase tracking-widest mb-1 text-gray-400">{termsConfig.planLabel}</label>
+                            <div className="mt-0.5">
+                              {termsConfig.planNode}
                             </div>
                           </div>
                           <div>
-                            <label className="block text-[10px] font-bold uppercase tracking-widest mb-1 text-gray-400">開始月</label>
-                            <div className="font-mono text-sm">
-                              {c.collection_start_month || c.collectionStartMonth || c.payroll_month || c.payrollMonth || 'N/A'}
+                            <label className="block text-[10px] font-bold uppercase tracking-widest mb-1 text-gray-400">{termsConfig.monthLabel}</label>
+                            <div className="font-mono text-sm font-semibold text-gray-800">
+                              {termsConfig.monthValue}
                             </div>
                           </div>
                           <div>
-                            <label className="block text-[10px] font-bold uppercase tracking-widest mb-1 text-gray-400">現在の期間</label>
-                            <div className="font-mono text-sm">
-                              {totalTerms > 1 ? `第${paid + 1}回 / 全${totalTerms}回` : '1 / 1'}
+                            <label className="block text-[10px] font-bold uppercase tracking-widest mb-1 text-gray-400">{termsConfig.termLabel}</label>
+                            <div className="mt-0.5">
+                              {termsConfig.termNode}
                             </div>
                           </div>
                         </div>
-                        {/* Installment schedule (if multi-term) */}
-                        {schedule && schedule.length > 1 && (
+                        {/* Installment schedule (only if multi-term) */}
+                        {schedule && schedule.length > 1 && totalTerms > 1 && (
                           <div className="mt-3">
                             <div className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-2">分割回収スケジュール</div>
                             <div className="grid grid-cols-12 gap-2 text-[9px] font-bold text-gray-400 uppercase tracking-widest mb-1 border-b border-gray-200 pb-1">
@@ -1199,7 +1594,11 @@ export default function PaymentStatus() {
               {/* Print-only: Payment Details Summary */}
               <div className="hidden print:block border-b border-dashed border-[#162D50] pb-4 mb-4">
                 <div className="text-xs font-bold uppercase tracking-widest text-gray-500 mb-3">支払い詳細</div>
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-3">
+                <div className="grid grid-cols-2 sm:grid-cols-5 gap-4 mb-3">
+                  <div>
+                    <label className="block text-[10px] font-bold uppercase tracking-widest mb-1 text-gray-400">支払処理タイプ</label>
+                    <div className="font-mono text-sm">{getPaymentProcessLabel(selectedCase?.payment_process_type || selectedCase?.payment_process_types || selectedCase?.advancerName)}</div>
+                  </div>
                   <div>
                     <label className="block text-[10px] font-bold uppercase tracking-widest mb-1 text-gray-400">支払方法</label>
                     <div className="font-mono text-sm">{paymentMethod || '—'}</div>
@@ -1233,7 +1632,7 @@ export default function PaymentStatus() {
                     </div>
                   </div>
                 )}
-                {(paymentMethod === '給与控除' || paymentMethod === '給与振込') && (
+                {(paymentMethod === '給与控除' || paymentMethod === '給与振込' || paymentMethod === '給与に加算') && (
                   <div className="mb-3">
                     <label className="block text-[10px] font-bold uppercase tracking-widest mb-1 text-gray-400">対象給与期間</label>
                     <div className="font-mono text-sm">{destinationDetails.payroll期間 || '—'}</div>
@@ -1283,19 +1682,61 @@ export default function PaymentStatus() {
 
               {/* 支払方法 & Deductions Form (Interactive) */}
               <div className="mt-8 print:hidden">
-                <div className="text-xs font-bold uppercase tracking-widest text-gray-500 mb-6">支払いを記録</div>
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-6">
+                  <div className="text-xs font-bold uppercase tracking-widest text-gray-500">支払いを記録</div>
+                  {selectedCase && (
+                    <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-50 border border-blue-200 text-xs text-[#162D50]">
+                      <span className="text-[10px] uppercase font-bold text-gray-500">支払処理タイプ:</span>
+                      <span className="font-mono font-semibold">
+                        {getPaymentProcessLabel(selectedCase.payment_process_type || selectedCase.payment_process_types || selectedCase.advancerName)}
+                      </span>
+                    </div>
+                  )}
+                </div>
                 <div className="space-y-6">
                   <div className="flex flex-col sm:flex-row gap-6">
                     <div className="flex-1">
                       <label className="block text-sm font-semibold text-gray-700 mb-2">支払方法 <span className="text-red-500">*</span></label>
                       <select 
                         value={paymentMethod} 
-                        onChange={(e) => setPaymentMethod(e.target.value)}
+                        onChange={(e) => {
+                          const newMethod = e.target.value;
+                          setPaymentMethod(newMethod);
+                          if (newMethod === '銀行振込') {
+                            const bankInfo = selectedCase?.bankInfo || {};
+                            set目的地Details(prev => ({
+                              ...prev,
+                              bankName: prev.bankName || bankInfo.bankName || selectedCase?.bankName || selectedCase?.bank_name || '',
+                              branchCode: prev.branchCode || bankInfo.branchCode || selectedCase?.branchCode || selectedCase?.branch_code || '',
+                              accountNumber: prev.accountNumber || bankInfo.accountNumber || selectedCase?.accountNumber || selectedCase?.account_number || '',
+                            }));
+                          } else if (newMethod === '給与控除' || newMethod === '給与振込' || newMethod === '給与に加算') {
+                            const paidTerms = selectedCase?.paidTerms || 0;
+                            let targetMonth = new Date().toISOString().slice(0, 7);
+                            if (selectedCase?.installment_schedule && selectedCase.installment_schedule.length > paidTerms) {
+                              targetMonth = selectedCase.installment_schedule[paidTerms].month || targetMonth;
+                            } else if (selectedCase?.payroll_month || selectedCase?.collection_start_month) {
+                              targetMonth = selectedCase.payroll_month || selectedCase.collection_start_month;
+                            }
+                            set目的地Details(prev => ({
+                              ...prev,
+                              payroll期間: prev.payroll期間 || targetMonth
+                            }));
+                          } else if (newMethod === 'Cash' || newMethod === '小口現金') {
+                            set目的地Details(prev => ({
+                              ...prev,
+                              receiverName: prev.receiverName || (selectedCase?.isHostCompanyCase ? (selectedCase?.contactName || selectedCase?.farmName) : selectedCase?.staffName) || ''
+                            }));
+                          }
+                        }}
                         className="w-full border border-gray-400 bg-white/70 rounded-none px-4 py-2.5 text-gray-700 focus:ring-2 focus:ring-[#162D50] focus:border-[#162D50] outline-none font-mono text-sm"
                         required
                       >
                         <option value="" disabled>支払い方法を選択</option>
-                        {PAYMENT_METHODS.map(m => (
+                        {getPaymentMethodsForProcessType(
+                          selectedCase?.payment_process_type || selectedCase?.payment_process_types || selectedCase?.advancerName,
+                          Boolean(selectedCase?.isHostCompanyCase || selectedCase?.case_type === 'Host Company Case' || activePaymentTab === 'Host Company')
+                        ).map(m => (
                           <option key={m.value} value={m.value}>{m.label}</option>
                         ))}
                       </select>
@@ -1330,7 +1771,7 @@ export default function PaymentStatus() {
                     </div>
                   )}
 
-                  {(paymentMethod === '給与控除' || paymentMethod === '給与振込') && (
+                  {(paymentMethod === '給与控除' || paymentMethod === '給与振込' || paymentMethod === '給与に加算') && (
                     <div className="space-y-4 bg-white/50 p-5 rounded border-2 border-dashed border-gray-300">
                       <div>
                         <label className="block text-[10px] font-bold uppercase tracking-widest text-gray-700 mb-2">対象給与期間 <span className="text-red-500">*</span></label>
@@ -1696,17 +2137,22 @@ export default function PaymentStatus() {
         </div>
 
         <div className="bg-white border border-gray-200 p-5 rounded-md shadow-sm">
-          <h3 className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-2">スタッフの総支払額</h3>
+          <h3 className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-2">
+            {activePaymentTab === 'Host Company' ? 'ホスト会社の総支払額' : 'スタッフの総支払額'}
+          </h3>
           <div className="flex justify-between items-center">
             <div>
-              <p className="text-3xl font-bold text-[#162D50]">¥{totalStaffPayment.toLocaleString()}</p>
+              <p className="text-3xl font-bold text-[#162D50]">
+                ¥{(activePaymentTab === 'Host Company' ? totalHostPayment : totalStaffPayment).toLocaleString()}
+              </p>
               <div className="flex items-center mt-2 text-xs text-green-600 font-medium">
                 <div className="w-3 h-3 rounded-full border-2 border-green-600 flex items-center justify-center mr-1">
                   <div className="w-1.5 h-1.5 bg-green-600 rounded-full"></div>
                 </div>
-                {postApprovalCases.filter(c => c.advancerCategory === 'Staff').length} スタッフ案件数
+                {activePaymentTab === 'Host Company' ? `${hostCompanyCasesCount} ホスト会社案件数` : `${staffCasesCount} スタッフ案件数`}
               </div>
             </div>
+            {activePaymentTab === 'Host Company' && <Building className="w-10 h-10 text-emerald-100" />}
           </div>
         </div>
 
@@ -1749,17 +2195,17 @@ export default function PaymentStatus() {
       {/* Top Tabs */}
       <div className="bg-[#F2F4F7] p-1 rounded-md flex space-x-1 mb-4 border border-gray-200">
         <button 
-          onClick={() => setActivePaymentTab('Office')}
+          onClick={() => handleTabChange('Office')}
           className={`flex-1 py-1.5 sm:py-2 text-xs sm:text-sm font-bold rounded-md transition-colors ${activePaymentTab === 'Office' ? 'text-white bg-[#0A192F] shadow-sm' : 'text-gray-500 hover:bg-gray-200'}`}>
           オフィス支払案件 <span className={`ml-2 px-2 py-0.5 rounded-full text-xs ${activePaymentTab === 'Office' ? 'bg-white text-[#0A192F]' : 'bg-gray-200 text-gray-600'}`}>{officeCasesCount}</span>
         </button>
         <button 
-          onClick={() => setActivePaymentTab('Staff')}
+          onClick={() => handleTabChange('Staff')}
           className={`flex-1 py-1.5 sm:py-2 text-xs sm:text-sm font-bold rounded-md transition-colors ${activePaymentTab === 'Staff' ? 'text-white bg-[#0A192F] shadow-sm' : 'text-gray-500 hover:bg-gray-200'}`}>
           スタッフ支払案件 <span className={`ml-2 px-2 py-0.5 rounded-full text-xs ${activePaymentTab === 'Staff' ? 'bg-white text-[#0A192F]' : 'bg-gray-200 text-gray-600'}`}>{staffCasesCount}</span>
         </button>
         <button 
-          onClick={() => setActivePaymentTab('Host Company')}
+          onClick={() => handleTabChange('Host Company')}
           className={`flex-1 py-1.5 sm:py-2 text-xs sm:text-sm font-bold rounded-md transition-colors ${activePaymentTab === 'Host Company' ? 'text-white bg-[#0A192F] shadow-sm' : 'text-gray-500 hover:bg-gray-200'}`}>
           ホスト会社案件 <span className={`ml-2 px-2 py-0.5 rounded-full text-xs ${activePaymentTab === 'Host Company' ? 'bg-white text-[#0A192F]' : 'bg-gray-200 text-gray-600'}`}>{hostCompanyCasesCount}</span>
         </button>
@@ -1770,7 +2216,13 @@ export default function PaymentStatus() {
         <div className="flex-1">
           <label className="block text-xs font-bold text-gray-600 mb-1">検索</label>
           <div className="relative">
-            <input type="text" placeholder="案件ID、スタッフ名を検索..." className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-[#162D50]" />
+            <input 
+              type="text" 
+              placeholder={activePaymentTab === 'Host Company' ? "案件ID、農場名、拠点・所在地を検索..." : "案件ID、スタッフ名を検索..."} 
+              value={searchQuery} 
+              onChange={e => setSearchQuery(e.target.value)} 
+              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-[#162D50]" 
+            />
             <Search className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
           </div>
         </div>
@@ -1779,7 +2231,7 @@ export default function PaymentStatus() {
           <div className="relative">
             <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)} className="w-full pl-4 pr-10 py-2 border border-gray-300 rounded-md text-sm appearance-none focus:outline-none focus:ring-1 focus:ring-[#162D50] text-gray-600">
               <option value="すべてのステータス">すべてのステータス</option>
-              {[...new Set(cases.map(c => c.status))].filter(Boolean).map(status => (
+              {[...new Set(postApprovalCases.map(c => c.status))].filter(Boolean).map(status => (
                 <option key={status} value={status}>{getStatusJapanese(status)}</option>
               ))}
             </select>
@@ -1847,7 +2299,20 @@ export default function PaymentStatus() {
                     {totalTerms > 1 ? `${Math.min(paidTerms, totalTerms)}/${totalTerms} 完了` : getStatusJapanese(displayStatus)}
                   </span>
                 </div>
-                <div className="font-bold text-gray-800 text-sm mb-0.5">{c.staffName}</div>
+                {activePaymentTab === 'Host Company' ? (
+                  <div className="mb-2">
+                    <div className="font-bold text-[#162D50] text-sm flex items-center gap-1.5">
+                      <Building className="w-3.5 h-3.5 text-emerald-700 shrink-0" />
+                      {c.farmName || '提携農場'}
+                    </div>
+                    <div className="text-xs text-gray-500 flex items-center gap-1 mt-0.5">
+                      <MapPin className="w-3 h-3 text-gray-400 shrink-0" />
+                      {c.farmLocation || '—'}
+                    </div>
+                  </div>
+                ) : (
+                  <div className="font-bold text-gray-800 text-sm mb-0.5">{c.staffName}</div>
+                )}
                 <div className="text-xs text-gray-500 mb-2">{getExpenseTypeJapanese(c.expenseType)}</div>
                 <div className="flex justify-between items-center mb-2">
                   <span className="text-xs text-gray-400">{new Date(c.expense期間Start).toLocaleDateString('en-US')}</span>
@@ -1877,7 +2342,14 @@ export default function PaymentStatus() {
             <tr className="bg-[#F8F9FA] border-b border-gray-200 text-xs font-bold text-gray-600">
               <th className="py-3 px-6">案件ID</th>
               <th className="py-3 px-6">日付</th>
-              <th className="py-3 px-6">スタッフ名</th>
+              {activePaymentTab === 'Host Company' ? (
+                <>
+                  <th className="py-3 px-6">農場 / ホスト企業名</th>
+                  <th className="py-3 px-6">所在地 / 拠点</th>
+                </>
+              ) : (
+                <th className="py-3 px-6">スタッフ名</th>
+              )}
               <th className="py-3 px-6">経費の種類</th>
               <th className="py-3 px-6">残額</th>
               <th className="py-3 px-6">回収条件</th>
@@ -1888,11 +2360,11 @@ export default function PaymentStatus() {
           <tbody className="text-sm">
             {loading ? (
               <tr>
-                <td colSpan="8" className="py-4 px-6 text-center text-gray-500">読み込み中...</td>
+                <td colSpan={activePaymentTab === 'Host Company' ? "9" : "8"} className="py-4 px-6 text-center text-gray-500">読み込み中...</td>
               </tr>
             ) : filteredCases.length === 0 ? (
               <tr>
-                <td colSpan="8" className="py-4 px-6 text-center text-gray-500">いいえ cases found.</td>
+                <td colSpan={activePaymentTab === 'Host Company' ? "9" : "8"} className="py-4 px-6 text-center text-gray-500">該当する案件がありません。</td>
               </tr>
             ) : (
               filteredCases.map(c => {
@@ -1912,7 +2384,27 @@ export default function PaymentStatus() {
                     <td className="py-4 px-6 text-gray-600">
                       {new Date(c.expense期間Start).toLocaleDateString('en-US')}
                     </td>
-                    <td className="py-4 px-6 text-gray-800">{c.staffName}</td>
+                    {activePaymentTab === 'Host Company' ? (
+                      <>
+                        <td className="py-4 px-6">
+                          <div className="font-bold text-[#162D50] flex items-center gap-1.5">
+                            <Building className="w-3.5 h-3.5 text-emerald-700 shrink-0" />
+                            <span>{c.farmName || '提携農場'}</span>
+                          </div>
+                          {c.farmIndustry && (
+                            <div className="text-[11px] text-gray-400 mt-0.5">{c.farmIndustry}</div>
+                          )}
+                        </td>
+                        <td className="py-4 px-6">
+                          <div className="text-gray-700 text-xs flex items-center gap-1">
+                            <MapPin className="w-3 h-3 text-gray-400 shrink-0" />
+                            <span>{c.farmLocation || '—'}</span>
+                          </div>
+                        </td>
+                      </>
+                    ) : (
+                      <td className="py-4 px-6 text-gray-800">{c.staffName}</td>
+                    )}
                     <td className="py-4 px-6 text-gray-600">{getExpenseTypeJapanese(c.expenseType)}</td>
                     <td className="py-4 px-6 font-bold text-gray-800">
                       {c.currency === 'JPY' ? '¥' : '$'}{Math.round(get残りBalance(c)).toLocaleString()}
@@ -1922,7 +2414,7 @@ export default function PaymentStatus() {
                         {c.advancerCategory === 'Staff' ? (c.settlement_method || c.settlementMethod || 'N/A') : (c.collection_method || c.collectionMethod || 'N/A')}
                       </div>
                       <div className="text-xs text-gray-500 whitespace-nowrap mt-1">
-                        {c.installment_plan || c.installmentPlan || 'N/A'}
+                        {c.installment_plan || c.installmentPlan || '一括払い'}
                       </div>
                       {totalTerms > 1 && (
                         <div className="text-[10px] text-gray-400 mt-1 uppercase font-bold tracking-wider">

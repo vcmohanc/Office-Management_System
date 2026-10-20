@@ -11,6 +11,7 @@ import {
   sortExpenseTypes,
   getAvailableCollectionMethods,
   isHostCompanyPairing,
+  isFarmParty,
   PAYMENT_PROCESSING_OPTIONS
 } from '../../utils/expenseRules.js';
 import { getDirection, calculateInstallments } from '../../utils/paymentUtils.js';
@@ -143,7 +144,7 @@ export default function NewCase() {
   }, []);
 
   useEffect(() => {
-    const hasFarm = cases.some(c => ['Farm', 'ファーム'].includes(c.advancerCategory) || ['Farm', 'ファーム'].includes(c.bearingParty));
+    const hasFarm = cases.some(c => isFarmParty(c.advancerCategory) || isFarmParty(c.bearingParty));
     if (!hasFarm) {
       setPartnerInfo({ partnerId: '', partnerName: '', industry: '', status: '', contactName: '', contactEmail: '', contactPhone: '', website: '' });
       setPartnerSearch('');
@@ -153,7 +154,7 @@ export default function NewCase() {
 
   useEffect(() => {
     const branchName = staffInfo.branchAndFarmName;
-    const hasFarm = cases.some(c => ['Farm', 'ファーム'].includes(c.advancerCategory) || ['Farm', 'ファーム'].includes(c.bearingParty));
+    const hasFarm = cases.some(c => isFarmParty(c.advancerCategory) || isFarmParty(c.bearingParty));
     if (!hasFarm || !branchName || branchName === '配属先を選択' || partners.length === 0) return;
     const matched = partners
       .filter(p => Array.isArray(p.workplaceCategories) && p.workplaceCategories.includes(branchName))
@@ -422,7 +423,7 @@ export default function NewCase() {
           installment_plan: installmentCount === 1 ? '一括払い' : `${installmentCount}回払い`,
           installment_count: installmentCount,
           monthly_deduction: 0,
-          collection_start_month: collectionStartMonth || "TBD",
+          collection_start_month: collectionStartMonth || payrollMonth || (expectedSettlementDate ? expectedSettlementDate.slice(0, 7) : new Date().toISOString().slice(0, 7)),
           installment_schedule: installmentSchedule,
           labor_consent: laborConsent,
           status: '保留中',
@@ -924,7 +925,7 @@ export default function NewCase() {
           })()}
 
           {/* パートナー名 Section */}
-          {cases.some(c => ['Farm', 'ファーム'].includes(c.advancerCategory) || ['Farm', 'ファーム'].includes(c.bearingParty)) && (() => {
+          {cases.some(c => isFarmParty(c.advancerCategory) || isFarmParty(c.bearingParty)) && (() => {
             const currentWorkplace = staffInfo.branchAndFarmName;
             const workplaceMatched = currentWorkplace
               ? partners.filter(p => Array.isArray(p.workplaceCategories) && p.workplaceCategories.includes(currentWorkplace))

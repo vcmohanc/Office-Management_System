@@ -5,6 +5,7 @@ import Case from '../models/Case.js';
 import SettlementPayment from '../models/SettlementPayment.js';
 import Claim from '../models/Claim.js';
 import Settlement from '../models/Settlement.js';
+import User from '../models/User.js';
 const router = express.Router();
 
 // Get dashboard stats & employees (Admin and HR only)
@@ -299,8 +300,15 @@ router.delete('/account/recovery-breakdown/:source/:id', verifyToken, requireRol
 // Get Support Dashboard stats (Admin and Support roles only)
 router.get('/support', verifyToken, requireRole('admin', 'support'), async (req, res) => {
   try {
+    let claimQuery = {};
+    if (req.user.role === 'support') {
+      const currentUser = await User.findById(req.user.id).select('username').lean();
+      const usernames = [req.user.username, currentUser?.username].filter(Boolean);
+      claimQuery = { registered_by: { $in: usernames } };
+    }
+
     const [claims, employees] = await Promise.all([
-      Claim.find().sort({ createdAt: -1 }).lean(),
+      Claim.find(claimQuery).sort({ createdAt: -1 }).lean(),
       Employee.find({}, { katakanaName: 1, romajiName: 1, department: 1, visaEndDate: 1, joinDate: 1 }).lean()
     ]);
 

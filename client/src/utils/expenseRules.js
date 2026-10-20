@@ -170,6 +170,24 @@ export function sortExpenseTypes(optionsList = []) {
 
 
 /**
+ * Checks whether a party string corresponds to Farm / Host Company.
+ * @param {string} party - Advancer category or Bearing party
+ * @returns {boolean}
+ */
+export function isFarmParty(party = '') {
+  if (!party) return false;
+  const p = String(party).trim().toLowerCase();
+  return (
+    p === 'farm' ||
+    p.includes('farm') ||
+    p.includes('ファーム') ||
+    p.includes('host') ||
+    p.includes('ホスト') ||
+    p.includes('dispatch')
+  );
+}
+
+/**
  * Normalizes an option value against the active list of options from the DB,
  * handling case sensitivity, alias variations, or partial matches.
  * @param {Array} optionsList - Array of { label, value } option items from DB
@@ -205,6 +223,22 @@ export function normalizeOptionValue(optionsList = [], currentValue = '', fallba
       );
       if (kwMatch) return kwMatch.value;
     }
+  }
+
+  // 4. Fallback farm keyword match
+  if (isFarmParty(curLower)) {
+    const farmMatch = optionsList.find(opt => isFarmParty(opt.value) || isFarmParty(opt.label));
+    if (farmMatch) return farmMatch.value;
+  }
+
+  // 5. Fallback staff keyword match
+  if (curLower.includes('staff') || curLower.includes('スタッフ')) {
+    const staffMatch = optionsList.find(opt => 
+      (opt.value || '').toLowerCase().includes('staff') ||
+      (opt.label || '').toLowerCase().includes('staff') ||
+      (opt.label || '').includes('スタッフ')
+    );
+    if (staffMatch) return staffMatch.value;
   }
 
   return cur;
@@ -249,7 +283,8 @@ export function getAutoFill(expenseKey, availableAdvancers = [], availableBearer
       const match = availableAdvancers.find(o => 
         (o.value || '').toLowerCase() === advCat.toLowerCase() ||
         (o.label || '').toLowerCase() === advCat.toLowerCase() ||
-        (advCat.toLowerCase().includes('staff') && (o.value || '').toLowerCase().includes('staff'))
+        (advCat.toLowerCase().includes('staff') && (o.value || '').toLowerCase().includes('staff')) ||
+        (isFarmParty(advCat) && isFarmParty(o.value || o.label))
       );
       if (match) advCat = match.value;
     }
@@ -258,7 +293,7 @@ export function getAutoFill(expenseKey, availableAdvancers = [], availableBearer
       const match = availableBearers.find(o => 
         (o.value || '').toLowerCase() === bearParty.toLowerCase() ||
         (o.label || '').toLowerCase() === bearParty.toLowerCase() ||
-        (bearParty.toLowerCase().includes('farm') && (o.value || '').toLowerCase().includes('farm'))
+        (isFarmParty(bearParty) && isFarmParty(o.value || o.label))
       );
       if (match) bearParty = match.value;
     }
@@ -432,7 +467,6 @@ export function isHostCompanyPairing(advancer = '', bearer = '') {
   const b = String(bearer || '').trim().toLowerCase();
 
   const isVC = (val) => val === 'vc';
-  const isFarm = (val) => val.includes('farm') || val.includes('ファーム');
 
-  return (isVC(a) && isFarm(b)) || (isFarm(a) && isVC(b));
+  return (isVC(a) && isFarmParty(b)) || (isFarmParty(a) && isVC(b));
 }

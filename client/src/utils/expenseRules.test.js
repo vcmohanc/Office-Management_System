@@ -14,7 +14,8 @@ import {
   getPaymentMethod, 
   calculateSuggestedExpenseCost,
   getAvailableCollectionMethods,
-  isHostCompanyPairing
+  isHostCompanyPairing,
+  isFarmParty
 } from './expenseRules.js';
 
 describe('expenseRules utils', () => {
@@ -230,6 +231,27 @@ describe('expenseRules utils', () => {
 
     it('returns empty array when payment type is empty and not host company pairing', () => {
       assert.deepStrictEqual(getAvailableCollectionMethods(''), []);
+    });
+  });
+
+  describe('isFarmParty helper', () => {
+    it('returns true for Farm keywords and variations', () => {
+      assert.strictEqual(isFarmParty('Farm'), true);
+      assert.strictEqual(isFarmParty('farm'), true);
+      assert.strictEqual(isFarmParty('ファーム'), true);
+      assert.strictEqual(isFarmParty('Dispatch destination: Farm'), true);
+      assert.strictEqual(isFarmParty('派遣先: ファーム'), true);
+      assert.strictEqual(isFarmParty('Host Company'), true);
+      assert.strictEqual(isFarmParty('ホスト企業'), true);
+    });
+
+    it('returns false for non-farm parties', () => {
+      assert.strictEqual(isFarmParty('VC'), false);
+      assert.strictEqual(isFarmParty('Service Staff'), false);
+      assert.strictEqual(isFarmParty('Support Staff'), false);
+      assert.strictEqual(isFarmParty(''), false);
+      assert.strictEqual(isFarmParty(null), false);
+      assert.strictEqual(isFarmParty(undefined), false);
     });
   });
 
