@@ -86,9 +86,10 @@ app.use('/api', apiLimiter);
 app.use(express.json());
 app.use(compressionMiddleware);
 
-// Force UTF-8 charset on all responses
+// Force UTF-8 charset and anti-indexing header on all responses
 app.use((_req, res, next) => {
   res.setHeader('Content-Type', 'application/json; charset=utf-8');
+  res.setHeader('X-Robots-Tag', 'noindex, nofollow, noarchive, nosnippet');
   next();
 });
 
