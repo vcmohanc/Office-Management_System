@@ -86,7 +86,60 @@ app.use('/api', apiLimiter);
 app.use(express.json());
 app.use(compressionMiddleware);
 
-// Force UTF-8 charset and anti-indexing header on all responses
+// Serve robots.txt directly if backend receives the request
+app.get('/robots.txt', (_req, res) => {
+  res.setHeader('Content-Type', 'text/plain; charset=utf-8');
+  res.setHeader('Cache-Control', 'public, max-age=86400');
+  res.send(`# ==============================================================================
+# robots.txt for https://oms.vegecoop.net/
+# VegeCoop Office Management System (OMS)
+# ==============================================================================
+
+User-agent: *
+Allow: /$
+Allow: /favicon.png
+Allow: /logo.png
+Allow: /vegeicon.png
+Allow: /assets/
+Disallow: /login
+Disallow: /dashboard
+Disallow: /dashboard/
+Disallow: /dashboard/*
+Disallow: /payments
+Disallow: /payments/
+Disallow: /payments/*
+Disallow: /api
+Disallow: /api/
+Disallow: /api/*
+Disallow: /uploads
+Disallow: /uploads/
+Disallow: /uploads/*
+Disallow: /*?*
+Disallow: /*.json$
+Crawl-delay: 10
+
+User-agent: GPTBot
+User-agent: ChatGPT-User
+User-agent: CCBot
+User-agent: ClaudeBot
+User-agent: anthropic-ai
+User-agent: Google-Extended
+User-agent: Bytespider
+User-agent: PerplexityBot
+User-agent: Cohere-training
+User-agent: FacebookBot
+User-agent: Diffbot
+User-agent: Omgilibot
+User-agent: Applebot-Extended
+User-agent: Timpibot
+User-agent: Amazonbot
+Disallow: /
+
+Host: https://oms.vegecoop.net
+`);
+});
+
+// Force UTF-8 charset and anti-indexing header on all API responses
 app.use((_req, res, next) => {
   res.setHeader('Content-Type', 'application/json; charset=utf-8');
   res.setHeader('X-Robots-Tag', 'noindex, nofollow, noarchive, nosnippet');

@@ -1,4 +1,4 @@
-import { Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import Login from './components/Login';
 import Dashboard from './components/Dashboard';
@@ -9,6 +9,22 @@ import { Toaster } from 'react-hot-toast';
 
 function App() {
   const [token, setToken] = useState(localStorage.getItem('token'));
+  const location = useLocation();
+
+  // Control robots indexing dynamically: allow landing page, protect internal pages
+  useEffect(() => {
+    let metaRobots = document.querySelector('meta[name="robots"]');
+    if (!metaRobots) {
+      metaRobots = document.createElement('meta');
+      metaRobots.setAttribute('name', 'robots');
+      document.head.appendChild(metaRobots);
+    }
+    if (location.pathname === '/') {
+      metaRobots.setAttribute('content', 'index, follow');
+    } else {
+      metaRobots.setAttribute('content', 'noindex, nofollow, noarchive, nosnippet');
+    }
+  }, [location.pathname]);
 
   useEffect(() => {
     const validateToken = async () => {
