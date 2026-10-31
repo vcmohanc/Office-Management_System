@@ -16,7 +16,8 @@ import {
   Building2, 
   CreditCard,
   Sparkles,
-  RefreshCw
+  RefreshCw,
+  SlidersHorizontal
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { toastConfirm } from '../../utils/toastConfirm.jsx';
@@ -26,18 +27,38 @@ import {
   getPaymentMethod, 
   EXPENSE_RULES_MAPPING, 
   sortExpenseTypes,
-  optionLabelJP
+  optionLabelJP,
+  PAYMENT_PROCESSING_OPTIONS,
+  getMergedPaymentOptions
 } from '../../utils/expenseRules.js';
+
+const STANDARD_PAYMENT_TYPES = [
+  { value: 'salary_addition', label: '給与に加算', desc: 'salary_addition' },
+  { value: 'salary_deduction', label: '給与控除', desc: 'salary_deduction' },
+  { value: 'client_invoice', label: '請求書発行・顧客へ請求', desc: 'client_invoice' },
+  { value: 'direct_transfer', label: '本人へ振込・銀行振込', desc: 'direct_transfer' }
+];
 
 const PAYMENT_METHOD_LABELS = {
   'salary_addition': { label: '給与に加算', color: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
-  'salary_deduction': { label: '給与から控除', color: 'bg-rose-50 text-rose-700 border-rose-200' },
+  'salary_deduction': { label: '給与控除', color: 'bg-rose-50 text-rose-700 border-rose-200' },
   'client_invoice': { label: '顧客へ請求', color: 'bg-blue-50 text-blue-700 border-blue-200' },
   'direct_transfer': { label: '本人へ振込', color: 'bg-purple-50 text-purple-700 border-purple-200' }
 };
 
+const getPaymentMethodDisplay = (method) => {
+  if (!method) return null;
+  if (PAYMENT_METHOD_LABELS[method]) {
+    return PAYMENT_METHOD_LABELS[method];
+  }
+  return {
+    label: toJP(method),
+    color: 'bg-amber-50 text-amber-700 border-amber-200'
+  };
+};
+
 export default function CaseCategoryManagement() {
-  const [subTab, setSubTab] = useState('expenseTypes'); // 'expenseTypes' | 'advancers' | 'bearers' | 'rules'
+  const [subTab, setSubTab] = useState('expenseTypes'); // 'expenseTypes' | 'advancers' | 'bearers' | 'paymentTypes' | 'rules'
   const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(false);
   const [options, setOptions] = useState([]);
@@ -54,6 +75,8 @@ export default function CaseCategoryManagement() {
   const [formDefaultAdvancer, setFormDefaultAdvancer] = useState('');
   const [formDefaultBearer, setFormDefaultBearer] = useState('');
   const [formDefaultPaymentMethod, setFormDefaultPaymentMethod] = useState('');
+  const [isCustomPaymentInput, setIsCustomPaymentInput] = useState(false);
+  const [customPaymentText, setCustomPaymentText] = useState('');
 
   // Fetch all options
   const fetchOptions = async () => {
@@ -92,6 +115,28 @@ export default function CaseCategoryManagement() {
     return options.filter(o => o.type === 'BearingParty');
   }, [options]);
 
+  const customPaymentTypes = useMemo(() => {
+    return options.filter(o => o.type === 'PaymentType');
+  }, [options]);
+
+  const allPaymentOptions = useMemo(() => {
+    const list = STANDARD_PAYMENT_TYPES.map(s => ({ ...s, isStandard: true }));
+    const seen = new Set(STANDARD_PAYMENT_TYPES.map(s => s.value));
+    for (const c of customPaymentTypes) {
+      if (!seen.has(c.value)) {
+        seen.add(c.value);
+        list.push({
+          value: c.value,
+          label: toJP(c.label) || c.label,
+          desc: c.value,
+          isStandard: false,
+          _id: c._id
+        });
+      }
+    }
+    return list;
+  }, [customPaymentTypes]);
+
   // Quick lookup helper
   const isOthers = (o) => {
     const v = (o.value || '').toLowerCase();
@@ -114,6 +159,7 @@ export default function CaseCategoryManagement() {
   const filteredExpenseTypes = useMemo(() => expenseTypes.filter(filterItem), [expenseTypes, q]);
   const filteredAdvancers = useMemo(() => advancers.filter(filterItem), [advancers, q]);
   const filteredBearers = useMemo(() => bearers.filter(filterItem), [bearers, q]);
+  const filteredPaymentTypes = useMemo(() => allPaymentOptions.filter(filterItem), [allPaymentOptions, q]);
 
   // Open Create Modal
   const openCreateModal = (type) => {
@@ -125,6 +171,8 @@ export default function CaseCategoryManagement() {
     setFormDefaultAdvancer('');
     setFormDefaultBearer('');
     setFormDefaultPaymentMethod('');
+    setIsCustomPaymentInput(false);
+    setCustomPaymentText('');
     setIsModalOpen(true);
   };
 
@@ -140,7 +188,20 @@ export default function CaseCategoryManagement() {
     const staticRule = EXPENSE_RULES_MAPPING[item.value] || EXPENSE_RULES_MAPPING[item.label] || {};
     setFormDefaultAdvancer(item.defaultAdvancerCategory || staticRule.advancerCategory || '');
     setFormDefaultBearer(item.defaultBearingParty || staticRule.bearingParty || '');
-    setFormDefaultPaymentMethod(item.defaultPaymentMethod || '');
+    
+    const curPay = item.defaultPaymentMethod || '';
+    setFormDefaultPaymentMethod(curPay);
+
+    const isStandard = !curPay || STANDARD_PAYMENT_TYPES.some(s => s.value === curPay);
+    const inCustom = customPaymentTypes.some(c => c.value === curPay);
+    if (curPay && !isStandard && !inCustom) {
+      setIsCustomPaymentInput(true);
+      setCustomPaymentText(curPay);
+    } else {
+      setIsCustomPaymentInput(false);
+      setCustomPaymentText('');
+    }
+
     setIsModalOpen(true);
   };
 
@@ -148,6 +209,8 @@ export default function CaseCategoryManagement() {
   const closeModal = () => {
     setIsModalOpen(false);
     setEditingItem(null);
+    setIsCustomPaymentInput(false);
+    setCustomPaymentText('');
   };
 
   // Save Item (Create or Edit)
@@ -161,6 +224,33 @@ export default function CaseCategoryManagement() {
       return;
     }
 
+    // Determine target payment method
+    let finalPaymentMethod = formDefaultPaymentMethod;
+    if (isCustomPaymentInput && customPaymentText.trim()) {
+      finalPaymentMethod = customPaymentText.trim();
+
+      // If custom option doesn't exist yet, automatically persist it as a PaymentType option!
+      const exists = allPaymentOptions.some(p => p.value === finalPaymentMethod || p.label === finalPaymentMethod);
+      if (!exists) {
+        try {
+          const res = await apiFetch('/api/options', {
+            method: 'POST',
+            body: JSON.stringify({
+              type: 'PaymentType',
+              label: finalPaymentMethod,
+              value: finalPaymentMethod
+            })
+          });
+          if (res.ok) {
+            const newOpt = await res.json();
+            setOptions(prev => [...prev, newOpt]);
+          }
+        } catch (err) {
+          console.warn('Could not register new custom payment type:', err);
+        }
+      }
+    }
+
     try {
       if (modalMode === 'create') {
         const payload = {
@@ -169,7 +259,7 @@ export default function CaseCategoryManagement() {
           value,
           defaultAdvancerCategory: formDefaultAdvancer,
           defaultBearingParty: formDefaultBearer,
-          defaultPaymentMethod: formDefaultPaymentMethod
+          defaultPaymentMethod: finalPaymentMethod
         };
 
         const res = await apiFetch('/api/options', {
@@ -194,7 +284,7 @@ export default function CaseCategoryManagement() {
           value: isOthers(editingItem) ? editingItem.value : value,
           defaultAdvancerCategory: formDefaultAdvancer,
           defaultBearingParty: formDefaultBearer,
-          defaultPaymentMethod: formDefaultPaymentMethod
+          defaultPaymentMethod: finalPaymentMethod
         };
 
         const res = await apiFetch(`/api/options/${editingItem._id}`, {
@@ -267,7 +357,8 @@ export default function CaseCategoryManagement() {
                 label: exp.label,
                 value: exp.value,
                 defaultAdvancerCategory: exp.defaultAdvancerCategory || staticRule.advancerCategory,
-                defaultBearingParty: exp.defaultBearingParty || staticRule.bearingParty
+                defaultBearingParty: exp.defaultBearingParty || staticRule.bearingParty,
+                defaultPaymentMethod: exp.defaultPaymentMethod || ''
               })
             });
             if (res.ok) updatedCount++;
@@ -287,21 +378,22 @@ export default function CaseCategoryManagement() {
 
   // Effective payment method in modal (explicit selection or auto-calculated from advancer + bearer)
   const effectivePaymentMethod = useMemo(() => {
-    if (formDefaultPaymentMethod) {
+    const target = isCustomPaymentInput ? customPaymentText.trim() : formDefaultPaymentMethod;
+    if (target) {
       return {
-        ...(PAYMENT_METHOD_LABELS[formDefaultPaymentMethod] || { label: formDefaultPaymentMethod, color: 'bg-gray-100 text-gray-700' }),
+        ...getPaymentMethodDisplay(target),
         isExplicit: true
       };
     }
     if (formDefaultAdvancer && formDefaultBearer) {
       const method = getPaymentMethod(formDefaultAdvancer, formDefaultBearer);
       return {
-        ...(PAYMENT_METHOD_LABELS[method] || { label: method, color: 'bg-gray-100 text-gray-700' }),
+        ...getPaymentMethodDisplay(method),
         isExplicit: false
       };
     }
     return null;
-  }, [formDefaultPaymentMethod, formDefaultAdvancer, formDefaultBearer]);
+  }, [isCustomPaymentInput, customPaymentText, formDefaultPaymentMethod, formDefaultAdvancer, formDefaultBearer]);
 
   return (
     <div className="flex-1 bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden flex flex-col">
@@ -319,7 +411,7 @@ export default function CaseCategoryManagement() {
               </span>
             </div>
             <p className="text-xs sm:text-sm text-gray-500 mt-1.5">
-              案件登録や経費申請で利用される「経費の種類」「立替者カテゴリ」「負担先」および連動する自動入力ルールを管理します。
+              案件登録や経費申請で利用される「経費の種類」「立替者カテゴリ」「負担先」「支払処理タイプ」および連動ルールを管理します。
             </p>
           </div>
 
@@ -378,11 +470,8 @@ export default function CaseCategoryManagement() {
               <CreditCard className="w-4 h-4" />
             </div>
             <div>
-              <p className="text-xs text-gray-500 font-medium">自動連動設定済み</p>
-              <p className="text-lg font-bold text-gray-900">
-                {expenseTypes.filter(e => e.defaultAdvancerCategory || EXPENSE_RULES_MAPPING[e.value]?.advancerCategory).length}
-                <span className="text-xs font-normal text-gray-500"> / {expenseTypes.length}</span>
-              </p>
+              <p className="text-xs text-gray-500 font-medium">支払処理タイプ</p>
+              <p className="text-lg font-bold text-gray-900">{allPaymentOptions.length} <span className="text-xs font-normal text-gray-500">種類</span></p>
             </div>
           </div>
         </div>
@@ -422,6 +511,16 @@ export default function CaseCategoryManagement() {
             負担先 ({bearers.length})
           </button>
           <button
+            onClick={() => setSubTab('paymentTypes')}
+            className={`px-3.5 py-1.5 text-xs sm:text-sm font-semibold rounded-md transition-all cursor-pointer ${
+              subTab === 'paymentTypes'
+                ? 'bg-[#162D50] text-white shadow-xs'
+                : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-200'
+            }`}
+          >
+            支払処理タイプ ({allPaymentOptions.length})
+          </button>
+          <button
             onClick={() => setSubTab('rules')}
             className={`px-3.5 py-1.5 text-xs sm:text-sm font-semibold rounded-md transition-all cursor-pointer ${
               subTab === 'rules'
@@ -456,7 +555,10 @@ export default function CaseCategoryManagement() {
           {subTab !== 'rules' && (
             <button
               onClick={() => {
-                const targetType = subTab === 'expenseTypes' ? 'ExpenseType' : subTab === 'advancers' ? 'AdvancerCategory' : 'BearingParty';
+                const targetType = 
+                  subTab === 'expenseTypes' ? 'ExpenseType' : 
+                  subTab === 'advancers' ? 'AdvancerCategory' : 
+                  subTab === 'bearers' ? 'BearingParty' : 'PaymentType';
                 openCreateModal(targetType);
               }}
               className="flex items-center space-x-1.5 px-3 py-1.5 text-xs sm:text-sm font-semibold text-white bg-[#162D50] hover:bg-[#0f1f38] rounded-md transition-colors shadow-xs shrink-0 cursor-pointer"
@@ -497,7 +599,7 @@ export default function CaseCategoryManagement() {
                     const adv = item.defaultAdvancerCategory || staticRule.advancerCategory || '';
                     const bear = item.defaultBearingParty || staticRule.bearingParty || '';
                     const payMethod = item.defaultPaymentMethod || ((adv && bear) ? getPaymentMethod(adv, bear) : null);
-                    const payMethodConfig = payMethod ? PAYMENT_METHOD_LABELS[payMethod] : null;
+                    const payMethodConfig = getPaymentMethodDisplay(payMethod);
 
                     return (
                       <tr key={item._id} className="hover:bg-slate-50/80 transition-colors">
@@ -539,6 +641,9 @@ export default function CaseCategoryManagement() {
                           {payMethodConfig ? (
                             <span className={`inline-flex items-center px-2 py-0.5 text-xs font-medium rounded border ${payMethodConfig.color}`}>
                               {payMethodConfig.label}
+                              {item.defaultPaymentMethod && (
+                                <span className="ml-1 text-[10px] opacity-75">★</span>
+                              )}
                             </span>
                           ) : (
                             <span className="text-xs text-gray-400">-</span>
@@ -689,7 +794,85 @@ export default function CaseCategoryManagement() {
           </div>
         )}
 
-        {/* SUBTAB 4: 自動入力ルール一覧 (Rule Matrix) */}
+        {/* SUBTAB 4: 支払処理タイプ (Payment Processing Types) */}
+        {subTab === 'paymentTypes' && (
+          <div className="space-y-4">
+            <div className="border border-gray-200 rounded-lg overflow-hidden shadow-2xs">
+              <table className="w-full text-left text-sm">
+                <thead className="bg-gray-50 border-b border-gray-200 text-gray-700 text-xs uppercase font-semibold">
+                  <tr>
+                    <th className="py-3 px-4">表示名（日本語）</th>
+                    <th className="py-3 px-4">システムコード（Value）</th>
+                    <th className="py-3 px-4">区分</th>
+                    <th className="py-3 px-4 text-center">操作</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-200">
+                  {filteredPaymentTypes.length === 0 ? (
+                    <tr>
+                      <td colSpan={4} className="py-8 text-center text-gray-500 text-sm">
+                        該当する支払処理タイプが見つかりません
+                      </td>
+                    </tr>
+                  ) : (
+                    filteredPaymentTypes.map((item, idx) => {
+                      return (
+                        <tr key={item._id || item.value || idx} className="hover:bg-slate-50/80 transition-colors">
+                          <td className="py-3 px-4">
+                            <div className="flex items-center space-x-2">
+                              <span className="font-semibold text-gray-900">{toJP(item.label)}</span>
+                              {item.label !== toJP(item.label) && (
+                                <span className="text-xs text-gray-400">({item.label})</span>
+                              )}
+                            </div>
+                          </td>
+                          <td className="py-3 px-4 font-mono text-xs text-gray-600">
+                            {item.value}
+                          </td>
+                          <td className="py-3 px-4">
+                            {item.isStandard ? (
+                              <span className="inline-flex items-center px-2 py-0.5 text-xs font-medium rounded bg-gray-100 text-gray-700 border border-gray-200">
+                                標準システム項目
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center px-2 py-0.5 text-xs font-medium rounded bg-blue-50 text-blue-700 border border-blue-200">
+                                手動追加項目
+                              </span>
+                            )}
+                          </td>
+                          <td className="py-3 px-4 text-center">
+                            {item.isStandard ? (
+                              <span className="text-xs text-gray-400">システム既定</span>
+                            ) : (
+                              <div className="flex items-center justify-center space-x-2">
+                                <button
+                                  onClick={() => openEditModal(item)}
+                                  className="p-1.5 text-gray-600 hover:text-[#162D50] hover:bg-gray-100 rounded-md transition-colors cursor-pointer"
+                                  title="編集"
+                                >
+                                  <Edit2 className="w-4 h-4" />
+                                </button>
+                                <button
+                                  onClick={() => handleDelete(item)}
+                                  className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors cursor-pointer"
+                                  title="削除"
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </button>
+                              </div>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+        {/* SUBTAB 5: 自動入力ルール一覧 (Rule Matrix) */}
         {subTab === 'rules' && (
           <div className="space-y-6">
             <div className="bg-blue-50/60 border border-blue-200 rounded-lg p-4 text-xs sm:text-sm text-blue-900 flex items-start space-x-3">
@@ -697,7 +880,7 @@ export default function CaseCategoryManagement() {
               <div>
                 <p className="font-bold">自動連動の仕組み</p>
                 <p className="mt-1 text-blue-800 leading-relaxed">
-                  案件作成時にスタッフが「経費の種類」を選択すると、ここで定義された「立替者カテゴリ」と「負担先」が瞬時にフォームに自動反映され、それらに基づいて「支払処理タイプ（給与加算/控除/振込等）」が自動決定されます。
+                  案件作成時にスタッフが「経費の種類」を選択すると、ここで定義された「立替者カテゴリ」と「負担先」が瞬時にフォームに自動反映され、それらに基づいて「支払処理タイプ（給与加算/控除/振込/手動指定等）」が自動決定されます。
                 </p>
               </div>
             </div>
@@ -708,7 +891,7 @@ export default function CaseCategoryManagement() {
                 const adv = item.defaultAdvancerCategory || staticRule.advancerCategory || '';
                 const bear = item.defaultBearingParty || staticRule.bearingParty || '';
                 const payMethod = item.defaultPaymentMethod || ((adv && bear) ? getPaymentMethod(adv, bear) : null);
-                const payMethodConfig = payMethod ? PAYMENT_METHOD_LABELS[payMethod] : null;
+                const payMethodConfig = getPaymentMethodDisplay(payMethod);
 
                 return (
                   <div key={item._id} className="bg-white border border-gray-200 rounded-lg p-4 shadow-2xs hover:shadow-xs transition-shadow flex flex-col justify-between">
@@ -739,9 +922,14 @@ export default function CaseCategoryManagement() {
                     <div className="mt-4 pt-3 border-t border-gray-100 flex items-center justify-between">
                       <span className="text-[11px] text-gray-400">支払処理:</span>
                       {payMethodConfig ? (
-                        <span className={`text-[11px] font-semibold px-2 py-0.5 rounded border ${payMethodConfig.color}`}>
-                          {payMethodConfig.label}
-                        </span>
+                        <div className="flex items-center space-x-1">
+                          <span className={`text-[11px] font-semibold px-2 py-0.5 rounded border ${payMethodConfig.color}`}>
+                            {payMethodConfig.label}
+                          </span>
+                          {item.defaultPaymentMethod && (
+                            <span className="text-[10px] text-gray-400">（指定）</span>
+                          )}
+                        </div>
                       ) : (
                         <span className="text-[11px] text-gray-400">未連動</span>
                       )}
@@ -784,7 +972,8 @@ export default function CaseCategoryManagement() {
                   value={
                     formType === 'ExpenseType' ? '経費の種類 (ExpenseType)' :
                     formType === 'AdvancerCategory' ? '立替者カテゴリ (AdvancerCategory)' :
-                    '負担先 (BearingParty)'
+                    formType === 'BearingParty' ? '負担先 (BearingParty)' :
+                    '支払処理タイプ (PaymentType)'
                   }
                   className="w-full px-3 py-2 border border-gray-200 bg-gray-100 rounded-md text-gray-600 text-xs font-medium"
                 />
@@ -797,7 +986,11 @@ export default function CaseCategoryManagement() {
                 <input
                   type="text"
                   required
-                  placeholder="例: 駐車場代、通信費、宿泊手当など"
+                  placeholder={
+                    formType === 'PaymentType' 
+                      ? '例: 現金手渡し、農場への直接回収 など' 
+                      : '例: 駐車場代、通信費、宿泊手当など'
+                  }
                   value={formLabel}
                   onChange={(e) => {
                     setFormLabel(e.target.value);
@@ -817,7 +1010,7 @@ export default function CaseCategoryManagement() {
                   type="text"
                   required
                   disabled={modalMode === 'edit' && isOthers(editingItem)}
-                  placeholder="例: Parking Fee, Communication"
+                  placeholder="例: Parking Fee, CashHandover"
                   value={formValue}
                   onChange={(e) => setFormValue(e.target.value)}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50] disabled:bg-gray-100 font-mono text-xs"
@@ -829,7 +1022,7 @@ export default function CaseCategoryManagement() {
 
               {/* Expense Type specific default auto-fills */}
               {formType === 'ExpenseType' && (
-                <div className="bg-slate-50 border border-gray-200 rounded-lg p-4 space-y-3">
+                <div className="bg-slate-50 border border-gray-200 rounded-lg p-4 space-y-3.5">
                   <div className="flex items-center space-x-1.5 text-xs font-bold text-[#162D50]">
                     <Sparkles className="w-4 h-4 text-amber-500" />
                     <span>自動連動設定（選択時の既定値）</span>
@@ -869,27 +1062,98 @@ export default function CaseCategoryManagement() {
                     </div>
                   </div>
 
+                  {/* 自動判定支払タイプ with manual option input capability */}
                   <div>
-                    <label className="block text-xs font-semibold text-gray-600 mb-1">
-                      自動判定支払タイプ
-                    </label>
-                    <select
-                      value={formDefaultPaymentMethod}
-                      onChange={(e) => setFormDefaultPaymentMethod(e.target.value)}
-                      className="w-full px-2.5 py-1.5 text-xs border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50] bg-white"
-                    >
-                      <option value="">自動判定（立替者・負担先から自動算出）</option>
-                      <option value="salary_addition">給与に加算 (salary_addition)</option>
-                      <option value="salary_deduction">給与控除 (salary_deduction)</option>
-                      <option value="client_invoice">請求書発行・顧客へ請求 (client_invoice)</option>
-                      <option value="direct_transfer">本人へ振込・銀行振込 (direct_transfer)</option>
-                    </select>
+                    <div className="flex items-center justify-between mb-1">
+                      <label className="block text-xs font-semibold text-gray-600">
+                        自動判定支払タイプ
+                      </label>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (!isCustomPaymentInput) {
+                            setIsCustomPaymentInput(true);
+                            setCustomPaymentText(formDefaultPaymentMethod || '');
+                          } else {
+                            setIsCustomPaymentInput(false);
+                          }
+                        }}
+                        className="text-xs text-blue-600 hover:text-blue-800 font-medium flex items-center space-x-1 cursor-pointer transition-colors"
+                      >
+                        {isCustomPaymentInput ? (
+                          <span>一覧から選択に戻す</span>
+                        ) : (
+                          <>
+                            <Plus className="w-3 h-3" />
+                            <span>手動で選択肢を追加</span>
+                          </>
+                        )}
+                      </button>
+                    </div>
+
+                    {!isCustomPaymentInput ? (
+                      <select
+                        value={formDefaultPaymentMethod}
+                        onChange={(e) => {
+                          if (e.target.value === '__NEW_CUSTOM__') {
+                            setIsCustomPaymentInput(true);
+                            setCustomPaymentText('');
+                          } else {
+                            setFormDefaultPaymentMethod(e.target.value);
+                          }
+                        }}
+                        className="w-full px-2.5 py-1.5 text-xs border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50] bg-white"
+                      >
+                        <option value="">自動判定（立替者・負担先から自動算出）</option>
+                        <optgroup label="標準の支払処理タイプ">
+                          <option value="salary_addition">給与に加算 (salary_addition)</option>
+                          <option value="salary_deduction">給与控除 (salary_deduction)</option>
+                          <option value="client_invoice">請求書発行・顧客へ請求 (client_invoice)</option>
+                          <option value="direct_transfer">本人へ振込・銀行振込 (direct_transfer)</option>
+                        </optgroup>
+                        {customPaymentTypes.length > 0 && (
+                          <optgroup label="手動追加された支払処理タイプ">
+                            {customPaymentTypes.map(c => (
+                              <option key={c._id} value={c.value}>{toJP(c.label)} ({c.value})</option>
+                            ))}
+                          </optgroup>
+                        )}
+                        <option value="__NEW_CUSTOM__" className="font-bold text-blue-600">
+                          + 手動で新しい選択肢を入力・追加...
+                        </option>
+                      </select>
+                    ) : (
+                      <div className="space-y-1.5 animate-in fade-in duration-100">
+                        <div className="flex items-center space-x-2">
+                          <input
+                            type="text"
+                            placeholder="手動で支払タイプ名を入力 (例: 現金手渡し、農場への直接回収 など)"
+                            value={customPaymentText}
+                            onChange={(e) => {
+                              setCustomPaymentText(e.target.value);
+                              setFormDefaultPaymentMethod(e.target.value);
+                            }}
+                            className="flex-1 px-2.5 py-1.5 text-xs border border-blue-400 ring-1 ring-blue-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#162D50] bg-white font-medium"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setIsCustomPaymentInput(false)}
+                            className="px-2.5 py-1.5 text-xs bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-md transition-colors shrink-0"
+                          >
+                            選択に戻す
+                          </button>
+                        </div>
+                        <p className="text-[11px] text-blue-600">
+                          ※ 入力した項目は保存時に新しい選択肢として自動登録され、他の画面でも再利用できます。
+                        </p>
+                      </div>
+                    )}
                   </div>
 
                   {effectivePaymentMethod && (
                     <div className="mt-2 pt-2 border-t border-gray-200/80 flex items-center justify-between text-xs">
                       <span className="text-gray-500">
-                        {formDefaultPaymentMethod ? '指定された支払処理タイプ:' : '連動する支払処理（自動判定）:'}
+                        {formDefaultPaymentMethod || (isCustomPaymentInput && customPaymentText) ? '指定された支払処理タイプ:' : '連動する支払処理（自動判定）:'}
                       </span>
                       <div className="flex items-center space-x-1.5">
                         <span className={`px-2 py-0.5 rounded font-semibold border ${effectivePaymentMethod.color}`}>

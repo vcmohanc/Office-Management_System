@@ -46,7 +46,7 @@ const caseSchemaZod = z.object({
   visa_available_time: z.coerce.date().optional().nullable().or(z.literal('')),
   expense_type: z.string().min(1),
   advancer_category: z.string().min(1),
-  payment_process_type: z.enum(['salary_addition', 'salary_deduction', 'client_invoice', 'direct_transfer']),
+  payment_process_type: z.string().min(1),
   bearing_party: z.string().min(1),
   expense_amount: z.number().min(0),
   expense_period_start: z.coerce.date(),

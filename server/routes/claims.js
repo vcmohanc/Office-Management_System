@@ -81,7 +81,7 @@ const claimSchemaZod = z.object({
 
   expense_type: z.string().min(1, 'Expense type is required'),
   advancer_category: z.string().min(1, 'Advancer category is required'),
-  payment_process_types: z.enum(['salary_addition', 'salary_deduction', 'client_invoice', 'direct_transfer']),
+  payment_process_types: z.string().min(1, 'Payment processing type is required'),
   bearing_party: z.string().min(1, 'Bearing party is required'),
   expense_amount: z.number().min(0),
   expense_period_start: z.string().optional().nullable(),
