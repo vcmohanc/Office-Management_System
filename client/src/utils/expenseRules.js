@@ -276,6 +276,7 @@ export function getPaymentMethod(payer = '', bearer = '') {
  */
 export function getAutoFill(expenseKey, availableAdvancers = [], availableBearers = [], expenseOptions = []) {
   let rule = null;
+  let customPaymentMethod = null;
 
   // 1. Dynamic rule configured on the expense type option itself
   if (Array.isArray(expenseOptions) && expenseOptions.length > 0) {
@@ -284,11 +285,14 @@ export function getAutoFill(expenseKey, availableAdvancers = [], availableBearer
       o.label === expenseKey ||
       (o.value && (expenseKey || '').trim() && o.value.toLowerCase() === expenseKey.trim().toLowerCase())
     );
-    if (opt && (opt.defaultAdvancerCategory || opt.defaultBearingParty)) {
+    if (opt && (opt.defaultAdvancerCategory || opt.defaultBearingParty || opt.defaultPaymentMethod)) {
       rule = {
         advancerCategory: opt.defaultAdvancerCategory || '',
         bearingParty: opt.defaultBearingParty || ''
       };
+      if (opt.defaultPaymentMethod) {
+        customPaymentMethod = opt.defaultPaymentMethod;
+      }
     }
   }
 
@@ -320,7 +324,7 @@ export function getAutoFill(expenseKey, availableAdvancers = [], availableBearer
       if (match) bearParty = match.value;
     }
 
-    const advancerName = getPaymentMethod(advCat, bearParty);
+    const advancerName = customPaymentMethod || getPaymentMethod(advCat, bearParty);
     return {
       advancerCategory: advCat,
       bearingParty: bearParty,

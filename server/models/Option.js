@@ -6,6 +6,7 @@ const optionSchema = new mongoose.Schema({
   value: { type: String, required: true },
   defaultAdvancerCategory: { type: String, default: '' },
   defaultBearingParty: { type: String, default: '' },
+  defaultPaymentMethod: { type: String, default: '' },
   order: { type: Number, default: 0 }
 }, { timestamps: true });
 
