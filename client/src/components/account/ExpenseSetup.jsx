@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import JapaneseRegionManagement from './JapaneseRegionManagement.jsx';
 import PostageRateMatrix from './PostageRateMatrix.jsx';
 import TravelRateMatrix from './TravelRateMatrix.jsx';
+import CaseCategoryManagement from './CaseCategoryManagement.jsx';
 import { loadRegions, saveRegions } from '../../utils/regionHelper.js';
 import { apiFetch } from '../../utils/apiFetch.js';
 
@@ -14,7 +15,7 @@ export default function ExpenseSetup() {
   // Pre-warm remaining tabs in the background after initial paint
   useEffect(() => {
     const timer = setTimeout(() => {
-      setVisitedTabs(new Set(['postal', 'travel', 'regions']));
+      setVisitedTabs(new Set(['postal', 'travel', 'regions', 'categories']));
     }, 200);
     return () => clearTimeout(timer);
   }, []);
@@ -117,6 +118,17 @@ export default function ExpenseSetup() {
         >
           <span>地域管理</span>
         </button>
+        <button
+          type="button"
+          onClick={() => handleTabChange('categories')}
+          className={`px-6 py-2 rounded-md font-medium transition-colors cursor-pointer ${
+            activeTab === 'categories' 
+              ? 'bg-[#162D50] text-white shadow-sm' 
+              : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-200'
+          }`}
+        >
+          <span>案件カテゴリ</span>
+        </button>
       </div>
 
       {/* Tab Contents - Persistent once mounted to make tab switching 0ms instantaneous */}
@@ -145,6 +157,12 @@ export default function ExpenseSetup() {
               />
             </div>
           </div>
+        </div>
+      )}
+
+      {visitedTabs.has('categories') && (
+        <div className={`flex-col flex-1 ${activeTab === 'categories' ? 'flex' : 'hidden'}`}>
+          <CaseCategoryManagement />
         </div>
       )}
     </div>
