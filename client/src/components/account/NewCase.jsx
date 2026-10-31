@@ -12,7 +12,8 @@ import {
   getAvailableCollectionMethods,
   isHostCompanyPairing,
   isFarmParty,
-  PAYMENT_PROCESSING_OPTIONS
+  PAYMENT_PROCESSING_OPTIONS,
+  getMergedPaymentOptions
 } from '../../utils/expenseRules.js';
 import { getDirection, calculateInstallments } from '../../utils/paymentUtils.js';
 import { User, ChevronDown, Box, Calendar, UploadCloud, ArrowRight, Wallet, Landmark, FileText, ArrowLeft, Image, AlertTriangle, Building2 } from 'lucide-react';
@@ -732,7 +733,7 @@ export default function NewCase() {
                         onChange={(e) => updateCase(index, 'advancerName', e.target.value)}
                         className="w-full px-3 sm:px-4 py-2 border border-gray-300 rounded-md appearance-none focus:outline-none focus:ring-1 focus:ring-[#162D50] text-gray-700 text-sm">
                         <option value="">支払処理タイプを選択</option>
-                        {PAYMENT_PROCESSING_OPTIONS.map((opt) => (
+                        {getMergedPaymentOptions(options.PaymentType).map((opt) => (
                           <option key={opt.value} value={opt.value}>{opt.label}</option>
                         ))}
                       </select>

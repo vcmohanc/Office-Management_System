@@ -15,7 +15,8 @@ import {
   calculateSuggestedExpenseCost,
   getAvailableCollectionMethods,
   isHostCompanyPairing,
-  isFarmParty
+  isFarmParty,
+  getMergedPaymentOptions
 } from './expenseRules.js';
 
 describe('expenseRules utils', () => {
@@ -305,6 +306,23 @@ describe('expenseRules utils', () => {
       assert.strictEqual(isHostCompanyPairing('Service Staff', 'VC'), false);
       assert.strictEqual(isHostCompanyPairing('VC', 'Service Staff'), false);
       assert.strictEqual(isHostCompanyPairing('Support Staff', 'Farm'), false);
+    });
+  });
+
+  describe('getMergedPaymentOptions helper', () => {
+    it('returns standard options when no custom options provided', () => {
+      const merged = getMergedPaymentOptions();
+      assert.strictEqual(merged.length, 4);
+    });
+
+    it('merges custom payment options without duplicates', () => {
+      const custom = [
+        { label: '現金を直接手渡し', value: 'Cash Handover' },
+        { label: '給与控除', value: 'salary_deduction' } // Duplicate
+      ];
+      const merged = getMergedPaymentOptions(custom);
+      assert.strictEqual(merged.length, 5);
+      assert.strictEqual(merged.some(m => m.value === 'Cash Handover'), true);
     });
   });
 });

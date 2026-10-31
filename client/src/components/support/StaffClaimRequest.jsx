@@ -10,6 +10,7 @@ import {
   calculateSuggestedExpenseCost,
   sortExpenseTypes,
   PAYMENT_PROCESSING_OPTIONS,
+  getMergedPaymentOptions,
   getAvailableCollectionMethods,
   isHostCompanyPairing,
   isFarmParty
@@ -743,7 +744,7 @@ export default function StaffClaimRequest() {
                         className="w-full px-3 sm:px-4 py-2 border border-gray-300 rounded-md appearance-none focus:outline-none focus:ring-1 focus:ring-[#162D50] text-sm text-gray-700 bg-white"
                       >
                         <option value="">支払処理タイプを選択</option>
-                        {PAYMENT_PROCESSING_OPTIONS.map((opt) => (
+                        {getMergedPaymentOptions(options.PaymentType).map((opt) => (
                           <option key={opt.value} value={opt.value}>{opt.label}</option>
                         ))}
                       </select>

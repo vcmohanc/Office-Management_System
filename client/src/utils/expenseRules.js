@@ -409,6 +409,26 @@ export const PAYMENT_PROCESSING_OPTIONS = [
 ];
 
 /**
+ * Combines standard payment processing options with custom payment types from DB.
+ */
+export function getMergedPaymentOptions(customPaymentTypes = []) {
+  const merged = [...PAYMENT_PROCESSING_OPTIONS];
+  const seen = new Set(PAYMENT_PROCESSING_OPTIONS.map(o => o.value));
+  if (Array.isArray(customPaymentTypes)) {
+    for (const opt of customPaymentTypes) {
+      if (opt && opt.value && !seen.has(opt.value)) {
+        seen.add(opt.value);
+        merged.push({
+          value: opt.value,
+          label: `${toJP(opt.label || opt.value)}${opt.label !== opt.value ? ` (${opt.value})` : ''}`
+        });
+      }
+    }
+  }
+  return merged;
+}
+
+/**
  * Dependency mapping: Payment Processing Type (支払処理タイプ) → Allowed Collection Methods (回収方法).
  */
 export const PAYMENT_TO_COLLECTION_MAP = {
