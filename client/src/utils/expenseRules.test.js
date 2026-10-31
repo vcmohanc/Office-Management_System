@@ -131,6 +131,23 @@ describe('expenseRules utils', () => {
       expect(fill.bearingParty).toBe('Farm');
       expect(fill.advancerName).toBe('salary_addition');
     });
+
+    it('respects explicitly configured defaultPaymentMethod override on expense option', () => {
+      const dynamicExpenseTypes = [
+        {
+          value: 'CustomTravel',
+          label: '特別出張費',
+          defaultAdvancerCategory: 'VC',
+          defaultBearingParty: 'Farm',
+          defaultPaymentMethod: 'salary_addition' // Normally VC->Farm is direct_transfer, but overridden here
+        }
+      ];
+      const fill = getAutoFill('CustomTravel', [], [], dynamicExpenseTypes);
+      expect(fill).not.toBeNull();
+      expect(fill.advancerCategory).toBe('VC');
+      expect(fill.bearingParty).toBe('Farm');
+      expect(fill.advancerName).toBe('salary_addition');
+    });
   });
 
   describe('calculateSuggestedExpenseCost helper', () => {

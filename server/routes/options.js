@@ -30,7 +30,7 @@ router.get('/', async (req, res) => {
 // POST /api/options - Create a new option
 router.post('/', requireRole('account', 'admin'), async (req, res) => {
   try {
-    const { type, label, value, defaultAdvancerCategory, defaultBearingParty, order } = req.body;
+    const { type, label, value, defaultAdvancerCategory, defaultBearingParty, defaultPaymentMethod, order } = req.body;
     if (!type || !label) {
       return res.status(400).json({ error: '種別（type）と名称（label）は必須です。' });
     }
@@ -49,6 +49,7 @@ router.post('/', requireRole('account', 'admin'), async (req, res) => {
       value: finalValue,
       defaultAdvancerCategory: defaultAdvancerCategory || '',
       defaultBearingParty: defaultBearingParty || '',
+      defaultPaymentMethod: defaultPaymentMethod || '',
       order: order || 0
     });
 
@@ -63,7 +64,7 @@ router.post('/', requireRole('account', 'admin'), async (req, res) => {
 // PUT /api/options/:id - Update an option
 router.put('/:id', requireRole('account', 'admin'), async (req, res) => {
   try {
-    const { label, value, defaultAdvancerCategory, defaultBearingParty, order } = req.body;
+    const { label, value, defaultAdvancerCategory, defaultBearingParty, defaultPaymentMethod, order } = req.body;
     const option = await Option.findById(req.params.id);
     if (!option) {
       return res.status(404).json({ error: '対象の項目が見つかりません。' });
@@ -88,6 +89,7 @@ router.put('/:id', requireRole('account', 'admin'), async (req, res) => {
     }
     if (defaultAdvancerCategory !== undefined) option.defaultAdvancerCategory = defaultAdvancerCategory;
     if (defaultBearingParty !== undefined) option.defaultBearingParty = defaultBearingParty;
+    if (defaultPaymentMethod !== undefined) option.defaultPaymentMethod = defaultPaymentMethod;
     if (order !== undefined) option.order = order;
 
     await option.save();

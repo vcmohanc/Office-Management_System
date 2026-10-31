@@ -53,6 +53,7 @@ export default function CaseCategoryManagement() {
   const [formValue, setFormValue] = useState('');
   const [formDefaultAdvancer, setFormDefaultAdvancer] = useState('');
   const [formDefaultBearer, setFormDefaultBearer] = useState('');
+  const [formDefaultPaymentMethod, setFormDefaultPaymentMethod] = useState('');
 
   // Fetch all options
   const fetchOptions = async () => {
@@ -123,6 +124,7 @@ export default function CaseCategoryManagement() {
     setFormValue('');
     setFormDefaultAdvancer('');
     setFormDefaultBearer('');
+    setFormDefaultPaymentMethod('');
     setIsModalOpen(true);
   };
 
@@ -138,6 +140,7 @@ export default function CaseCategoryManagement() {
     const staticRule = EXPENSE_RULES_MAPPING[item.value] || EXPENSE_RULES_MAPPING[item.label] || {};
     setFormDefaultAdvancer(item.defaultAdvancerCategory || staticRule.advancerCategory || '');
     setFormDefaultBearer(item.defaultBearingParty || staticRule.bearingParty || '');
+    setFormDefaultPaymentMethod(item.defaultPaymentMethod || '');
     setIsModalOpen(true);
   };
 
@@ -165,7 +168,8 @@ export default function CaseCategoryManagement() {
           label,
           value,
           defaultAdvancerCategory: formDefaultAdvancer,
-          defaultBearingParty: formDefaultBearer
+          defaultBearingParty: formDefaultBearer,
+          defaultPaymentMethod: formDefaultPaymentMethod
         };
 
         const res = await apiFetch('/api/options', {
@@ -189,7 +193,8 @@ export default function CaseCategoryManagement() {
           label,
           value: isOthers(editingItem) ? editingItem.value : value,
           defaultAdvancerCategory: formDefaultAdvancer,
-          defaultBearingParty: formDefaultBearer
+          defaultBearingParty: formDefaultBearer,
+          defaultPaymentMethod: formDefaultPaymentMethod
         };
 
         const res = await apiFetch(`/api/options/${editingItem._id}`, {
@@ -280,12 +285,23 @@ export default function CaseCategoryManagement() {
     }
   };
 
-  // Live preview payment method in modal
-  const previewPaymentMethod = useMemo(() => {
-    if (!formDefaultAdvancer || !formDefaultBearer) return null;
-    const method = getPaymentMethod(formDefaultAdvancer, formDefaultBearer);
-    return PAYMENT_METHOD_LABELS[method] || { label: method, color: 'bg-gray-100 text-gray-700' };
-  }, [formDefaultAdvancer, formDefaultBearer]);
+  // Effective payment method in modal (explicit selection or auto-calculated from advancer + bearer)
+  const effectivePaymentMethod = useMemo(() => {
+    if (formDefaultPaymentMethod) {
+      return {
+        ...(PAYMENT_METHOD_LABELS[formDefaultPaymentMethod] || { label: formDefaultPaymentMethod, color: 'bg-gray-100 text-gray-700' }),
+        isExplicit: true
+      };
+    }
+    if (formDefaultAdvancer && formDefaultBearer) {
+      const method = getPaymentMethod(formDefaultAdvancer, formDefaultBearer);
+      return {
+        ...(PAYMENT_METHOD_LABELS[method] || { label: method, color: 'bg-gray-100 text-gray-700' }),
+        isExplicit: false
+      };
+    }
+    return null;
+  }, [formDefaultPaymentMethod, formDefaultAdvancer, formDefaultBearer]);
 
   return (
     <div className="flex-1 bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden flex flex-col">
@@ -480,7 +496,7 @@ export default function CaseCategoryManagement() {
                     const staticRule = EXPENSE_RULES_MAPPING[item.value] || EXPENSE_RULES_MAPPING[item.label] || {};
                     const adv = item.defaultAdvancerCategory || staticRule.advancerCategory || '';
                     const bear = item.defaultBearingParty || staticRule.bearingParty || '';
-                    const payMethod = (adv && bear) ? getPaymentMethod(adv, bear) : null;
+                    const payMethod = item.defaultPaymentMethod || ((adv && bear) ? getPaymentMethod(adv, bear) : null);
                     const payMethodConfig = payMethod ? PAYMENT_METHOD_LABELS[payMethod] : null;
 
                     return (
@@ -691,7 +707,7 @@ export default function CaseCategoryManagement() {
                 const staticRule = EXPENSE_RULES_MAPPING[item.value] || EXPENSE_RULES_MAPPING[item.label] || {};
                 const adv = item.defaultAdvancerCategory || staticRule.advancerCategory || '';
                 const bear = item.defaultBearingParty || staticRule.bearingParty || '';
-                const payMethod = (adv && bear) ? getPaymentMethod(adv, bear) : null;
+                const payMethod = item.defaultPaymentMethod || ((adv && bear) ? getPaymentMethod(adv, bear) : null);
                 const payMethodConfig = payMethod ? PAYMENT_METHOD_LABELS[payMethod] : null;
 
                 return (
@@ -853,12 +869,36 @@ export default function CaseCategoryManagement() {
                     </div>
                   </div>
 
-                  {previewPaymentMethod && (
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-600 mb-1">
+                      自動判定支払タイプ
+                    </label>
+                    <select
+                      value={formDefaultPaymentMethod}
+                      onChange={(e) => setFormDefaultPaymentMethod(e.target.value)}
+                      className="w-full px-2.5 py-1.5 text-xs border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50] bg-white"
+                    >
+                      <option value="">自動判定（立替者・負担先から自動算出）</option>
+                      <option value="salary_addition">給与に加算 (salary_addition)</option>
+                      <option value="salary_deduction">給与控除 (salary_deduction)</option>
+                      <option value="client_invoice">請求書発行・顧客へ請求 (client_invoice)</option>
+                      <option value="direct_transfer">本人へ振込・銀行振込 (direct_transfer)</option>
+                    </select>
+                  </div>
+
+                  {effectivePaymentMethod && (
                     <div className="mt-2 pt-2 border-t border-gray-200/80 flex items-center justify-between text-xs">
-                      <span className="text-gray-500">連動する支払処理:</span>
-                      <span className={`px-2 py-0.5 rounded font-semibold border ${previewPaymentMethod.color}`}>
-                        {previewPaymentMethod.label}
+                      <span className="text-gray-500">
+                        {formDefaultPaymentMethod ? '指定された支払処理タイプ:' : '連動する支払処理（自動判定）:'}
                       </span>
+                      <div className="flex items-center space-x-1.5">
+                        <span className={`px-2 py-0.5 rounded font-semibold border ${effectivePaymentMethod.color}`}>
+                          {effectivePaymentMethod.label}
+                        </span>
+                        {effectivePaymentMethod.isExplicit && (
+                          <span className="text-[10px] text-gray-400 font-medium">（個別指定）</span>
+                        )}
+                      </div>
                     </div>
                   )}
                 </div>
