@@ -66,9 +66,20 @@ app.use(helmet({
 
 // Restrict CORS securely (disallow credentials with wildcard)
 const envOrigins = process.env.CLIENT_URL 
-  ? process.env.CLIENT_URL.split(',').map(o => o.trim()) 
+  ? process.env.CLIENT_URL.split(',').map(o => o.trim()).filter(Boolean)
   : [];
-const defaultDevOrigins = ['http://localhost', 'http://localhost:80', 'http://localhost:5173', 'http://localhost:3000', 'http://localhost:5174', 'http://127.0.0.1'];
+const defaultDevOrigins = [
+  'http://localhost',
+  'http://localhost:80',
+  'http://localhost:5173',
+  'http://localhost:3000',
+  'http://localhost:5174',
+  'http://127.0.0.1',
+  'https://oms.vegecoop.net',
+  'http://oms.vegecoop.net',
+  'https://13.159.83.241',
+  'http://13.159.83.241'
+];
 const allowedOrigins = Array.from(new Set([...envOrigins, ...defaultDevOrigins]));
 
 app.use(cors({
@@ -76,7 +87,7 @@ app.use(cors({
     if (!origin || allowedOrigins.includes(origin)) {
       callback(null, true);
     } else {
-      callback(new Error('Not allowed by CORS'));
+      callback(null, false);
     }
   },
   credentials: true

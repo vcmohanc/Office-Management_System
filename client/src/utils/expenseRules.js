@@ -271,10 +271,32 @@ export function getPaymentMethod(payer = '', bearer = '') {
  * @param {string} expenseKey - 経費の種類
  * @param {Array} availableAdvancers - Optional list of option objects from DB
  * @param {Array} availableBearers - Optional list of option objects from DB
+ * @param {Array} expenseOptions - Optional list of ExpenseType option objects from DB (with configured defaults)
  * @returns {Object|null} An object containing the auto-filled fields
  */
-export function getAutoFill(expenseKey, availableAdvancers = [], availableBearers = []) {
-  const rule = EXPENSE_RULES_MAPPING[expenseKey];
+export function getAutoFill(expenseKey, availableAdvancers = [], availableBearers = [], expenseOptions = []) {
+  let rule = null;
+
+  // 1. Dynamic rule configured on the expense type option itself
+  if (Array.isArray(expenseOptions) && expenseOptions.length > 0) {
+    const opt = expenseOptions.find(o => 
+      o.value === expenseKey || 
+      o.label === expenseKey ||
+      (o.value && (expenseKey || '').trim() && o.value.toLowerCase() === expenseKey.trim().toLowerCase())
+    );
+    if (opt && (opt.defaultAdvancerCategory || opt.defaultBearingParty)) {
+      rule = {
+        advancerCategory: opt.defaultAdvancerCategory || '',
+        bearingParty: opt.defaultBearingParty || ''
+      };
+    }
+  }
+
+  // 2. Fall back to static EXPENSE_RULES_MAPPING
+  if (!rule) {
+    rule = EXPENSE_RULES_MAPPING[expenseKey];
+  }
+
   if (rule) {
     let advCat = rule.advancerCategory;
     let bearParty = rule.bearingParty;

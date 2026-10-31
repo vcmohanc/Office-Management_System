@@ -115,6 +115,22 @@ describe('expenseRules utils', () => {
       expect(fill.advancerCategory).toBe('Service Staff');
       expect(fill.bearingParty).toBe('VC');
     });
+
+    it('uses dynamic defaults configured on the expense type option', () => {
+      const dynamicExpenseTypes = [
+        {
+          value: 'CustomParking',
+          label: '駐車場代',
+          defaultAdvancerCategory: 'Service Staff',
+          defaultBearingParty: 'Farm'
+        }
+      ];
+      const fill = getAutoFill('CustomParking', [], [], dynamicExpenseTypes);
+      expect(fill).not.toBeNull();
+      expect(fill.advancerCategory).toBe('Service Staff');
+      expect(fill.bearingParty).toBe('Farm');
+      expect(fill.advancerName).toBe('salary_addition');
+    });
   });
 
   describe('calculateSuggestedExpenseCost helper', () => {

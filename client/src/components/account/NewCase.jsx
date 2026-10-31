@@ -231,7 +231,7 @@ export default function NewCase() {
     newCases[index][field] = value;
 
     if (field === 'expenseType') {
-      const autoFill = getAutoFill(value, options.AdvancerCategory, options.BearingParty);
+      const autoFill = getAutoFill(value, options.AdvancerCategory, options.BearingParty, options.ExpenseType);
       if (autoFill) {
         Object.assign(newCases[index], autoFill);
       } else if (value === 'others') {
