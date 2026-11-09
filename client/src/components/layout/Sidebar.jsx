@@ -192,7 +192,7 @@ export default function Sidebar({ activeTab, setActiveTab, openMenus, toggleMenu
                               if (subItem.name === 'Case List' && item.name === 'サポート部門') {
                                 sessionStorage.setItem('caseListTab', 'Staff');
                               } else if (subItem.name === 'Case List' && item.name === '経理部門') {
-                                sessionStorage.setItem('caseListTab', 'All');
+                                sessionStorage.setItem('caseListTab', 'Office');
                               }
                               setActiveTab(subItem.name);
                               setMobileMenuOpen?.(false);

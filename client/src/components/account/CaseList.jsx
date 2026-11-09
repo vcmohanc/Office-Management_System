@@ -144,11 +144,14 @@ export default function CaseList({ setActiveTab: onNavigate }) {
   // Use sessionStorage to set initial tab, then clear it
   const [activeTab, setActiveTab] = useState(() => {
     const savedTab = sessionStorage.getItem('caseListTab');
-    if (savedTab) {
+    if (savedTab && savedTab !== 'All') {
       sessionStorage.removeItem('caseListTab');
       return savedTab;
     }
-    return user.role === 'support' ? 'Staff' : 'All';
+    if (savedTab === 'All') {
+      sessionStorage.removeItem('caseListTab');
+    }
+    return user.role === 'support' ? 'Staff' : 'Office';
   });
 
   const [statusFilter, setStatusFilter] = useState('すべてのステータス');
@@ -817,19 +820,6 @@ export default function CaseList({ setActiveTab: onNavigate }) {
       
       {/* Top Tabs */}
       <div className="bg-[#F2F4F7] p-1 rounded-md flex space-x-1 mb-4 border border-gray-200">
-        {user.role !== 'support' && (
-          <button 
-            onClick={() => setActiveTab('All')}
-            className={`relative flex-1 py-1.5 sm:py-2 text-xs sm:text-sm font-bold rounded-md transition-colors ${activeTab === 'All' ? 'text-white bg-[#0A192F] shadow-sm' : 'text-gray-500 hover:bg-gray-200'}`}>
-            すべて <span className={`ml-2 px-2 py-0.5 rounded-full text-xs ${activeTab === 'All' ? 'bg-white text-[#0A192F]' : 'bg-gray-200 text-gray-600'}`}>{allCasesCount}</span>
-            {(hasOfficeNotification || hasStaffNotification || hasHostCompanyNotification) && (
-              <span className="absolute top-2 right-4 flex h-3 w-3" title="New updates available">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
-              </span>
-            )}
-          </button>
-        )}
         {user.role !== 'support' && (
           <button 
             onClick={() => setActiveTab('Office')}
