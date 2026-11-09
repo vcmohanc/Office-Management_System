@@ -33,55 +33,55 @@ router.get('/:caseId/payments', requireRole('admin', 'account'), ledgerControlle
 router.put('/:caseId/pay-remaining', requireRole('admin', 'account'), ledgerController.payRemainingBalance);
 
 const caseSchemaZod = z.object({
-  case_type: z.string().min(1),
-  staff_name: z.string().min(1),
-  staff_id: z.string().min(1),
-  location: z.string().min(1),
-  branch_farm_name: z.string().optional().nullable().or(z.literal('')),
-  partner_id: z.string().optional().nullable().or(z.literal('')),
-  partner_name: z.string().optional().nullable().or(z.literal('')),
-  partner_industry: z.string().optional().nullable().or(z.literal('')),
-  hostCompany: z.string().optional().nullable().or(z.literal('')),
-  visa_status: z.string().optional().nullable().or(z.literal('')),
+  case_type: z.string().min(1).max(100),
+  staff_name: z.string().min(1).max(200),
+  staff_id: z.string().min(1).max(100),
+  location: z.string().min(1).max(200),
+  branch_farm_name: z.string().max(200).optional().nullable().or(z.literal('')),
+  partner_id: z.string().max(100).optional().nullable().or(z.literal('')),
+  partner_name: z.string().max(200).optional().nullable().or(z.literal('')),
+  partner_industry: z.string().max(200).optional().nullable().or(z.literal('')),
+  hostCompany: z.string().max(200).optional().nullable().or(z.literal('')),
+  visa_status: z.string().max(100).optional().nullable().or(z.literal('')),
   visa_available_time: z.coerce.date().optional().nullable().or(z.literal('')),
-  expense_type: z.string().min(1),
-  advancer_category: z.string().min(1),
-  payment_process_type: z.string().min(1),
-  bearing_party: z.string().min(1),
+  expense_type: z.string().min(1).max(100),
+  advancer_category: z.string().min(1).max(100),
+  payment_process_type: z.string().min(1).max(100),
+  bearing_party: z.string().min(1).max(100),
   expense_amount: z.number().min(0),
   expense_period_start: z.coerce.date(),
   expense_period_end: z.coerce.date(),
-  sender: z.string().optional().nullable().or(z.literal('')),
-  recipient: z.string().optional().nullable().or(z.literal('')),
-  departure: z.string().optional().nullable().or(z.literal('')),
-  destination: z.string().optional().nullable().or(z.literal('')),
-  transport_method: z.string().optional().nullable().or(z.literal('')),
-  receipts: z.array(z.string()).optional(),
-  remark: z.string().optional().nullable().or(z.literal('')),
+  sender: z.string().max(200).optional().nullable().or(z.literal('')),
+  recipient: z.string().max(200).optional().nullable().or(z.literal('')),
+  departure: z.string().max(200).optional().nullable().or(z.literal('')),
+  destination: z.string().max(200).optional().nullable().or(z.literal('')),
+  transport_method: z.string().max(100).optional().nullable().or(z.literal('')),
+  receipts: z.array(z.string().max(500)).optional(),
+  remark: z.string().max(5000).optional().nullable().or(z.literal('')),
   total_expense: z.number(),
   currency: z.string().default('JPY'),
   previous_unsettled_balance: z.number().default(0),
   includeBalance: z.boolean().default(false),
   final_total_amount: z.number(),
-  settlement_method: z.string().min(1),
+  settlement_method: z.string().min(1).max(100),
   expected_settlement_date: z.coerce.date(),
-  collection_method: z.string().min(1),
-  installment_plan: z.string().min(1),
+  collection_method: z.string().min(1).max(100),
+  installment_plan: z.string().min(1).max(100),
   installment_count: z.number().min(1),
-  collection_start_month: z.string().min(1),
+  collection_start_month: z.string().min(1).max(20),
   monthly_deduction: z.number().min(0),
   isHostCompanyCase: z.boolean().optional(),
   hasAccountNotification: z.boolean().optional(),
   hasSupportNotification: z.boolean().optional(),
   messages: z.array(z.object({
-    text: z.string(),
+    text: z.string().max(5000),
     date: z.coerce.date().optional(),
-    author: z.string().optional(),
+    author: z.string().max(100).optional(),
     readBySupport: z.boolean().optional()
   })).optional(),
-  supportUpdatedFields: z.array(z.string()).optional(),
-  registered_by: z.string().optional().nullable(),
-  registered_by_role: z.string().optional().nullable()
+  supportUpdatedFields: z.array(z.string().max(100)).optional(),
+  registered_by: z.string().max(100).optional().nullable(),
+  registered_by_role: z.string().max(50).optional().nullable()
 });
 
 router.get('/', verifyToken, requireRole('admin', 'account', 'support'), async (req, res) => {
@@ -215,22 +215,32 @@ router.post('/', requireRole('admin', 'account', 'support'), async (req, res) =>
 });
 router.put('/:id', requireRole('admin', 'account', 'support'), async (req, res) => {
   try {
+    const existing = await Case.findOne(buildCaseQuery(req.params.id));
+    if (!existing) {
+      return res.status(404).json({ message: 'Case not found' });
+    }
+
+    if (req.user.role === 'support') {
+      const currentUser = await User.findById(req.user.id).select('username').lean();
+      const usernames = [req.user.username, currentUser?.username].filter(Boolean);
+      if (!usernames.includes(existing.registered_by)) {
+        return res.status(403).json({ error: 'Forbidden: you do not have permission to modify this case' });
+      }
+    }
+
     const validatedData = caseSchemaZod.partial().parse(req.body);
 
     if (validatedData.advancer_category || validatedData.bearing_party || validatedData.collection_method) {
-      const existing = await Case.findOne(buildCaseQuery(req.params.id));
-      if (existing) {
-        const adv = validatedData.advancer_category || existing.advancer_category;
-        const bear = validatedData.bearing_party || existing.bearing_party;
-        const col = validatedData.collection_method || existing.collection_method;
-        if (isHostCompanyPairing(adv, bear)) {
-          validatedData.isHostCompanyCase = true;
-          validatedData.case_type = 'Host Company Case';
-          if (col && !isValidCollectionMethodForPairing(col, adv, bear)) {
-            return res.status(400).json({ 
-              message: 'ホスト会社案件（VC ↔ Farm）の回収方法は「銀行振込」または「農場への直接回収」である必要があります。' 
-            });
-          }
+      const adv = validatedData.advancer_category || existing.advancer_category;
+      const bear = validatedData.bearing_party || existing.bearing_party;
+      const col = validatedData.collection_method || existing.collection_method;
+      if (isHostCompanyPairing(adv, bear)) {
+        validatedData.isHostCompanyCase = true;
+        validatedData.case_type = 'Host Company Case';
+        if (col && !isValidCollectionMethodForPairing(col, adv, bear)) {
+          return res.status(400).json({ 
+            message: 'ホスト会社案件（VC ↔ Farm）の回収方法は「銀行振込」または「農場への直接回収」である必要があります。' 
+          });
         }
       }
     }
@@ -259,6 +269,19 @@ router.patch('/:id/status', requireRole('admin', 'account', 'support'), async (r
     // Support role may only resubmit
     if (req.user.role === 'support' && status !== 'RESUBMITTED') {
       return res.status(403).json({ message: 'Support role may only set status to RESUBMITTED' });
+    }
+
+    const existing = await Case.findOne(buildCaseQuery(req.params.id));
+    if (!existing) {
+      return res.status(404).json({ message: 'Case not found' });
+    }
+
+    if (req.user.role === 'support') {
+      const currentUser = await User.findById(req.user.id).select('username').lean();
+      const usernames = [req.user.username, currentUser?.username].filter(Boolean);
+      if (!usernames.includes(existing.registered_by)) {
+        return res.status(403).json({ error: 'Forbidden: you do not have permission to update this case' });
+      }
     }
 
     let updateQuery = { $set: { status } };
@@ -448,8 +471,24 @@ router.post('/:id/deduct-term', requireRole('admin', 'account'), async (req, res
 router.post('/:id/messages', verifyToken, requireRole('admin', 'account', 'support'), async (req, res) => {
   try {
     const { text } = req.body;
-    if (!text) {
+    if (!text || typeof text !== 'string' || !text.trim()) {
       return res.status(400).json({ message: 'Message text is required' });
+    }
+    if (text.length > 5000) {
+      return res.status(400).json({ message: 'Message text cannot exceed 5000 characters' });
+    }
+
+    const existing = await Case.findOne(buildCaseQuery(req.params.id));
+    if (!existing) {
+      return res.status(404).json({ message: 'Case not found' });
+    }
+
+    if (req.user.role === 'support') {
+      const currentUser = await User.findById(req.user.id).select('username').lean();
+      const usernames = [req.user.username, currentUser?.username].filter(Boolean);
+      if (!usernames.includes(existing.registered_by)) {
+        return res.status(403).json({ error: 'Forbidden: you do not have permission to post messages to this case' });
+      }
     }
 
     const role = req.user.role;
@@ -488,6 +527,17 @@ router.post('/:id/messages', verifyToken, requireRole('admin', 'account', 'suppo
 
 router.all('/:id/messages/read', verifyToken, requireRole('admin', 'account', 'support'), async (req, res) => {
   try {
+    const existing = await Case.findOne(buildCaseQuery(req.params.id));
+    if (!existing) return res.status(404).json({ message: 'Case not found' });
+
+    if (req.user.role === 'support') {
+      const currentUser = await User.findById(req.user.id).select('username').lean();
+      const usernames = [req.user.username, currentUser?.username].filter(Boolean);
+      if (!usernames.includes(existing.registered_by)) {
+        return res.status(403).json({ error: 'Forbidden: you do not have permission to access messages for this case' });
+      }
+    }
+
     const updatedCase = await Case.findOneAndUpdate(
       buildCaseQuery(req.params.id),
       {

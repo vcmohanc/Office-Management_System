@@ -25,12 +25,12 @@ export const PATTERN_CONFIG = [
   },
   {
     id: 'PTN-3',
-    flowTitle: 'ファーム → VC',
-    flowTitleEn: 'Farm → VC Fund',
+    flowTitle: 'クライアント → VC',
+    flowTitleEn: 'Client → VC Fund',
     advancer: 'VC Fund',
     bearer: 'Farm',
     advancerJP: 'VC',
-    bearerJP: 'ファーム',
+    bearerJP: 'クライアント',
     flowType: 'Collect', // inflow to fund
     flowTypeLabel: '回収',
     expenseTypes: ['機材費', 'Wi-Fi']
@@ -49,11 +49,11 @@ export const PATTERN_CONFIG = [
   },
   {
     id: 'PTN-5',
-    flowTitle: 'ファーム → サービススタッフ',
-    flowTitleEn: 'Farm → Service Staff',
+    flowTitle: 'クライアント → サービススタッフ',
+    flowTitleEn: 'Client → Service Staff',
     advancer: 'Farm',
     bearer: 'Service Staff',
-    advancerJP: 'ファーム',
+    advancerJP: 'クライアント',
     bearerJP: 'サービススタッフ',
     flowType: 'Transfer', // outside fund
     flowTypeLabel: '振替',
@@ -66,9 +66,11 @@ export const PARTY_JP = {
   'VC': 'VC',
   'Service Staff': 'サービススタッフ',
   'Support Staff': 'サポートスタッフ',
-  'Farm': 'ファーム',
-  'Host Company': 'ホスト企業・農場',
-  'Dispatch destination: Farm': 'ファーム',
+  'Farm': 'クライアント',
+  'ファーム': 'クライアント',
+  'クライアント': 'クライアント',
+  'Host Company': 'ホスト企業・クライアント',
+  'Dispatch destination: Farm': 'クライアント',
   'Office': 'オフィス',
   'Staff': 'スタッフ'
 };
@@ -79,7 +81,7 @@ export const normalizeParty = (party = '') => {
   if (p === 'vc' || p.includes('vc fund') || p === 'vc') return 'VC';
   if (p.includes('service staff') || p === 'servicestaff' || p.includes('サービススタッフ') || p === 'staff' || p === 'スタッフ') return 'Service Staff';
   if (p.includes('support staff') || p === 'supportstaff' || p.includes('サポートスタッフ')) return 'Support Staff';
-  if (p.includes('farm') || p.includes('ファーム') || p.includes('host company') || p.includes('ホスト') || p.includes('dispatch destination')) return 'Farm';
+  if (p.includes('farm') || p.includes('ファーム') || p.includes('クライアント') || p.includes('client') || p.includes('host company') || p.includes('ホスト') || p.includes('dispatch destination')) return 'Farm';
   if (p.includes('office') || p.includes('オフィス')) return 'VC';
   return party;
 };

@@ -41,8 +41,8 @@ export default function Login({ setToken }) {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-8 bg-white p-10 rounded-xl shadow-lg">
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-8 sm:py-12 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-md w-full space-y-6 sm:space-y-8 bg-white p-6 sm:p-10 rounded-xl shadow-lg">
         <div className="flex flex-col items-center">
           <div className="flex items-center justify-center overflow-hidden mb-2">
             <img src="/logo.png" alt="OMS Logo" className="h-12 w-auto object-contain" />

@@ -4,6 +4,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import fs from 'fs';
 import { fileTypeFromBuffer } from 'file-type';
+import { rateLimit } from 'express-rate-limit';
 import { requireRole } from '../middleware/auth.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -77,9 +78,17 @@ const upload = multer({
   },
 });
 
+const uploadLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  limit: 50,                // max 50 upload batches per 15 mins per IP
+  standardHeaders: 'draft-8',
+  legacyHeaders: false,
+  message: { message: 'アップロードのリクエスト上限を超えました。しばらくしてから再試行してください。' }
+});
+
 // Use multer's callback pattern — compatible with Express v5 + multer v2.
 // The old router-level (err, req, res, next) pattern is unreliable in this stack.
-router.post('/', requireRole('admin', 'account', 'support'), (req, res) => {
+router.post('/', uploadLimiter, requireRole('admin', 'account', 'support'), (req, res) => {
   upload.array('files', 10)(req, res, async (err) => {
     // Handle multer-level errors inline (file size, type, count limits, permissions)
     if (err) {

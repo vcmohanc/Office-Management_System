@@ -33,8 +33,8 @@ describe('expenseRules utils', () => {
     it('translates known advancer / bearing parties to Japanese', () => {
       expect(toJP('Service Staff')).toBe('サービススタッフ');
       expect(toJP('Support Staff')).toBe('サポートスタッフ');
-      expect(toJP('Farm')).toBe('ファーム');
-      expect(toJP('Dispatch destination: Farm')).toBe('派遣先: ファーム');
+      expect(toJP('Farm')).toBe('クライアント');
+      expect(toJP('Dispatch destination: Farm')).toBe('派遣先: クライアント');
       expect(toJP('Select for each project')).toBe('プロジェクト毎に選択');
     });
 
@@ -273,8 +273,10 @@ describe('expenseRules utils', () => {
       assert.strictEqual(isFarmParty('Farm'), true);
       assert.strictEqual(isFarmParty('farm'), true);
       assert.strictEqual(isFarmParty('ファーム'), true);
+      assert.strictEqual(isFarmParty('クライアント'), true);
       assert.strictEqual(isFarmParty('Dispatch destination: Farm'), true);
       assert.strictEqual(isFarmParty('派遣先: ファーム'), true);
+      assert.strictEqual(isFarmParty('派遣先: クライアント'), true);
       assert.strictEqual(isFarmParty('Host Company'), true);
       assert.strictEqual(isFarmParty('ホスト企業'), true);
     });
@@ -293,12 +295,14 @@ describe('expenseRules utils', () => {
     it('returns true for VC -> Farm', () => {
       assert.strictEqual(isHostCompanyPairing('VC', 'Farm'), true);
       assert.strictEqual(isHostCompanyPairing('VC', 'ファーム'), true);
+      assert.strictEqual(isHostCompanyPairing('VC', 'クライアント'), true);
       assert.strictEqual(isHostCompanyPairing('VC', 'Dispatch destination: Farm'), true);
     });
 
     it('returns true for Farm -> VC', () => {
       assert.strictEqual(isHostCompanyPairing('Farm', 'VC'), true);
       assert.strictEqual(isHostCompanyPairing('ファーム', 'VC'), true);
+      assert.strictEqual(isHostCompanyPairing('クライアント', 'VC'), true);
       assert.strictEqual(isHostCompanyPairing('Dispatch destination: Farm', 'VC'), true);
     });
 

@@ -61,7 +61,7 @@ export const isHostCompanyPairing = (advancer = '', bearer = '') => {
   const b = String(bearer || '').trim().toLowerCase();
 
   const isVC = (val) => val === 'vc';
-  const isFarm = (val) => val.includes('farm') || val.includes('ファーム');
+  const isFarm = (val) => val.includes('farm') || val.includes('ファーム') || val.includes('クライアント') || val.includes('client');
 
   return (isVC(a) && isFarm(b)) || (isFarm(a) && isVC(b));
 };

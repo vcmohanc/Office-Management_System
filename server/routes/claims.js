@@ -69,52 +69,52 @@ router.get('/:id', verifyToken, requireRole('admin', 'account', 'support'), asyn
 });
 
 const claimSchemaZod = z.object({
-  full_name: z.string().min(1, 'Full name is required'),
-  staff_id: z.string().min(1, 'Staff ID is required'),
-  location: z.string().min(1, 'Location is required'),
-  branch_farm_name: z.string().optional().nullable(),
-  partner_id: z.string().optional().nullable(),
-  partner_name: z.string().optional().nullable(),
-  partner_industry: z.string().optional().nullable(),
-  visa_status: z.string().optional().nullable(),
-  visa_available_time: z.string().optional().nullable(),
+  full_name: z.string().min(1, 'Full name is required').max(200),
+  staff_id: z.string().min(1, 'Staff ID is required').max(100),
+  location: z.string().min(1, 'Location is required').max(200),
+  branch_farm_name: z.string().max(200).optional().nullable(),
+  partner_id: z.string().max(100).optional().nullable(),
+  partner_name: z.string().max(200).optional().nullable(),
+  partner_industry: z.string().max(200).optional().nullable(),
+  visa_status: z.string().max(100).optional().nullable(),
+  visa_available_time: z.string().max(100).optional().nullable(),
 
-  expense_type: z.string().min(1, 'Expense type is required'),
-  advancer_category: z.string().min(1, 'Advancer category is required'),
-  payment_process_types: z.string().min(1, 'Payment processing type is required'),
-  bearing_party: z.string().min(1, 'Bearing party is required'),
+  expense_type: z.string().min(1, 'Expense type is required').max(100),
+  advancer_category: z.string().min(1, 'Advancer category is required').max(100),
+  payment_process_types: z.string().min(1, 'Payment processing type is required').max(100),
+  bearing_party: z.string().min(1, 'Bearing party is required').max(100),
   expense_amount: z.number().min(0),
   expense_period_start: z.string().optional().nullable(),
   expense_period_end: z.string().optional().nullable(),
-  bill_receipt_url: z.array(z.string()).optional(),
-  remarks: z.string().optional().nullable(),
-  sender: z.string().optional().nullable().or(z.literal('')),
-  recipient: z.string().optional().nullable().or(z.literal('')),
-  departure: z.string().optional().nullable().or(z.literal('')),
-  destination: z.string().optional().nullable().or(z.literal('')),
-  transport_method: z.string().optional().nullable().or(z.literal('')),
+  bill_receipt_url: z.array(z.string().max(500)).optional(),
+  remarks: z.string().max(5000).optional().nullable(),
+  sender: z.string().max(200).optional().nullable().or(z.literal('')),
+  recipient: z.string().max(200).optional().nullable().or(z.literal('')),
+  departure: z.string().max(200).optional().nullable().or(z.literal('')),
+  destination: z.string().max(200).optional().nullable().or(z.literal('')),
+  transport_method: z.string().max(100).optional().nullable().or(z.literal('')),
 
   total_expense_amount: z.number().min(0),
   currency: z.string().default('JPY'),
-  settlement_method: z.string().optional().nullable(),
+  settlement_method: z.string().max(100).optional().nullable(),
   expected_settlement_date: z.string().optional().nullable(),
-  collection_method: z.string().optional().nullable(),
-  installment_plan: z.string().optional().nullable(),
+  collection_method: z.string().max(100).optional().nullable(),
+  installment_plan: z.string().max(100).optional().nullable(),
   installment_count: z.number().min(1),
-  collection_start_month: z.string().min(1, 'Collection start month is required'),
+  collection_start_month: z.string().min(1, 'Collection start month is required').max(20),
   monthly_deduction: z.number().min(0),
   isHostCompanyCase: z.boolean().optional(),
   hasAccountNotification: z.boolean().optional(),
   hasSupportNotification: z.boolean().optional(),
   messages: z.array(z.object({
-    text: z.string(),
+    text: z.string().max(5000),
     date: z.coerce.date().optional(),
-    author: z.string().optional(),
+    author: z.string().max(100).optional(),
     readBySupport: z.boolean().optional()
   })).optional(),
-  supportUpdatedFields: z.array(z.string()).optional(),
-  registered_by: z.string().optional().nullable(),
-  registered_by_role: z.string().optional().nullable()
+  supportUpdatedFields: z.array(z.string().max(100)).optional(),
+  registered_by: z.string().max(100).optional().nullable(),
+  registered_by_role: z.string().max(50).optional().nullable()
 });
 
 router.post('/', requireRole('admin', 'support'), async (req, res) => {
@@ -207,20 +207,30 @@ router.delete('/:id', requireRole('admin', 'account'), async (req, res) => {
 });
 router.put('/:id', requireRole('admin', 'account', 'support'), async (req, res) => {
   try {
+    const existing = await Claim.findOne(buildClaimQuery(req.params.id));
+    if (!existing) {
+      return res.status(404).json({ message: 'Claim not found' });
+    }
+
+    if (req.user.role === 'support') {
+      const currentUser = await User.findById(req.user.id).select('username').lean();
+      const usernames = [req.user.username, currentUser?.username].filter(Boolean);
+      if (!usernames.includes(existing.registered_by)) {
+        return res.status(403).json({ error: 'Forbidden: you do not have permission to modify this claim' });
+      }
+    }
+
     const validatedData = claimSchemaZod.partial().parse(req.body);
     if (validatedData.advancer_category || validatedData.bearing_party || validatedData.collection_method) {
-      const existing = await Claim.findOne(buildClaimQuery(req.params.id));
-      if (existing) {
-        const adv = validatedData.advancer_category || existing.advancer_category;
-        const bear = validatedData.bearing_party || existing.bearing_party;
-        const col = validatedData.collection_method || existing.collection_method;
-        if (isHostCompanyPairing(adv, bear)) {
-          validatedData.isHostCompanyCase = true;
-          if (col && !isValidCollectionMethodForPairing(col, adv, bear)) {
-            return res.status(400).json({ 
-              message: 'ホスト会社案件（VC ↔ Farm）の回収方法は「銀行振込」または「農場への直接回収」である必要があります。' 
-            });
-          }
+      const adv = validatedData.advancer_category || existing.advancer_category;
+      const bear = validatedData.bearing_party || existing.bearing_party;
+      const col = validatedData.collection_method || existing.collection_method;
+      if (isHostCompanyPairing(adv, bear)) {
+        validatedData.isHostCompanyCase = true;
+        if (col && !isValidCollectionMethodForPairing(col, adv, bear)) {
+          return res.status(400).json({ 
+            message: 'ホスト会社案件（VC ↔ Farm）の回収方法は「銀行振込」または「農場への直接回収」である必要があります。' 
+          });
         }
       }
     }
@@ -249,6 +259,19 @@ router.patch('/:id/status', requireRole('admin', 'account', 'support'), async (r
     // Support role may only resubmit
     if (req.user.role === 'support' && status !== 'RESUBMITTED') {
       return res.status(403).json({ message: 'Support role may only set status to RESUBMITTED' });
+    }
+
+    const existing = await Claim.findOne(buildClaimQuery(req.params.id));
+    if (!existing) {
+      return res.status(404).json({ message: 'Claim not found' });
+    }
+
+    if (req.user.role === 'support') {
+      const currentUser = await User.findById(req.user.id).select('username').lean();
+      const usernames = [req.user.username, currentUser?.username].filter(Boolean);
+      if (!usernames.includes(existing.registered_by)) {
+        return res.status(403).json({ error: 'Forbidden: you do not have permission to update this claim' });
+      }
     }
 
     let updateQuery = { $set: { status } };
@@ -293,8 +316,24 @@ router.patch('/:id/status', requireRole('admin', 'account', 'support'), async (r
 router.post('/:id/messages', verifyToken, requireRole('admin', 'account', 'support'), async (req, res) => {
   try {
     const { text } = req.body;
-    if (!text) {
+    if (!text || typeof text !== 'string' || !text.trim()) {
       return res.status(400).json({ message: 'Message text is required' });
+    }
+    if (text.length > 5000) {
+      return res.status(400).json({ message: 'Message text cannot exceed 5000 characters' });
+    }
+
+    const existing = await Claim.findOne(buildClaimQuery(req.params.id));
+    if (!existing) {
+      return res.status(404).json({ message: 'Claim not found' });
+    }
+
+    if (req.user.role === 'support') {
+      const currentUser = await User.findById(req.user.id).select('username').lean();
+      const usernames = [req.user.username, currentUser?.username].filter(Boolean);
+      if (!usernames.includes(existing.registered_by)) {
+        return res.status(403).json({ error: 'Forbidden: you do not have permission to post messages to this claim' });
+      }
     }
 
     const role = req.user.role;
@@ -464,6 +503,17 @@ router.post('/:id/settle', requireRole('admin', 'account'), async (req, res) => 
 
 router.all('/:id/messages/read', verifyToken, requireRole('admin', 'account', 'support'), async (req, res) => {
   try {
+    const existing = await Claim.findOne(buildClaimQuery(req.params.id));
+    if (!existing) return res.status(404).json({ message: 'Claim not found' });
+
+    if (req.user.role === 'support') {
+      const currentUser = await User.findById(req.user.id).select('username').lean();
+      const usernames = [req.user.username, currentUser?.username].filter(Boolean);
+      if (!usernames.includes(existing.registered_by)) {
+        return res.status(403).json({ error: 'Forbidden: you do not have permission to access messages for this claim' });
+      }
+    }
+
     const updatedClaim = await Claim.findOneAndUpdate(
       buildClaimQuery(req.params.id),
       {

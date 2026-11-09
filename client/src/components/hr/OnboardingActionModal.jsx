@@ -102,14 +102,14 @@ export default function OnboardingActionModal({ employee, onClose, onComplete })
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-      <div className="bg-white rounded-lg w-full max-w-2xl max-h-[90vh] flex flex-col shadow-xl">
-        <div className="p-6 border-b border-gray-200 flex justify-between items-center">
-          <h2 className="text-xl font-bold text-[#162D50]">アクション Required: {employee.romajiName || employee.katakanaName}</h2>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600"><X className="w-6 h-6" /></button>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-3 sm:p-4">
+      <div className="bg-white rounded-lg w-full max-w-2xl max-h-[90vh] flex flex-col shadow-xl overflow-hidden">
+        <div className="p-4 sm:p-6 border-b border-gray-200 flex justify-between items-center">
+          <h2 className="text-lg sm:text-xl font-bold text-[#162D50] truncate mr-2">アクション Required: {employee.romajiName || employee.katakanaName}</h2>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 shrink-0 cursor-pointer"><X className="w-5 h-5 sm:w-6 sm:h-6" /></button>
         </div>
         
-        <div className="p-6 overflow-y-auto flex-1 space-y-6">
+        <div className="p-4 sm:p-6 overflow-y-auto flex-1 space-y-4 sm:space-y-6">
           {pendingItems.map((item, idx) => {
             const resolved = isResolved(item);
             

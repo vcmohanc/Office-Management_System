@@ -20,7 +20,8 @@ export const sseHandler = (req, res) => {
   const newClient = {
     id: clientId,
     res,
-    role: req.user?.role || ''
+    role: req.user?.role || '',
+    username: req.user?.username || ''
   };
 
   clients.push(newClient);
@@ -41,12 +42,19 @@ export const sseHandler = (req, res) => {
 };
 
 const safeBroadcast = (eventName, data) => {
-  const payload = `event: ${eventName}\ndata: ${JSON.stringify(data)}\n\n`;
+  const fullPayload = `event: ${eventName}\ndata: ${JSON.stringify(data)}\n\n`;
+  const pingPayload = `event: ${eventName}\ndata: ${JSON.stringify({ _id: data?._id, status: data?.status })}\n\n`;
+
   clients
     .filter(c => CASE_BROADCAST_ROLES.includes(c.role))
     .forEach(client => {
       try {
-        client.res.write(payload);
+        if (client.role === 'admin' || client.role === 'account') {
+          client.res.write(fullPayload);
+        } else if (client.role === 'support') {
+          const isOwner = client.username && data?.registered_by === client.username;
+          client.res.write(isOwner ? fullPayload : pingPayload);
+        }
       } catch (err) {
         console.error(`Error sending SSE event ${eventName} to client ${client.id}:`, err);
       }

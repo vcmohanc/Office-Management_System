@@ -800,7 +800,7 @@ const getEntityIcon = (name) => {
     if (!name) return Building;
     if (name.includes('VC')) return Landmark;
     if (name.includes('Staff') || name.includes('スタッフ')) return User;
-    if (name.includes('Farm') || name.includes('ファーム')) return Building2;
+    if (name.includes('Farm') || name.includes('ファーム') || name.includes('クライアント')) return Building2;
     return Building;
   };
 

@@ -477,7 +477,7 @@ export default function HRDashboard({ setParentActiveTab }) {
         <div className="px-4 sm:px-6 py-3 sm:py-4 border-b border-gray-100 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
           <div className="flex items-center gap-2 flex-wrap">
             <Link2 className="w-4 h-4 text-[#162D50] shrink-0" />
-            <h3 className="text-xs sm:text-sm font-bold text-[#162D50]">B2Bファーム配置状況</h3>
+            <h3 className="text-xs sm:text-sm font-bold text-[#162D50]">B2Bクライアント配置状況</h3>
             <span className="text-[11px] sm:text-xs text-gray-400 font-normal">カードをクリックして絞り込み</span>
           </div>
           <div className="flex items-center gap-2 sm:gap-3 flex-wrap justify-between sm:justify-end">

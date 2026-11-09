@@ -6,7 +6,7 @@ import { requireRole } from '../middleware/auth.js';
 const router = express.Router();
 
 // GET /api/b2b/metrics
-router.get('/metrics', async (req, res) => {
+router.get('/metrics', requireRole('admin', 'account'), async (req, res) => {
   try {
     const [
       activePartnersCount,
@@ -36,7 +36,7 @@ router.get('/metrics', async (req, res) => {
 });
 
 // GET /api/b2b/engagements
-router.get('/engagements', async (req, res) => {
+router.get('/engagements', requireRole('admin', 'account', 'support'), async (req, res) => {
   try {
     const { status, search, page = 1, limit = 10 } = req.query;
     const query = {};
@@ -85,7 +85,7 @@ router.get('/engagements', async (req, res) => {
 });
 
 // GET /api/b2b/partners (all partners)
-router.get('/partners', async (req, res) => {
+router.get('/partners', requireRole('admin', 'account', 'support', 'hr'), async (req, res) => {
   try {
     const query = {};
     if (req.user && req.user.role === 'support') {
@@ -103,7 +103,7 @@ router.get('/partners', async (req, res) => {
 });
 
 // GET /api/b2b/partners/:id
-router.get('/partners/:id', async (req, res) => {
+router.get('/partners/:id', requireRole('admin', 'account', 'support', 'hr'), async (req, res) => {
   try {
     const partner = await B2BPartner.findById(req.params.id);
     if (!partner) return res.status(404).json({ message: 'パートナーが見つかりません' });

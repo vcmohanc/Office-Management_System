@@ -100,7 +100,7 @@ export default function AccountDashboard({ setActiveTab }) {
     if (!name) return Building;
     if (name.includes('VC')) return Landmark;
     if (name.includes('Staff') || name.includes('スタッフ')) return User;
-    if (name.includes('Farm') || name.includes('ファーム')) return Building2;
+    if (name.includes('Farm') || name.includes('ファーム') || name.includes('クライアント')) return Building2;
     return Building;
   };
 
@@ -134,22 +134,22 @@ export default function AccountDashboard({ setActiveTab }) {
     <div className="space-y-6">
 
       {/* ── Hero Header ── */}
-      <div className="relative bg-gradient-to-r from-[#162D50] to-[#1e4080] rounded-2xl p-6 overflow-hidden">
+      <div className="relative bg-gradient-to-r from-[#162D50] to-[#1e4080] rounded-xl sm:rounded-2xl p-4 sm:p-6 overflow-hidden">
         {/* Decorative circles */}
         <div className="absolute -top-8 -right-8 w-40 h-40 rounded-full bg-white/5 pointer-events-none" />
         <div className="absolute -bottom-10 -right-2 w-28 h-28 rounded-full bg-white/5 pointer-events-none" />
         <div className="absolute top-4 right-32 w-14 h-14 rounded-full bg-white/5 pointer-events-none" />
 
-        <div className="relative flex items-center gap-4">
-          <div className="w-12 h-12 rounded-xl bg-white/10 flex items-center justify-center flex-shrink-0">
-            <Landmark className="w-6 h-6 text-white" />
+        <div className="relative flex items-center gap-3 sm:gap-4">
+          <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg sm:rounded-xl bg-white/10 flex items-center justify-center shrink-0">
+            <Landmark className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
           </div>
           <div>
             <p className="text-blue-200 text-xs font-semibold uppercase tracking-widest mb-0.5">
               財務・精算管理
             </p>
-            <h2 className="text-2xl font-bold text-white leading-tight">経理部門</h2>
-            <p className="text-blue-200 text-sm mt-0.5">
+            <h2 className="text-xl sm:text-2xl font-bold text-white leading-tight">経理部門</h2>
+            <p className="text-blue-200 text-xs sm:text-sm mt-0.5">
               前払金の精算・回収状況を一元管理します。
             </p>
           </div>
@@ -280,91 +280,157 @@ export default function AccountDashboard({ setActiveTab }) {
               今月の回収データはありません。
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-left">
-                <thead>
-                  <tr className="bg-gray-50 border-b border-gray-200">
-                    <th className="px-4 py-2.5 text-xs font-bold text-gray-500 uppercase tracking-wide">案件番号</th>
-                    <th className="px-4 py-2.5 text-xs font-bold text-gray-500 uppercase tracking-wide">スタッフ名</th>
-                    <th className="px-4 py-2.5 text-xs font-bold text-gray-500 uppercase tracking-wide">経費種別</th>
-                    <th className="px-4 py-2.5 text-xs font-bold text-gray-500 uppercase tracking-wide">回数</th>
-                    <th className="px-4 py-2.5 text-xs font-bold text-gray-500 uppercase tracking-wide text-right">回収額</th>
-                    <th className="px-4 py-2.5 text-xs font-bold text-gray-500 uppercase tracking-wide">支払日</th>
-                    <th className="px-4 py-2.5 text-xs font-bold text-gray-500 uppercase tracking-wide">種別</th>
-                    <th className="px-4 py-2.5 text-xs font-bold text-gray-500 uppercase tracking-wide"></th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-100">
-                  {breakdown.rows.map((row) => {
-                    const rowId = String(row.id);
-                    const isConfirming = confirmId === rowId;
-                    const isDeleting = deletingId === rowId;
-                    return (
-                      <tr key={rowId} className={`transition-colors ${isConfirming ? 'bg-red-50' : 'hover:bg-gray-50'}`}>
-                        <td className="px-4 py-3 text-sm font-mono text-[#162D50] font-semibold">{row.caseRef || '-'}</td>
-                        <td className="px-4 py-3 text-sm text-gray-800">{row.staffName || '-'}</td>
-                        <td className="px-4 py-3 text-sm text-gray-600">{row.expenseType || '-'}</td>
-                        <td className="px-4 py-3 text-sm text-gray-600 text-center">
-                          {row.termNumber ? `第${row.termNumber}回` : '-'}
-                        </td>
-                        <td className="px-4 py-3 text-sm font-bold text-green-600 text-right">
-                          {formatCurrency(row.amount || 0)}
-                        </td>
-                        <td className="px-4 py-3 text-sm text-gray-500">
-                          {row.paymentDate ? new Date(row.paymentDate).toLocaleDateString('ja-JP') : '-'}
-                        </td>
-                        <td className="px-4 py-3">
-                          <span className={`text-xs px-2 py-0.5 rounded-full font-semibold ${
-                            row.source === 'payment'
-                              ? 'bg-blue-50 text-blue-700'
-                              : 'bg-purple-50 text-purple-700'
-                          }`}>
-                            {row.source === 'payment' ? '分割払い' : '決済'}
-                          </span>
-                        </td>
-                        <td className="px-4 py-3 text-right whitespace-nowrap">
-                          {isConfirming ? (
-                            <div className="flex items-center justify-end gap-1.5">
-                              <button
-                                onClick={() => handleDeleteRow(row)}
-                                disabled={isDeleting}
-                                className="text-xs font-bold text-white bg-red-500 hover:bg-red-600 px-2.5 py-1 rounded-lg transition-colors disabled:opacity-60"
-                              >
-                                {isDeleting ? '削除中…' : '確認'}
-                              </button>
-                              <button
-                                onClick={() => setConfirmId(null)}
-                                disabled={isDeleting}
-                                className="text-xs font-medium text-gray-500 hover:text-gray-700 px-2.5 py-1 rounded-lg bg-gray-100 hover:bg-gray-200 transition-colors"
-                              >
-                                取消
-                              </button>
-                            </div>
-                          ) : (
+            <>
+              {/* Mobile Card View (< sm) */}
+              <div className="block sm:hidden divide-y divide-gray-100">
+                {breakdown.rows.map((row) => {
+                  const rowId = String(row.id);
+                  const isConfirming = confirmId === rowId;
+                  const isDeleting = deletingId === rowId;
+                  return (
+                    <div key={rowId} className={`p-4 space-y-2.5 transition-colors ${isConfirming ? 'bg-red-50' : 'hover:bg-gray-50'}`}>
+                      <div className="flex items-center justify-between">
+                        <span className="font-mono text-xs font-semibold text-[#162D50]">{row.caseRef || '-'}</span>
+                        <span className={`text-[10px] px-2 py-0.5 rounded-full font-semibold ${
+                          row.source === 'payment'
+                            ? 'bg-blue-50 text-blue-700'
+                            : 'bg-purple-50 text-purple-700'
+                        }`}>
+                          {row.source === 'payment' ? '分割払い' : '決済'}
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="font-bold text-gray-800 text-sm">{row.staffName || '-'}</span>
+                        <span className="font-bold text-green-600 text-base">{formatCurrency(row.amount || 0)}</span>
+                      </div>
+                      <div className="flex items-center justify-between text-xs text-gray-500">
+                        <span>{row.expenseType || '-'} {row.termNumber ? `(第${row.termNumber}回)` : ''}</span>
+                        <span>{row.paymentDate ? new Date(row.paymentDate).toLocaleDateString('ja-JP') : '-'}</span>
+                      </div>
+                      <div className="flex justify-end pt-1">
+                        {isConfirming ? (
+                          <div className="flex items-center gap-2">
                             <button
-                              onClick={() => setConfirmId(rowId)}
-                              className="p-1.5 text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
-                              title="削除"
+                              onClick={() => handleDeleteRow(row)}
+                              disabled={isDeleting}
+                              className="text-xs font-bold text-white bg-red-500 hover:bg-red-600 px-3 py-1.5 rounded-md transition-colors disabled:opacity-60"
                             >
-                              <Trash2 className="w-3.5 h-3.5" />
+                              {isDeleting ? '削除中…' : '確認して削除'}
                             </button>
-                          )}
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-                <tfoot>
-                  <tr className="bg-green-50 border-t-2 border-green-200">
-                    <td colSpan="4" className="px-4 py-3 text-sm font-bold text-green-800">合計</td>
-                    <td className="px-4 py-3 text-sm font-bold text-green-800 text-right">
-                      {formatCurrency(breakdown.total || 0)}
-                    </td>
-                    <td colSpan="3"></td>
-                  </tr>
-                </tfoot>
-              </table>
-            </div>
+                            <button
+                              onClick={() => setConfirmId(null)}
+                              disabled={isDeleting}
+                              className="text-xs font-medium text-gray-600 px-3 py-1.5 rounded-md bg-gray-100 hover:bg-gray-200 transition-colors"
+                            >
+                              取消
+                            </button>
+                          </div>
+                        ) : (
+                          <button
+                            onClick={() => setConfirmId(rowId)}
+                            className="text-xs text-red-500 hover:text-red-700 font-medium inline-flex items-center gap-1 p-1 hover:bg-red-50 rounded"
+                            title="削除"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" /> 削除
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+                <div className="p-4 bg-green-50 border-t-2 border-green-200 flex justify-between items-center">
+                  <span className="text-sm font-bold text-green-800">合計</span>
+                  <span className="text-base font-bold text-green-800">{formatCurrency(breakdown.total || 0)}</span>
+                </div>
+              </div>
+
+              {/* Desktop Table View (>= sm) */}
+              <div className="hidden sm:block overflow-x-auto">
+                <table className="w-full text-left">
+                  <thead>
+                    <tr className="bg-gray-50 border-b border-gray-200">
+                      <th className="px-4 py-2.5 text-xs font-bold text-gray-500 uppercase tracking-wide">案件番号</th>
+                      <th className="px-4 py-2.5 text-xs font-bold text-gray-500 uppercase tracking-wide">スタッフ名</th>
+                      <th className="px-4 py-2.5 text-xs font-bold text-gray-500 uppercase tracking-wide">経費種別</th>
+                      <th className="px-4 py-2.5 text-xs font-bold text-gray-500 uppercase tracking-wide">回数</th>
+                      <th className="px-4 py-2.5 text-xs font-bold text-gray-500 uppercase tracking-wide text-right">回収額</th>
+                      <th className="px-4 py-2.5 text-xs font-bold text-gray-500 uppercase tracking-wide">支払日</th>
+                      <th className="px-4 py-2.5 text-xs font-bold text-gray-500 uppercase tracking-wide">種別</th>
+                      <th className="px-4 py-2.5 text-xs font-bold text-gray-500 uppercase tracking-wide"></th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100">
+                    {breakdown.rows.map((row) => {
+                      const rowId = String(row.id);
+                      const isConfirming = confirmId === rowId;
+                      const isDeleting = deletingId === rowId;
+                      return (
+                        <tr key={rowId} className={`transition-colors ${isConfirming ? 'bg-red-50' : 'hover:bg-gray-50'}`}>
+                          <td className="px-4 py-3 text-sm font-mono text-[#162D50] font-semibold">{row.caseRef || '-'}</td>
+                          <td className="px-4 py-3 text-sm text-gray-800">{row.staffName || '-'}</td>
+                          <td className="px-4 py-3 text-sm text-gray-600">{row.expenseType || '-'}</td>
+                          <td className="px-4 py-3 text-sm text-gray-600 text-center">
+                            {row.termNumber ? `第${row.termNumber}回` : '-'}
+                          </td>
+                          <td className="px-4 py-3 text-sm font-bold text-green-600 text-right">
+                            {formatCurrency(row.amount || 0)}
+                          </td>
+                          <td className="px-4 py-3 text-sm text-gray-500">
+                            {row.paymentDate ? new Date(row.paymentDate).toLocaleDateString('ja-JP') : '-'}
+                          </td>
+                          <td className="px-4 py-3">
+                            <span className={`text-xs px-2 py-0.5 rounded-full font-semibold ${
+                              row.source === 'payment'
+                                ? 'bg-blue-50 text-blue-700'
+                                : 'bg-purple-50 text-purple-700'
+                            }`}>
+                              {row.source === 'payment' ? '分割払い' : '決済'}
+                            </span>
+                          </td>
+                          <td className="px-4 py-3 text-right whitespace-nowrap">
+                            {isConfirming ? (
+                              <div className="flex items-center justify-end gap-1.5">
+                                <button
+                                  onClick={() => handleDeleteRow(row)}
+                                  disabled={isDeleting}
+                                  className="text-xs font-bold text-white bg-red-500 hover:bg-red-600 px-2.5 py-1 rounded-lg transition-colors disabled:opacity-60"
+                                >
+                                  {isDeleting ? '削除中…' : '確認'}
+                                </button>
+                                <button
+                                  onClick={() => setConfirmId(null)}
+                                  disabled={isDeleting}
+                                  className="text-xs font-medium text-gray-500 hover:text-gray-700 px-2.5 py-1 rounded-lg bg-gray-100 hover:bg-gray-200 transition-colors"
+                                >
+                                  取消
+                                </button>
+                              </div>
+                            ) : (
+                              <button
+                                onClick={() => setConfirmId(rowId)}
+                                className="p-1.5 text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                                title="削除"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                  <tfoot>
+                    <tr className="bg-green-50 border-t-2 border-green-200">
+                      <td colSpan="4" className="px-4 py-3 text-sm font-bold text-green-800">合計</td>
+                      <td className="px-4 py-3 text-sm font-bold text-green-800 text-right">
+                        {formatCurrency(breakdown.total || 0)}
+                      </td>
+                      <td colSpan="3"></td>
+                    </tr>
+                  </tfoot>
+                </table>
+              </div>
+            </>
           )}
         </div>
       )}
@@ -400,27 +466,23 @@ export default function AccountDashboard({ setActiveTab }) {
             現在、承認待ちの案件はありません。
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left">
-              <thead>
-                <tr className="bg-gray-50 border-b border-gray-100 text-[11px] font-bold text-gray-500 uppercase tracking-wider">
-                  <th className="px-4 py-3">案件ID</th>
-                  <th className="px-4 py-3">区分</th>
-                  <th className="px-4 py-3">スタッフ名</th>
-                  <th className="px-4 py-3">経費の種類</th>
-                  <th className="px-4 py-3 text-right">金額</th>
-                  <th className="px-4 py-3">申請日</th>
-                  <th className="px-4 py-3">ステータス</th>
-                  <th className="px-4 py-3 text-right">アクション</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100 text-sm">
-                {data.pendingCases.map((c) => (
-                  <tr key={c.id || c.displayId} className="hover:bg-gray-50 transition-colors">
-                    <td className="px-4 py-3 font-semibold text-[#162D50] font-mono text-xs">
-                      {c.displayId}
-                    </td>
-                    <td className="px-4 py-3">
+          <>
+            {/* Mobile Cards (< sm) */}
+            <div className="block sm:hidden divide-y divide-gray-100">
+              {data.pendingCases.map((c) => (
+                <div key={c.id || c.displayId} className="p-4 space-y-2.5 hover:bg-gray-50 transition-colors">
+                  <div className="flex items-center justify-between">
+                    <span className="font-semibold text-[#162D50] font-mono text-xs">{c.displayId}</span>
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-blue-100 text-blue-700 border border-blue-200">
+                      新た
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between text-sm">
+                    <div className="font-bold text-gray-800">{c.staffName}</div>
+                    <div className="font-bold text-gray-900 text-base">{formatCurrency(c.amount || 0)}</div>
+                  </div>
+                  <div className="flex items-center justify-between text-xs text-gray-500">
+                    <div className="flex items-center gap-2">
                       <span className={`text-[10px] px-2 py-0.5 rounded font-semibold whitespace-nowrap ${
                         c.type === 'Staff Case' ? 'bg-blue-50 text-blue-700 border border-blue-200' :
                         c.type === 'Host Company Case' ? 'bg-purple-50 text-purple-700 border border-purple-200' :
@@ -428,43 +490,95 @@ export default function AccountDashboard({ setActiveTab }) {
                       }`}>
                         {c.type === 'Staff Case' ? 'スタッフ' : c.type === 'Host Company Case' ? 'クライアント' : 'オフィス'}
                       </span>
-                    </td>
-                    <td className="px-4 py-3 font-medium text-gray-800">
-                      {c.staffName}
-                    </td>
-                    <td className="px-4 py-3 text-gray-600">
-                      {toJP(c.expenseType)}
-                    </td>
-                    <td className="px-4 py-3 font-bold text-gray-800 text-right">
-                      {formatCurrency(c.amount || 0)}
-                    </td>
-                    <td className="px-4 py-3 text-xs text-gray-500 whitespace-nowrap">
-                      {c.date ? new Date(c.date).toLocaleDateString('ja-JP') : '-'}
-                    </td>
-                    <td className="px-4 py-3">
-                      <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-blue-100 text-blue-700 border border-blue-200">
-                        新た
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 text-right whitespace-nowrap">
-                      <button
-                        onClick={() => {
-                          sessionStorage.setItem('openCaseDetailId', String(c.id));
-                          sessionStorage.setItem('openCaseIsClaim', c.isClaim ? 'true' : 'false');
-                          const targetTab = c.isHostCompanyCase || c.type === 'Host Company Case' ? 'Host Company' : 'Staff';
-                          sessionStorage.setItem('caseListTab', targetTab);
-                          setActiveTab?.('Case List');
-                        }}
-                        className="text-xs font-bold text-white bg-[#162D50] hover:bg-[#0f1f3d] px-3 py-1.5 rounded-md transition-colors inline-flex items-center gap-1 shadow-xs cursor-pointer"
-                      >
-                        確認・承認 <ArrowRight className="w-3 h-3" />
-                      </button>
-                    </td>
+                      <span>{toJP(c.expenseType)}</span>
+                    </div>
+                    <span>{c.date ? new Date(c.date).toLocaleDateString('ja-JP') : '-'}</span>
+                  </div>
+                  <div className="pt-1">
+                    <button
+                      onClick={() => {
+                        sessionStorage.setItem('openCaseDetailId', String(c.id));
+                        sessionStorage.setItem('openCaseIsClaim', c.isClaim ? 'true' : 'false');
+                        const targetTab = c.isHostCompanyCase || c.type === 'Host Company Case' ? 'Host Company' : 'Staff';
+                        sessionStorage.setItem('caseListTab', targetTab);
+                        setActiveTab?.('Case List');
+                      }}
+                      className="w-full text-xs font-bold text-white bg-[#162D50] hover:bg-[#0f1f3d] py-2 rounded-md transition-colors inline-flex items-center justify-center gap-1.5 shadow-xs cursor-pointer"
+                    >
+                      確認・承認 <ArrowRight className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Desktop Table (>= sm) */}
+            <div className="hidden sm:block overflow-x-auto">
+              <table className="w-full text-left">
+                <thead>
+                  <tr className="bg-gray-50 border-b border-gray-100 text-[11px] font-bold text-gray-500 uppercase tracking-wider">
+                    <th className="px-4 py-3">案件ID</th>
+                    <th className="px-4 py-3">区分</th>
+                    <th className="px-4 py-3">スタッフ名</th>
+                    <th className="px-4 py-3">経費の種類</th>
+                    <th className="px-4 py-3 text-right">金額</th>
+                    <th className="px-4 py-3">申請日</th>
+                    <th className="px-4 py-3">ステータス</th>
+                    <th className="px-4 py-3 text-right">アクション</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody className="divide-y divide-gray-100 text-sm">
+                  {data.pendingCases.map((c) => (
+                    <tr key={c.id || c.displayId} className="hover:bg-gray-50 transition-colors">
+                      <td className="px-4 py-3 font-semibold text-[#162D50] font-mono text-xs">
+                        {c.displayId}
+                      </td>
+                      <td className="px-4 py-3">
+                        <span className={`text-[10px] px-2 py-0.5 rounded font-semibold whitespace-nowrap ${
+                          c.type === 'Staff Case' ? 'bg-blue-50 text-blue-700 border border-blue-200' :
+                          c.type === 'Host Company Case' ? 'bg-purple-50 text-purple-700 border border-purple-200' :
+                          'bg-gray-100 text-gray-700 border border-gray-200'
+                        }`}>
+                          {c.type === 'Staff Case' ? 'スタッフ' : c.type === 'Host Company Case' ? 'クライアント' : 'オフィス'}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 font-medium text-gray-800">
+                        {c.staffName}
+                      </td>
+                      <td className="px-4 py-3 text-gray-600">
+                        {toJP(c.expenseType)}
+                      </td>
+                      <td className="px-4 py-3 font-bold text-gray-800 text-right">
+                        {formatCurrency(c.amount || 0)}
+                      </td>
+                      <td className="px-4 py-3 text-xs text-gray-500 whitespace-nowrap">
+                        {c.date ? new Date(c.date).toLocaleDateString('ja-JP') : '-'}
+                      </td>
+                      <td className="px-4 py-3">
+                        <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-blue-100 text-blue-700 border border-blue-200">
+                          新た
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 text-right whitespace-nowrap">
+                        <button
+                          onClick={() => {
+                            sessionStorage.setItem('openCaseDetailId', String(c.id));
+                            sessionStorage.setItem('openCaseIsClaim', c.isClaim ? 'true' : 'false');
+                            const targetTab = c.isHostCompanyCase || c.type === 'Host Company Case' ? 'Host Company' : 'Staff';
+                            sessionStorage.setItem('caseListTab', targetTab);
+                            setActiveTab?.('Case List');
+                          }}
+                          className="text-xs font-bold text-white bg-[#162D50] hover:bg-[#0f1f3d] px-3 py-1.5 rounded-md transition-colors inline-flex items-center gap-1 shadow-xs cursor-pointer"
+                        >
+                          確認・承認 <ArrowRight className="w-3 h-3" />
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </>
         )}
       </div>
 
@@ -531,54 +645,54 @@ export default function AccountDashboard({ setActiveTab }) {
                 </div>
 
                 {/* Flow Diagram */}
-                <div className="flex justify-between items-center px-8 py-5">
+                <div className="flex justify-between items-center px-3 sm:px-8 py-3.5 sm:py-5">
                   {/* Source node */}
-                  <div className="flex flex-col items-center gap-1">
-                    <div className="w-12 h-12 rounded-xl bg-gray-50 border border-gray-100 flex items-center justify-center">
-                      <SourceIcon className="w-6 h-6 text-[#162D50]" aria-hidden="true" />
+                  <div className="flex flex-col items-center gap-1 shrink-0">
+                    <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-gray-50 border border-gray-100 flex items-center justify-center">
+                      <SourceIcon className="w-5 h-5 sm:w-6 sm:h-6 text-[#162D50]" aria-hidden="true" />
                     </div>
-                    <span className="font-bold text-[12px] text-[#162D50] text-center leading-tight max-w-[70px]">
+                    <span className="font-bold text-[11px] sm:text-[12px] text-[#162D50] text-center leading-tight max-w-[65px] sm:max-w-[70px]">
                       {advancerLabel}
                     </span>
                   </div>
 
                   {/* Arrow + label */}
-                  <div className="flex-1 px-3 flex flex-col items-center relative">
+                  <div className="flex-1 px-1.5 sm:px-3 flex flex-col items-center relative min-w-0">
                     <div className={`w-full h-[2px] ${flowColors.bg} absolute top-1/2 -translate-y-1/2`}></div>
                     <ArrowRight
-                      className={`${flowColors.text} absolute top-1/2 -right-1 -translate-y-1/2 w-4 h-4`}
+                      className={`${flowColors.text} absolute top-1/2 -right-1 -translate-y-1/2 w-3.5 h-3.5 sm:w-4 sm:h-4`}
                       aria-hidden="true"
                     />
-                    <div className="relative bg-white px-2 z-10">
-                      <span className={`text-[11px] font-bold ${flowColors.text}`}>{flowTypeLabel}</span>
+                    <div className="relative bg-white px-1 sm:px-2 z-10 text-center">
+                      <span className={`text-[10px] sm:text-[11px] font-bold ${flowColors.text} whitespace-nowrap`}>{flowTypeLabel}</span>
                     </div>
                   </div>
 
                   {/* Target node */}
-                  <div className="flex flex-col items-center gap-1">
-                    <div className="w-12 h-12 rounded-xl bg-gray-50 border border-gray-100 flex items-center justify-center">
-                      <TargetIcon className="w-6 h-6 text-[#162D50]" aria-hidden="true" />
+                  <div className="flex flex-col items-center gap-1 shrink-0">
+                    <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-gray-50 border border-gray-100 flex items-center justify-center">
+                      <TargetIcon className="w-5 h-5 sm:w-6 sm:h-6 text-[#162D50]" aria-hidden="true" />
                     </div>
-                    <span className="font-bold text-[12px] text-[#162D50] text-center leading-tight max-w-[70px]">
+                    <span className="font-bold text-[11px] sm:text-[12px] text-[#162D50] text-center leading-tight max-w-[65px] sm:max-w-[70px]">
                       {bearerLabel}
                     </span>
                   </div>
                 </div>
 
                 {/* Bottom Stats Bar */}
-                <div className="mt-auto bg-gray-50 rounded-b-xl p-4 border-t border-gray-100">
-                  <div className="flex justify-between items-center gap-2 mb-3">
-                    <div className="text-center">
-                      <p className="text-[10px] text-gray-500 font-semibold uppercase tracking-wide mb-0.5">立替総額</p>
-                      <p className="text-[13px] font-bold text-red-500">{formatCurrency(option.totalAdvanced)}</p>
+                <div className="mt-auto bg-gray-50 rounded-b-xl p-3 sm:p-4 border-t border-gray-100">
+                  <div className="flex justify-between items-center gap-1 sm:gap-2 mb-3">
+                    <div className="text-center min-w-0 flex-1">
+                      <p className="text-[10px] text-gray-500 font-semibold uppercase tracking-wide mb-0.5 truncate">立替総額</p>
+                      <p className="text-[11px] sm:text-[13px] font-bold text-red-500 truncate">{formatCurrency(option.totalAdvanced)}</p>
                     </div>
-                    <div className="text-center">
-                      <p className="text-[10px] text-gray-500 font-semibold uppercase tracking-wide mb-0.5">回収総額</p>
-                      <p className="text-[13px] font-bold text-green-600">{formatCurrency(option.totalRecovered)}</p>
+                    <div className="text-center min-w-0 flex-1 border-x border-gray-200/60 px-1">
+                      <p className="text-[10px] text-gray-500 font-semibold uppercase tracking-wide mb-0.5 truncate">回収総額</p>
+                      <p className="text-[11px] sm:text-[13px] font-bold text-green-600 truncate">{formatCurrency(option.totalRecovered)}</p>
                     </div>
-                    <div className="text-center">
-                      <p className="text-[10px] text-gray-500 font-semibold uppercase tracking-wide mb-0.5">差引残額</p>
-                      <p className={`text-[13px] font-bold ${option.netExposure > 0 ? 'text-red-600' : 'text-gray-700'}`}>
+                    <div className="text-center min-w-0 flex-1">
+                      <p className="text-[10px] text-gray-500 font-semibold uppercase tracking-wide mb-0.5 truncate">差引残額</p>
+                      <p className={`text-[11px] sm:text-[13px] font-bold ${option.netExposure > 0 ? 'text-red-600' : 'text-gray-700'} truncate`}>
                         {formatCurrency(option.netExposure)}
                       </p>
                     </div>

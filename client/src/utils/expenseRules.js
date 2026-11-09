@@ -83,9 +83,10 @@ export const optionLabelJP = {
   'Support Staff': 'サポートスタッフ',
   'Support staff': 'サポートスタッフ',
   'VC': 'VC',
-  'Farm': 'ファーム',
-  'ファーム': 'ファーム',
-  'Dispatch destination: Farm': '派遣先: ファーム',
+  'Farm': 'クライアント',
+  'ファーム': 'クライアント',
+  'クライアント': 'クライアント',
+  'Dispatch destination: Farm': '派遣先: クライアント',
   'Select for each project': 'プロジェクト毎に選択',
   'Office': 'オフィス',
   'Service Staff': 'サービススタッフ',
@@ -181,6 +182,8 @@ export function isFarmParty(party = '') {
     p === 'farm' ||
     p.includes('farm') ||
     p.includes('ファーム') ||
+    p.includes('クライアント') ||
+    p.includes('client') ||
     p.includes('host') ||
     p.includes('ホスト') ||
     p.includes('dispatch')
@@ -254,7 +257,7 @@ export function getPaymentMethod(payer = '', bearer = '') {
   const p = (payer || '').toLowerCase().trim();
   const b = (bearer || '').toLowerCase().trim();
 
-  if (p === 'vc' && (b === 'farm' || b.includes('farm') || b.includes('ファーム'))) {
+  if (p === 'vc' && (b === 'farm' || b.includes('farm') || b.includes('ファーム') || b.includes('クライアント') || b.includes('client'))) {
     return 'direct_transfer';
   }
   if (b.includes('service staff') || b === 'servicestaff' || b.includes('staff') || b.includes('スタッフ')) {
