@@ -312,11 +312,11 @@ export default function PaymentStatus() {
   const [activePaymentTab, setActivePaymentTab] = useState(() => {
     try {
       const saved = sessionStorage.getItem('activePaymentTab');
-      if (saved && ['Office', 'Staff', 'Host Company'].includes(saved)) {
-        return saved;
+      if (saved && saved === 'Host Company') {
+        return 'Host Company';
       }
     } catch (_) {}
-    return 'Office';
+    return 'Staff';
   });
 
   const handleTabChange = (tab) => {
@@ -774,12 +774,10 @@ export default function PaymentStatus() {
   const hasAutoSwitchedRef = useRef(false);
   useEffect(() => {
     if (loading || hasAutoSwitchedRef.current || postApprovalCases.length === 0) return;
-    const currentCount = postApprovalCases.filter(c => c.advancerCategory === activePaymentTab || (!c.advancerCategory && activePaymentTab === 'Office')).length;
+    const currentCount = postApprovalCases.filter(c => activePaymentTab === 'Host Company' ? c.advancerCategory === 'Host Company' : c.advancerCategory !== 'Host Company').length;
     if (currentCount === 0) {
-      if (staffCasesCount > 0) {
+      if (staffCasesCount + officeCasesCount > 0) {
         handleTabChange('Staff');
-      } else if (officeCasesCount > 0) {
-        handleTabChange('Office');
       } else if (hostCompanyCasesCount > 0) {
         handleTabChange('Host Company');
       }
@@ -788,7 +786,7 @@ export default function PaymentStatus() {
   }, [loading, postApprovalCases.length, activePaymentTab, staffCasesCount, officeCasesCount, hostCompanyCasesCount]);
 
   const filteredCases = postApprovalCases.filter(c => {
-    const matchesTab = c.advancerCategory === activePaymentTab || (!c.advancerCategory && activePaymentTab === 'Office');
+    const matchesTab = activePaymentTab === 'Host Company' ? c.advancerCategory === 'Host Company' : c.advancerCategory !== 'Host Company';
     const matchesStatus = statusFilter === 'すべてのステータス' || c.status === statusFilter;
     const matchesType = expenseTypeFilter === 'すべての種類' || c.expenseType === expenseTypeFilter;
     const q = searchQuery.toLowerCase();
@@ -807,7 +805,7 @@ export default function PaymentStatus() {
     return matchesTab && matchesStatus && matchesType && matchesSearch && matchesDateStart && matchesDateEnd;
   });
 
-  const tabCases = postApprovalCases.filter(c => c.advancerCategory === activePaymentTab || (!c.advancerCategory && activePaymentTab === 'Office'));
+  const tabCases = postApprovalCases.filter(c => activePaymentTab === 'Host Company' ? c.advancerCategory === 'Host Company' : c.advancerCategory !== 'Host Company');
 
   const get残りBalance = (c) => {
     const totalTerms = c.installment_count || (c.installmentPlan ? (c.installmentPlan.match(/\d+/) ? parseInt(c.installmentPlan.match(/\d+/)[0], 10) : 1) : 1);
@@ -840,7 +838,7 @@ export default function PaymentStatus() {
         }
         return c.advancerCategory === 'Host Company';
       }
-      return c.staffId === selectedCase.staffId && (c.advancerCategory === activePaymentTab || (!c.advancerCategory && activePaymentTab === 'Office'));
+      return c.staffId === selectedCase.staffId && (activePaymentTab === 'Host Company' ? c.advancerCategory === 'Host Company' : c.advancerCategory !== 'Host Company');
     });
     const personTotalOfficePayment = personCases.filter(c => c.advancerCategory === 'Office').reduce((sum, c) => sum + get残りBalance(c), 0);
     const personTotalStaffPayment = personCases.filter(c => c.advancerCategory === 'Staff').reduce((sum, c) => sum + get残りBalance(c), 0);
@@ -1938,15 +1936,15 @@ export default function PaymentStatus() {
         {/* Metric Cards */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
           <div className="bg-white border border-gray-200 p-5 rounded-md shadow-sm">
-            <h3 className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-2">オフィスの総支払額</h3>
+            <h3 className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-2">スタッフの総支払額</h3>
             <div className="flex justify-between items-center">
               <div>
-                <p className="text-3xl font-bold text-[#162D50]">¥{totalOfficePayment.toLocaleString()}</p>
+                <p className="text-3xl font-bold text-[#162D50]">¥{(totalOfficePayment + totalStaffPayment).toLocaleString()}</p>
                 <div className="flex items-center mt-2 text-xs text-green-600 font-medium">
                   <div className="w-3 h-3 rounded-full border-2 border-green-600 flex items-center justify-center mr-1">
                     <div className="w-1.5 h-1.5 bg-green-600 rounded-full"></div>
                   </div>
-                  {postApprovalCases.filter(c => c.advancerCategory === 'Office').length} オフィス案件数
+                  {postApprovalCases.filter(c => c.advancerCategory !== 'Host Company').length} スタッフ案件数
                 </div>
               </div>
               <Landmark className="w-10 h-10 text-gray-100" />
@@ -1954,17 +1952,18 @@ export default function PaymentStatus() {
           </div>
 
           <div className="bg-white border border-gray-200 p-5 rounded-md shadow-sm">
-            <h3 className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-2">スタッフの総支払額</h3>
+            <h3 className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-2">クライアントの総支払額</h3>
             <div className="flex justify-between items-center">
               <div>
-                <p className="text-3xl font-bold text-[#162D50]">¥{totalStaffPayment.toLocaleString()}</p>
+                <p className="text-3xl font-bold text-[#162D50]">¥{totalHostPayment.toLocaleString()}</p>
                 <div className="flex items-center mt-2 text-xs text-green-600 font-medium">
                   <div className="w-3 h-3 rounded-full border-2 border-green-600 flex items-center justify-center mr-1">
                     <div className="w-1.5 h-1.5 bg-green-600 rounded-full"></div>
                   </div>
-                  {postApprovalCases.filter(c => c.advancerCategory === 'Staff').length} スタッフ案件数
+                  {hostCompanyCasesCount} クライアント案件数
                 </div>
               </div>
+              <Building className="w-10 h-10 text-emerald-100" />
             </div>
           </div>
 
@@ -2121,15 +2120,15 @@ export default function PaymentStatus() {
       {/* Metric Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
         <div className="bg-white border border-gray-200 p-5 rounded-md shadow-sm">
-          <h3 className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-2">オフィスの総支払額</h3>
+          <h3 className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-2">スタッフの総支払額</h3>
           <div className="flex justify-between items-center">
             <div>
-              <p className="text-3xl font-bold text-[#162D50]">¥{totalOfficePayment.toLocaleString()}</p>
+              <p className="text-3xl font-bold text-[#162D50]">¥{(totalOfficePayment + totalStaffPayment).toLocaleString()}</p>
               <div className="flex items-center mt-2 text-xs text-green-600 font-medium">
                 <div className="w-3 h-3 rounded-full border-2 border-green-600 flex items-center justify-center mr-1">
                   <div className="w-1.5 h-1.5 bg-green-600 rounded-full"></div>
                 </div>
-                {postApprovalCases.filter(c => c.advancerCategory === 'Office').length} オフィス案件数
+                {postApprovalCases.filter(c => c.advancerCategory !== 'Host Company').length} スタッフ案件数
               </div>
             </div>
             <Landmark className="w-10 h-10 text-gray-100" />
@@ -2137,22 +2136,20 @@ export default function PaymentStatus() {
         </div>
 
         <div className="bg-white border border-gray-200 p-5 rounded-md shadow-sm">
-          <h3 className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-2">
-            {activePaymentTab === 'Host Company' ? 'クライアントの総支払額' : 'スタッフの総支払額'}
-          </h3>
+          <h3 className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-2">クライアントの総支払額</h3>
           <div className="flex justify-between items-center">
             <div>
               <p className="text-3xl font-bold text-[#162D50]">
-                ¥{(activePaymentTab === 'Host Company' ? totalHostPayment : totalStaffPayment).toLocaleString()}
+                ¥{totalHostPayment.toLocaleString()}
               </p>
               <div className="flex items-center mt-2 text-xs text-green-600 font-medium">
                 <div className="w-3 h-3 rounded-full border-2 border-green-600 flex items-center justify-center mr-1">
                   <div className="w-1.5 h-1.5 bg-green-600 rounded-full"></div>
                 </div>
-                {activePaymentTab === 'Host Company' ? `${hostCompanyCasesCount} クライアント案件数` : `${staffCasesCount} スタッフ案件数`}
+                {hostCompanyCasesCount} クライアント案件数
               </div>
             </div>
-            {activePaymentTab === 'Host Company' && <Building className="w-10 h-10 text-emerald-100" />}
+            <Building className="w-10 h-10 text-emerald-100" />
           </div>
         </div>
 
@@ -2195,14 +2192,9 @@ export default function PaymentStatus() {
       {/* Top Tabs */}
       <div className="bg-[#F2F4F7] p-1 rounded-md flex space-x-1 mb-4 border border-gray-200">
         <button 
-          onClick={() => handleTabChange('Office')}
-          className={`flex-1 py-1.5 sm:py-2 text-xs sm:text-sm font-bold rounded-md transition-colors ${activePaymentTab === 'Office' ? 'text-white bg-[#0A192F] shadow-sm' : 'text-gray-500 hover:bg-gray-200'}`}>
-          オフィス支払案件 <span className={`ml-2 px-2 py-0.5 rounded-full text-xs ${activePaymentTab === 'Office' ? 'bg-white text-[#0A192F]' : 'bg-gray-200 text-gray-600'}`}>{officeCasesCount}</span>
-        </button>
-        <button 
           onClick={() => handleTabChange('Staff')}
           className={`flex-1 py-1.5 sm:py-2 text-xs sm:text-sm font-bold rounded-md transition-colors ${activePaymentTab === 'Staff' ? 'text-white bg-[#0A192F] shadow-sm' : 'text-gray-500 hover:bg-gray-200'}`}>
-          スタッフ支払案件 <span className={`ml-2 px-2 py-0.5 rounded-full text-xs ${activePaymentTab === 'Staff' ? 'bg-white text-[#0A192F]' : 'bg-gray-200 text-gray-600'}`}>{staffCasesCount}</span>
+          スタッフ <span className={`ml-2 px-2 py-0.5 rounded-full text-xs ${activePaymentTab === 'Staff' ? 'bg-white text-[#0A192F]' : 'bg-gray-200 text-gray-600'}`}>{staffCasesCount + officeCasesCount}</span>
         </button>
         <button 
           onClick={() => handleTabChange('Host Company')}

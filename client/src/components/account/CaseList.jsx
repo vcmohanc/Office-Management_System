@@ -14,7 +14,7 @@ import {
 } from '../../utils/expenseRules.js';
 
 const getCaseTargetTab = (c) => {
-  if (!c) return 'Office';
+  if (!c) return 'Staff';
   const isHost = Boolean(
     c.isHostCompanyCase ||
     c.case_type === 'Host Company Case' ||
@@ -23,21 +23,7 @@ const getCaseTargetTab = (c) => {
     isFarmParty(c.bearing_party || c.bearingParty)
   );
   if (isHost) return 'Host Company';
-  const rawAdv = String(c.advancer_category || c.advancerCategory || '').trim().toLowerCase();
-  if (
-    rawAdv.includes('staff') ||
-    rawAdv.includes('スタッフ') ||
-    rawAdv.includes('service') ||
-    rawAdv.includes('support') ||
-    c.claim_id ||
-    c.claimId ||
-    c._isClaim ||
-    c.type === 'Staff Case' ||
-    c.case_type === 'Staff Case'
-  ) {
-    return 'Staff';
-  }
-  return 'Office';
+  return 'Staff';
 };
 
 export default function CaseList({ setActiveTab: onNavigate }) {
