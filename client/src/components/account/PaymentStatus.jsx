@@ -2138,7 +2138,7 @@ export default function PaymentStatus() {
 
         <div className="bg-white border border-gray-200 p-5 rounded-md shadow-sm">
           <h3 className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-2">
-            {activePaymentTab === 'Host Company' ? 'ホスト会社の総支払額' : 'スタッフの総支払額'}
+            {activePaymentTab === 'Host Company' ? 'クライアントの総支払額' : 'スタッフの総支払額'}
           </h3>
           <div className="flex justify-between items-center">
             <div>
@@ -2149,7 +2149,7 @@ export default function PaymentStatus() {
                 <div className="w-3 h-3 rounded-full border-2 border-green-600 flex items-center justify-center mr-1">
                   <div className="w-1.5 h-1.5 bg-green-600 rounded-full"></div>
                 </div>
-                {activePaymentTab === 'Host Company' ? `${hostCompanyCasesCount} ホスト会社案件数` : `${staffCasesCount} スタッフ案件数`}
+                {activePaymentTab === 'Host Company' ? `${hostCompanyCasesCount} クライアント案件数` : `${staffCasesCount} スタッフ案件数`}
               </div>
             </div>
             {activePaymentTab === 'Host Company' && <Building className="w-10 h-10 text-emerald-100" />}
@@ -2207,7 +2207,7 @@ export default function PaymentStatus() {
         <button 
           onClick={() => handleTabChange('Host Company')}
           className={`flex-1 py-1.5 sm:py-2 text-xs sm:text-sm font-bold rounded-md transition-colors ${activePaymentTab === 'Host Company' ? 'text-white bg-[#0A192F] shadow-sm' : 'text-gray-500 hover:bg-gray-200'}`}>
-          ホスト会社案件 <span className={`ml-2 px-2 py-0.5 rounded-full text-xs ${activePaymentTab === 'Host Company' ? 'bg-white text-[#0A192F]' : 'bg-gray-200 text-gray-600'}`}>{hostCompanyCasesCount}</span>
+          クライアント <span className={`ml-2 px-2 py-0.5 rounded-full text-xs ${activePaymentTab === 'Host Company' ? 'bg-white text-[#0A192F]' : 'bg-gray-200 text-gray-600'}`}>{hostCompanyCasesCount}</span>
         </button>
       </div>
 

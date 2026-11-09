@@ -426,7 +426,7 @@ export default function AccountDashboard({ setActiveTab }) {
                         c.type === 'Host Company Case' ? 'bg-purple-50 text-purple-700 border border-purple-200' :
                         'bg-gray-100 text-gray-700 border border-gray-200'
                       }`}>
-                        {c.type === 'Staff Case' ? 'スタッフ' : c.type === 'Host Company Case' ? 'ホスト会社' : 'オフィス'}
+                        {c.type === 'Staff Case' ? 'スタッフ' : c.type === 'Host Company Case' ? 'クライアント' : 'オフィス'}
                       </span>
                     </td>
                     <td className="px-4 py-3 font-medium text-gray-800">
