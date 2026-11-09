@@ -1,29 +1,23 @@
 #!/bin/bash
 set -e
 
-ENV_FILE="/var/www/oms-config/.env"
+# Secrets live outside the web root; never in /var/www/ or the deploy temp dir.
+ENV_FILE="/etc/oms/.env"
 
 if [ ! -f "$ENV_FILE" ]; then
-    if [ -f /var/www/oms-temp-config/.env ]; then
-        echo "Copying .env from /var/www/oms-temp-config/.env to $ENV_FILE..."
-        sudo mkdir -p /var/www/oms-config
-        sudo cp /var/www/oms-temp-config/.env "$ENV_FILE"
-        sudo chown ubuntu:ubuntu "$ENV_FILE"
-        sudo chmod 640 "$ENV_FILE"
-    elif [ -f /home/ubuntu/.env ]; then
-        echo "Found .env in /home/ubuntu/.env, copying to $ENV_FILE..."
-        sudo mkdir -p /var/www/oms-config
-        sudo cp /home/ubuntu/.env "$ENV_FILE"
-        sudo chown ubuntu:ubuntu "$ENV_FILE"
-        sudo chmod 640 "$ENV_FILE"
-    else
-        echo "Error: $ENV_FILE not found."
-        exit 1
-    fi
+    echo "ERROR: $ENV_FILE not found."
+    echo "Provision it once on the server:"
+    echo "  sudo mkdir -p /etc/oms"
+    echo "  sudo nano /etc/oms/.env        # paste your production secrets"
+    echo "  sudo chmod 600 /etc/oms/.env"
+    echo "  sudo chown root:root /etc/oms/.env"
+    exit 1
 fi
 
-# Ensure no .env sits inside application directory
+# Scrub any stale .env copies from web-accessible or deploy-temp directories.
 rm -f .env .env.bak*
+sudo rm -f /var/www/oms-config/.env /var/www/oms-temp-config/.env 2>/dev/null || true
+sudo rmdir --ignore-fail-on-non-empty /var/www/oms-config /var/www/oms-temp-config 2>/dev/null || true
 
 echo "Pulling latest images..."
 sudo docker compose --env-file "$ENV_FILE" pull
