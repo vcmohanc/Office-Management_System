@@ -16,7 +16,6 @@ import VisaManagement from './hr/VisaManagement';
 import Resignation from './hr/Resignation';
 import SupportDashboard from './support/SupportDashboard';
 import StaffClaimRequest from './support/StaffClaimRequest';
-import ClaimList from './support/ClaimList';
 import AdminNewRegistration from './admin/AdminNewRegistration';
 import AdminUserList from './admin/AdminUserList';
 import Settings from './settings/Settings';

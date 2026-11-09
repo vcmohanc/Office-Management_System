@@ -374,6 +374,11 @@ export default function CaseList({ setActiveTab: onNavigate }) {
   };
 
   const handleSaveEdit = async () => {
+    if (!editData.receipts || editData.receipts.length === 0) {
+      toast.error('請求書/領収書の添付は必須です。');
+      return;
+    }
+
     const isClaim = selectedCase._isClaim;
     const endpoint = isClaim ? `/api/claims/${selectedCase._id}` : `/api/cases/${selectedCase._id}`;
 
@@ -644,9 +649,40 @@ export default function CaseList({ setActiveTab: onNavigate }) {
     return false;
   };
 
+  const getCollectionTerms = (c) => {
+    const advancer = c.advancer_category || c.advancerCategory;
+    const rawMethod = advancer === 'Staff'
+      ? (c.settlement_method || c.settlementMethod || c.collection_method || c.collectionMethod)
+      : (c.collection_method || c.collectionMethod || c.settlement_method || c.settlementMethod);
+    
+    let method = '会社経費（VC負担）';
+    if (rawMethod && rawMethod !== 'Select Method' && rawMethod !== '方法を選択') {
+      method = toJP(rawMethod) || rawMethod;
+    }
+    
+    let plan = c.installment_plan || c.installmentPlan;
+    if (!plan) {
+      const count = c.installment_count || c.installmentCount;
+      plan = count && count > 1 ? `${count}回払い` : '一括払い';
+    } else {
+      const m = String(plan).match(/(\d+)\s*month/i);
+      if (m) {
+        plan = `${m[1]}回払い`;
+      } else if (String(plan).toLowerCase() === 'custom') {
+        const count = c.installment_count || c.installmentCount;
+        plan = count && count > 1 ? `${count}回払い` : '一括払い';
+      } else {
+        plan = toJP(plan) || plan;
+      }
+    }
+
+    return { method, plan };
+  };
+
   // Map Cases
   const mappedCases = cases.filter(filterOld拒否).map(c => {
     const isHost = c.isHostCompanyCase || c.case_type === 'Host Company Case' || isHostCompanyPairing(c.advancer_category || c.advancerCategory, c.bearing_party || c.bearingParty);
+    const collectionTerms = getCollectionTerms(c);
     return {
       ...c,
       _isClaim: false,
@@ -657,6 +693,7 @@ export default function CaseList({ setActiveTab: onNavigate }) {
       displayTotal: c.finalTotal || c.totalExpense || c.total_expense || c.final_total_amount || 0,
       currencySymbol: c.currency === 'JPY' ? '¥' : '$',
       expense_type: c.expenseType || c.expense_type || 'N/A',
+      collectionTerms,
       registered_by: c.registered_by || 'account_user',
       registered_by_role: c.registered_by_role || 'account',
     };
@@ -665,6 +702,7 @@ export default function CaseList({ setActiveTab: onNavigate }) {
   // Map Claims
   const mappedClaims = claims.filter(filterOld拒否).map(c => {
     const isHost = c.isHostCompanyCase || c.case_type === 'Host Company Case' || isHostCompanyPairing(c.advancer_category || c.advancerCategory, c.bearing_party || c.bearingParty);
+    const collectionTerms = getCollectionTerms(c);
     return {
       ...c,
       _isClaim: true,
@@ -675,6 +713,7 @@ export default function CaseList({ setActiveTab: onNavigate }) {
       displayTotal: c.expenseAmount || c.expense_amount || c.totalExpense金額 || c.total_expense_amount || 0,
       currencySymbol: c.currency === 'JPY' ? '¥' : '$',
       expense_type: c.expenseType || c.expense_type || 'N/A',
+      collectionTerms,
       registered_by: c.registered_by || c.registeredBy || '',
       registered_by_role: c.registered_by_role || 'support',
     };
@@ -740,7 +779,9 @@ export default function CaseList({ setActiveTab: onNavigate }) {
       (c.displayId || '').toLowerCase().includes(q) ||
       (c.displayName || '').toLowerCase().includes(q) ||
       (c.expense_type || '').toLowerCase().includes(q) ||
-      toJP(c.expense_type).toLowerCase().includes(q);
+      toJP(c.expense_type).toLowerCase().includes(q) ||
+      (c.collectionTerms?.method || '').toLowerCase().includes(q) ||
+      (c.collectionTerms?.plan || '').toLowerCase().includes(q);
     const recordDate = new Date(c.expensePeriodStart || c.expense_period_start || c.createdAt);
     const matchesDateStart = !dateFilterStart || recordDate >= new Date(dateFilterStart);
     const matchesDateEnd = !dateFilterEnd || recordDate <= new Date(dateFilterEnd + 'T23:59:59');
@@ -900,9 +941,13 @@ export default function CaseList({ setActiveTab: onNavigate }) {
               </div>
               <div className="font-bold text-gray-800 text-sm mb-0.5">{c.displayName}</div>
               <div className="text-xs text-gray-500 mb-2">{toJP(c.expense_type)}</div>
-              <div className="flex justify-between items-center mb-3">
+              <div className="flex justify-between items-center mb-2">
                 <span className="text-xs text-gray-400">{c.displayDate}</span>
                 <span className="font-bold text-gray-800 text-sm">{c.currencySymbol}{c.displayTotal.toLocaleString()}</span>
+              </div>
+              <div className="flex justify-between items-center text-xs text-gray-600 mb-3 bg-gray-50 px-2.5 py-1.5 rounded border border-gray-100">
+                <span className="text-gray-400">回収条件</span>
+                <span className="font-medium text-gray-700">{c.collectionTerms?.method || '会社経費（VC負担）'} ({c.collectionTerms?.plan || '一括払い'})</span>
               </div>
               <div className="flex items-center gap-4 pt-3 border-t border-gray-100">
                 <div className="relative inline-block">
@@ -943,6 +988,7 @@ export default function CaseList({ setActiveTab: onNavigate }) {
               <th className="py-3 px-6">スタッフ名</th>
               <th className="py-3 px-6">経費の種類</th>
               <th className="py-3 px-6">合計金額</th>
+              <th className="py-3 px-6">回収条件</th>
               <th className="py-3 px-6">ステータス</th>
               <th className="py-3 px-6">アクション</th>
             </tr>
@@ -950,11 +996,11 @@ export default function CaseList({ setActiveTab: onNavigate }) {
           <tbody className="text-sm">
             {loading ? (
               <tr>
-                <td colSpan="7" className="py-4 px-6 text-center text-gray-500">読み込み中...</td>
+                <td colSpan="8" className="py-4 px-6 text-center text-gray-500">読み込み中...</td>
               </tr>
             ) : filteredRecords.length === 0 ? (
               <tr>
-                <td colSpan="7" className="py-4 px-6 text-center text-gray-500">案件が見つかりません.</td>
+                <td colSpan="8" className="py-4 px-6 text-center text-gray-500">案件が見つかりません.</td>
               </tr>
             ) : (
               filteredRecords.map(c => (
@@ -980,6 +1026,14 @@ export default function CaseList({ setActiveTab: onNavigate }) {
                   <td className="py-4 px-6 text-gray-600">{toJP(c.expense_type)}</td>
                   <td className="py-4 px-6 font-bold text-gray-800">
                     {c.currencySymbol}{c.displayTotal.toLocaleString()}
+                  </td>
+                  <td className="py-4 px-6">
+                    <div className="text-gray-800 font-medium whitespace-nowrap">
+                      {c.collectionTerms?.method || '会社経費（VC負担）'}
+                    </div>
+                    <div className="text-xs text-gray-500 whitespace-nowrap mt-0.5">
+                      {c.collectionTerms?.plan || '一括払い'}
+                    </div>
                   </td>
                   <td className="py-4 px-6">
                     <span className={`px-3 py-1 rounded-full text-xs font-medium border ${
@@ -1186,7 +1240,7 @@ export default function CaseList({ setActiveTab: onNavigate }) {
 
             {/* ATTACHMENTS */}
             <div>
-              <h4 className="text-xs font-bold text-gray-500 mb-4 tracking-wider">添付ファイル</h4>
+              <h4 className="text-xs font-bold text-gray-500 mb-4 tracking-wider">添付ファイル（請求書/領収書） <span className="text-red-500">*</span></h4>
               <div className="space-y-3">
                 {isEditing ? (
                   <>
@@ -1194,6 +1248,7 @@ export default function CaseList({ setActiveTab: onNavigate }) {
                       <input type="file" multiple accept=".jpg,.jpeg,.png,.pdf,image/jpeg,image/png,application/pdf" className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" onChange={handleFileUpload} />
                       <FileText className="w-6 h-6 text-gray-400 mb-2" />
                       <p className="text-sm text-gray-600">ファイルをドラッグ＆ドロップするか、クリックしてアップロード</p>
+                      <p className="text-xs text-red-500 mt-1 font-medium">※ 請求書または領収書の添付は必須です</p>
                     </div>
                     {editData.receipts && editData.receipts.length > 0 && (
                       <div className="mt-3 flex flex-col gap-2">

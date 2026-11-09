@@ -244,6 +244,29 @@ export default function StaffClaimRequest() {
     newCases[index][field] = value;
 
     if (field === 'expenseType') {
+      // Clear previous type-specific fields so the category fields refresh cleanly
+      delete newCases[index].sender;
+      delete newCases[index].recipient;
+      delete newCases[index].departure;
+      delete newCases[index].destination;
+      delete newCases[index].dateUsed;
+      delete newCases[index].transportMethod;
+      delete newCases[index].dormitoryName;
+      delete newCases[index].dormitoryStartDate;
+      delete newCases[index].dormitoryEndDate;
+      delete newCases[index].consultationDate;
+      delete newCases[index].consultationFee;
+      delete newCases[index].medicineCost;
+      delete newCases[index].itemName;
+      delete newCases[index].quantity;
+      delete newCases[index].purchaseDate;
+      delete newCases[index].damageReason;
+      delete newCases[index].hostCompany;
+      delete newCases[index].wifiStartDate;
+      delete newCases[index].remark;
+      newCases[index].expense金額 = '';
+      newCases[index].suggested金額 = 0;
+
       const autoFill = getAutoFill(value, options.AdvancerCategory, options.BearingParty, options.ExpenseType);
       if (autoFill) {
         Object.assign(newCases[index], autoFill);
@@ -393,6 +416,12 @@ export default function StaffClaimRequest() {
 
   const handle送信 = async () => {
     try {
+      for (let i = 0; i < cases.length; i++) {
+        if (!cases[i].receipts || cases[i].receipts.length === 0) {
+          toast.error(`案件カテゴリ #${i+1} の請求書/領収書をアップロードしてください。`);
+          return;
+        }
+      }
       const submissions = cases.map(caseItem => {
         const isHost = isHostCompanyPairing(caseItem.advancerCategory, caseItem.bearingParty);
         const payload = {
@@ -734,7 +763,7 @@ export default function StaffClaimRequest() {
                   </div>
                 </div>
                 
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mb-6 sm:mb-8">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 mb-6 sm:mb-8">
                   <div>
                     <label className="block text-sm font-bold text-gray-700 mb-1.5 sm:mb-2">支払処理タイプ <span className="text-red-500">*</span></label>
                     <div className="relative">
@@ -774,39 +803,40 @@ export default function StaffClaimRequest() {
                       return null;
                     })()}
                   </div>
-                  <div className="sm:col-span-2 lg:col-span-1">
-                    <label className="block text-sm font-bold text-gray-700 mb-1.5 sm:mb-2">経費対象期間</label>
-                    <div className="flex items-center gap-2">
-                      <div className="relative flex-1 min-w-0">
-                        <input type="date" value={caseItem.expense期間Start || ''} onChange={(e) => updateCase(index, 'expense期間Start', e.target.value)} className="w-full px-2.5 sm:px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50] text-gray-600 text-xs sm:text-sm min-w-0" />
-                      </div>
-                      <span className="text-gray-500 shrink-0 font-medium">~</span>
-                      <div className="relative flex-1 min-w-0">
-                        <input type="date" value={caseItem.expense期間End || ''} onChange={(e) => updateCase(index, 'expense期間End', e.target.value)} className="w-full px-2.5 sm:px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50] text-gray-600 text-xs sm:text-sm min-w-0" />
-                      </div>
-                    </div>
-                    <p className="text-xs text-gray-400 mt-2 leading-tight">注: 経費精算は通常、その月の11日から27日の間に処理されます。</p>
-                  </div>
                 </div>
 
-                {renderDynamicFields(caseItem.expenseType, index, caseItem)}
+                <div key={`${caseItem.expenseType || 'none'}-${index}`}>
+                  {renderDynamicFields(caseItem.expenseType, index, caseItem)}
+                </div>
 
                 {/* Bill/Receipt Upload and Remark for this case */}
                 <div className="border-t border-gray-200 mt-6 pt-6">
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
                     <div>
-                      <label className="block text-sm font-bold text-gray-700 mb-2">請求書/領収書のアップロード</label>
-                      <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center hover:bg-gray-50 transition-colors cursor-pointer relative">
+                      <label className="block text-sm font-bold text-gray-700 mb-2">請求書/領収書のアップロード <span className="text-red-500">*</span></label>
+                      <div className={`border-2 border-dashed ${caseItem.receipts && caseItem.receipts.length > 0 ? 'border-green-400 bg-green-50/20' : 'border-gray-300'} rounded-lg p-4 text-center hover:bg-gray-50 transition-colors cursor-pointer relative`}>
                         <input type="file" multiple accept=".jpg,.jpeg,.png,.pdf,image/jpeg,image/png,application/pdf" className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" onChange={(e) => handleFileUpload(e, index)} />
-                        <FileText className="w-6 h-6 mx-auto text-gray-400 mb-2" />
+                        <FileText className={`w-6 h-6 mx-auto mb-2 ${caseItem.receipts && caseItem.receipts.length > 0 ? 'text-green-500' : 'text-gray-400'}`} />
                         <p className="text-xs sm:text-sm text-gray-600">ファイルをドラッグ＆ドロップするか、クリックしてアップロード</p>
+                        <p className="text-xs text-red-500 mt-1 font-medium">※ 請求書または領収書の添付は必須です</p>
                       </div>
                       {caseItem.receipts && caseItem.receipts.length > 0 && (
                         <div className="mt-3 flex flex-wrap gap-2">
                           {caseItem.receipts.map((file, i) => (
-                            <div key={i} className="text-xs bg-gray-100 text-gray-700 px-2 py-1 rounded flex items-center max-w-full">
-                              <FileText className="w-3 h-3 mr-1 shrink-0" /> 
+                            <div key={i} className="text-xs bg-gray-100 text-gray-700 px-2.5 py-1 rounded-md flex items-center max-w-full border border-gray-200">
+                              <FileText className="w-3 h-3 mr-1 shrink-0 text-[#162D50]" /> 
                               <span className="truncate">{typeof file === 'string' ? (file.includes('-') ? file.split('-').slice(1).join('-') : file) : file.name}</span>
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  const updated = [...cases];
+                                  updated[index].receipts = updated[index].receipts.filter((_, idx) => idx !== i);
+                                  setCases(updated);
+                                }}
+                                className="ml-2 text-gray-400 hover:text-red-500 font-bold text-sm cursor-pointer"
+                                title="削除"
+                              >×</button>
                             </div>
                           ))}
                         </div>
@@ -1110,6 +1140,10 @@ export default function StaffClaimRequest() {
                   }
                   if (c.advancerCategory !== 'Office' && !c.advancerName) {
                     toast.error(`案件カテゴリ #${i+1} の支払処理タイプを入力してください。`);
+                    return;
+                  }
+                  if (!c.receipts || c.receipts.length === 0) {
+                    toast.error(`案件カテゴリ #${i+1} の請求書/領収書をアップロードしてください。`);
                     return;
                   }
                 }
