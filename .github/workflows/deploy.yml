@@ -49,6 +49,9 @@ jobs:
           cache-to: type=gha,mode=max
 
       # ── 6. Copy deployment files to Server ────────────────────────────────
+      # /home/ubuntu/oms is the permanent home for docker-compose.yml and
+      # nginx.conf on the server. It is NOT web-served and must NOT be deleted
+      # after deploy — docker compose needs these files for future operations.
       - name: Copy deployment files
         uses: appleboy/scp-action@master
         with:
@@ -56,7 +59,7 @@ jobs:
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SERVER_SSH_KEY }}
           source: "docker-compose.yml,deploy.sh,client/nginx.conf"
-          target: "/home/ubuntu/oms-temp"
+          target: "/home/ubuntu/oms"
 
       # ── 7. Deploy to Live Server via SSH ─────────────────────────────────
       - name: Deploy to Live Server
@@ -66,8 +69,6 @@ jobs:
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SERVER_SSH_KEY }}
           script: |
-            cd /home/ubuntu/oms-temp
+            cd /home/ubuntu/oms
             chmod +x deploy.sh
             ./deploy.sh
-            cd /home/ubuntu
-            rm -rf /home/ubuntu/oms-temp
