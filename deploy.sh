@@ -1,12 +1,18 @@
 #!/bin/bash
 set -e
 
-ENV_FILE="/var/www/oms-temp-config/.env"
+ENV_FILE="/var/www/oms-config/.env"
 
 if [ ! -f "$ENV_FILE" ]; then
-    if [ -f /home/ubuntu/.env ]; then
+    if [ -f /var/www/oms-temp-config/.env ]; then
+        echo "Copying .env from /var/www/oms-temp-config/.env to $ENV_FILE..."
+        sudo mkdir -p /var/www/oms-config
+        sudo cp /var/www/oms-temp-config/.env "$ENV_FILE"
+        sudo chown ubuntu:ubuntu "$ENV_FILE"
+        sudo chmod 640 "$ENV_FILE"
+    elif [ -f /home/ubuntu/.env ]; then
         echo "Found .env in /home/ubuntu/.env, copying to $ENV_FILE..."
-        sudo mkdir -p /var/www/oms-temp-config
+        sudo mkdir -p /var/www/oms-config
         sudo cp /home/ubuntu/.env "$ENV_FILE"
         sudo chown ubuntu:ubuntu "$ENV_FILE"
         sudo chmod 640 "$ENV_FILE"
@@ -16,7 +22,7 @@ if [ ! -f "$ENV_FILE" ]; then
     fi
 fi
 
-# Ensure no .env sits inside oms-temp directory
+# Ensure no .env sits inside application directory
 rm -f .env .env.bak*
 
 echo "Pulling latest images..."
