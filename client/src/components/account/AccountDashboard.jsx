@@ -188,7 +188,7 @@ export default function AccountDashboard({ setActiveTab }) {
         {/* Card 2 — Pending Settlements (clickable) */}
         <div
           onClick={() => {
-            sessionStorage.setItem('caseListTab', 'Office');
+            sessionStorage.setItem('caseListTab', 'Staff');
             setActiveTab?.('Case List');
           }}
           className="bg-white rounded-xl p-5 border border-gray-100 shadow-sm cursor-pointer hover:border-amber-300 hover:shadow-md transition-all group"
@@ -381,7 +381,7 @@ export default function AccountDashboard({ setActiveTab }) {
           </div>
           <button
             onClick={() => {
-              sessionStorage.setItem('caseListTab', 'Office');
+              sessionStorage.setItem('caseListTab', 'Staff');
               setActiveTab?.('Case List');
             }}
             className="text-xs font-bold text-[#162D50] hover:text-blue-700 flex items-center gap-1 transition-colors self-start sm:self-auto cursor-pointer"
@@ -451,7 +451,7 @@ export default function AccountDashboard({ setActiveTab }) {
                         onClick={() => {
                           sessionStorage.setItem('openCaseDetailId', String(c.id));
                           sessionStorage.setItem('openCaseIsClaim', c.isClaim ? 'true' : 'false');
-                          const targetTab = c.isClaim || c.type === 'Staff Case' ? 'Staff' : (c.isHostCompanyCase || c.type === 'Host Company Case' ? 'Host Company' : 'Office');
+                          const targetTab = c.isHostCompanyCase || c.type === 'Host Company Case' ? 'Host Company' : 'Staff';
                           sessionStorage.setItem('caseListTab', targetTab);
                           setActiveTab?.('Case List');
                         }}
