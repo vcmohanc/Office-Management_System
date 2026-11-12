@@ -804,51 +804,6 @@ export default function NewCase() {
                 <div key={`${caseItem.expenseType || 'none'}-${index}`}>
                   {renderDynamicFields(caseItem.expenseType, index, caseItem)}
                 </div>
-
-                {/* Bill/Receipt Upload and Remark for this case */}
-                <div className="border-t border-gray-200 mt-6 pt-6">
-                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
-                    <div>
-                      <label className="block text-sm font-bold text-gray-700 mb-2">請求書/領収書のアップロード <span className="text-red-500">*</span></label>
-                      <div className={`border-2 border-dashed ${caseItem.receipts && caseItem.receipts.length > 0 ? 'border-green-400 bg-green-50/20' : 'border-gray-300'} rounded-lg p-4 text-center hover:bg-gray-50 transition-colors cursor-pointer relative`}>
-                        <input type="file" multiple accept=".jpg,.jpeg,.png,.pdf,image/jpeg,image/png,application/pdf" className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" onChange={(e) => handleFileUpload(e, index)} />
-                        <FileText className={`w-6 h-6 mx-auto mb-2 ${caseItem.receipts && caseItem.receipts.length > 0 ? 'text-green-500' : 'text-gray-400'}`} />
-                        <p className="text-xs sm:text-sm text-gray-600">ファイルをドラッグ＆ドロップするか、クリックしてアップロード</p>
-                        <p className="text-xs text-red-500 mt-1 font-medium">※ 請求書または領収書の添付は必須です</p>
-                      </div>
-                      {caseItem.receipts && caseItem.receipts.length > 0 && (
-                        <div className="mt-3 flex flex-wrap gap-2">
-                          {caseItem.receipts.map((file, i) => (
-                            <div key={i} className="text-xs bg-gray-100 text-gray-700 px-2.5 py-1 rounded-md flex items-center max-w-full border border-gray-200">
-                              <FileText className="w-3 h-3 mr-1 shrink-0 text-[#162D50]" /> 
-                              <span className="truncate">{typeof file === 'string' ? (file.includes('-') ? file.split('-').slice(1).join('-') : file) : file.name}</span>
-                              <button
-                                type="button"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  const updated = [...cases];
-                                  updated[index].receipts = updated[index].receipts.filter((_, idx) => idx !== i);
-                                  setCases(updated);
-                                }}
-                                className="ml-2 text-gray-400 hover:text-red-500 font-bold text-sm cursor-pointer"
-                                title="削除"
-                              >×</button>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                    <div>
-                      <label className="block text-sm font-bold text-gray-700 mb-2">備考</label>
-                      <textarea 
-                        value={caseItem.remark || ''} 
-                        onChange={(e) => updateCase(index, 'remark', e.target.value)}
-                        placeholder="この案件に関する追加の詳細や備考を入力してください..." 
-                        className="w-full h-[100px] sm:h-[120px] px-3 sm:px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50] resize-none text-sm"
-                      ></textarea>
-                    </div>
-                  </div>
-                </div>
               </div>
             </div>
           ))}
@@ -1116,6 +1071,61 @@ export default function NewCase() {
               </button>
             </div>
           </div>
+
+          {/* 請求書/領収書のアップロード & 備考 Section */}
+          {cases.map((caseItem, index) => (
+            <div key={index} className="bg-white border border-gray-200 rounded-lg mb-6 sm:mb-8 shadow-xs">
+              <div className="p-4 sm:p-6">
+                {cases.length > 1 && (
+                  <div className="flex items-center text-[#162D50] font-bold text-base sm:text-lg mb-4">
+                    <FileText className="w-4 h-4 mr-2 shrink-0" />
+                    <span>案件カテゴリ #{index + 1} の請求書/領収書・備考</span>
+                  </div>
+                )}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+                  <div>
+                    <label className="block text-sm font-bold text-gray-700 mb-2">請求書/領収書のアップロード <span className="text-red-500">*</span></label>
+                    <div className={`border-2 border-dashed ${caseItem.receipts && caseItem.receipts.length > 0 ? 'border-green-400 bg-green-50/20' : 'border-gray-300'} rounded-lg p-4 text-center hover:bg-gray-50 transition-colors cursor-pointer relative`}>
+                      <input type="file" multiple accept=".jpg,.jpeg,.png,.pdf,image/jpeg,image/png,application/pdf" className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" onChange={(e) => handleFileUpload(e, index)} />
+                      <FileText className={`w-6 h-6 mx-auto mb-2 ${caseItem.receipts && caseItem.receipts.length > 0 ? 'text-green-500' : 'text-gray-400'}`} />
+                      <p className="text-xs sm:text-sm text-gray-600">ファイルをドラッグ＆ドロップするか、クリックしてアップロード</p>
+                      <p className="text-xs text-red-500 mt-1 font-medium">※ 請求書または領収書の添付は必須です</p>
+                    </div>
+                    {caseItem.receipts && caseItem.receipts.length > 0 && (
+                      <div className="mt-3 flex flex-wrap gap-2">
+                        {caseItem.receipts.map((file, i) => (
+                          <div key={i} className="text-xs bg-gray-100 text-gray-700 px-2.5 py-1 rounded-md flex items-center max-w-full border border-gray-200">
+                            <FileText className="w-3 h-3 mr-1 shrink-0 text-[#162D50]" /> 
+                            <span className="truncate">{typeof file === 'string' ? (file.includes('-') ? file.split('-').slice(1).join('-') : file) : file.name}</span>
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                const updated = [...cases];
+                                updated[index].receipts = updated[index].receipts.filter((_, idx) => idx !== i);
+                                setCases(updated);
+                              }}
+                              className="ml-2 text-gray-400 hover:text-red-500 font-bold text-sm cursor-pointer"
+                              title="削除"
+                            >×</button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                  <div>
+                    <label className="block text-sm font-bold text-gray-700 mb-2">備考</label>
+                    <textarea 
+                      value={caseItem.remark || ''} 
+                      onChange={(e) => updateCase(index, 'remark', e.target.value)}
+                      placeholder="この案件に関する追加の詳細や備考を入力してください..." 
+                      className="w-full h-[100px] sm:h-[120px] px-3 sm:px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50] resize-none text-sm"
+                    ></textarea>
+                  </div>
+                </div>
+              </div>
+            </div>
+          ))}
 
           {/* Next Button */}
           <div className="flex justify-end pt-2 sm:pt-4">
