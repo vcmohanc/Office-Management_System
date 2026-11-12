@@ -146,7 +146,7 @@ function PartnerDrawer({ mode, partner, onClose, onSaved }) {
 
   const validate = () => {
     const errs = {};
-    if (!formData.partner_name.trim()) errs.partner_name = 'パートナー名は必須です';
+    if (!formData.partner_name.trim()) errs.partner_name = 'クライアント名は必須です';
     if (!formData.industry) errs.industry = '業種を選択してください';
     if (!formData.status) errs.status = 'ステータスを選択してください';
     if (formData.contact_email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.contact_email)) {
@@ -223,7 +223,7 @@ function PartnerDrawer({ mode, partner, onClose, onSaved }) {
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-white font-semibold text-sm truncate">
-                  {formData.partner_name || 'パートナー名を入力してください'}
+                  {formData.partner_name || 'クライアント名を入力してください'}
                 </p>
                 <p className="text-blue-200 text-xs mt-0.5">{formData.industry || '業種未選択'}</p>
               </div>
@@ -272,7 +272,7 @@ function PartnerDrawer({ mode, partner, onClose, onSaved }) {
               {/* Partner Name */}
               <div>
                 <label className="block text-xs font-semibold text-gray-600 mb-1.5">
-                  パートナー企業名 <span className="text-red-500">*</span>
+                  クライアント名 <span className="text-red-500">*</span>
                 </label>
                 <input
                   name="partner_name"
@@ -802,7 +802,7 @@ export default function B2BDashboard() {
           <table className="w-full text-left">
             <thead>
               <tr className="border-b border-gray-100">
-                {['パートナー名', '業種', '担当者', '契約開始日', '契約終了日', '月間収益', 'ステータス', '操作'].map(h => (
+                {['クライアント名', '業種', '担当者', '契約開始日', '契約終了日', '月間収益', 'ステータス', '操作'].map(h => (
                   <th key={h} className={`py-3 px-4 text-xs font-semibold text-gray-400 uppercase tracking-wider ${h === '操作' ? 'text-center' : ''}`}>{h}</th>
                 ))}
               </tr>

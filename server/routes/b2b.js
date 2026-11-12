@@ -124,7 +124,7 @@ router.post('/partners', requireRole('admin', 'account'), async (req, res) => {
     } = req.body;
 
     if (!partner_name?.trim() || !industry?.trim() || !status) {
-      return res.status(400).json({ message: 'パートナー名、業種、ステータスは必須項目です。' });
+      return res.status(400).json({ message: 'クライアント名、業種、ステータスは必須項目です。' });
     }
 
     const partner = new B2BPartner({
@@ -161,7 +161,7 @@ router.put('/partners/:id', requireRole('admin', 'account'), async (req, res) =>
     } = req.body;
 
     if (!partner_name?.trim() || !industry?.trim() || !status) {
-      return res.status(400).json({ message: 'パートナー名、業種、ステータスは必須項目です。' });
+      return res.status(400).json({ message: 'クライアント名、業種、ステータスは必須項目です。' });
     }
 
     const partner = await B2BPartner.findByIdAndUpdate(

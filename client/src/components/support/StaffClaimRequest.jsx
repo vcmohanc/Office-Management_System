@@ -956,7 +956,7 @@ export default function StaffClaimRequest() {
             );
           })()}
 
-          {/* パートナー名 Section */}
+          {/* クライアント Section */}
           {cases.some(c => isFarmParty(c.advancerCategory) || isFarmParty(c.bearingParty)) && (() => {
             const currentWorkplace = staffInfo.branchAndFarmName;
             const workplaceMatched = currentWorkplace
@@ -975,7 +975,7 @@ export default function StaffClaimRequest() {
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center gap-2 text-[#162D50] font-bold text-base sm:text-lg">
                     <Building2 className="w-4 h-4 shrink-0" />
-                    パートナー名
+                    クライアント
                     {partnerAutoFilled && (
                       <span className="text-xs font-normal bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">配属先より自動入力</span>
                     )}
@@ -994,20 +994,20 @@ export default function StaffClaimRequest() {
                   <div className="flex items-center gap-2 mb-3 p-2.5 bg-blue-50 border border-blue-100 rounded-md">
                     <span className="text-blue-500 text-sm">🔗</span>
                     <p className="text-xs text-blue-700 font-medium">
-                      「{currentWorkplace}」に対応するパートナー企業が{workplaceMatched.length}社見つかりました
+                      「{currentWorkplace}」に対応するクライアントが{workplaceMatched.length}社見つかりました
                     </p>
                   </div>
                 )}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
                   <div>
                     <label className="block text-sm font-bold text-gray-700 mb-1.5 sm:mb-2">
-                      パートナー名<span className="text-gray-400 font-normal ml-1">（任意）</span>
+                      クライアント<span className="text-gray-400 font-normal ml-1">（任意）</span>
                     </label>
                     <div className="relative">
                       <input
                         type="text"
                         value={partnerInfo.partnerName || partnerSearch}
-                        placeholder="パートナー名を検索・入力"
+                        placeholder="クライアントを検索・入力"
                         onFocus={() => { if (partnerInfo.partnerId) return; setShowPartnerDropdown(true); }}
                         onChange={e => {
                           setPartnerSearch(e.target.value);
@@ -1025,7 +1025,7 @@ export default function StaffClaimRequest() {
                             <div className="px-3 py-1.5 bg-blue-50 border-b border-blue-100 text-xs text-blue-600 font-semibold">配属先マッチ ({workplaceMatched.length}社)</div>
                           )}
                           {filteredPartners.length === 0 ? (
-                            <div className="px-4 py-3 text-sm text-gray-400">パートナーが見つかりません</div>
+                            <div className="px-4 py-3 text-sm text-gray-400">クライアントが見つかりません</div>
                           ) : filteredPartners.map(p => {
                             const isMatch = workplaceMatchedIds.has(p._id);
                             return (
@@ -1055,7 +1055,7 @@ export default function StaffClaimRequest() {
                   {partnerInfo.partnerId ? (
                     <div className={`border rounded-md p-3 sm:p-4 flex flex-col gap-2 ${partnerAutoFilled ? 'bg-blue-50 border-blue-100' : 'bg-indigo-50 border-indigo-100'}`}>
                       <div className="flex items-center justify-between mb-1">
-                        <span className="text-xs font-bold text-[#162D50]">パートナー詳細</span>
+                        <span className="text-xs font-bold text-[#162D50]">クライアント詳細</span>
                         <div className="flex items-center gap-1.5">
                           {partnerAutoFilled && partnerInfo.matchedCount > 1 && (
                             <span className="text-xs bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded font-semibold">{partnerInfo.matchedCount}社マッチ中</span>
@@ -1075,7 +1075,7 @@ export default function StaffClaimRequest() {
                       {partnerInfo.website && <div className="flex items-center gap-2"><span className="text-xs text-gray-500 w-14 shrink-0">サイト</span><a href={partnerInfo.website} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-600 hover:underline truncate">{partnerInfo.website}</a></div>}
                       {partnerAutoFilled && partnerInfo.matchedCount > 1 && (
                         <div className="mt-1 pt-2 border-t border-blue-100">
-                          <p className="text-xs text-blue-600">他のパートナーを選ぶには「クリア」してドロップダウンを開いてください</p>
+                          <p className="text-xs text-blue-600">他のクライアントを選ぶには「クリア」してドロップダウンを開いてください</p>
                         </div>
                       )}
                     </div>
@@ -1084,8 +1084,8 @@ export default function StaffClaimRequest() {
                       <span className="text-2xl">🏢</span>
                       <p className="text-sm text-gray-400 text-center">
                         {currentWorkplace && workplaceMatched.length === 0
-                          ? 'この配属先に対応するパートナーがいません'
-                          : 'パートナーを選択すると詳細が表示されます'}
+                          ? 'この配属先に対応するクライアントがいません'
+                          : 'クライアントを選択すると詳細が表示されます'}
                       </p>
                     </div>
                   )}
