@@ -653,8 +653,8 @@ export default function StaffClaimRequest() {
         return (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 mb-6 sm:mb-8 bg-blue-50/70 p-4 sm:p-6 rounded-lg border border-blue-100">
             <div>
-              <label className="block text-sm font-bold text-gray-700 mb-1.5 sm:mb-2">対象ホスト企業/農場</label>
-              <input type="text" value={caseItem.hostCompany || ''} onChange={(e) => updateCase(index, 'hostCompany', e.target.value)} placeholder="企業/農場を入力" className="w-full px-3 sm:px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50] text-sm" />
+              <label className="block text-sm font-bold text-gray-700 mb-1.5 sm:mb-2">クライアント</label>
+              <input type="text" value={caseItem.hostCompany || ''} onChange={(e) => updateCase(index, 'hostCompany', e.target.value)} placeholder="クライアントを入力" className="w-full px-3 sm:px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50] text-sm" />
             </div>
             <div>
               <label className="block text-sm font-bold text-gray-700 mb-1.5 sm:mb-2">利用開始日</label>
