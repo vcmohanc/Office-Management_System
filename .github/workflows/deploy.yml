@@ -49,32 +49,28 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-      # ── 6. Copy deployment files to Server ────────────────────────────────
-      # /home/ubuntu/oms is the permanent home for docker-compose.yml and
-      # nginx.conf on the server. It is NOT web-served and must NOT be deleted
-      # after deploy — docker compose needs these files for future operations.
-      - name: Copy deployment files
-        uses: appleboy/scp-action@master
-        with:
-          host: ${{ secrets.SERVER_HOST }}
-          username: ${{ secrets.SERVER_USER }}
-          key: ${{ secrets.SERVER_SSH_KEY }}
-          timeout: 30s
-          command_timeout: 5m
-          source: "docker-compose.yml,deploy.sh,client/nginx.conf"
-          target: "/home/ubuntu/oms"
+      # ── 6 & 7. Copy deployment files & Deploy to Live Server via OpenSSH ───
+      - name: Copy deployment files & Deploy to Live Server
+        timeout-minutes: 15
+        env:
+          SSH_KEY: ${{ secrets.SERVER_SSH_KEY }}
+          SERVER_HOST: ${{ secrets.SERVER_HOST }}
+          SERVER_USER: ${{ secrets.SERVER_USER }}
+        run: |
+          set -euo pipefail
+          KEY_FILE="$RUNNER_TEMP/deploy_key"
+          printf '%s\n' "$SSH_KEY" > "$KEY_FILE"
+          chmod 600 "$KEY_FILE"
+          trap 'rm -f "$KEY_FILE"' EXIT
 
-      # ── 7. Deploy to Live Server via SSH ─────────────────────────────────
-      - name: Deploy to Live Server
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: ${{ secrets.SERVER_HOST }}
-          username: ${{ secrets.SERVER_USER }}
-          key: ${{ secrets.SERVER_SSH_KEY }}
-          timeout: 30s
-          command_timeout: 15m
-          script_stop: true
-          script: |
-            cd /home/ubuntu/oms
-            chmod +x deploy.sh
-            ./deploy.sh
+          SSH_OPTS="-i $KEY_FILE -o StrictHostKeyChecking=no -o ConnectTimeout=15 -o ServerAliveInterval=15 -o ServerAliveCountMax=4 -o BatchMode=yes"
+
+          echo "Creating target directories on server..."
+          ssh $SSH_OPTS "$SERVER_USER@$SERVER_HOST" "mkdir -p /home/ubuntu/oms/client"
+
+          echo "Copying deployment files..."
+          scp $SSH_OPTS docker-compose.yml deploy.sh "$SERVER_USER@$SERVER_HOST:/home/ubuntu/oms/"
+          scp $SSH_OPTS client/nginx.conf "$SERVER_USER@$SERVER_HOST:/home/ubuntu/oms/client/"
+
+          echo "Running deploy.sh on server..."
+          ssh $SSH_OPTS "$SERVER_USER@$SERVER_HOST" "cd /home/ubuntu/oms && chmod +x deploy.sh && ./deploy.sh"
