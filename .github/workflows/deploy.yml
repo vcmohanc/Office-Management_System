@@ -63,14 +63,9 @@ jobs:
           chmod 600 "$KEY_FILE"
           trap 'rm -f "$KEY_FILE"' EXIT
 
-          SSH_OPTS="-i $KEY_FILE -o StrictHostKeyChecking=no -o ConnectTimeout=15 -o ServerAliveInterval=15 -o ServerAliveCountMax=4 -o BatchMode=yes"
+          SSH_OPTS="-i $KEY_FILE -o StrictHostKeyChecking=no -o ConnectTimeout=30 -o ServerAliveInterval=30 -o ServerAliveCountMax=10 -o BatchMode=yes"
 
-          echo "Creating target directories on server..."
-          ssh $SSH_OPTS "$SERVER_USER@$SERVER_HOST" "mkdir -p /home/ubuntu/oms/client"
-
-          echo "Copying deployment files..."
-          scp $SSH_OPTS docker-compose.yml deploy.sh "$SERVER_USER@$SERVER_HOST:/home/ubuntu/oms/"
-          scp $SSH_OPTS client/nginx.conf "$SERVER_USER@$SERVER_HOST:/home/ubuntu/oms/client/"
-
-          echo "Running deploy.sh on server..."
-          ssh $SSH_OPTS "$SERVER_USER@$SERVER_HOST" "cd /home/ubuntu/oms && chmod +x deploy.sh && ./deploy.sh"
+          echo "Copying deployment files and running deploy.sh on server..."
+          tar -czf - docker-compose.yml deploy.sh client/nginx.conf | \
+            ssh $SSH_OPTS -T "$SERVER_USER@$SERVER_HOST" \
+              "mkdir -p /home/ubuntu/oms/client && tar -xzf - -C /home/ubuntu/oms && cd /home/ubuntu/oms && chmod +x deploy.sh && ./deploy.sh"

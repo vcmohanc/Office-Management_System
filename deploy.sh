@@ -18,6 +18,16 @@ if [ ! -f "$ENV_FILE" ]; then
     fi
 fi
 
+# 0. Ensure swap is enabled on micro instances (1 GB RAM) to prevent OOM freezes
+if [ -z "$(sudo swapon --show --noheadings 2>/dev/null)" ] && [ ! -f /swapfile ]; then
+    echo "Creating 2G swapfile..."
+    sudo fallocate -l 2G /swapfile 2>/dev/null || sudo dd if=/dev/zero of=/swapfile bs=1M count=2048
+    sudo chmod 600 /swapfile
+    sudo mkswap /swapfile
+    sudo swapon /swapfile
+    grep -q '/swapfile' /etc/fstab || echo '/swapfile none swap sw 0 0' | sudo tee -a /etc/fstab >/dev/null
+fi
+
 # 1. Stop and disable host nginx so Docker client container can bind ports 80 and 443
 echo "Stopping host nginx if active..."
 sudo systemctl stop nginx 2>/dev/null || true
