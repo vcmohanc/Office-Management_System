@@ -212,10 +212,11 @@ mongoose.connect(process.env.MONGO_URI || 'mongodb://localhost:27017/office_mana
 })
   .then(() => {
     console.log('Connected to MongoDB (office_manage_system)');
-    app.listen(PORT, () => {
+    app.listen(PORT, '0.0.0.0', () => {
       console.log(`Server running on port ${PORT}`);
     });
   })
   .catch((err) => {
     console.error('Error connecting to MongoDB:', err.message);
+    process.exit(1);
   });
