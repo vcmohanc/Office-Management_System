@@ -1,0 +1,8 @@
+# Local development overrides — adds build contexts so you can build from source.
+# Usage: docker compose -f docker-compose.yml -f docker-compose.dev.yml -f docker-compose.override.yml up
+services:
+  client:
+    build: ./client
+
+  server:
+    build: ./server

@@ -1,6 +1,5 @@
 services:
   client:
-    build: ./client
     image: mohanc35/oms-client:latest
     restart: unless-stopped
     ports:
@@ -15,7 +14,6 @@ services:
         condition: service_started
 
   server:
-    build: ./server
     image: mohanc35/oms-server:latest
     restart: unless-stopped
     environment:

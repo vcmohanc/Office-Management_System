@@ -46,10 +46,10 @@ echo "Pulling latest images..."
 sudo docker compose --env-file "$ENV_FILE" pull server
 sudo docker compose --env-file "$ENV_FILE" pull client
 
-# 5. Bring down old containers cleanly and start with new images
+# 5. Bring down old containers cleanly and start with new images (pre-built in CI — never build on server)
 echo "Starting application..."
 sudo docker compose --env-file "$ENV_FILE" down --remove-orphans 2>/dev/null || true
-sudo docker compose --env-file "$ENV_FILE" up -d --remove-orphans
+sudo docker compose --env-file "$ENV_FILE" up -d --no-build --remove-orphans
 
 echo "Waiting for server to be healthy..."
 HEALTHY=0
