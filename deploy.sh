@@ -26,26 +26,39 @@ sudo systemctl disable nginx 2>/dev/null || true
 # 2. Scrub any stale .env copies from web-accessible or deploy-temp directories.
 rm -f .env .env.bak*
 
-# 3. Pull latest images sequentially to avoid CPU/memory spike on micro instances
+# 3. Stop app containers and prune dangling images before pulling to free RAM/disk on micro instances
+echo "Stopping app containers before pull..."
+sudo docker compose --env-file "$ENV_FILE" stop client server 2>/dev/null || true
+sudo docker image prune -f
+
+# 4. Pull latest images sequentially to avoid CPU/memory spike on micro instances
 echo "Pulling latest images..."
 sudo docker compose --env-file "$ENV_FILE" pull server
 sudo docker compose --env-file "$ENV_FILE" pull client
 
-# 4. Bring down old containers cleanly and start with new images
+# 5. Bring down old containers cleanly and start with new images
 echo "Starting application..."
 sudo docker compose --env-file "$ENV_FILE" down --remove-orphans 2>/dev/null || true
 sudo docker compose --env-file "$ENV_FILE" up -d --remove-orphans
 
 echo "Waiting for server to be healthy..."
+HEALTHY=0
 for i in $(seq 1 30); do
     STATUS=$(sudo docker compose --env-file "$ENV_FILE" ps --format json server 2>/dev/null | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('Health',''))" 2>/dev/null || echo "")
     if [ "$STATUS" = "healthy" ]; then
         echo "  Server is healthy."
+        HEALTHY=1
         break
     fi
     echo "  Waiting... ($i/30)"
     sleep 3
 done
+
+if [ "$HEALTHY" -ne 1 ]; then
+    echo "ERROR: Server did not become healthy in time. Recent logs:"
+    sudo docker compose --env-file "$ENV_FILE" logs --tail=50 server || true
+    exit 1
+fi
 
 echo "Running database seed (skips existing records)..."
 sudo docker compose --env-file "$ENV_FILE" exec -T server node scripts/seedB2B.js && echo "  B2B seed complete." || echo "  B2B seed skipped or already up to date."

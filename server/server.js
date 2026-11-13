@@ -177,6 +177,12 @@ app.get('/api/uploads/:filename', verifyFileToken, (req, res) => {
   res.sendFile(filePath);
 });
 
+// Health check endpoint
+app.get('/api/health', (_req, res) => {
+  const dbReady = mongoose.connection.readyState === 1;
+  res.status(dbReady ? 200 : 503).json({ ok: dbReady, db: dbReady ? 'connected' : 'disconnected' });
+});
+
 // Public routes — no token required
 app.use('/api/auth', authRoutes);
 
@@ -200,6 +206,9 @@ app.get('/api/events', verifyFileToken, sseHandler);
 // MongoDB Connection
 mongoose.connect(process.env.MONGO_URI || 'mongodb://localhost:27017/office_manage_system', {
   dbName: 'office_manage_system',
+  serverSelectionTimeoutMS: 5000,
+  connectTimeoutMS: 10000,
+  socketTimeoutMS: 30000,
 })
   .then(() => {
     console.log('Connected to MongoDB (office_manage_system)');

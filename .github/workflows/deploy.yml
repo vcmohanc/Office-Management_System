@@ -9,6 +9,7 @@ jobs:
   build-and-deploy:
     name: Build, Push & Deploy
     runs-on: ubuntu-latest
+    timeout-minutes: 25
 
     steps:
       # ── 1. Checkout code ────────────────────────────────────────────────
@@ -58,6 +59,8 @@ jobs:
           host: ${{ secrets.SERVER_HOST }}
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SERVER_SSH_KEY }}
+          timeout: 30s
+          command_timeout: 5m
           source: "docker-compose.yml,deploy.sh,client/nginx.conf"
           target: "/home/ubuntu/oms"
 
@@ -68,8 +71,9 @@ jobs:
           host: ${{ secrets.SERVER_HOST }}
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SERVER_SSH_KEY }}
-          timeout: 60s
-          command_timeout: 30m
+          timeout: 30s
+          command_timeout: 15m
+          script_stop: true
           script: |
             cd /home/ubuntu/oms
             chmod +x deploy.sh

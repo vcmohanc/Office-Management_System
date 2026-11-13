@@ -6,29 +6,50 @@ export default function Login({ setToken }) {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
   const [showForgotMessage, setShowForgotMessage] = useState(false);
   const navigate = useNavigate();
 
   const handleLogin = async (e) => {
     e.preventDefault();
+    if (isLoading) return;
+    setError('');
+    setIsLoading(true);
+
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 20000);
+
     try {
       const apiUrl = import.meta.env.VITE_API_URL || '';
       const res = await fetch(`${apiUrl}/api/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username, password }),
+        signal: controller.signal,
       });
-      
+
       const text = await res.text();
-      let data = {};
-      try {
-        if (text) data = JSON.parse(text);
-      } catch (err) {
-        throw new Error(`Server returned invalid response (HTTP ${res.status}).`);
+      let data = null;
+      if (text) {
+        try {
+          data = JSON.parse(text);
+        } catch {
+          data = null;
+        }
       }
 
       if (!res.ok) {
-        throw new Error(data.error || data.message || `Login failed (HTTP ${res.status})`);
+        if (res.status === 504) {
+          throw new Error('サーバーの応答がタイムアウトしました。しばらく待ってからもう一度お試しください。(HTTP 504)');
+        }
+        if (res.status === 502 || res.status === 503) {
+          throw new Error(`サーバーに接続できません。しばらく待ってからもう一度お試しください。(HTTP ${res.status})`);
+        }
+        throw new Error(data?.error || data?.message || `ログインに失敗しました (HTTP ${res.status})`);
+      }
+
+      if (!data || !data.token) {
+        throw new Error(`Server returned invalid response (HTTP ${res.status}).`);
       }
 
       localStorage.setItem('token', data.token);
@@ -36,7 +57,14 @@ export default function Login({ setToken }) {
       setToken(data.token);
       navigate('/dashboard');
     } catch (err) {
-      setError(err.message);
+      if (err.name === 'AbortError') {
+        setError('サーバーの応答がタイムアウトしました。しばらく待ってからもう一度お試しください。');
+      } else {
+        setError(err.message);
+      }
+    } finally {
+      clearTimeout(timeoutId);
+      setIsLoading(false);
     }
   };
 
@@ -110,9 +138,10 @@ export default function Login({ setToken }) {
           <div>
             <button
               type="submit"
-              className="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors"
+              disabled={isLoading}
+              className="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 disabled:opacity-60 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors"
             >
-              サインイン
+              {isLoading ? 'サインイン中...' : 'サインイン'}
             </button>
           </div>
         </form>
