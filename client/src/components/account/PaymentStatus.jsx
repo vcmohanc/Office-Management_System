@@ -490,7 +490,7 @@ export default function PaymentStatus() {
 
     const isHostExport = activePaymentTab === 'Host Company';
     const headers = isHostExport
-      ? ['案件ID', '期間', '農場/ホスト企業名', '所在地/拠点', '経費の種類', '残額', 'ステータス', '回収条件']
+      ? ['案件ID', '期間', '農場/ホスト企業名', '所在地/拠点', '経費の種類', '残額', 'ステータス', '処理区分']
       : ['案件ID', '期間', '経費の種類', '残額', 'ステータス', '立替者カテゴリ', 'スタッフ名'];
     const csvRows = [headers.join(',')];
 
@@ -2344,7 +2344,7 @@ export default function PaymentStatus() {
               )}
               <th className="py-3 px-6">経費の種類</th>
               <th className="py-3 px-6">残額</th>
-              <th className="py-3 px-6">回収条件</th>
+              <th className="py-3 px-6">処理区分</th>
               <th className="py-3 px-6">ステータス</th>
               <th className="py-3 px-6 text-right">アクション</th>
             </tr>

@@ -946,7 +946,7 @@ export default function CaseList({ setActiveTab: onNavigate }) {
                 <span className="font-bold text-gray-800 text-sm">{c.currencySymbol}{c.displayTotal.toLocaleString()}</span>
               </div>
               <div className="flex justify-between items-center text-xs text-gray-600 mb-3 bg-gray-50 px-2.5 py-1.5 rounded border border-gray-100">
-                <span className="text-gray-400">回収条件</span>
+                <span className="text-gray-400">処理区分</span>
                 <span className="font-medium text-gray-700">{c.collectionTerms?.method || '会社経費（VC負担）'} ({c.collectionTerms?.plan || '一括払い'})</span>
               </div>
               <div className="flex items-center gap-4 pt-3 border-t border-gray-100">
@@ -988,7 +988,7 @@ export default function CaseList({ setActiveTab: onNavigate }) {
               <th className="py-3 px-6">スタッフ名</th>
               <th className="py-3 px-6">経費の種類</th>
               <th className="py-3 px-6">合計金額</th>
-              <th className="py-3 px-6">回収条件</th>
+              <th className="py-3 px-6">処理区分</th>
               <th className="py-3 px-6">ステータス</th>
               <th className="py-3 px-6">アクション</th>
             </tr>
