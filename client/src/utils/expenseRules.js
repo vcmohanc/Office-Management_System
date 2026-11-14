@@ -95,17 +95,24 @@ export const optionLabelJP = {
   'Host Company': 'ホスト企業',
 
   // Payment / Settlement / Collection Methods
-  'salary_addition': '給与に加算',
-  'salary_deduction': '給与から控除',
-  'client_invoice': '顧客へ請求',
-  'direct_transfer': '本人へ振込',
+  'salary_addition': '給与加算',
+  'salary_deduction': '給与控除',
+  'client_invoice': '顧客請求',
+  'direct_transfer': '銀行振込',
   'bank_transfer': '銀行振込',
   'Bank Transfer': '銀行振込',
   'Company Expense (VC Bears)': '会社経費（VC負担）',
   'Farm and VC Asset Transfer Agreement': 'Farm and VC Asset Transfer Agreement',
   '給与控除': '給与控除',
-  '給与振込': '給与振込',
-  '請求書発行': '請求書発行',
+  '給与振込': '給与控除',
+  '給与に加算': '給与加算',
+  '給与加算': '給与加算',
+  '請求書発行': '顧客請求',
+  '顧客へ請求': '顧客請求',
+  '顧客請求': '顧客請求',
+  '本人へ振込': '銀行振込',
+  '本人へ振込・銀行振込': '銀行振込',
+  '請求書発行・顧客へ請求': '顧客請求',
   '自動引落': '自動引落',
   '相殺処理': '相殺処理',
   '直接集金': '直接集金',
@@ -406,9 +413,9 @@ export function calculateSuggestedExpenseCost({
  */
 export const PAYMENT_PROCESSING_OPTIONS = [
   { value: 'salary_deduction', label: '給与控除 (Salary deduction)' },
-  { value: 'salary_addition', label: '給与に加算 (Addition to salary)' },
-  { value: 'client_invoice', label: '請求書発行・顧客へ請求 (Invoice from client company)' },
-  { value: 'direct_transfer', label: '本人へ振込・銀行振込 (Transfer to person concerned)' },
+  { value: 'salary_addition', label: '給与加算 (Addition to salary)' },
+  { value: 'client_invoice', label: '顧客請求 (Invoice from client company)' },
+  { value: 'direct_transfer', label: '銀行振込 (Transfer to person concerned)' },
 ];
 
 /**
@@ -440,11 +447,13 @@ export const PAYMENT_TO_COLLECTION_MAP = {
     { value: '自動引落', label: '自動引落 (Automatic Debit)' }
   ],
   'salary_addition': [
-    { value: '給与振込', label: '給与振込 (Payroll Transfer)' },
+    { value: '給与加算', label: '給与加算 (Payroll Addition)' },
+    { value: '給与控除', label: '給与控除 (Payroll Transfer)' },
     { value: '銀行振込', label: '銀行振込 (Bank Transfer)' }
   ],
   'client_invoice': [
-    { value: '請求書発行', label: '請求書発行 (Invoice Issuance)' },
+    { value: '顧客請求', label: '顧客請求 (Invoice to Client)' },
+    { value: '請求書発行', label: '顧客請求 (Invoice Issuance)' },
     { value: '銀行振込', label: '銀行振込 (Bank Transfer)' },
     { value: '相殺処理', label: '相殺処理 (Offset / Settlement)' }
   ],

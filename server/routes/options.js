@@ -1,4 +1,5 @@
 import express from 'express';
+import mongoose from 'mongoose';
 import Option from '../models/Option.js';
 import { requireRole } from '../middleware/auth.js';
 
@@ -8,6 +9,19 @@ const isOthers = (o) => {
   const v = (o.value || '').toLowerCase();
   const l = (o.label || '').toLowerCase();
   return v === 'others' || v === 'other' || v === 'その他' || l === 'others' || l === 'other' || l === 'その他';
+};
+
+const buildOptionIdQuery = (id) => {
+  const raw = String(id || '').trim();
+  if (/^[0-9a-fA-F]{24}$/.test(raw) && mongoose.Types.ObjectId.isValid(raw)) {
+    return {
+      $or: [
+        { _id: new mongoose.Types.ObjectId(raw) },
+        { _id: raw }
+      ]
+    };
+  }
+  return { _id: raw };
 };
 
 // GET /api/options - Fetch all options (ordered, with others at the end for ExpenseType)
@@ -65,7 +79,7 @@ router.post('/', requireRole('account', 'admin'), async (req, res) => {
 router.put('/:id', requireRole('account', 'admin'), async (req, res) => {
   try {
     const { type, label, value, defaultAdvancerCategory, defaultBearingParty, defaultPaymentMethod, order } = req.body;
-    const option = await Option.findById(req.params.id);
+    const option = await Option.findOne(buildOptionIdQuery(req.params.id));
     if (!option) {
       return res.status(404).json({ error: '対象の項目が見つかりません。' });
     }
@@ -77,12 +91,13 @@ router.put('/:id', requireRole('account', 'admin'), async (req, res) => {
 
     const targetType = (type && !isOthers(option)) ? String(type).trim() : option.type;
 
-    if (label !== undefined) option.label = label.trim();
+    if (label !== undefined) option.label = String(label).trim();
     if (!isOthers(option)) {
-      const targetVal = (value !== undefined && value.trim()) ? value.trim() : option.value;
+      const trimmedVal = typeof value === 'string' ? value.trim() : '';
+      const targetVal = trimmedVal || option.value;
       if (targetVal !== option.value || targetType !== option.type) {
         // Check duplicate
-        const dup = await Option.findOne({ _id: { $ne: option._id }, type: targetType, value: targetVal });
+        const dup = await Option.collection.findOne({ _id: { $ne: option._id }, type: targetType, value: targetVal });
         if (dup) {
           return res.status(400).json({ error: `同種別の項目（コード: ${targetVal}）が既に存在します。` });
         }
@@ -90,13 +105,21 @@ router.put('/:id', requireRole('account', 'admin'), async (req, res) => {
         option.value = targetVal;
       }
     }
-    if (defaultAdvancerCategory !== undefined) option.defaultAdvancerCategory = defaultAdvancerCategory;
-    if (defaultBearingParty !== undefined) option.defaultBearingParty = defaultBearingParty;
-    if (defaultPaymentMethod !== undefined) option.defaultPaymentMethod = defaultPaymentMethod;
-    if (order !== undefined) option.order = order;
 
-    await option.save();
-    res.json(option);
+    const updateFields = {
+      type: option.type,
+      label: option.label,
+      value: option.value,
+      defaultAdvancerCategory: defaultAdvancerCategory !== undefined ? defaultAdvancerCategory : (option.defaultAdvancerCategory || ''),
+      defaultBearingParty: defaultBearingParty !== undefined ? defaultBearingParty : (option.defaultBearingParty || ''),
+      defaultPaymentMethod: defaultPaymentMethod !== undefined ? defaultPaymentMethod : (option.defaultPaymentMethod || ''),
+      order: order !== undefined ? order : (option.order ?? 0),
+      updatedAt: new Date()
+    };
+
+    await Option.collection.updateOne({ _id: option._id }, { $set: updateFields });
+    const updatedOption = await Option.findOne({ _id: option._id });
+    res.json(updatedOption || { ...option.toObject(), ...updateFields });
   } catch (err) {
     console.error('Error updating option:', err);
     res.status(500).json({ error: '項目の更新に失敗しました。' });
@@ -106,17 +129,42 @@ router.put('/:id', requireRole('account', 'admin'), async (req, res) => {
 // DELETE /api/options/:id - Delete an option
 router.delete('/:id', requireRole('account', 'admin'), async (req, res) => {
   try {
-    const option = await Option.findById(req.params.id);
+    let option = null;
+    const rawId = String(req.params.id || '').trim();
+    if (rawId && rawId !== 'undefined' && rawId !== 'null' && rawId !== 'by-key') {
+      option = await Option.findOne(buildOptionIdQuery(rawId));
+    }
+
+    // Fallback lookup by (type, value) if ID did not match (e.g. legacy string _id or missing _id)
+    if (!option && req.query?.type && req.query?.value) {
+      option = await Option.findOne({
+        type: String(req.query.type).trim(),
+        value: String(req.query.value).trim()
+      });
+    }
+
     if (!option) {
       return res.status(404).json({ error: '対象の項目が見つかりません。' });
     }
 
-    // Protect 'others' from deletion
+    // Protect the last remaining 'others' from deletion, while allowing duplicate cleanup
     if (isOthers(option)) {
-      return res.status(400).json({ error: '「その他」はシステムの基本項目のため削除できません。' });
+      const sameTypeOptions = await Option.find({ type: option.type }).lean();
+      const othersCount = sameTypeOptions.filter(isOthers).length;
+      if (othersCount <= 1) {
+        return res.status(400).json({ error: '「その他」はシステムの基本項目のため削除できません。' });
+      }
     }
 
-    await Option.findByIdAndDelete(req.params.id);
+    let delResult = await Option.collection.deleteOne({ _id: option._id });
+    if (delResult.deletedCount === 0 && rawId && rawId !== 'by-key') {
+      delResult = await Option.collection.deleteOne(buildOptionIdQuery(rawId));
+    }
+
+    if (delResult.deletedCount === 0) {
+      return res.status(404).json({ error: '対象の項目が見つかりません。' });
+    }
+
     res.json({ success: true, message: '項目を削除しました。' });
   } catch (err) {
     console.error('Error deleting option:', err);

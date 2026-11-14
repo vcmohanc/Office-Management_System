@@ -33,17 +33,27 @@ import {
 } from '../../utils/expenseRules.js';
 
 const STANDARD_PAYMENT_TYPES = [
-  { value: 'salary_addition', label: '給与に加算', desc: 'salary_addition' },
+  { value: 'salary_addition', label: '給与加算', desc: 'salary_addition' },
   { value: 'salary_deduction', label: '給与控除', desc: 'salary_deduction' },
-  { value: 'client_invoice', label: '請求書発行・顧客へ請求', desc: 'client_invoice' },
-  { value: 'direct_transfer', label: '本人へ振込・銀行振込', desc: 'direct_transfer' }
+  { value: 'client_invoice', label: '顧客請求', desc: 'client_invoice' },
+  { value: 'direct_transfer', label: '銀行振込', desc: 'direct_transfer' }
 ];
 
 const PAYMENT_METHOD_LABELS = {
-  'salary_addition': { label: '給与に加算', color: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
+  'salary_addition': { label: '給与加算', color: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
   'salary_deduction': { label: '給与控除', color: 'bg-rose-50 text-rose-700 border-rose-200' },
-  'client_invoice': { label: '顧客へ請求', color: 'bg-blue-50 text-blue-700 border-blue-200' },
-  'direct_transfer': { label: '本人へ振込', color: 'bg-purple-50 text-purple-700 border-purple-200' }
+  'client_invoice': { label: '顧客請求', color: 'bg-blue-50 text-blue-700 border-blue-200' },
+  'direct_transfer': { label: '銀行振込', color: 'bg-purple-50 text-purple-700 border-purple-200' },
+  '給与に加算': { label: '給与加算', color: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
+  '給与加算': { label: '給与加算', color: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
+  '給与振込': { label: '給与控除', color: 'bg-rose-50 text-rose-700 border-rose-200' },
+  '給与控除': { label: '給与控除', color: 'bg-rose-50 text-rose-700 border-rose-200' },
+  '請求書発行・顧客へ請求': { label: '顧客請求', color: 'bg-blue-50 text-blue-700 border-blue-200' },
+  '顧客へ請求': { label: '顧客請求', color: 'bg-blue-50 text-blue-700 border-blue-200' },
+  '顧客請求': { label: '顧客請求', color: 'bg-blue-50 text-blue-700 border-blue-200' },
+  '本人へ振込・銀行振込': { label: '銀行振込', color: 'bg-purple-50 text-purple-700 border-purple-200' },
+  '本人へ振込': { label: '銀行振込', color: 'bg-purple-50 text-purple-700 border-purple-200' },
+  '銀行振込': { label: '銀行振込', color: 'bg-purple-50 text-purple-700 border-purple-200' }
 };
 
 const getPaymentMethodDisplay = (method) => {
@@ -126,6 +136,7 @@ export default function CaseCategoryManagement() {
       if (!seen.has(c.value)) {
         seen.add(c.value);
         list.push({
+          type: c.type || 'PaymentType',
           value: c.value,
           label: toJP(c.label) || c.label,
           desc: c.value,
@@ -180,7 +191,12 @@ export default function CaseCategoryManagement() {
   const openEditModal = (item) => {
     setModalMode('edit');
     setEditingItem(item);
-    setFormType(item.type);
+    const resolvedType = item.type || (
+      subTab === 'advancers' ? 'AdvancerCategory' :
+      subTab === 'bearers' ? 'BearingParty' :
+      subTab === 'paymentTypes' ? 'PaymentType' : 'ExpenseType'
+    );
+    setFormType(resolvedType);
     setFormLabel(item.label || '');
     setFormValue(item.value || '');
     
@@ -274,7 +290,7 @@ export default function CaseCategoryManagement() {
           closeModal();
           window.dispatchEvent(new CustomEvent('oms_options_updated'));
         } else {
-          const errData = await res.json();
+          const errData = await res.json().catch(() => ({}));
           toast.error(errData.error || '登録に失敗しました');
         }
       } else {
@@ -289,7 +305,8 @@ export default function CaseCategoryManagement() {
           defaultPaymentMethod: targetType === 'ExpenseType' ? finalPaymentMethod : ''
         };
 
-        const res = await apiFetch(`/api/options/${editingItem._id}`, {
+        const editId = editingItem?._id?.$oid || editingItem?._id;
+        const res = await apiFetch(`/api/options/${encodeURIComponent(editId)}`, {
           method: 'PUT',
           body: JSON.stringify(payload)
         });
@@ -301,7 +318,7 @@ export default function CaseCategoryManagement() {
           closeModal();
           window.dispatchEvent(new CustomEvent('oms_options_updated'));
         } else {
-          const errData = await res.json();
+          const errData = await res.json().catch(() => ({}));
           toast.error(errData.error || '更新に失敗しました');
         }
       }
@@ -322,16 +339,18 @@ export default function CaseCategoryManagement() {
     if (!confirm) return;
 
     try {
-      const res = await apiFetch(`/api/options/${item._id}`, {
+      const rawId = item?._id?.$oid || item?._id || 'by-key';
+      const url = `/api/options/${encodeURIComponent(rawId)}?type=${encodeURIComponent(item.type || '')}&value=${encodeURIComponent(item.value || '')}`;
+      const res = await apiFetch(url, {
         method: 'DELETE'
       });
 
       if (res.ok) {
-        setOptions(prev => prev.filter(o => o._id !== item._id));
+        setOptions(prev => prev.filter(o => (item._id ? o._id !== item._id : !(o.type === item.type && o.value === item.value))));
         toast.success(`「${toJP(item.label)}」を削除しました`);
         window.dispatchEvent(new CustomEvent('oms_options_updated'));
       } else {
-        const errData = await res.json();
+        const errData = await res.json().catch(() => ({}));
         toast.error(errData.error || '削除に失敗しました');
       }
     } catch (err) {
@@ -582,7 +601,7 @@ export default function CaseCategoryManagement() {
                   <th className="py-3 px-4">システムコード</th>
                   <th className="py-3 px-4">デフォルト立替者</th>
                   <th className="py-3 px-4">デフォルト負担先</th>
-                  <th className="py-3 px-4">自動判定支払タイプ</th>
+                  <th className="py-3 px-4">支払区分（自動判定）</th>
                   <th className="py-3 px-4 text-center">操作</th>
                 </tr>
               </thead>
@@ -1062,11 +1081,11 @@ export default function CaseCategoryManagement() {
                     </div>
                   </div>
 
-                  {/* 自動判定支払タイプ with manual option input capability */}
+                  {/* 支払区分（自動判定） with manual option input capability */}
                   <div>
                     <div className="flex items-center justify-between mb-1">
                       <label className="block text-xs font-semibold text-gray-600">
-                        自動判定支払タイプ
+                        支払区分（自動判定）
                       </label>
                       <button
                         type="button"
@@ -1106,10 +1125,10 @@ export default function CaseCategoryManagement() {
                       >
                         <option value="">自動判定（立替者・負担先から自動算出）</option>
                         <optgroup label="標準の支払処理タイプ">
-                          <option value="salary_addition">給与に加算 (salary_addition)</option>
+                          <option value="salary_addition">給与加算 (salary_addition)</option>
                           <option value="salary_deduction">給与控除 (salary_deduction)</option>
-                          <option value="client_invoice">請求書発行・顧客へ請求 (client_invoice)</option>
-                          <option value="direct_transfer">本人へ振込・銀行振込 (direct_transfer)</option>
+                          <option value="client_invoice">顧客請求 (client_invoice)</option>
+                          <option value="direct_transfer">銀行振込 (direct_transfer)</option>
                         </optgroup>
                         {customPaymentTypes.length > 0 && (
                           <optgroup label="手動追加された支払処理タイプ">

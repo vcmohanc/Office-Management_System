@@ -595,7 +595,7 @@ export default function PaymentEntry() {
       }
 
       let txHead = [];
-      if (pMethod === '給与振込' || pMethod === '給与控除' || pMethod === '給与に加算' || pMethod === 'Pay in Salary' || pMethod === 'Payroll Deduction') {
+      if (pMethod === '給与振込' || pMethod === '給与控除' || pMethod === '給与に加算' || pMethod === '給与加算' || pMethod === 'Pay in Salary' || pMethod === 'Payroll Deduction') {
         txHead = ['回次', '日付', '支払金額', '残額', 'ステータス', '給与期間', '参照番号'];
       } else if (pMethod === '小切手' || pMethod === 'Company Check') {
         txHead = ['回次', '日付', '支払金額', '残額', 'ステータス', '小切手番号', '送付先', '参照番号'];
@@ -653,7 +653,7 @@ export default function PaymentEntry() {
           status
         ];
 
-        if (pMethod === '給与振込' || pMethod === '給与控除' || pMethod === '給与に加算' || pMethod === 'Pay in Salary' || pMethod === 'Payroll Deduction') {
+        if (pMethod === '給与振込' || pMethod === '給与控除' || pMethod === '給与に加算' || pMethod === '給与加算' || pMethod === 'Pay in Salary' || pMethod === 'Payroll Deduction') {
           txRow.push(dest.payroll期間 || '—', refいいえ);
         } else if (pMethod === '小切手' || pMethod === 'Company Check') {
           txRow.push(dest.checkNumber || '—', dest.checkDelivery || '—', refいいえ);
@@ -1504,13 +1504,13 @@ function PaymentEntryForm({ caseId, termNumber, navigate }) {
                 >
                   <option value="" disabled>支払い方法を選択</option>
                   <option value="Bank Transfer">銀行振込</option>
-                  <option value="Pay in Salary">給与振込</option>
+                  <option value="Pay in Salary">給与控除</option>
                   <option value="Petty Cash">小口現金</option>
                   <option value="Company Check">小切手</option>
                   <option value="Corporate Card">法人カード</option>
                   <option value="Cash">現金</option>
                   <option value="Payroll Deduction">給与控除</option>
-                  <option value="給与に加算">給与に加算</option>
+                  <option value="給与加算">給与加算</option>
                 </select>
               </div>
               

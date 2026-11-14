@@ -64,7 +64,7 @@ export default function StaffClaimRequest() {
   const [prefTravelRates, setPrefTravelRates] = useState(() => loadTravelRateMatrix());
   const [unsettledBalance, setUnsettledBalance] = useState(0);
   const [includeBalance, setIncludeBalance] = useState(false);
-  const [settlementMethod, setSettlementMethod] = useState('給与に加算');
+  const [settlementMethod, setSettlementMethod] = useState('給与加算');
   const [recoveryPlan, setRecoveryPlan] = useState('給与控除（3ヶ月）');
   const [expectedSettlementDate, setExpectedSettlementDate] = useState('');
   const [collectionMethod, setCollectionMethod] = useState('方法を選択');
@@ -1449,7 +1449,7 @@ export default function StaffClaimRequest() {
                 <div className="space-y-3 sm:space-y-4 text-xs sm:text-sm">
                   <div className="flex justify-between items-center">
                     <span className="text-blue-200">支払い方向</span>
-                    <span className="font-medium">{direction === 'ADD' ? '給与に加算 (Addition)' : '給与から控除 (Deduction)'}</span>
+                    <span className="font-medium">{direction === 'ADD' ? '給与加算 (Addition)' : '給与控除 (Deduction)'}</span>
                   </div>
                   {direction === 'DEDUCT' && (
                     <>

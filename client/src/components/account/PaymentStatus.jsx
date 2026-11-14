@@ -23,9 +23,9 @@ export const getPaymentProcessLabel = (val) => {
 
   const low = v.toLowerCase();
   if (low.includes('deduction') || low.includes('控除')) return '給与控除 (Salary deduction)';
-  if (low.includes('addition') || low.includes('加算')) return '給与に加算 (Addition to salary)';
-  if (low.includes('invoice') || low.includes('請求')) return '請求書発行・顧客へ請求 (Invoice from client company)';
-  if (low.includes('transfer') || low.includes('振込')) return '本人へ振込・銀行振込 (Transfer to person concerned)';
+  if (low.includes('addition') || low.includes('加算')) return '給与加算 (Addition to salary)';
+  if (low.includes('invoice') || low.includes('請求')) return '顧客請求 (Invoice from client company)';
+  if (low.includes('transfer') || low.includes('振込')) return '銀行振込 (Transfer to person concerned)';
   return val;
 };
 
@@ -194,8 +194,8 @@ export const getPaymentMethodsForProcessType = (processType = '', isHost = false
   }
   if (pt === 'salary_addition' || pt.includes('addition') || pt.includes('加算')) {
     return [
-      { value: '給与に加算', label: '給与に加算 (Addition to salary)' },
-      { value: '給与振込', label: '給与振込 (Payroll Transfer)' },
+      { value: '給与加算', label: '給与加算 (Addition to salary)' },
+      { value: '給与控除', label: '給与控除 (Payroll Transfer)' },
       { value: '銀行振込', label: '銀行振込 (Bank Transfer)' },
     ];
   }
@@ -426,8 +426,8 @@ export default function PaymentStatus() {
     } else if (pt === 'salary_addition' || pt.includes('addition') || pt.includes('加算')) {
       const setMethod = selectedCase.settlement_method || selectedCase.settlementMethod || '';
       if (setMethod.includes('振込') && !setMethod.includes('給与')) method = '銀行振込';
-      else if (setMethod.includes('給与振込') || setMethod.includes('Payroll')) method = '給与振込';
-      else method = '給与に加算';
+      else if (setMethod.includes('給与振込') || setMethod.includes('Payroll') || setMethod.includes('控除')) method = '給与控除';
+      else method = '給与加算';
     } else if (pt === 'client_invoice' || pt.includes('invoice') || pt.includes('請求')) {
       method = '銀行振込';
     } else if (pt === 'direct_transfer' || pt.includes('transfer') || pt.includes('振込')) {
@@ -447,7 +447,7 @@ export default function PaymentStatus() {
       newDestDetails.bankName = bankInfo.bankName || selectedCase.bankName || selectedCase.bank_name || '';
       newDestDetails.branchCode = bankInfo.branchCode || selectedCase.branchCode || selectedCase.branch_code || '';
       newDestDetails.accountNumber = bankInfo.accountNumber || selectedCase.accountNumber || selectedCase.account_number || '';
-    } else if (finalMethod === '給与控除' || finalMethod === '給与振込' || finalMethod === '給与に加算') {
+    } else if (finalMethod === '給与控除' || finalMethod === '給与振込' || finalMethod === '給与に加算' || finalMethod === '給与加算') {
       const paidTerms = selectedCase.paidTerms || 0;
       let targetMonth = new Date().toISOString().slice(0, 7);
       if (selectedCase.installment_schedule && selectedCase.installment_schedule.length > paidTerms) {
@@ -1630,7 +1630,7 @@ export default function PaymentStatus() {
                     </div>
                   </div>
                 )}
-                {(paymentMethod === '給与控除' || paymentMethod === '給与振込' || paymentMethod === '給与に加算') && (
+                {(paymentMethod === '給与控除' || paymentMethod === '給与振込' || paymentMethod === '給与に加算' || paymentMethod === '給与加算') && (
                   <div className="mb-3">
                     <label className="block text-[10px] font-bold uppercase tracking-widest mb-1 text-gray-400">対象給与期間</label>
                     <div className="font-mono text-sm">{destinationDetails.payroll期間 || '—'}</div>
@@ -1708,7 +1708,7 @@ export default function PaymentStatus() {
                               branchCode: prev.branchCode || bankInfo.branchCode || selectedCase?.branchCode || selectedCase?.branch_code || '',
                               accountNumber: prev.accountNumber || bankInfo.accountNumber || selectedCase?.accountNumber || selectedCase?.account_number || '',
                             }));
-                          } else if (newMethod === '給与控除' || newMethod === '給与振込' || newMethod === '給与に加算') {
+                          } else if (newMethod === '給与控除' || newMethod === '給与振込' || newMethod === '給与に加算' || newMethod === '給与加算') {
                             const paidTerms = selectedCase?.paidTerms || 0;
                             let targetMonth = new Date().toISOString().slice(0, 7);
                             if (selectedCase?.installment_schedule && selectedCase.installment_schedule.length > paidTerms) {
@@ -1769,7 +1769,7 @@ export default function PaymentStatus() {
                     </div>
                   )}
 
-                  {(paymentMethod === '給与控除' || paymentMethod === '給与振込' || paymentMethod === '給与に加算') && (
+                  {(paymentMethod === '給与控除' || paymentMethod === '給与振込' || paymentMethod === '給与に加算' || paymentMethod === '給与加算') && (
                     <div className="space-y-4 bg-white/50 p-5 rounded border-2 border-dashed border-gray-300">
                       <div>
                         <label className="block text-[10px] font-bold uppercase tracking-widest text-gray-700 mb-2">対象給与期間 <span className="text-red-500">*</span></label>

@@ -29,7 +29,10 @@ const SEEDS_DIR = resolve(__dirname, '../seeds');
 // ── Reference models ──────────────────────────────────────────────────────────
 
 const Option = mongoose.model('Option', new mongoose.Schema(
-  { type: String, label: String, value: String }, { timestamps: true }
+  {
+    _id: { type: mongoose.Schema.Types.Mixed, default: () => new mongoose.Types.ObjectId() },
+    type: String, label: String, value: String
+  }, { timestamps: true }
 ));
 const Region = mongoose.model('Region', new mongoose.Schema(
   { name1: String, name2: String }, { timestamps: true }
@@ -111,12 +114,23 @@ async function seedReference() {
       if (r.upsertedCount) inserted++; else if (r.modifiedCount) updated++;
     }
     const validTypes = [...new Set(optionsData.map(o => o.type))];
-    const existing = await Option.find({ type: { $in: validTypes } }).lean();
+    const existing = await Option.find({ type: { $in: validTypes } })
+      .sort({ updatedAt: -1, createdAt: 1 })
+      .lean();
     const validKeys = new Set(optionsData.map(o => `${o.type}:::${o.value}`));
-    const toDelete = existing.filter(o => !validKeys.has(`${o.type}:::${o.value}`)).map(o => o._id);
+    const seenKeys = new Set();
+    const toDelete = [];
+    for (const o of existing) {
+      const key = `${o.type}:::${o.value}`;
+      if (!validKeys.has(key) || seenKeys.has(key)) {
+        toDelete.push(o._id);
+      } else {
+        seenKeys.add(key);
+      }
+    }
     let deleted = 0;
-    if (toDelete.length > 0) { const r = await Option.deleteMany({ _id: { $in: toDelete } }); deleted = r.deletedCount; }
-    console.log(`  Options: ${inserted} inserted, ${updated} updated, ${deleted} stale deleted`);
+    if (toDelete.length > 0) { const r = await Option.collection.deleteMany({ _id: { $in: toDelete } }); deleted = r.deletedCount; }
+    console.log(`  Options: ${inserted} inserted, ${updated} updated, ${deleted} stale/duplicate deleted`);
   }
 
   // 2. Regions

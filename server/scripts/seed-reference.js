@@ -29,6 +29,7 @@ const SEEDS_DIR = resolve(__dirname, '../seeds');
 // ── Models ───────────────────────────────────────────────────────────────────
 
 const Option = mongoose.model('Option', new mongoose.Schema({
+  _id: { type: mongoose.Schema.Types.Mixed, default: () => new mongoose.Types.ObjectId() },
   type: String, label: String, value: String
 }, { timestamps: true }));
 
@@ -77,21 +78,30 @@ async function run() {
       else if (result.modifiedCount) updated++;
     }
 
-    // Prune stale options that are not in options.json
+    // Prune stale or duplicate options that are not in options.json or appear more than once
     const validTypes = [...new Set(optionsData.map(o => o.type))];
-    const existing = await Option.find({ type: { $in: validTypes } }).lean();
+    const existing = await Option.find({ type: { $in: validTypes } })
+      .sort({ updatedAt: -1, createdAt: 1 })
+      .lean();
     const validKeys = new Set(optionsData.map(o => `${o.type}:::${o.value}`));
-    const idsToDelete = existing
-      .filter(o => !validKeys.has(`${o.type}:::${o.value}`))
-      .map(o => o._id);
+    const seenKeys = new Set();
+    const idsToDelete = [];
+    for (const o of existing) {
+      const key = `${o.type}:::${o.value}`;
+      if (!validKeys.has(key) || seenKeys.has(key)) {
+        idsToDelete.push(o._id);
+      } else {
+        seenKeys.add(key);
+      }
+    }
 
     let deleted = 0;
     if (idsToDelete.length > 0) {
-      const delResult = await Option.deleteMany({ _id: { $in: idsToDelete } });
+      const delResult = await Option.collection.deleteMany({ _id: { $in: idsToDelete } });
       deleted = delResult.deletedCount;
     }
 
-    console.log(`  Options: ${inserted} inserted, ${updated} updated, ${deleted} stale deleted`);
+    console.log(`  Options: ${inserted} inserted, ${updated} updated, ${deleted} stale/duplicate deleted`);
   }
 
   // 2. Regions — upsert by (name1, name2)

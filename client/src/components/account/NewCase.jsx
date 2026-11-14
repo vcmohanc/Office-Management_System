@@ -65,7 +65,7 @@ export default function NewCase() {
   const [prefTravelRates, setPrefTravelRates] = useState(() => loadTravelRateMatrix());
   const [unsettledBalance, setUnsettledBalance] = useState(0);
   const [includeBalance, setIncludeBalance] = useState(false);
-  const [settlementMethod, setSettlementMethod] = useState('給与に加算');
+  const [settlementMethod, setSettlementMethod] = useState('給与加算');
   const [recoveryPlan, setRecoveryPlan] = useState('給与控除（3ヶ月）');
   const [expectedSettlementDate, setExpectedSettlementDate] = useState('');
   const [collectionMethod, setCollectionMethod] = useState('方法を選択');
@@ -1228,7 +1228,7 @@ export default function NewCase() {
                     <span>立替者への精算 (Settlement to advancer)</span>
                   </div>
                   <span className="self-start sm:self-auto bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-1 rounded border border-blue-400">
-                    Company-borne (負担先: {cases[0].bearingParty}) → 給与に加算
+                    Company-borne (負担先: {cases[0].bearingParty}) → 給与加算
                   </span>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
@@ -1504,7 +1504,7 @@ export default function NewCase() {
                 <div className="space-y-3 sm:space-y-4 text-xs sm:text-sm">
                   <div className="flex justify-between items-center">
                     <span className="text-blue-200">支払い方向</span>
-                    <span className="font-medium">{direction === 'ADD' ? '給与に加算 (Addition)' : '給与から控除 (Deduction)'}</span>
+                    <span className="font-medium">{direction === 'ADD' ? '給与加算 (Addition)' : '給与控除 (Deduction)'}</span>
                   </div>
                   {direction === 'ADD' ? (
                     <>
