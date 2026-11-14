@@ -1,4 +1,5 @@
-export const COMPANY_BEARERS = ['VC', 'Office', 'Host Company', 'Dispatch destination: Farm'];
+// 'Farm' is the actual DB option value; 'Dispatch destination: Farm' is the legacy mapping label
+export const COMPANY_BEARERS = ['VC', 'Office', 'Host Company', 'Dispatch destination: Farm', 'Farm'];
 
 /**
  * Determine the payment direction based on the cost bearer (負担先).

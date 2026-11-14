@@ -264,6 +264,11 @@ export default function NewCase() {
         newCases[index].advancerCategory = defaultAdv;
         newCases[index].bearingParty = defaultBear;
         newCases[index].advancerName = '';
+      } else {
+        // No auto-fill rule: reset to placeholders so stale values from a previous type don't carry over
+        newCases[index].advancerCategory = 'カテゴリを選択';
+        newCases[index].bearingParty = '負担先を選択';
+        newCases[index].advancerName = '';
       }
     }
 
@@ -831,11 +836,11 @@ export default function NewCase() {
                       <input type="text" placeholder="氏名を入力" list="employeeNames" value={staffInfo.fullName} onChange={e => {
                         const val = e.target.value;
                         setStaffInfo({...staffInfo, fullName: val});
-                        const match = validEmployees.find(emp => (emp.romajiName && emp.romajiName.toLowerCase() === val.toLowerCase()) || (emp.katakanaName && emp.katakanaName === val));
+                        const match = employees.find(emp => (emp.romajiName && emp.romajiName.toLowerCase() === val.toLowerCase()) || (emp.katakanaName && emp.katakanaName === val));
                         if (match) {
-                          setStaffInfo({...staffInfo, 
-                            fullName: val, 
-                            id: 'ID-' + match._id.slice(-6).toUpperCase(), 
+                          setStaffInfo({...staffInfo,
+                            fullName: val,
+                            id: 'ID-' + match._id.slice(-6).toUpperCase(),
                             location: match.location || staffInfo.location,
                             branchAndFarmName: Array.isArray(match.assignedWorkPlace) ? (match.assignedWorkPlace.length > 0 ? match.assignedWorkPlace[0] : '') : (match.assignedWorkPlace || ''),
                             availableWorkPlaces: Array.isArray(match.assignedWorkPlace) ? match.assignedWorkPlace : (match.assignedWorkPlace ? [match.assignedWorkPlace] : []),
@@ -845,7 +850,7 @@ export default function NewCase() {
                         }
                       }} onBlur={() => {
                         if (staffInfo.fullName) {
-                          const match = validEmployees.find(emp => (emp.romajiName && emp.romajiName.toLowerCase() === staffInfo.fullName.toLowerCase()) || (emp.katakanaName && emp.katakanaName === staffInfo.fullName));
+                          const match = employees.find(emp => (emp.romajiName && emp.romajiName.toLowerCase() === staffInfo.fullName.toLowerCase()) || (emp.katakanaName && emp.katakanaName === staffInfo.fullName));
                           if (!match) {
                             setStaffInfo({...staffInfo, fullName: '', id: '', location: '', branchAndFarmName: '', visaステータス: '', visaAvailableTime: ''});
                             toast.error('リストから有効なスタッフを選択してください。');
@@ -864,11 +869,11 @@ export default function NewCase() {
                         const val = e.target.value;
                         setStaffInfo({...staffInfo, id: val});
                         const searchId = val.replace('ID-', '').toLowerCase();
-                        const match = validEmployees.find(emp => emp._id.slice(-6) === searchId);
+                        const match = employees.find(emp => emp._id.slice(-6) === searchId);
                         if (match) {
-                          setStaffInfo({...staffInfo, 
-                            id: val, 
-                            fullName: match.romajiName || match.katakanaName || staffInfo.fullName, 
+                          setStaffInfo({...staffInfo,
+                            id: val,
+                            fullName: match.romajiName || match.katakanaName || staffInfo.fullName,
                             location: match.location || staffInfo.location,
                             branchAndFarmName: Array.isArray(match.assignedWorkPlace) ? (match.assignedWorkPlace.length > 0 ? match.assignedWorkPlace[0] : '') : (match.assignedWorkPlace || ''),
                             availableWorkPlaces: Array.isArray(match.assignedWorkPlace) ? match.assignedWorkPlace : (match.assignedWorkPlace ? [match.assignedWorkPlace] : []),
@@ -879,7 +884,7 @@ export default function NewCase() {
                       }} onBlur={() => {
                         if (staffInfo.id) {
                           const searchId = staffInfo.id.replace('ID-', '').toLowerCase();
-                          const match = validEmployees.find(emp => emp._id.slice(-6) === searchId);
+                          const match = employees.find(emp => emp._id.slice(-6) === searchId);
                           if (!match) {
                             setStaffInfo({...staffInfo, fullName: '', id: '', location: '', branchAndFarmName: '', visaステータス: '', visaAvailableTime: ''});
                             toast.error('リストから有効なスタッフIDを選択してください。');
