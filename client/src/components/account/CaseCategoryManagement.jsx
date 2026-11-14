@@ -226,7 +226,7 @@ export default function CaseCategoryManagement() {
 
     // Determine target payment method
     let finalPaymentMethod = formDefaultPaymentMethod;
-    if (isCustomPaymentInput && customPaymentText.trim()) {
+    if (formType === 'ExpenseType' && isCustomPaymentInput && customPaymentText.trim()) {
       finalPaymentMethod = customPaymentText.trim();
 
       // If custom option doesn't exist yet, automatically persist it as a PaymentType option!
@@ -257,9 +257,9 @@ export default function CaseCategoryManagement() {
           type: formType,
           label,
           value,
-          defaultAdvancerCategory: formDefaultAdvancer,
-          defaultBearingParty: formDefaultBearer,
-          defaultPaymentMethod: finalPaymentMethod
+          defaultAdvancerCategory: formType === 'ExpenseType' ? formDefaultAdvancer : '',
+          defaultBearingParty: formType === 'ExpenseType' ? formDefaultBearer : '',
+          defaultPaymentMethod: formType === 'ExpenseType' ? finalPaymentMethod : ''
         };
 
         const res = await apiFetch('/api/options', {
@@ -279,12 +279,14 @@ export default function CaseCategoryManagement() {
         }
       } else {
         // Edit
+        const targetType = isOthers(editingItem) ? editingItem.type : formType;
         const payload = {
+          type: targetType,
           label,
           value: isOthers(editingItem) ? editingItem.value : value,
-          defaultAdvancerCategory: formDefaultAdvancer,
-          defaultBearingParty: formDefaultBearer,
-          defaultPaymentMethod: finalPaymentMethod
+          defaultAdvancerCategory: targetType === 'ExpenseType' ? formDefaultAdvancer : '',
+          defaultBearingParty: targetType === 'ExpenseType' ? formDefaultBearer : '',
+          defaultPaymentMethod: targetType === 'ExpenseType' ? finalPaymentMethod : ''
         };
 
         const res = await apiFetch(`/api/options/${editingItem._id}`, {
@@ -552,21 +554,19 @@ export default function CaseCategoryManagement() {
             )}
           </div>
 
-          {subTab !== 'rules' && (
-            <button
-              onClick={() => {
-                const targetType = 
-                  subTab === 'expenseTypes' ? 'ExpenseType' : 
-                  subTab === 'advancers' ? 'AdvancerCategory' : 
-                  subTab === 'bearers' ? 'BearingParty' : 'PaymentType';
-                openCreateModal(targetType);
-              }}
-              className="flex items-center space-x-1.5 px-3 py-1.5 text-xs sm:text-sm font-semibold text-white bg-[#162D50] hover:bg-[#0f1f38] rounded-md transition-colors shadow-xs shrink-0 cursor-pointer"
-            >
-              <Plus className="w-4 h-4" />
-              <span>新規追加</span>
-            </button>
-          )}
+          <button
+            onClick={() => {
+              const targetType = 
+                subTab === 'advancers' ? 'AdvancerCategory' : 
+                subTab === 'bearers' ? 'BearingParty' : 
+                subTab === 'paymentTypes' ? 'PaymentType' : 'ExpenseType';
+              openCreateModal(targetType);
+            }}
+            className="flex items-center space-x-1.5 px-3 py-1.5 text-xs sm:text-sm font-semibold text-white bg-[#162D50] hover:bg-[#0f1f38] rounded-md transition-colors shadow-xs shrink-0 cursor-pointer"
+          >
+            <Plus className="w-4 h-4" />
+            <span>新規追加</span>
+          </button>
         </div>
       </div>
 
@@ -964,19 +964,19 @@ export default function CaseCategoryManagement() {
             <form onSubmit={handleSave} className="p-6 space-y-4 text-sm">
               <div>
                 <label className="block font-bold text-gray-700 mb-1">
-                  項目種別
+                  項目種別 <span className="text-red-500">*</span>
                 </label>
-                <input
-                  type="text"
-                  disabled
-                  value={
-                    formType === 'ExpenseType' ? '経費の種類 (ExpenseType)' :
-                    formType === 'AdvancerCategory' ? '立替者カテゴリ (AdvancerCategory)' :
-                    formType === 'BearingParty' ? '負担先 (BearingParty)' :
-                    '支払処理タイプ (PaymentType)'
-                  }
-                  className="w-full px-3 py-2 border border-gray-200 bg-gray-100 rounded-md text-gray-600 text-xs font-medium"
-                />
+                <select
+                  value={formType}
+                  disabled={modalMode === 'edit' && isOthers(editingItem)}
+                  onChange={(e) => setFormType(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 bg-white rounded-md text-gray-700 text-xs font-medium focus:outline-none focus:ring-1 focus:ring-[#162D50] disabled:bg-gray-100 disabled:text-gray-500"
+                >
+                  <option value="ExpenseType">経費の種類 (ExpenseType)</option>
+                  <option value="AdvancerCategory">立替者カテゴリ (AdvancerCategory)</option>
+                  <option value="BearingParty">負担先 (BearingParty)</option>
+                  <option value="PaymentType">支払処理タイプ (PaymentType)</option>
+                </select>
               </div>
 
               <div>

@@ -64,7 +64,7 @@ router.post('/', requireRole('account', 'admin'), async (req, res) => {
 // PUT /api/options/:id - Update an option
 router.put('/:id', requireRole('account', 'admin'), async (req, res) => {
   try {
-    const { label, value, defaultAdvancerCategory, defaultBearingParty, defaultPaymentMethod, order } = req.body;
+    const { type, label, value, defaultAdvancerCategory, defaultBearingParty, defaultPaymentMethod, order } = req.body;
     const option = await Option.findById(req.params.id);
     if (!option) {
       return res.status(404).json({ error: '対象の項目が見つかりません。' });
@@ -75,16 +75,19 @@ router.put('/:id', requireRole('account', 'admin'), async (req, res) => {
       return res.status(400).json({ error: '「その他」のシステムコードは変更できません。' });
     }
 
+    const targetType = (type && !isOthers(option)) ? String(type).trim() : option.type;
+
     if (label !== undefined) option.label = label.trim();
-    if (value !== undefined && !isOthers(option)) {
-      const trimmedVal = value.trim();
-      if (trimmedVal !== option.value) {
+    if (!isOthers(option)) {
+      const targetVal = (value !== undefined && value.trim()) ? value.trim() : option.value;
+      if (targetVal !== option.value || targetType !== option.type) {
         // Check duplicate
-        const dup = await Option.findOne({ _id: { $ne: option._id }, type: option.type, value: trimmedVal });
+        const dup = await Option.findOne({ _id: { $ne: option._id }, type: targetType, value: targetVal });
         if (dup) {
-          return res.status(400).json({ error: `同種別の項目（コード: ${trimmedVal}）が既に存在します。` });
+          return res.status(400).json({ error: `同種別の項目（コード: ${targetVal}）が既に存在します。` });
         }
-        option.value = trimmedVal;
+        option.type = targetType;
+        option.value = targetVal;
       }
     }
     if (defaultAdvancerCategory !== undefined) option.defaultAdvancerCategory = defaultAdvancerCategory;
