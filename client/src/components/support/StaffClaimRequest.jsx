@@ -1214,53 +1214,6 @@ export default function StaffClaimRequest() {
           </div>
 
           {/* Conditional Sections Based on Direction */}
-          {direction === 'ADD' && (
-            <div className="bg-white border border-gray-200 rounded-lg shadow-xs mt-6">
-              <div className="p-4 sm:p-6">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4">
-                  <div className="flex items-center text-[#162D50] font-bold text-sm sm:text-base">
-                    <Landmark className="w-4 h-4 mr-2 shrink-0" />
-                    <span>立替者への精算 (Settlement to advancer)</span>
-                  </div>
-                  <span className="self-start sm:self-auto bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-1 rounded border border-blue-400">
-                    Company-borne (負担先: {cases[0].bearingParty}) → 給与に加算
-                  </span>
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
-                  <div>
-                    <label className="block text-sm font-bold text-gray-700 mb-1.5 sm:mb-2">精算方法 <span className="text-red-500">*</span></label>
-                    <div className="relative">
-                      <select value={settlementMethod} onChange={e => setSettlementMethod(e.target.value)} className="w-full px-3 sm:px-4 py-2 border border-gray-300 rounded-md bg-white text-gray-600 appearance-none text-sm">
-                        {PAYMENT_METHODS.map(m => (
-                          <option key={m.value} value={m.value}>{m.label}</option>
-                        ))}
-                      </select>
-                      <ChevronDown className="w-4 h-4 absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 pointer-events-none" />
-                    </div>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-bold text-gray-700 mb-1.5 sm:mb-2">給与反映月 (Payroll Month) <span className="text-red-500">*</span></label>
-                    <div className="relative">
-                      <input type="month" value={payrollMonth} onChange={e => setPayrollMonth(e.target.value)} min={new Date().toISOString().slice(0, 7)} className="w-full px-3 sm:px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50] text-gray-600 text-sm" />
-                    </div>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-bold text-gray-700 mb-1.5 sm:mb-2">精算予定日 <span className="text-red-500">*</span></label>
-                    <div className="relative">
-                      <input type="date" value={expectedSettlementDate} onChange={e => setExpectedSettlementDate(e.target.value)} className="w-full px-3 sm:px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50] text-gray-600 text-sm" />
-                    </div>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-bold text-gray-700 mb-1.5 sm:mb-2">備考 (Note)</label>
-                    <div className="relative">
-                      <input type="text" value={settlementNote} onChange={e => setSettlementNote(e.target.value)} placeholder="任意のメモを入力" className="w-full px-3 sm:px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50] text-gray-600 text-sm" />
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-
           {direction === 'DEDUCT' && (
             <div className="bg-white border border-gray-200 rounded-lg shadow-xs mt-6">
               <div className="p-4 sm:p-6">
@@ -1383,12 +1336,7 @@ export default function StaffClaimRequest() {
             </button>
             <button 
               onClick={() => {
-                if (direction === 'ADD') {
-                  if (!payrollMonth || !expectedSettlementDate) {
-                    toast.error('必須項目をすべて入力してください。');
-                    return;
-                  }
-                } else {
+                if (direction === 'DEDUCT') {
                   if (!collectionStartMonth) {
                     toast.error('回収開始月を入力してください。');
                     return;
@@ -1404,8 +1352,10 @@ export default function StaffClaimRequest() {
                   let isVisaInvalid = false;
                   
                   if (direction === 'ADD') {
-                    const expectedDate = new Date(expectedSettlementDate);
-                    if (visaDate < expectedDate) isVisaInvalid = true;
+                    if (expectedSettlementDate) {
+                      const expectedDate = new Date(expectedSettlementDate);
+                      if (visaDate < expectedDate) isVisaInvalid = true;
+                    }
                   } else {
                     let finalPlanDate = new Date(collectionStartMonth + '-01');
                     if (installmentCount > 1) {
@@ -1423,7 +1373,7 @@ export default function StaffClaimRequest() {
 
                 setNewCaseStep(3);
               }}
-              className={`w-full sm:w-auto justify-center px-8 py-3 rounded-md font-bold text-sm flex items-center transition-colors shadow-xs cursor-pointer ${((direction === 'ADD' && (!payrollMonth || !expectedSettlementDate)) || (direction === 'DEDUCT' && (!collectionStartMonth || !laborConsent))) ? 'bg-gray-300 text-gray-500 cursor-not-allowed' : 'bg-[#0A192F] text-white hover:bg-[#162D50]'}`}
+              className={`w-full sm:w-auto justify-center px-8 py-3 rounded-md font-bold text-sm flex items-center transition-colors shadow-xs cursor-pointer ${(direction === 'DEDUCT' && (!collectionStartMonth || !laborConsent)) ? 'bg-gray-300 text-gray-500 cursor-not-allowed' : 'bg-[#0A192F] text-white hover:bg-[#162D50]'}`}
             >
               次へ <ArrowRight className="w-4 h-4 ml-2" />
             </button>
@@ -1501,18 +1451,7 @@ export default function StaffClaimRequest() {
                     <span className="text-blue-200">支払い方向</span>
                     <span className="font-medium">{direction === 'ADD' ? '給与に加算 (Addition)' : '給与から控除 (Deduction)'}</span>
                   </div>
-                  {direction === 'ADD' ? (
-                    <>
-                      <div className="flex justify-between items-center">
-                        <span className="text-blue-200">給与反映月</span>
-                        <span className="font-medium">{payrollMonth}</span>
-                      </div>
-                      <div className="flex justify-between items-center">
-                        <span className="text-blue-200">精算予定日</span>
-                        <span className="font-medium">{expectedSettlementDate}</span>
-                      </div>
-                    </>
-                  ) : (
+                  {direction === 'DEDUCT' && (
                     <>
                       <div className="flex justify-between items-center">
                         <span className="text-blue-200">分割回数</span>
