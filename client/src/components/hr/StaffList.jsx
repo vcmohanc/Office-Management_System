@@ -12,7 +12,7 @@ export default function StaffList({ setActiveTab }) {
   const [selectedStaffToView, setSelectedStaffToView] = useState(null);
   const [selectedStaffToEdit, setSelectedStaffToEdit] = useState(null);
   const [actionModalStaff, setActionModalStaff] = useState(null);
-  const [activeTab, setLocalActiveTab] = useState('New Reg. Staff');
+  const [activeTab, setLocalActiveTab] = useState('All Staff');
   
   const [searchQuery, setSearchQuery] = useState('');
   const [joinDateFilter, setJoinDateFilter] = useState('');
