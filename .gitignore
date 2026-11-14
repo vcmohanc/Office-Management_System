@@ -7,4 +7,4 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 docker-compose.override.yml
-
+server/db_dump/
