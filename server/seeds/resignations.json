@@ -1,0 +1,23 @@
+[
+  {
+    "_id": "6abddd8a2bac39eb6d7a6ef2",
+    "employeeId": "6abb7666c637ac4ce2d9f9f8",
+    "status": "In Progress",
+    "reasonType": "会社都合",
+    "reasonDetail": "",
+    "submitDate": "2026-10-01T00:00:00.000Z",
+    "resignationDate": "2026-10-30T00:00:00.000Z",
+    "lastWorkingDate": "2026-10-30T00:00:00.000Z",
+    "usePaidLeave": false,
+    "accountStopDate": "2026-10-30T00:00:00.000Z",
+    "interviewEnabled": true,
+    "interviewDate": "2026-10-10",
+    "interviewTime": "16:11",
+    "finalPayDate": "2026-10-30T00:00:00.000Z",
+    "hasSeverance": false,
+    "severanceAmount": null,
+    "createdAt": "2026-10-01T04:11:54.093Z",
+    "updatedAt": "2026-10-01T04:11:54.093Z",
+    "__v": 0
+  }
+]

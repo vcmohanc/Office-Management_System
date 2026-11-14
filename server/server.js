@@ -16,6 +16,7 @@ import uploadRoutes from './routes/upload.js';
 import settlementRoutes from './routes/settlements.js';
 import staffRoutes from './routes/staff.js';
 import resignationRoutes from './routes/resignations.js';
+import adminRoutes from './routes/admin.js';
 import { verifyToken, verifyFileToken } from './middleware/auth.js';
 import { sseHandler } from './events.js';
 import fs from 'fs';
@@ -199,24 +200,58 @@ app.use('/api/regions', verifyToken, regionRoutes);
 app.use('/api/upload', verifyToken, uploadRoutes);
 app.use('/api/settlements', verifyToken, settlementRoutes);
 app.use('/api/resignations', verifyToken, resignationRoutes);
+app.use('/api/admin', verifyToken, adminRoutes);
 
 // SSE endpoint for real-time synchronization
 app.get('/api/events', verifyFileToken, sseHandler);
 
 // MongoDB Connection
-mongoose.connect(process.env.MONGO_URI || 'mongodb://localhost:27017/office_manage_system', {
-  dbName: 'office_manage_system',
-  serverSelectionTimeoutMS: 5000,
-  connectTimeoutMS: 10000,
-  socketTimeoutMS: 30000,
-})
-  .then(() => {
-    console.log('Connected to MongoDB (office_manage_system)');
-    app.listen(PORT, '0.0.0.0', () => {
-      console.log(`Server running on port ${PORT}`);
+function resolveMongoUri() {
+  const rawUri = (process.env.MONGO_URI || '').trim();
+  if (rawUri && !rawUri.includes('://:@')) {
+    return rawUri;
+  }
+  const user = (process.env.MONGO_INITDB_ROOT_USERNAME || '').trim();
+  const pass = (process.env.MONGO_INITDB_ROOT_PASSWORD || '').trim();
+  const db = (process.env.MONGO_INITDB_DATABASE || 'office_manage_system').trim();
+  const host = (process.env.MONGO_HOST || 'mongo').trim();
+  if (user && pass) {
+    return `mongodb://${encodeURIComponent(user)}:${encodeURIComponent(pass)}@${host}:27017/${encodeURIComponent(db)}?authSource=admin`;
+  }
+  return process.env.NODE_ENV === 'production'
+    ? `mongodb://${host}:27017/${encodeURIComponent(db)}`
+    : `mongodb://127.0.0.1:27017/${encodeURIComponent(db)}`;
+}
+
+const mongoUri = resolveMongoUri();
+
+mongoose.connection.on('connected', () => {
+  console.log('Connected to MongoDB (office_manage_system)');
+});
+
+mongoose.connection.on('error', (err) => {
+  console.error('MongoDB connection error:', err.message);
+});
+
+mongoose.connection.on('disconnected', () => {
+  console.warn('MongoDB disconnected');
+});
+
+async function connectMongoWithRetry() {
+  try {
+    await mongoose.connect(mongoUri, {
+      dbName: 'office_manage_system',
+      serverSelectionTimeoutMS: 15000,
+      connectTimeoutMS: 15000,
+      socketTimeoutMS: 45000,
     });
-  })
-  .catch((err) => {
-    console.error('Error connecting to MongoDB:', err.message);
-    process.exit(1);
-  });
+  } catch (err) {
+    console.error('Error connecting to MongoDB (retrying in 3s):', err.message);
+    setTimeout(connectMongoWithRetry, 3000);
+  }
+}
+
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`Server running on port ${PORT}`);
+  connectMongoWithRetry();
+});
