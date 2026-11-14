@@ -39,6 +39,21 @@ const STANDARD_PAYMENT_TYPES = [
   { value: 'direct_transfer', label: '銀行振込', desc: 'direct_transfer' }
 ];
 
+export const PRESET_EXPENSE_SUGGESTIONS = [
+  { label: '駐車場代', code: 'Parking Fee', adv: 'Service staff', bear: 'VC', pay: 'salary_addition' },
+  { label: 'ガソリン代・燃料費', code: 'Gasoline Fee', adv: 'Service staff', bear: 'VC', pay: 'salary_addition' },
+  { label: '通信費・Wi-Fi通信費', code: 'Communication Expense', adv: 'Service staff', bear: 'VC', pay: 'salary_addition' },
+  { label: '消耗品費・文房具代', code: 'Consumables Expense', adv: 'VC', bear: 'Dispatch destination: Farm', pay: 'direct_transfer' },
+  { label: '宿泊手当・宿泊費', code: 'Accommodation Allowance', adv: 'VC', bear: 'Service staff', pay: 'salary_deduction' },
+  { label: '研修費・講習受講料', code: 'Training Course Fee', adv: 'VC', bear: 'Service staff', pay: 'salary_deduction' },
+  { label: '制服代・作業着代', code: 'Uniform Fee', adv: 'VC', bear: 'Service staff', pay: 'salary_deduction' },
+  { label: '飲食費・交際費', code: 'Entertainment Food Expense', adv: 'Service staff', bear: 'VC', pay: 'salary_addition' },
+  { label: '事務手数料・送金手数料', code: 'Administrative Fee', adv: 'VC', bear: 'Service staff', pay: 'salary_deduction' },
+  { label: '工具・器具代', code: 'Tools Equipment Expense', adv: 'VC', bear: 'Dispatch destination: Farm', pay: 'direct_transfer' },
+  { label: '荷物運送費・配送費', code: 'Shipping Delivery Fee', adv: 'Service staff', bear: 'VC', pay: 'salary_addition' },
+  { label: 'その他雑費', code: 'Miscellaneous Expense', adv: '', bear: '', pay: '' }
+];
+
 const PAYMENT_METHOD_LABELS = {
   'salary_addition': { label: '給与加算', color: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
   'salary_deduction': { label: '給与控除', color: 'bg-rose-50 text-rose-700 border-rose-200' },
@@ -87,6 +102,7 @@ export default function CaseCategoryManagement() {
   const [formDefaultPaymentMethod, setFormDefaultPaymentMethod] = useState('');
   const [isCustomPaymentInput, setIsCustomPaymentInput] = useState(false);
   const [customPaymentText, setCustomPaymentText] = useState('');
+  const [isCustomLabelInput, setIsCustomLabelInput] = useState(true);
 
   // Fetch all options
   const fetchOptions = async () => {
@@ -173,12 +189,13 @@ export default function CaseCategoryManagement() {
   const filteredPaymentTypes = useMemo(() => allPaymentOptions.filter(filterItem), [allPaymentOptions, q]);
 
   // Open Create Modal
-  const openCreateModal = (type) => {
+  const openCreateModal = (type, manual = true) => {
     setModalMode('create');
     setEditingItem(null);
     setFormType(type);
     setFormLabel('');
     setFormValue('');
+    setIsCustomLabelInput(manual);
     setFormDefaultAdvancer('');
     setFormDefaultBearer('');
     setFormDefaultPaymentMethod('');
@@ -199,6 +216,7 @@ export default function CaseCategoryManagement() {
     setFormType(resolvedType);
     setFormLabel(item.label || '');
     setFormValue(item.value || '');
+    setIsCustomLabelInput(true);
     
     // Fall back to static mapping if not set on item
     const staticRule = EXPENSE_RULES_MAPPING[item.value] || EXPENSE_RULES_MAPPING[item.label] || {};
@@ -225,6 +243,7 @@ export default function CaseCategoryManagement() {
   const closeModal = () => {
     setIsModalOpen(false);
     setEditingItem(null);
+    setIsCustomLabelInput(true);
     setIsCustomPaymentInput(false);
     setCustomPaymentText('');
   };
@@ -233,7 +252,10 @@ export default function CaseCategoryManagement() {
   const handleSave = async (e) => {
     e?.preventDefault();
     const label = formLabel.trim();
-    const value = formValue.trim() || label;
+    let value = formValue.trim();
+    if (!value) {
+      value = label;
+    }
 
     if (!label) {
       toast.error('名称（表示名）を入力してください');
@@ -579,12 +601,13 @@ export default function CaseCategoryManagement() {
                 subTab === 'advancers' ? 'AdvancerCategory' : 
                 subTab === 'bearers' ? 'BearingParty' : 
                 subTab === 'paymentTypes' ? 'PaymentType' : 'ExpenseType';
-              openCreateModal(targetType);
+              openCreateModal(targetType, true);
             }}
             className="flex items-center space-x-1.5 px-3 py-1.5 text-xs sm:text-sm font-semibold text-white bg-[#162D50] hover:bg-[#0f1f38] rounded-md transition-colors shadow-xs shrink-0 cursor-pointer"
+            title="手動で新しい選択肢を追加"
           >
             <Plus className="w-4 h-4" />
-            <span>新規追加</span>
+            <span>手動で項目を追加</span>
           </button>
         </div>
       </div>
@@ -694,6 +717,21 @@ export default function CaseCategoryManagement() {
                 )}
               </tbody>
             </table>
+
+            {/* Quick Add footer button for manual category option */}
+            <div className="bg-gray-50/80 px-4 py-2.5 border-t border-gray-200 flex items-center justify-between">
+              <span className="text-xs text-gray-500">
+                全 {filteredExpenseTypes.length} 項目
+              </span>
+              <button
+                type="button"
+                onClick={() => openCreateModal('ExpenseType', true)}
+                className="text-xs font-semibold text-blue-600 hover:text-blue-800 flex items-center space-x-1 cursor-pointer transition-colors px-2.5 py-1 hover:bg-blue-50 rounded"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                <span>「表示名（日本語）」を手動で追加</span>
+              </button>
+            </div>
           </div>
         )}
 
@@ -999,43 +1037,115 @@ export default function CaseCategoryManagement() {
               </div>
 
               <div>
-                <label className="block font-bold text-gray-700 mb-1">
-                  表示名（日本語） <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  required
-                  placeholder={
-                    formType === 'PaymentType' 
-                      ? '例: 現金手渡し、農場への直接回収 など' 
-                      : '例: 駐車場代、通信費、宿泊手当など'
-                  }
-                  value={formLabel}
-                  onChange={(e) => {
-                    setFormLabel(e.target.value);
-                    if (modalMode === 'create' && !formValue) {
-                      setFormValue(e.target.value);
-                    }
-                  }}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50]"
-                />
+                <div className="flex items-center justify-between mb-1">
+                  <label className="block font-bold text-gray-700">
+                    表示名（日本語） <span className="text-red-500">*</span>
+                  </label>
+                  {formType === 'ExpenseType' && modalMode === 'create' && (
+                    <button
+                      type="button"
+                      onClick={() => setIsCustomLabelInput(!isCustomLabelInput)}
+                      className="text-xs text-blue-600 hover:text-blue-800 font-medium flex items-center space-x-1 cursor-pointer transition-colors"
+                    >
+                      {isCustomLabelInput ? (
+                        <span>定型候補から選ぶ</span>
+                      ) : (
+                        <>
+                          <Plus className="w-3 h-3" />
+                          <span>手動で直接入力する</span>
+                        </>
+                      )}
+                    </button>
+                  )}
+                </div>
+
+                {isCustomLabelInput ? (
+                  <div className="space-y-1">
+                    <input
+                      type="text"
+                      required
+                      placeholder={
+                        formType === 'PaymentType' 
+                          ? '例: 現金手渡し、農場への直接回収 など' 
+                          : '例: 駐車場代、通信費、宿泊手当など（手動入力）'
+                      }
+                      value={formLabel}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        setFormLabel(val);
+                        if (modalMode === 'create' && (!formValue || formValue === formLabel)) {
+                          setFormValue(val);
+                        }
+                      }}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50] text-sm"
+                    />
+                    <div className="flex items-center justify-between text-[11px] text-gray-500">
+                      <span>手動入力モード: 任意の表示名（日本語）を入力できます</span>
+                      {formType === 'ExpenseType' && modalMode === 'create' && (
+                        <button
+                          type="button"
+                          onClick={() => setIsCustomLabelInput(false)}
+                          className="text-blue-600 hover:underline cursor-pointer"
+                        >
+                          定型候補を表示
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                ) : (
+                  <div className="space-y-1">
+                    <select
+                      value={formLabel}
+                      onChange={(e) => {
+                        const sel = e.target.value;
+                        if (sel === '__CUSTOM_MANUAL__') {
+                          setIsCustomLabelInput(true);
+                          setFormLabel('');
+                        } else {
+                          setFormLabel(sel);
+                          const preset = PRESET_EXPENSE_SUGGESTIONS.find(p => p.label === sel);
+                          if (preset) {
+                            if (!formValue || modalMode === 'create') setFormValue(preset.code);
+                            if (preset.adv && !formDefaultAdvancer) setFormDefaultAdvancer(preset.adv);
+                            if (preset.bear && !formDefaultBearer) setFormDefaultBearer(preset.bear);
+                            if (preset.pay && !formDefaultPaymentMethod) setFormDefaultPaymentMethod(preset.pay);
+                          }
+                        }
+                      }}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50] bg-white text-sm"
+                    >
+                      <option value="">定型候補から選択...</option>
+                      {PRESET_EXPENSE_SUGGESTIONS.map(p => (
+                        <option key={p.label} value={p.label}>
+                          {p.label} ({p.code})
+                        </option>
+                      ))}
+                      <option value="__CUSTOM_MANUAL__" className="font-bold text-blue-600">
+                        + 手動で直接入力する...
+                      </option>
+                    </select>
+                    <p className="text-[11px] text-gray-500">
+                      候補から選ぶか、「手動で直接入力」で任意の表示名を追加できます。
+                    </p>
+                  </div>
+                )}
               </div>
 
               <div>
                 <label className="block font-bold text-gray-700 mb-1">
-                  識別コード（半角英数またはキー） <span className="text-red-500">*</span>
+                  識別コード（半角英数またはキー）
+                  <span className="text-gray-400 font-normal text-xs ml-1">（空欄の場合は表示名から自動設定）</span>
                 </label>
                 <input
                   type="text"
-                  required
                   disabled={modalMode === 'edit' && isOthers(editingItem)}
-                  placeholder="例: Parking Fee, CashHandover"
+                  placeholder="例: Parking Fee, CashHandover（空欄でも可）"
                   value={formValue}
                   onChange={(e) => setFormValue(e.target.value)}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50] disabled:bg-gray-100 font-mono text-xs"
                 />
                 <p className="text-[11px] text-gray-400 mt-1">
-                  システム内部や集計で使用される識別子です。
+                  システム内部や集計で使用される識別子です。空欄の場合は表示名が自動適用されます。
                 </p>
               </div>
 

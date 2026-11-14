@@ -448,7 +448,10 @@ export default function StaffClaimRequest() {
           destination: caseItem.destination || '',
           transport_method: caseItem.transportMethod || '',
           bill_receipt_url: caseItem.receipts || [],
-          remarks: caseItem.remark || caseItem.damageReason || "",
+          remarks: [
+            caseItem.otherExpenseDetail ? `【経費内容】${caseItem.otherExpenseDetail}` : '',
+            caseItem.remark || caseItem.damageReason || ''
+          ].filter(Boolean).join('\n'),
           total_expense_amount: totalExpense金額,
           currency: 'JPY',
           previous_unsettled_balance: unsettledBalance,
@@ -660,6 +663,25 @@ export default function StaffClaimRequest() {
               <div className="relative">
                 <input type="date" value={caseItem.wifiStartDate || ''} onChange={(e) => updateCase(index, 'wifiStartDate', e.target.value)} className="w-full px-3 sm:px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50] text-gray-600 text-sm" />
               </div>
+            </div>
+          </div>
+        );
+      case 'others':
+      case 'Others':
+      case 'その他':
+        return (
+          <div className="grid grid-cols-1 gap-4 sm:gap-6 mb-6 sm:mb-8 bg-blue-50/70 p-4 sm:p-6 rounded-lg border border-blue-100">
+            <div>
+              <label className="block text-sm font-bold text-gray-700 mb-1.5 sm:mb-2">
+                具体的な経費内容 / 表示名（手動入力）
+              </label>
+              <input
+                type="text"
+                value={caseItem.otherExpenseDetail || ''}
+                onChange={(e) => updateCase(index, 'otherExpenseDetail', e.target.value)}
+                placeholder="手動で経費の名称・内容を入力してください"
+                className="w-full px-3 sm:px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#162D50] text-sm bg-white"
+              />
             </div>
           </div>
         );
