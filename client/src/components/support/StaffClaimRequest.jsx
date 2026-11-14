@@ -421,12 +421,6 @@ export default function StaffClaimRequest() {
 
   const handle送信 = async () => {
     try {
-      for (let i = 0; i < cases.length; i++) {
-        if (!cases[i].receipts || cases[i].receipts.length === 0) {
-          toast.error(`案件カテゴリ #${i+1} の請求書/領収書をアップロードしてください。`);
-          return;
-        }
-      }
       const submissions = cases.map(caseItem => {
         const isHost = isHostCompanyPairing(caseItem.advancerCategory, caseItem.bearingParty);
         const payload = {
@@ -1090,12 +1084,12 @@ export default function StaffClaimRequest() {
                 )}
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
                   <div>
-                    <label className="block text-sm font-bold text-gray-700 mb-2">請求書/領収書のアップロード <span className="text-red-500">*</span></label>
+                    <label className="block text-sm font-bold text-gray-700 mb-2">請求書/領収書のアップロード <span className="text-xs text-gray-400 font-normal ml-1">（任意）</span></label>
                     <div className={`border-2 border-dashed ${caseItem.receipts && caseItem.receipts.length > 0 ? 'border-green-400 bg-green-50/20' : 'border-gray-300'} rounded-lg p-4 text-center hover:bg-gray-50 transition-colors cursor-pointer relative`}>
                       <input type="file" multiple accept=".jpg,.jpeg,.png,.pdf,image/jpeg,image/png,application/pdf" className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" onChange={(e) => handleFileUpload(e, index)} />
                       <FileText className={`w-6 h-6 mx-auto mb-2 ${caseItem.receipts && caseItem.receipts.length > 0 ? 'text-green-500' : 'text-gray-400'}`} />
                       <p className="text-xs sm:text-sm text-gray-600">ファイルをドラッグ＆ドロップするか、クリックしてアップロード</p>
-                      <p className="text-xs text-red-500 mt-1 font-medium">※ 請求書または領収書の添付は必須です</p>
+                      <p className="text-xs text-gray-400 mt-1">※ 請求書または領収書がある場合は添付してください</p>
                     </div>
                     {caseItem.receipts && caseItem.receipts.length > 0 && (
                       <div className="mt-3 flex flex-wrap gap-2">
@@ -1155,10 +1149,6 @@ export default function StaffClaimRequest() {
                   }
                   if (c.advancerCategory !== 'Office' && !c.advancerName) {
                     toast.error(`案件カテゴリ #${i+1} の支払処理タイプを入力してください。`);
-                    return;
-                  }
-                  if (!c.receipts || c.receipts.length === 0) {
-                    toast.error(`案件カテゴリ #${i+1} の請求書/領収書をアップロードしてください。`);
                     return;
                   }
                 }
